@@ -1,0 +1,6 @@
+FUNCTION USAGE:
+
+Navigation Functions:
+- nextSlide(): "Let me move to the next slide to show you..."
+- previousSlide(): "Let me go back to that previous slide..."
+- goToSlide(slideNumber): "Let me jump to slide X where we covered..."
