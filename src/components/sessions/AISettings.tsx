@@ -64,6 +64,14 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const [showAdvancedAudio, setShowAdvancedAudio] = useState(false);
   const [showAdvancedTurnDetection, setShowAdvancedTurnDetection] = useState(false);
+  const [showSessionBehavior, setShowSessionBehavior] = useState(false);
+  const [sessionBehavior, setSessionBehavior] = useState({
+    hintPolicy: "NONE" as "NONE" | "FREE" | "PENALIZED",
+    rubric: [] as Array<{ criterion: string; weight: number }>,
+    sessionInstructions: "",
+  });
+  const [sessionBehaviorRubricInput, setSessionBehaviorRubricInput] = useState("[]");
+  const [sessionBehaviorRubricError, setSessionBehaviorRubricError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -130,6 +138,17 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
               coreInstructions = structuredInstructions.core || "";
               console.log("✅ Loaded structured instructions (JSON format)");
 
+              // Load sessionBehavior if present
+              if (structuredInstructions.sessionBehavior) {
+                const sb = structuredInstructions.sessionBehavior;
+                const loadedBehavior = {
+                  hintPolicy: (sb.hintPolicy || "NONE") as "NONE" | "FREE" | "PENALIZED",
+                  rubric: Array.isArray(sb.rubric) ? sb.rubric : [],
+                  sessionInstructions: sb.sessionInstructions || "",
+                };
+                setSessionBehavior(loadedBehavior);
+                setSessionBehaviorRubricInput(JSON.stringify(loadedBehavior.rubric, null, 2));
+              }
             }
           } catch (err) {
             console.error('Error parsing instructions:', err);
@@ -229,6 +248,11 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
         version: "1.0",
         core: settings.core_instructions || "",
         editable: settings.user_instructions || "",
+        sessionBehavior: {
+          hintPolicy: sessionBehavior.hintPolicy,
+          rubric: sessionBehavior.rubric,
+          sessionInstructions: sessionBehavior.sessionInstructions,
+        },
         timestamp: new Date().toISOString()
       };
       
@@ -401,9 +425,70 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
             </div>
           </fieldset>
 
+          {/* Session Behavior */}
+          <CollapsibleSection
+            title="Session Behavior"
+            isOpen={showSessionBehavior}
+            onToggle={() => setShowSessionBehavior(!showSessionBehavior)}
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Hint Policy</label>
+                <select
+                  value={sessionBehavior.hintPolicy}
+                  onChange={(e) => setSessionBehavior(prev => ({ ...prev, hintPolicy: e.target.value as "NONE" | "FREE" | "PENALIZED" }))}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="NONE">None — no hints offered</option>
+                  <option value="FREE">Free — hints given freely</option>
+                  <option value="PENALIZED">Penalized — hints reduce score</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Controls whether the AI offers hints and how they affect scoring.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rubric (JSON array)</label>
+                <textarea
+                  value={sessionBehaviorRubricInput}
+                  onChange={(e) => {
+                    setSessionBehaviorRubricInput(e.target.value);
+                    try {
+                      const parsed = JSON.parse(e.target.value);
+                      if (Array.isArray(parsed)) {
+                        setSessionBehavior(prev => ({ ...prev, rubric: parsed }));
+                        setSessionBehaviorRubricError("");
+                      } else {
+                        setSessionBehaviorRubricError("Must be a JSON array");
+                      }
+                    } catch {
+                      setSessionBehaviorRubricError("Invalid JSON");
+                    }
+                  }}
+                  rows={5}
+                  className={`w-full p-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${sessionBehaviorRubricError ? "border-red-400" : "border-gray-300"}`}
+                  placeholder={'[\n  { "criterion": "Understanding", "weight": 40 },\n  { "criterion": "Clarity", "weight": 60 }\n]'}
+                />
+                {sessionBehaviorRubricError && <p className="text-xs text-red-500 mt-1">{sessionBehaviorRubricError}</p>}
+                <p className="text-xs text-gray-500 mt-1">Grading criteria and weights injected into the AI prompt at session start.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Session-Specific Instructions</label>
+                <textarea
+                  value={sessionBehavior.sessionInstructions}
+                  onChange={(e) => setSessionBehavior(prev => ({ ...prev, sessionInstructions: e.target.value }))}
+                  rows={4}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g. Focus on Chapter 5 material only. Ask follow-up questions if the student is vague."
+                />
+                <p className="text-xs text-gray-500 mt-1">Extra behavioral instructions appended to the prompt for this session.</p>
+              </div>
+            </div>
+          </CollapsibleSection>
+
           {/* Advanced Settings */}
-          <CollapsibleSection 
-            title="Advanced Tool Settings" 
+          <CollapsibleSection
+            title="Advanced Tool Settings"
             isOpen={showAdvancedTools} 
             onToggle={() => setShowAdvancedTools(!showAdvancedTools)}
           >
