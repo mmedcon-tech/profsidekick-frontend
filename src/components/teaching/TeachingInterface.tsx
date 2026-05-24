@@ -42,7 +42,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const [showCaptions, setShowCaptions] = useState(true);
   const captionScrollRef = useRef<HTMLDivElement>(null);
   const [showStartPrompt, setShowStartPrompt] = useState(true); // Show from the beginning
-  
+
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
@@ -189,6 +189,54 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     []
   );
 
+
+  const buildFinalPrompt = (): string => {
+    const raw = classSession.classDetails.assistant_parameters?.instructions || "";
+    let base = raw;
+    let sb: { hintPolicy?: string; rubric?: Array<{ criterion: string; weight: number }>; sessionInstructions?: string } = {};
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        base = [parsed.core, parsed.editable].filter(Boolean).join("\n\n");
+        if (parsed.sessionBehavior) sb = parsed.sessionBehavior;
+      }
+    } catch { /* use raw as-is */ }
+
+    const hintPolicy = sb.hintPolicy || "NONE";
+    const rubric: Array<{ criterion: string; weight: number }> = Array.isArray(sb.rubric) ? sb.rubric : [];
+    const sessionInstructions = (sb.sessionInstructions || "").trim();
+
+    const hasConfig = hintPolicy !== "NONE" || rubric.length > 0 || sessionInstructions.length > 0;
+    if (!hasConfig) return base;
+
+    const parts: string[] = [base];
+
+    // Hint policy block — instruction-based, not JSON
+    const hintAllowed = hintPolicy !== "NONE" ? "YES" : "NO";
+    parts.push(
+      `[Hint Policy]\nAllowed: ${hintAllowed}\nMode: ${hintPolicy}\nRules:\n- ${
+        hintPolicy === "PENALIZED"
+          ? "Penalized mode applies rubric-based deduction for each hint used"
+          : hintPolicy === "FREE"
+          ? "Free mode allows hints without any score impact"
+          : "Hints are not permitted in this session"
+      }`
+    );
+
+    // Rubric block — human-readable percentages
+    if (rubric.length > 0) {
+      const rubricLines = rubric.map(r => `- ${r.criterion}: ${r.weight}%`).join("\n");
+      parts.push(`[Rubric]\n${rubricLines}`);
+    }
+
+    // Session instructions block
+    if (sessionInstructions.length > 0) {
+      parts.push(`[Session Instructions]\n${sessionInstructions}`);
+    }
+
+    return parts.join("\n\n");
+  };
 
   const connectToRealtime = async () => {
     // Generate unique connection ID for this attempt
@@ -802,6 +850,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     const sessionUpdate = {
       type: "session.update",
       session: {
+        instructions: buildFinalPrompt(),
         tools: [
           {
             type: "function",
