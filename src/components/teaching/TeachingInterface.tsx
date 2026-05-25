@@ -42,7 +42,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const [showCaptions, setShowCaptions] = useState(true);
   const captionScrollRef = useRef<HTMLDivElement>(null);
   const [showStartPrompt, setShowStartPrompt] = useState(true); // Show from the beginning
-  const [rightPanelMode, setRightPanelMode] = useState<"transcript" | "feedback">("transcript");
+  //const [rightPanelMode, setRightPanelMode] = useState<"transcript" | "feedback">("transcript");
   const [activeFeedbackId, setActiveFeedbackId] = useState<number | null>(null);
   const [highlightedKeywords, setHighlightedKeywords] = useState<string[]>([]);
 
@@ -1342,13 +1342,13 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   };
 
   // --- Mock feedback demo data (visual demo only, no backend) ---
-  const MOCK_FEEDBACK_ITEMS = [
-    { id: 1, text: "Variable mapping explanation unclear.", keywords: ["variable", "mapping"], severity: "warning" as const },
-    { id: 2, text: "Student did not justify distributive property.", keywords: ["distributive", "property"], severity: "error" as const },
-    { id: 3, text: "Function usage explanation incomplete.", keywords: ["function", "usage"], severity: "warning" as const },
-    { id: 4, text: "Correct application of substitution method.", keywords: ["substitution", "method"], severity: "success" as const },
-    { id: 5, text: "Loop termination condition not discussed.", keywords: ["loop", "termination"], severity: "error" as const },
-  ];
+  // const MOCK_FEEDBACK_ITEMS = [
+  //   { id: 1, text: "Variable mapping explanation unclear.", keywords: ["variable", "mapping"], severity: "warning" as const },
+  //   { id: 2, text: "Student did not justify distributive property.", keywords: ["distributive", "property"], severity: "error" as const },
+  //   { id: 3, text: "Function usage explanation incomplete.", keywords: ["function", "usage"], severity: "warning" as const },
+  //   { id: 4, text: "Correct application of substitution method.", keywords: ["substitution", "method"], severity: "success" as const },
+  //   { id: 5, text: "Loop termination condition not discussed.", keywords: ["loop", "termination"], severity: "error" as const },
+  // ];
 
   const KEYWORD_POSITIONS = [
     { top: "28%", left: "12%" },
@@ -1358,21 +1358,21 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     { top: "72%", left: "45%" },
   ];
 
-  const handleFeedbackItemClick = (id: number, keywords: string[]) => {
-    if (activeFeedbackId === id) {
-      setActiveFeedbackId(null);
-      setHighlightedKeywords([]);
-    } else {
-      setActiveFeedbackId(id);
-      setHighlightedKeywords(keywords);
-    }
-  };
+  // const handleFeedbackItemClick = (id: number, keywords: string[]) => {
+  //   if (activeFeedbackId === id) {
+  //     setActiveFeedbackId(null);
+  //     setHighlightedKeywords([]);
+  //   } else {
+  //     setActiveFeedbackId(id);
+  //     setHighlightedKeywords(keywords);
+  //   }
+  // };
 
-  const severityStyle = {
-    warning: { dot: "bg-amber-400", badge: "bg-amber-50 border-amber-200 text-amber-800", chip: "bg-amber-100 text-amber-700" },
-    error:   { dot: "bg-red-400",   badge: "bg-red-50 border-red-200 text-red-800",     chip: "bg-red-100 text-red-700"   },
-    success: { dot: "bg-emerald-400", badge: "bg-emerald-50 border-emerald-200 text-emerald-800", chip: "bg-emerald-100 text-emerald-700" },
-  };
+  // const severityStyle = {
+  //   warning: { dot: "bg-amber-400", badge: "bg-amber-50 border-amber-200 text-amber-800", chip: "bg-amber-100 text-amber-700" },
+  //   error:   { dot: "bg-red-400",   badge: "bg-red-50 border-red-200 text-red-800",     chip: "bg-red-100 text-red-700"   },
+  //   success: { dot: "bg-emerald-400", badge: "bg-emerald-50 border-emerald-200 text-emerald-800", chip: "bg-emerald-100 text-emerald-700" },
+  // };
   // --------------------------------------------------------------
 
   return (
