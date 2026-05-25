@@ -199,7 +199,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
     try {
       const formData = new FormData();
       formData.append('slide_image', file);
-      formData.append('vision_instructions', 'You are a helpful assistant that can analyze the slide image and provide a detailed description of the content.');
+      formData.append('vision_instructions', 'You are an AI assignment analysis system. Analyze the student solution against the correct solution and generate structured guidance for an oral examiner.\n\nInputs:\n[Correct solution-ground truth]\n[Student assignment solution]\n[Course Material-optional]\n\nCompare the student solution against the correct solution step-by-step.\nIdentify:\n- correct and incorrect steps\n- reasoning breaks or gaps in logic of the whole solution\n- missing justifications between steps\n- possible misunderstandings\n\nFor each major step, state the key rule, theorem, property, or concept involved for the student to state.\nFlag likely error sources and concepts the examiner should focus on during questioning.\nSuggested probing areas (non-binding) based on observed mistakes and reasoning patterns.\n\nRules:\n- Stay strictly grounded in the submitted work\n- Do not tutor, explain, or solve the problem\n- Do not assign final grades or outcomes');
       formData.append('vision_model', 'gpt-4o');
 
       const response = await fetch(

@@ -233,6 +233,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (sessionBehaviorRubricError) return;
     setIsLoading(true);
     setError('');
     setSuccess('');
@@ -243,7 +244,9 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
         throw new Error('Authentication required');
       }
 
-      // Create structured instructions as JSON
+      // Saves rubric + hint policy + professor instructions to backend.
+      // NOTE: Examiner base prompt is controlled by USE_FRONTEND_EXAMINER_MODE in examinerPrompt.ts
+      // and is injected at runtime by buildFinalPrompt() — not stored here.
       const structuredInstructions = {
         version: "1.0",
         core: settings.core_instructions || "",
@@ -455,8 +458,13 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     try {
                       const parsed = JSON.parse(e.target.value);
                       if (Array.isArray(parsed)) {
-                        setSessionBehavior(prev => ({ ...prev, rubric: parsed }));
-                        setSessionBehaviorRubricError("");
+                        const total = parsed.reduce((sum: number, r: any) => sum + (Number(r.weight) || 0), 0);
+                        if (parsed.length > 0 && total !== 100) {
+                          setSessionBehaviorRubricError(`Weights must sum to 100 (currently ${total})`);
+                        } else {
+                          setSessionBehavior(prev => ({ ...prev, rubric: parsed }));
+                          setSessionBehaviorRubricError("");
+                        }
                       } else {
                         setSessionBehaviorRubricError("Must be a JSON array");
                       }
