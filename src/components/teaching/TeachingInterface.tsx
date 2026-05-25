@@ -42,7 +42,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const [showCaptions, setShowCaptions] = useState(true);
   const captionScrollRef = useRef<HTMLDivElement>(null);
   const [showStartPrompt, setShowStartPrompt] = useState(true); // Show from the beginning
-  //const [rightPanelMode, setRightPanelMode] = useState<"transcript" | "feedback">("transcript");
+  const [rightPanelMode, setRightPanelMode] = useState<"transcript" | "feedback">("transcript");
   const [activeFeedbackId, setActiveFeedbackId] = useState<number | null>(null);
   const [highlightedKeywords, setHighlightedKeywords] = useState<string[]>([]);
 
@@ -1342,13 +1342,13 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   };
 
   // --- Mock feedback demo data (visual demo only, no backend) ---
-  // const MOCK_FEEDBACK_ITEMS = [
-  //   { id: 1, text: "Variable mapping explanation unclear.", keywords: ["variable", "mapping"], severity: "warning" as const },
-  //   { id: 2, text: "Student did not justify distributive property.", keywords: ["distributive", "property"], severity: "error" as const },
-  //   { id: 3, text: "Function usage explanation incomplete.", keywords: ["function", "usage"], severity: "warning" as const },
-  //   { id: 4, text: "Correct application of substitution method.", keywords: ["substitution", "method"], severity: "success" as const },
-  //   { id: 5, text: "Loop termination condition not discussed.", keywords: ["loop", "termination"], severity: "error" as const },
-  // ];
+  const MOCK_FEEDBACK_ITEMS = [
+    { id: 1, text: "Variable mapping explanation unclear.", keywords: ["variable", "mapping"], severity: "warning" as const },
+    { id: 2, text: "Student did not justify distributive property.", keywords: ["distributive", "property"], severity: "error" as const },
+    { id: 3, text: "Function usage explanation incomplete.", keywords: ["function", "usage"], severity: "warning" as const },
+    { id: 4, text: "Correct application of substitution method.", keywords: ["substitution", "method"], severity: "success" as const },
+    { id: 5, text: "Loop termination condition not discussed.", keywords: ["loop", "termination"], severity: "error" as const },
+  ];
 
   const KEYWORD_POSITIONS = [
     { top: "28%", left: "12%" },
@@ -1358,21 +1358,21 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     { top: "72%", left: "45%" },
   ];
 
-  // const handleFeedbackItemClick = (id: number, keywords: string[]) => {
-  //   if (activeFeedbackId === id) {
-  //     setActiveFeedbackId(null);
-  //     setHighlightedKeywords([]);
-  //   } else {
-  //     setActiveFeedbackId(id);
-  //     setHighlightedKeywords(keywords);
-  //   }
-  // };
+  const handleFeedbackItemClick = (id: number, keywords: string[]) => {
+    if (activeFeedbackId === id) {
+      setActiveFeedbackId(null);
+      setHighlightedKeywords([]);
+    } else {
+      setActiveFeedbackId(id);
+      setHighlightedKeywords(keywords);
+    }
+  };
 
-  // const severityStyle = {
-  //   warning: { dot: "bg-amber-400", badge: "bg-amber-50 border-amber-200 text-amber-800", chip: "bg-amber-100 text-amber-700" },
-  //   error:   { dot: "bg-red-400",   badge: "bg-red-50 border-red-200 text-red-800",     chip: "bg-red-100 text-red-700"   },
-  //   success: { dot: "bg-emerald-400", badge: "bg-emerald-50 border-emerald-200 text-emerald-800", chip: "bg-emerald-100 text-emerald-700" },
-  // };
+  const severityStyle = {
+    warning: { dot: "bg-amber-400", badge: "bg-amber-50 border-amber-200 text-amber-800", chip: "bg-amber-100 text-amber-700" },
+    error:   { dot: "bg-red-400",   badge: "bg-red-50 border-red-200 text-red-800",     chip: "bg-red-100 text-red-700"   },
+    success: { dot: "bg-emerald-400", badge: "bg-emerald-50 border-emerald-200 text-emerald-800", chip: "bg-emerald-100 text-emerald-700" },
+  };
   // --------------------------------------------------------------
 
   return (
@@ -1626,22 +1626,47 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           </div>
         </div>
 
-        {/* Real-time Captions Section */}
+        {/* Transcript / Feedback Panel */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-4 py-3 border-b border-slate-200/50">
-            <button
-              onClick={() => setShowCaptions(!showCaptions)}
-              className="flex items-center justify-between w-full text-left"
-            >
-              <div className="flex items-center gap-2">
-                <MessageSquare size={16} className="text-slate-600" />
-                <span className="text-sm font-medium text-slate-900">Live Captions</span>
-              </div>
-              {showCaptions ? <ChevronUp size={16} className="text-slate-600" /> : <ChevronDown size={16} className="text-slate-600" />}
-            </button>
+          {/* Tab header */}
+          <div className="px-4 py-2.5 border-b border-slate-200/50 flex items-center justify-between">
+            <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setRightPanelMode("transcript")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
+                  rightPanelMode === "transcript"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <MessageSquare size={11} />
+                Transcript
+              </button>
+              <button
+                onClick={() => setRightPanelMode("feedback")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
+                  rightPanelMode === "feedback"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Feedback
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+              </button>
+            </div>
+            {rightPanelMode === "transcript" && (
+              <button
+                onClick={() => setShowCaptions(!showCaptions)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+                aria-label="Toggle captions"
+              >
+                {showCaptions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            )}
           </div>
-          
-          {showCaptions && (
+
+          {/* Transcript content — logic unchanged, gated by tab */}
+          {rightPanelMode === "transcript" && showCaptions && (
             <div className="flex-1 flex flex-col min-h-0">
               <div
                 ref={captionScrollRef}
@@ -1661,11 +1686,10 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                       const isUser = item.role === "user";
                       const isComplete = item.status === "DONE";
                       const messageText = item.title || "";
-                      
-                      // Handle special transcript states
+
                       const isTranscribing = messageText === "[Transcribing...]";
                       const isInaudible = messageText === "[inaudible]";
-                      
+
                       return (
                         <div
                           key={item.itemId}
@@ -1673,8 +1697,8 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                         >
                           <div
                             className={`max-w-[85%] px-3 py-2 rounded-lg text-xs ${
-                              isUser 
-                                ? 'bg-blue-500 text-white' 
+                              isUser
+                                ? 'bg-blue-500 text-white'
                                 : 'bg-white text-slate-900 border border-slate-200'
                             } ${
                               !isComplete ? 'animate-pulse' : ''
@@ -1685,10 +1709,10 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                                 {isUser ? 'You' : 'AI'}
                               </span>
                               <span className={`text-xs ${isUser ? 'text-blue-200' : 'text-slate-400'}`}>
-                                {new Date(item.createdAtMs).toLocaleTimeString([], { 
-                                  hour: '2-digit', 
+                                {new Date(item.createdAtMs).toLocaleTimeString([], {
+                                  hour: '2-digit',
                                   minute: '2-digit',
-                                  second: '2-digit' 
+                                  second: '2-digit'
                                 })}
                               </span>
                             </div>
@@ -1703,6 +1727,40 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                     })
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Feedback panel — mock demo, visual only */}
+          {rightPanelMode === "feedback" && (
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              <p className="text-xs text-slate-400 px-1 pb-1">
+                Click an item to highlight keywords on the slide.
+              </p>
+              {MOCK_FEEDBACK_ITEMS.map((item) => {
+                const s = severityStyle[item.severity];
+                const isActive = activeFeedbackId === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleFeedbackItemClick(item.id, item.keywords)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg border text-xs transition-all duration-150 ${s.badge} ${
+                      isActive ? "ring-2 ring-amber-400 ring-offset-1" : "hover:brightness-95"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
+                      <span className="flex-1 leading-snug">{item.text}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1.5 ml-4">
+                      {item.keywords.map((kw) => (
+                        <span key={kw} className={`px-1.5 py-0.5 rounded text-xs font-medium ${s.chip}`}>
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
