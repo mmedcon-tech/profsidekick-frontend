@@ -8,6 +8,7 @@ import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
 import teachingAssistant from "@/constants/teachingAssistant";
+import { EXAMINER_BASE_PROMPT, USE_FRONTEND_EXAMINER_MODE } from "@/constants/examinerPrompt";
 import { config } from "@/lib/config";
 
 // Global connection tracking to prevent React Strict Mode issues
@@ -195,27 +196,40 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
 
   const buildFinalPrompt = (): string => {
     const raw = classSession.classDetails.assistant_parameters?.instructions || "";
-    let base = raw;
+    let core = "";
+    let editable = "";
     let sb: { hintPolicy?: string; rubric?: Array<{ criterion: string; weight: number }>; sessionInstructions?: string } = {};
 
     try {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === "object") {
-        base = [parsed.core, parsed.editable].filter(Boolean).join("\n\n");
+        core = parsed.core || "";
+        editable = parsed.editable || "";
         if (parsed.sessionBehavior) sb = parsed.sessionBehavior;
       }
-    } catch { /* use raw as-is */ }
+    } catch {
+      // raw string fallback — treat entire value as editable note
+      editable = raw;
+    }
 
     const hintPolicy = sb.hintPolicy || "NONE";
     const rubric: Array<{ criterion: string; weight: number }> = Array.isArray(sb.rubric) ? sb.rubric : [];
     const sessionInstructions = (sb.sessionInstructions || "").trim();
 
-    const hasConfig = hintPolicy !== "NONE" || rubric.length > 0 || sessionInstructions.length > 0;
-    if (!hasConfig) return base;
+    // When USE_FRONTEND_EXAMINER_MODE is true, always use the frontend examiner base.
+    // When false, fall back to backend-stored core (original behavior), with EXAMINER_BASE_PROMPT as safety net.
+    const basePrompt = USE_FRONTEND_EXAMINER_MODE
+      ? EXAMINER_BASE_PROMPT
+      : [core, editable].filter(Boolean).join("\n\n") || EXAMINER_BASE_PROMPT;
 
-    const parts: string[] = [base];
+    // Order: base → rubric → hint policy → professor instructions (when in override mode)
+    const parts: string[] = [basePrompt];
 
-    // Hint policy block — instruction-based, not JSON
+    if (rubric.length > 0) {
+      const rubricLines = rubric.map(r => `- ${r.criterion}: ${r.weight}%`).join("\n");
+      parts.push(`[Rubric]\n${rubricLines}`);
+    }
+
     const hintAllowed = hintPolicy !== "NONE" ? "YES" : "NO";
     parts.push(
       `[Hint Policy]\nAllowed: ${hintAllowed}\nMode: ${hintPolicy}\nRules:\n- ${
@@ -227,13 +241,12 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       }`
     );
 
-    // Rubric block — human-readable percentages
-    if (rubric.length > 0) {
-      const rubricLines = rubric.map(r => `- ${r.criterion}: ${r.weight}%`).join("\n");
-      parts.push(`[Rubric]\n${rubricLines}`);
+    // Professor instructions appended last — only injected as a separate block in override mode
+    // (in non-override mode they are already part of basePrompt via core+editable)
+    if (USE_FRONTEND_EXAMINER_MODE && editable.trim()) {
+      parts.push(`[Professor Instructions]\n${editable.trim()}`);
     }
 
-    // Session instructions block
     if (sessionInstructions.length > 0) {
       parts.push(`[Session Instructions]\n${sessionInstructions}`);
     }
