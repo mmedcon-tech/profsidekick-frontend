@@ -1,8 +1,12 @@
 // Configuration for different environments
+if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
+  throw new Error("NEXT_PUBLIC_BACKEND_URL is not set");
+}
+
 export const config = {
   // Backend API URL
   isLocal: process.env.NEXT_PUBLIC_IS_LOCAL === 'true',
-  backendUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'https://backend-production-1d79.up.railway.app',
+  backendUrl: process.env.NEXT_PUBLIC_BACKEND_URL,
   
   // Frontend URL (for redirects, CORS, etc.)
   appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',

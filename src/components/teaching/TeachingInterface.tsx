@@ -8,6 +8,7 @@ import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
 import teachingAssistant from "@/constants/teachingAssistant";
+import { EXAMINER_BASE_PROMPT, USE_FRONTEND_EXAMINER_MODE } from "@/constants/examinerPrompt";
 import { config } from "@/lib/config";
 
 // Global connection tracking to prevent React Strict Mode issues
@@ -42,7 +43,10 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const [showCaptions, setShowCaptions] = useState(true);
   const captionScrollRef = useRef<HTMLDivElement>(null);
   const [showStartPrompt, setShowStartPrompt] = useState(true); // Show from the beginning
-  
+  const [rightPanelMode, setRightPanelMode] = useState<"transcript" | "feedback">("transcript");
+  const [activeFeedbackId, setActiveFeedbackId] = useState<number | null>(null);
+  const [highlightedKeywords, setHighlightedKeywords] = useState<string[]>([]);
+
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
@@ -189,6 +193,66 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     []
   );
 
+
+  const buildFinalPrompt = (): string => {
+    const raw = classSession.classDetails.assistant_parameters?.instructions || "";
+    let core = "";
+    let editable = "";
+    let sb: { hintPolicy?: string; rubric?: Array<{ criterion: string; weight: number }>; sessionInstructions?: string } = {};
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        core = parsed.core || "";
+        editable = parsed.editable || "";
+        if (parsed.sessionBehavior) sb = parsed.sessionBehavior;
+      }
+    } catch {
+      // raw string fallback — treat entire value as editable note
+      editable = raw;
+    }
+
+    const hintPolicy = sb.hintPolicy || "NONE";
+    const rubric: Array<{ criterion: string; weight: number }> = Array.isArray(sb.rubric) ? sb.rubric : [];
+    const sessionInstructions = (sb.sessionInstructions || "").trim();
+
+    // When USE_FRONTEND_EXAMINER_MODE is true, always use the frontend examiner base.
+    // When false, fall back to backend-stored core (original behavior), with EXAMINER_BASE_PROMPT as safety net.
+    const basePrompt = USE_FRONTEND_EXAMINER_MODE
+      ? EXAMINER_BASE_PROMPT
+      : [core, editable].filter(Boolean).join("\n\n") || EXAMINER_BASE_PROMPT;
+
+    // Order: base → rubric → hint policy → professor instructions (when in override mode)
+    const parts: string[] = [basePrompt];
+
+    if (rubric.length > 0) {
+      const rubricLines = rubric.map(r => `- ${r.criterion}: ${r.weight}%`).join("\n");
+      parts.push(`[Rubric]\n${rubricLines}`);
+    }
+
+    const hintAllowed = hintPolicy !== "NONE" ? "YES" : "NO";
+    parts.push(
+      `[Hint Policy]\nAllowed: ${hintAllowed}\nMode: ${hintPolicy}\nRules:\n- ${
+        hintPolicy === "PENALIZED"
+          ? "Penalized mode applies rubric-based deduction for each hint used"
+          : hintPolicy === "FREE"
+          ? "Free mode allows hints without any score impact"
+          : "Hints are not permitted in this session"
+      }`
+    );
+
+    // Professor instructions appended last — only injected as a separate block in override mode
+    // (in non-override mode they are already part of basePrompt via core+editable)
+    if (USE_FRONTEND_EXAMINER_MODE && editable.trim()) {
+      parts.push(`[Professor Instructions]\n${editable.trim()}`);
+    }
+
+    if (sessionInstructions.length > 0) {
+      parts.push(`[Session Instructions]\n${sessionInstructions}`);
+    }
+
+    return parts.join("\n\n");
+  };
 
   const connectToRealtime = async () => {
     // Generate unique connection ID for this attempt
@@ -802,6 +866,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     const sessionUpdate = {
       type: "session.update",
       session: {
+        instructions: buildFinalPrompt(),
         tools: [
           {
             type: "function",
@@ -1289,6 +1354,40 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     return `${config.getApiUrl('/')}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
   };
 
+  // --- Mock feedback demo data (visual demo only, no backend) ---
+  const MOCK_FEEDBACK_ITEMS = [
+    { id: 1, text: "Variable mapping explanation unclear.", keywords: ["variable", "mapping"], severity: "warning" as const },
+    { id: 2, text: "Student did not justify distributive property.", keywords: ["distributive", "property"], severity: "error" as const },
+    { id: 3, text: "Function usage explanation incomplete.", keywords: ["function", "usage"], severity: "warning" as const },
+    { id: 4, text: "Correct application of substitution method.", keywords: ["substitution", "method"], severity: "success" as const },
+    { id: 5, text: "Loop termination condition not discussed.", keywords: ["loop", "termination"], severity: "error" as const },
+  ];
+
+  const KEYWORD_POSITIONS = [
+    { top: "28%", left: "12%" },
+    { top: "45%", left: "32%" },
+    { top: "61%", left: "22%" },
+    { top: "38%", left: "55%" },
+    { top: "72%", left: "45%" },
+  ];
+
+  const handleFeedbackItemClick = (id: number, keywords: string[]) => {
+    if (activeFeedbackId === id) {
+      setActiveFeedbackId(null);
+      setHighlightedKeywords([]);
+    } else {
+      setActiveFeedbackId(id);
+      setHighlightedKeywords(keywords);
+    }
+  };
+
+  const severityStyle = {
+    warning: { dot: "bg-amber-400", badge: "bg-amber-50 border-amber-200 text-amber-800", chip: "bg-amber-100 text-amber-700" },
+    error:   { dot: "bg-red-400",   badge: "bg-red-50 border-red-200 text-red-800",     chip: "bg-red-100 text-red-700"   },
+    success: { dot: "bg-emerald-400", badge: "bg-emerald-50 border-emerald-200 text-emerald-800", chip: "bg-emerald-100 text-emerald-700" },
+  };
+  // --------------------------------------------------------------
+
   return (
     <div className="h-screen bg-gray-100 flex relative">
       {/* Start Conversation Prompt - Floating notification */}
@@ -1363,20 +1462,41 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
 
         {/* Slide Content */}
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-full max-w-7xl">
+          <div className="w-full max-w-7xl relative">
             {currentSlideData?.imagePath ? (
-              <img
-                src={getCorrectImageUrl(currentSlideData.imagePath)}
-                alt={currentSlideData?.title}
-                className="w-full h-auto rounded-lg shadow-lg"
-                onError={(e) => {
-                  console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
-                  console.error('Error details:', e);
-                }}
-                onLoad={() => {
-                  console.log('Successfully loaded slide image:', getCorrectImageUrl(currentSlideData.imagePath));
-                }}
-              />
+              <>
+                <img
+                  src={getCorrectImageUrl(currentSlideData.imagePath)}
+                  alt={currentSlideData?.title}
+                  className={`w-full h-auto rounded-lg shadow-lg transition-all duration-300 ${
+                    highlightedKeywords.length > 0 ? "ring-2 ring-amber-400/70" : ""
+                  }`}
+                  onError={(e) => {
+                    console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
+                    console.error('Error details:', e);
+                  }}
+                  onLoad={() => {
+                    console.log('Successfully loaded slide image:', getCorrectImageUrl(currentSlideData.imagePath));
+                  }}
+                />
+                {/* Mock keyword highlight overlay — visual demo only */}
+                {highlightedKeywords.length > 0 && (
+                  <div className="absolute inset-0 pointer-events-none rounded-lg overflow-hidden">
+                    {highlightedKeywords.map((kw, i) => {
+                      const pos = KEYWORD_POSITIONS[i % KEYWORD_POSITIONS.length];
+                      return (
+                        <div
+                          key={kw}
+                          className="absolute px-2 py-0.5 bg-amber-300/85 text-amber-900 text-xs font-semibold rounded shadow-md"
+                          style={{ top: pos.top, left: pos.left, transform: "translateY(-50%)" }}
+                        >
+                          {kw}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="bg-gray-100 rounded-lg p-8 text-center">
                 <p className="text-gray-500">No slide image available</p>
@@ -1519,22 +1639,47 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           </div>
         </div>
 
-        {/* Real-time Captions Section */}
+        {/* Transcript / Feedback Panel */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-4 py-3 border-b border-slate-200/50">
-            <button
-              onClick={() => setShowCaptions(!showCaptions)}
-              className="flex items-center justify-between w-full text-left"
-            >
-              <div className="flex items-center gap-2">
-                <MessageSquare size={16} className="text-slate-600" />
-                <span className="text-sm font-medium text-slate-900">Live Captions</span>
-              </div>
-              {showCaptions ? <ChevronUp size={16} className="text-slate-600" /> : <ChevronDown size={16} className="text-slate-600" />}
-            </button>
+          {/* Tab header */}
+          <div className="px-4 py-2.5 border-b border-slate-200/50 flex items-center justify-between">
+            <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
+              <button
+                onClick={() => setRightPanelMode("transcript")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
+                  rightPanelMode === "transcript"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <MessageSquare size={11} />
+                Transcript
+              </button>
+              <button
+                onClick={() => setRightPanelMode("feedback")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
+                  rightPanelMode === "feedback"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Feedback
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+              </button>
+            </div>
+            {rightPanelMode === "transcript" && (
+              <button
+                onClick={() => setShowCaptions(!showCaptions)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+                aria-label="Toggle captions"
+              >
+                {showCaptions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            )}
           </div>
-          
-          {showCaptions && (
+
+          {/* Transcript content — logic unchanged, gated by tab */}
+          {rightPanelMode === "transcript" && showCaptions && (
             <div className="flex-1 flex flex-col min-h-0">
               <div
                 ref={captionScrollRef}
@@ -1554,11 +1699,10 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                       const isUser = item.role === "user";
                       const isComplete = item.status === "DONE";
                       const messageText = item.title || "";
-                      
-                      // Handle special transcript states
+
                       const isTranscribing = messageText === "[Transcribing...]";
                       const isInaudible = messageText === "[inaudible]";
-                      
+
                       return (
                         <div
                           key={item.itemId}
@@ -1566,8 +1710,8 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                         >
                           <div
                             className={`max-w-[85%] px-3 py-2 rounded-lg text-xs ${
-                              isUser 
-                                ? 'bg-blue-500 text-white' 
+                              isUser
+                                ? 'bg-blue-500 text-white'
                                 : 'bg-white text-slate-900 border border-slate-200'
                             } ${
                               !isComplete ? 'animate-pulse' : ''
@@ -1578,10 +1722,10 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                                 {isUser ? 'You' : 'AI'}
                               </span>
                               <span className={`text-xs ${isUser ? 'text-blue-200' : 'text-slate-400'}`}>
-                                {new Date(item.createdAtMs).toLocaleTimeString([], { 
-                                  hour: '2-digit', 
+                                {new Date(item.createdAtMs).toLocaleTimeString([], {
+                                  hour: '2-digit',
                                   minute: '2-digit',
-                                  second: '2-digit' 
+                                  second: '2-digit'
                                 })}
                               </span>
                             </div>
@@ -1596,6 +1740,40 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                     })
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Feedback panel — mock demo, visual only */}
+          {rightPanelMode === "feedback" && (
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              <p className="text-xs text-slate-400 px-1 pb-1">
+                Click an item to highlight keywords on the slide.
+              </p>
+              {MOCK_FEEDBACK_ITEMS.map((item) => {
+                const s = severityStyle[item.severity];
+                const isActive = activeFeedbackId === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleFeedbackItemClick(item.id, item.keywords)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg border text-xs transition-all duration-150 ${s.badge} ${
+                      isActive ? "ring-2 ring-amber-400 ring-offset-1" : "hover:brightness-95"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
+                      <span className="flex-1 leading-snug">{item.text}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1.5 ml-4">
+                      {item.keywords.map((kw) => (
+                        <span key={kw} className={`px-1.5 py-0.5 rounded text-xs font-medium ${s.chip}`}>
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
