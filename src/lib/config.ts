@@ -41,6 +41,12 @@ export const config = {
       update: (promptId: string) => `/api/prompts/${promptId}`,
       delete: (promptId: string) => `/api/prompts/${promptId}`,
     },
+    billing: {
+      balance: '/api/billing/balance',
+      redeem: '/api/billing/redeem',
+      addCredits: '/api/billing/add-credits',
+      usage: '/api/billing/usage',
+    },
   },
   
   // Get full URL for API calls
