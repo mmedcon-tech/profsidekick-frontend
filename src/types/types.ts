@@ -313,3 +313,17 @@ export interface EphemeralTokenResponse {
     expires_at: string;
   };
 }
+
+/** A single text chunk returned by the RAG search-knowledge endpoint. */
+export interface KnowledgeChunk {
+  slide_number: number;
+  chunk_index: number;
+  content: string;
+  score: number | null;
+}
+
+/** State set when the AI cites a specific slide as a source. */
+export interface CitedSource {
+  slideNumber: number;
+  citedAt: number; // Date.now() timestamp — used to auto-clear after a delay
+}

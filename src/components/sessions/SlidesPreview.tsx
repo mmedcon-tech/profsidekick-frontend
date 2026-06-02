@@ -19,9 +19,11 @@ interface SlideData {
 interface SlidesPreviewProps {
   slides: SlideData[];
   sessionId: string;
+  /** Slide number (1-indexed) cited by the AI — highlights that slide in the grid. */
+  citedSlide?: number;
 }
 
-export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps) {
+export default function SlidesPreview({ slides, sessionId, citedSlide }: SlidesPreviewProps) {
   const { token } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSlide, setSelectedSlide] = useState<SlideData | null>(null);
@@ -541,6 +543,8 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                 className={`relative bg-gray-50 rounded-lg border ${
                   draggedSlideId === slide.id
                     ? 'border-blue-500 opacity-50'
+                    : citedSlide === slide.slideNumber
+                    ? 'border-amber-400 ring-2 ring-amber-300'
                     : 'border-gray-200 hover:border-blue-300'
                 } hover:shadow-md transition-all duration-200 cursor-move group aspect-[4/3]`}
               >
@@ -569,6 +573,15 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                   <GripVertical className="w-3 h-3" />
                   {slide.slideNumber}
                 </div>
+
+                {citedSlide === slide.slideNumber && (
+                  <div className="absolute bottom-2 left-2 right-2 flex justify-center">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400 text-amber-900 text-xs font-semibold shadow">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-700"></span>
+                      Source
+                    </span>
+                  </div>
+                )}
                 
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
                   <button

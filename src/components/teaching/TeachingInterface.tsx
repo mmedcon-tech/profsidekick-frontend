@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, ChevronUp, ChevronDown } from "lucide-react";
-import { ClassSession,  } from "@/types";
+import { ClassSession, CitedSource } from "@/types";
 import { useTranscript } from "@/contexts/TranscriptContext";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
@@ -41,6 +41,23 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     suggestions: ""
   });
   const [showCaptions, setShowCaptions] = useState(true);
+
+  // Cited source — set when AI calls citeSlide, auto-cleared after 30 s
+  const [citedSource, setCitedSource] = useState<CitedSource | null>(null);
+  const citedSourceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCiteSlide = useCallback((slideNumber: number) => {
+    if (citedSourceTimerRef.current) clearTimeout(citedSourceTimerRef.current);
+    setCitedSource({ slideNumber, citedAt: Date.now() });
+    citedSourceTimerRef.current = setTimeout(() => setCitedSource(null), 30_000);
+  }, []);
+
+  // Clean up the auto-clear timer on unmount
+  useEffect(() => {
+    return () => {
+      if (citedSourceTimerRef.current) clearTimeout(citedSourceTimerRef.current);
+    };
+  }, []);
   const captionScrollRef = useRef<HTMLDivElement>(null);
   const [showStartPrompt, setShowStartPrompt] = useState(true); // Show from the beginning
   const [rightPanelMode, setRightPanelMode] = useState<"transcript" | "feedback">("transcript");
@@ -117,6 +134,8 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     sendClientEvent,
     setSelectedAgentName: () => {},
     setIsOutputAudioBufferActive: () => {},
+    sessionId: classSession.sessionId,
+    onCiteSlide: handleCiteSlide,
   });
 
   const fetchEphemeralKey = useCallback(async () => {
@@ -1524,6 +1543,12 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
             <p className="text-sm text-gray-600">
               Slide {currentSlide + 1} of {classSession.totalSlides}
             </p>
+            {citedSource && (
+              <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-xs font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                Source: Slide {citedSource.slideNumber}
+              </div>
+            )}
           </div>
           
           <button

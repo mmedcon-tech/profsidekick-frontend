@@ -19,6 +19,10 @@ export interface UseHandleServerEventParams {
   setSelectedAgentName: (name: string) => void;
   shouldForceResponse?: boolean;
   setIsOutputAudioBufferActive: (active: boolean) => void;
+  /** The backend session UUID — required for searchKnowledge BFF calls. */
+  sessionId?: string;
+  /** Called when the AI cites a slide as a source via the citeSlide tool. */
+  onCiteSlide?: (slideNumber: number) => void;
 }
 
 export function useHandleServerEvent({
@@ -28,6 +32,8 @@ export function useHandleServerEvent({
   sendClientEvent,
   setSelectedAgentName,
   setIsOutputAudioBufferActive,
+  sessionId,
+  onCiteSlide,
 }: UseHandleServerEventParams) {
   const {
     transcriptItems,
@@ -93,6 +99,40 @@ export function useHandleServerEvent({
           type: "function_call_output",
           call_id: functionCallParams.call_id,
           output: JSON.stringify(fnResult),
+        },
+      });
+      sendClientEvent({ type: "response.create" });
+    } else if (functionCallParams.name === "searchKnowledge") {
+      let output: string;
+      try {
+        const q = encodeURIComponent((args.query ?? "").slice(0, 500));
+        const res = await fetch(`/api/sessions/${sessionId}/search-knowledge?q=${q}`);
+        const data = await res.json();
+        output = JSON.stringify(data);
+      } catch (err) {
+        console.warn("searchKnowledge BFF call failed:", err);
+        output = JSON.stringify({ chunks: [], error: "Search failed" });
+      }
+      addTranscriptBreadcrumb("function call result: searchKnowledge", { output });
+      sendClientEvent({
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: functionCallParams.call_id,
+          output,
+        },
+      });
+      sendClientEvent({ type: "response.create" });
+    } else if (functionCallParams.name === "citeSlide") {
+      const slideNumber: number = args.slideNumber;
+      onCiteSlide?.(slideNumber);
+      addTranscriptBreadcrumb("function call result: citeSlide", { slideNumber });
+      sendClientEvent({
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: functionCallParams.call_id,
+          output: JSON.stringify({ cited: true, slideNumber }),
         },
       });
       sendClientEvent({ type: "response.create" });

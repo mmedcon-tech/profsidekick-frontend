@@ -55,6 +55,40 @@ You have access to the processed presentation content which includes slide title
         additionalProperties: false,
       },
     },
+    {
+      type: "function",
+      name: "searchKnowledge",
+      description:
+        "Search the session's slide knowledge base for relevant content before answering a factual question. Call this whenever a student asks something that should be grounded in the presentation material.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The topic or question to look up in the slides.",
+          },
+        },
+        required: ["query"],
+        additionalProperties: false,
+      },
+    },
+    {
+      type: "function",
+      name: "citeSlide",
+      description:
+        "Cite a specific slide as the source of an answer you are giving. Call this after searchKnowledge returns a result to indicate which slide the information came from.",
+      parameters: {
+        type: "object",
+        properties: {
+          slideNumber: {
+            type: "number",
+            description: "The 1-indexed slide number being cited as the source.",
+          },
+        },
+        required: ["slideNumber"],
+        additionalProperties: false,
+      },
+    },
   ],
 
   toolLogic: {
