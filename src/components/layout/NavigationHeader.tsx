@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBilling } from '@/hooks/useBilling';
-import { LogOut, User, ChevronDown, Home, CreditCard, AlertTriangle } from 'lucide-react';
+import { LogOut, User, ChevronDown, Home, CreditCard, AlertTriangle, Sparkles } from 'lucide-react';
 
 export default function NavigationHeader() {
   const router = useRouter();
@@ -37,6 +37,8 @@ export default function NavigationHeader() {
   if (!isAuthenticated || !user || isPublicPage) {
     return null;
   }
+
+  const isProfessor = user.role === 'professor' || user.role !== 'student';
 
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
@@ -157,6 +159,19 @@ export default function NavigationHeader() {
                         <Home size={16} />
                         Dashboard
                       </button>
+
+                      {isProfessor && (
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            router.push('/professor/persona');
+                          }}
+                          className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                        >
+                          <Sparkles size={16} />
+                          My Persona
+                        </button>
+                      )}
 
                       <button
                         onClick={() => {
