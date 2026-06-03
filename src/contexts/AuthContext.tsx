@@ -1,7 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { config } from '@/lib/config';
+import { registerApiAuthHandlers, resetApiAuthHandlers } from '@/lib/api';
 
 export interface User {
   id: string;
@@ -171,36 +179,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshToken = async () => {
-    try {
-      if (!token) {
-        throw new Error('No token to refresh');
-      }
-
-      const response = await fetch(config.getApiUrl('/api/auth/refresh'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Token refresh failed');
-      }
-
-      const { token: newToken } = data;
-      setToken(newToken);
-      localStorage.setItem('auth_token', newToken);
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      // If refresh fails, logout user
-      logout();
-      throw error;
+  const clearAuthAndRedirect = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    if (typeof window !== 'undefined') {
+      window.location.assign('/login');
     }
-  };
+  }, []);
+
+  const refreshToken = useCallback(async () => {
+    const currentToken = token ?? localStorage.getItem('auth_token');
+    if (!currentToken) {
+      throw new Error('No token to refresh');
+    }
+
+    const response = await fetch(config.getApiUrl(config.api.auth.refresh), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${currentToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || data.detail || 'Token refresh failed');
+    }
+
+    const { token: newToken } = data;
+    setToken(newToken);
+    localStorage.setItem('auth_token', newToken);
+  }, [token]);
+
+  useEffect(() => {
+    registerApiAuthHandlers({
+      refreshToken,
+      getToken: () => localStorage.getItem('auth_token'),
+      clearAuthAndRedirect,
+    });
+    return () => resetApiAuthHandlers();
+  }, [refreshToken, clearAuthAndRedirect]);
 
   const value: AuthContextType = {
     user,
