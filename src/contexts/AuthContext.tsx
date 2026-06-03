@@ -50,19 +50,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
+  const restoreSessionFromStorage = (): boolean => {
+    const storedToken = localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('auth_user');
+    if (!storedToken || !storedUser) {
+      return false;
+    }
     try {
-      setIsLoading(true);
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
+      return true;
+    } catch {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      setToken(null);
+      setUser(null);
+      return false;
+    }
+  };
+
+  const checkAuth = async () => {
+    setIsLoading(true);
+    try {
       const storedToken = localStorage.getItem('auth_token');
       const storedUser = localStorage.getItem('auth_user');
 
-      if (storedToken && storedUser) {
+      if (!storedToken || !storedUser) {
+        setToken(null);
+        setUser(null);
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      try {
         const response = await fetch(config.getApiUrl(config.api.auth.verify), {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${storedToken}`,
+            Authorization: `Bearer ${storedToken}`,
             'Content-Type': 'application/json',
           },
+          signal: controller.signal,
         });
 
         if (response.ok) {
@@ -75,20 +104,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setToken(null);
           setUser(null);
         } else {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          restoreSessionFromStorage();
         }
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      const storedToken = localStorage.getItem('auth_token');
-      const storedUser = localStorage.getItem('auth_user');
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } else {
-        setToken(null);
-        setUser(null);
+      } catch (error) {
+        console.error('Auth verify failed, using cached session:', error);
+        restoreSessionFromStorage();
+      } finally {
+        clearTimeout(timeoutId);
       }
     } finally {
       setIsLoading(false);
