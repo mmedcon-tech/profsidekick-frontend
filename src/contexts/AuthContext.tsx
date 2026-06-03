@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (storedToken && storedUser) {
         // Verify token is still valid
-        const response = await fetch(config.getApiUrl('/api/auth/verify'), {
+        const response = await fetch(config.getApiUrl('/api/auth/verify-token'), {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${storedToken}`,
