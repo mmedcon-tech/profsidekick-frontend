@@ -9,14 +9,13 @@ export interface SessionRunSummary {
   startedAt: string;
   endedAt?: string;
   duration?: number; // in minutes
-  feedback?: {
-    rating: number;
-    general_feedback?: string;
-    issues_encountered?: string;
-    suggestions?: string;
-  };
   slidesCompleted?: number;
   totalSlides?: number;
+  avatarId?: string;
+  avatarName?: string;
+  roleAtStart?: string;
+  sessionMode?: string;
+  className?: string;
 }
 
 export interface SessionRunsResponse {
