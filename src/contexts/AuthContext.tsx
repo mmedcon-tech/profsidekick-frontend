@@ -57,8 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const storedUser = localStorage.getItem('auth_user');
 
       if (storedToken && storedUser) {
-        // Verify token is still valid
-        const response = await fetch(config.getApiUrl('/api/auth/verify'), {
+        const response = await fetch(config.getApiUrl(config.api.auth.verify), {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${storedToken}`,
@@ -70,21 +69,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const userData = await response.json();
           setToken(storedToken);
           setUser(userData.user);
-        } else {
-          // Token invalid, clear storage
+        } else if (response.status === 401 || response.status === 403) {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('auth_user');
           setToken(null);
           setUser(null);
+        } else {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
         }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Clear potentially corrupted auth data
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      setToken(null);
-      setUser(null);
+      const storedToken = localStorage.getItem('auth_token');
+      const storedUser = localStorage.getItem('auth_user');
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } else {
+        setToken(null);
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }

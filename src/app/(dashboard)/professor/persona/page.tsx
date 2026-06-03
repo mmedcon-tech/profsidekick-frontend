@@ -12,7 +12,7 @@ import { DEFAULT_PERSONA_PREFERENCES } from '@/types/types';
 import type { PersonaPreferenceSelections } from '@/types/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const STEPS = ['Choose avatar', 'Set preferences', 'Refine & save'];
+const STEPS = ['Choose avatar', 'Set preferences', 'Refine (optional)'];
 
 export default function ProfessorPersonaPage() {
   const router = useRouter();
@@ -32,6 +32,7 @@ export default function ProfessorPersonaPage() {
   const [preferences, setPreferences] = useState<PersonaPreferenceSelections>(
     DEFAULT_PERSONA_PREFERENCES,
   );
+  const [additionalInstructions, setAdditionalInstructions] = useState('');
   const [refinedPrompt, setRefinedPrompt] = useState('');
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -49,10 +50,23 @@ export default function ProfessorPersonaPage() {
     }
   }, [avatars, selectedAvatarId]);
 
-  const canNext =
-    (step === 0 && !!selectedAvatarId) ||
-    (step === 1) ||
-    (step === 2 && refinedPrompt.trim().length > 0);
+  const handleSaveProfile = async (redirectAfter = false) => {
+    if (!selectedAvatarId) return false;
+    setSaveMessage(null);
+    const result = await upsertPersona({
+      avatarId: selectedAvatarId,
+      preferences,
+      refinedPrompt: refinedPrompt.trim() || undefined,
+    });
+    if (result) {
+      setSaveMessage('Profile saved successfully.');
+      if (redirectAfter) {
+        router.push('/dashboard');
+      }
+      return true;
+    }
+    return false;
+  };
 
   const handleRefine = async () => {
     if (!selectedAvatarId) return;
@@ -60,32 +74,15 @@ export default function ProfessorPersonaPage() {
     const result = await refinePersona({
       avatarId: selectedAvatarId,
       preferences,
+      additionalInstructions: additionalInstructions.trim() || undefined,
     });
     if (result) {
       setRefinedPrompt(result.refinedPrompt);
-      setStep(2);
     }
   };
 
-  const handleSave = async () => {
-    if (!selectedAvatarId) return;
-    setSaveMessage(null);
-    const result = await upsertPersona({
-      avatarId: selectedAvatarId,
-      preferences,
-      refinedPrompt,
-    });
-    if (result) {
-      setSaveMessage('Persona saved successfully.');
-    }
-  };
-
-  const goNext = () => {
-    if (step === 1) {
-      handleRefine();
-      return;
-    }
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  const handleSaveRefined = async () => {
+    await handleSaveProfile(false);
   };
 
   if (personaLoading && !persona) {
@@ -144,29 +141,38 @@ export default function ProfessorPersonaPage() {
             )}
 
             {step === 1 && (
-              <PreferencesForm preferences={preferences} onChange={setPreferences} />
+              <>
+                <PreferencesForm preferences={preferences} onChange={setPreferences} />
+                <p className="mt-4 text-sm text-gray-500">
+                  You can save your profile now, or optionally refine it with AI in
+                  the next step.
+                </p>
+              </>
             )}
 
             {step === 2 && (
               <>
                 <RefinedPromptEditor
+                  additionalInstructions={additionalInstructions}
+                  onAdditionalInstructionsChange={setAdditionalInstructions}
                   refinedPrompt={refinedPrompt}
-                  onChange={setRefinedPrompt}
+                  onRefinedPromptChange={setRefinedPrompt}
                   onRefine={handleRefine}
-                  onSave={handleSave}
+                  onSave={handleSaveRefined}
                   refining={refining}
                   saving={saving}
                   error={personaError}
                 />
-                {saveMessage && (
-                  <p className="mt-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
-                    {saveMessage}
-                  </p>
-                )}
               </>
             )}
 
-            <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
+            {saveMessage && (
+              <p className="mt-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-2">
+                {saveMessage}
+              </p>
+            )}
+
+            <div className="flex flex-wrap justify-between gap-3 mt-8 pt-6 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.max(s - 1, 0))}
@@ -177,25 +183,49 @@ export default function ProfessorPersonaPage() {
                 Back
               </button>
 
-              {step < 2 ? (
-                <button
-                  type="button"
-                  onClick={goNext}
-                  disabled={!canNext || refining}
-                  className="inline-flex items-center gap-1 px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {step === 1 ? (refining ? 'Refining...' : 'Refine') : 'Next'}
-                  <ChevronRight size={18} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => router.push('/dashboard')}
-                  className="px-5 py-2 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-900"
-                >
-                  Done
-                </button>
-              )}
+              <div className="flex flex-wrap gap-3">
+                {step === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    disabled={!selectedAvatarId}
+                    className="inline-flex items-center gap-1 px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Next
+                    <ChevronRight size={18} />
+                  </button>
+                )}
+
+                {step === 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="px-5 py-2 rounded-lg border border-indigo-300 text-indigo-700 font-medium hover:bg-indigo-50"
+                    >
+                      Refine with AI (optional)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveProfile(true)}
+                      disabled={saving || !selectedAvatarId}
+                      className="px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : 'Save profile'}
+                    </button>
+                  </>
+                )}
+
+                {step === 2 && (
+                  <button
+                    type="button"
+                    onClick={() => router.push('/dashboard')}
+                    className="px-5 py-2 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-900"
+                  >
+                    Done
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

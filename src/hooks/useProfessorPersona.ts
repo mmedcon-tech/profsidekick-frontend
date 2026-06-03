@@ -14,6 +14,7 @@ interface UpsertPayload {
 interface RefinePayload {
   avatarId: string;
   preferences: PersonaPreferenceSelections;
+  additionalInstructions?: string;
 }
 
 export function useProfessorPersona() {
