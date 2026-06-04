@@ -3,13 +3,53 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mic, GraduationCap, ShieldCheck, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { config } from '@/lib/config';
+
+type Step = 1 | 2;
+type Role = 'publisher' | 'subscriber' | 'admin';
+
+const ROLES: { value: Role; label: string; description: string; icon: React.ReactNode; color: string }[] = [
+  {
+    value: 'publisher',
+    label: 'Publisher',
+    description: 'Create AI-powered educational avatars, manage courses, sessions, and teach through the platform.',
+    icon: <Mic size={28} />,
+    color: 'blue',
+  },
+  {
+    value: 'subscriber',
+    label: 'Subscriber',
+    description: 'Browse the marketplace, subscribe to AI avatars, and learn through voice-driven experiences.',
+    icon: <GraduationCap size={28} />,
+    color: 'green',
+  },
+  {
+    value: 'admin',
+    label: 'Admin',
+    description: 'Platform administrator. Manage templates, avatars, publishers, and subscribers.',
+    icon: <ShieldCheck size={28} />,
+    color: 'purple',
+  },
+];
+
+const colorMap: Record<string, string> = {
+  blue:   'border-blue-500 bg-blue-50 ring-blue-500',
+  green:  'border-green-500 bg-green-50 ring-green-500',
+  purple: 'border-purple-500 bg-purple-50 ring-purple-500',
+};
+
+const iconColorMap: Record<string, string> = {
+  blue:   'text-blue-600 bg-blue-100',
+  green:  'text-green-600 bg-green-100',
+  purple: 'text-purple-600 bg-purple-100',
+};
 
 export default function RegisterPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
-  
+  const [step, setStep] = useState<Step>(1);
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -17,106 +57,59 @@ export default function RegisterPage() {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: 'professor',
+    role: '' as Role | '',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      router.push('/');
-    }
+    if (isAuthenticated && !isLoading) router.push('/');
   }, [isAuthenticated, isLoading, router]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (error) {
-      setError(null);
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const validateForm = () => {
-    if (!formData.username.trim()) {
-      setError('Username is required');
-      return false;
-    }
-    if (formData.username.length < 3) {
-      setError('Username must be at least 3 characters long');
-      return false;
-    }
-    if (!formData.email.trim()) {
-      setError('Email is required');
-      return false;
-    }
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setError('Please enter a valid email address');
-      return false;
-    }
-    if (!formData.password.trim()) {
-      setError('Password is required');
-      return false;
-    }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return false;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return false;
-    }
-    if (!formData.firstName.trim()) {
-      setError('First name is required');
-      return false;
-    }
-    if (!formData.lastName.trim()) {
-      setError('Last name is required');
-      return false;
-    }
+  const validateStep1 = () => {
+    if (formData.firstName.trim().length < 1) { setError('First name is required'); return false; }
+    if (formData.lastName.trim().length < 1)  { setError('Last name is required');  return false; }
+    if (formData.username.trim().length < 3)  { setError('Username must be at least 3 characters'); return false; }
+    if (!/\S+@\S+\.\S+/.test(formData.email)) { setError('Valid email is required'); return false; }
+    if (formData.password.length < 6)         { setError('Password must be at least 6 characters'); return false; }
+    if (formData.password !== formData.confirmPassword) { setError('Passwords do not match'); return false; }
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+  const handleContinue = () => {
+    if (!validateStep1()) return;
+    setError(null);
+    setStep(2);
+  };
 
+  const handleSubmit = async () => {
+    if (!formData.role) { setError('Please select a role'); return; }
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const response = await fetch(config.getApiUrl('/api/auth/register'), {
+      const res = await fetch(config.getApiUrl('/api/auth/register'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
+          username:  formData.username,
+          email:     formData.email,
+          password:  formData.password,
           firstName: formData.firstName,
-          lastName: formData.lastName,
-          role: formData.role,
+          lastName:  formData.lastName,
+          role:      formData.role,
         }),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-
-      // Registration successful, redirect to login with success message
-      router.push('/login?message=Registration successful. Please log in.');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.detail || 'Registration failed');
+      router.push('/login?message=Account created! Please sign in.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -124,234 +117,166 @@ export default function RegisterPage() {
     }
   };
 
-  // Show loading spinner while checking auth
-  if (isLoading) {
+  if (isLoading || isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
 
-  // Don't show register form if already authenticated
-  if (isAuthenticated) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <button
-            onClick={() => router.push('/login')}
-            className="absolute top-6 left-6 text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <ArrowLeft size={24} />
-          </button>
-          
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <img 
-              src="/images/logo.png" 
-              alt="ProfSidekick Logo" 
-              className="w-12 h-12 object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <h1 className="text-2xl font-bold text-blue-900">ProfSidekick</h1>
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <img src="/images/logo.png" alt="ProfSidekick" className="w-10 h-10 object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <span className="text-2xl font-bold text-blue-900">ProfSidekick</span>
           </div>
-          <p className="text-gray-600">Create your account</p>
+          <p className="text-gray-500 text-sm">
+            Step {step} of 2 — {step === 1 ? 'Account details' : 'Choose your role'}
+          </p>
+          {/* progress bar */}
+          <div className="mt-3 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-600 rounded-full transition-all duration-300"
+              style={{ width: step === 1 ? '50%' : '100%' }}
+            />
+          </div>
         </div>
 
-        {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm">{error}</p>
-            </div>
-          )}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
 
-          <div className="grid grid-cols-2 gap-4">
+        {/* ── Step 1: account info ── */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <input name="firstName" value={formData.firstName} onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  placeholder="Jane" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <input name="lastName" value={formData.lastName} onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  placeholder="Doe" required />
+              </div>
+            </div>
+
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                First Name
-              </label>
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="John"
-                disabled={isSubmitting}
-                required
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <input name="username" value={formData.username} onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                placeholder="janedoe" required />
             </div>
+
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name
-              </label>
-              <input
-                type="text"
-                id="lastName"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Doe"
-                disabled={isSubmitting}
-                required
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input name="email" type="email" value={formData.email} onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                placeholder="jane@example.com" required />
             </div>
-          </div>
 
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="johndoe"
-              disabled={isSubmitting}
-              required
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <input name="password" type={showPassword ? 'text' : 'password'}
+                  value={formData.password} onChange={handleChange}
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  placeholder="Min 6 characters" required />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="john@example.com"
-              disabled={isSubmitting}
-              required
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <div className="relative">
+                <input name="confirmPassword" type={showConfirm ? 'text' : 'password'}
+                  value={formData.confirmPassword} onChange={handleChange}
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  placeholder="Repeat password" required />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter password"
-                disabled={isSubmitting}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                disabled={isSubmitting}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            <button onClick={handleContinue}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+              Continue <ArrowRight size={18} />
+            </button>
+
+            <p className="text-center text-sm text-gray-500">
+              Already have an account?{' '}
+              <button onClick={() => router.push('/login')} className="text-blue-600 hover:underline font-medium">
+                Sign in
               </button>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Password
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Confirm password"
-                disabled={isSubmitting}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                disabled={isSubmitting}
-              >
-                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Role Selection */}
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-              Account Type
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              disabled={isSubmitting}
-              required
-            >
-              <option value="professor">Professor/Instructor</option>
-              <option value="student">Student</option>
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              {formData.role === 'professor' 
-                ? 'Create and manage teaching sessions with AI assistance'
-                : 'Join and participate in sessions created by your instructors'
-              }
             </p>
           </div>
+        )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Creating account...
-              </>
-            ) : (
-              <>
-                <UserPlus size={20} />
-                Create Account
-              </>
-            )}
-          </button>
-        </form>
+        {/* ── Step 2: role selection ── */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800 text-center">How will you use ProfSidekick?</h2>
 
-        {/* Footer */}
-        <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <button
-              onClick={() => router.push('/login')}
-              className="text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Sign in here
-            </button>
-          </p>
-        </div>
+            <div className="space-y-3">
+              {ROLES.map((r) => {
+                const selected = formData.role === r.value;
+                return (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => { setError(null); setFormData((p) => ({ ...p, role: r.value })); }}
+                    className={`
+                      w-full text-left flex items-start gap-4 p-4 rounded-xl border-2 transition-all
+                      ${selected
+                        ? `${colorMap[r.color]} ring-2 ring-offset-1`
+                        : 'border-gray-200 hover:border-gray-300 bg-white'}
+                    `}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconColorMap[r.color]}`}>
+                      {r.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-gray-900">{r.label}</span>
+                        {selected && <CheckCircle size={18} className="text-blue-600 flex-shrink-0" />}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-0.5">{r.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => { setError(null); setStep(1); }}
+                className="flex-1 flex items-center justify-center gap-2 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                <ArrowLeft size={16} /> Back
+              </button>
+              <button onClick={handleSubmit} disabled={isSubmitting || !formData.role}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                {isSubmitting ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
+                ) : 'Create Account'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-} 
+}
