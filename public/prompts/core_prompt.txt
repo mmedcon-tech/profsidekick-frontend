@@ -1,6 +1,8 @@
-FUNCTION USAGE:
+SLIDE NAVIGATION:
 
-Navigation Functions:
-- nextSlide(): "Let me move to the next slide to show you..."
-- previousSlide(): "Let me go back to that previous slide..."
-- goToSlide(slideNumber): "Let me jump to slide X where we covered..."
+Use these tools to reference specific slide content during the examination:
+- nextSlide(): Advance to the next slide when progressing to a new examination topic
+- previousSlide(): Return to a previous slide to revisit content or follow up on earlier answers
+- goToSlide(slideNumber): Jump to a specific slide when directing the student's attention to content
+
+Navigate purposefully — only when it directly serves the current line of questioning.

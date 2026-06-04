@@ -42,15 +42,14 @@ interface AISettingsProps {
 export default function AISettings({ sessionId, onClose }: AISettingsProps) {
   const { token } = useAuth();
   const [settings, setSettings] = useState({
-    model: "gpt-4o-realtime",
+    model: "gpt-4o-realtime-preview",
     voice: "alloy",
     temperature: 0.8,
     instructions: "",
     user_instructions: "",
-    core_instructions: "",
     tool_choice: "auto",
     input_audio_format: "pcm16",
-    input_audio_noice_reduction: {
+    input_audio_noise_reduction: {
       type: "near_field"
     },
     input_audio_transcription: {
@@ -127,15 +126,16 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
           
           // Parse instructions (JSON format or legacy string format)
           let userInstructions = "";
-          let coreInstructions = "";
           const instructionsStr = params.instructions || "";
-          
+
           try {
             // Try to parse as JSON first (new format)
             const structuredInstructions = JSON.parse(instructionsStr);
             if (structuredInstructions && typeof structuredInstructions === 'object') {
               userInstructions = structuredInstructions.editable || "";
-              coreInstructions = structuredInstructions.core || "";
+              // Fix 6: "core" field is not loaded — it is ignored by the backend (prompt_builder.py
+              // always uses EXAMINER_BASE_PROMPT). Existing DB rows may contain "core" but it has
+              // no effect and is no longer stored on save.
               console.log("✅ Loaded structured instructions (JSON format)");
 
               // Load sessionBehavior if present
@@ -166,7 +166,6 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
           setSettings({
             ...params,
             user_instructions: userInstructions,
-            core_instructions: coreInstructions
           });
         }
       }
@@ -244,12 +243,11 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
         throw new Error('Authentication required');
       }
 
-      // Saves rubric + hint policy + professor instructions to backend.
-      // NOTE: Examiner base prompt is controlled by USE_FRONTEND_EXAMINER_MODE in examinerPrompt.ts
-      // and is injected at runtime by buildFinalPrompt() — not stored here.
+      // Saves rubric, hint policy, and professor instructions to backend.
+      // The examiner base prompt is assembled server-side in prompt_builder.py at token-generation time.
+      // Fix 6: "core" is omitted — it was stored but silently ignored by the backend.
       const structuredInstructions = {
         version: "1.0",
-        core: settings.core_instructions || "",
         editable: settings.user_instructions || "",
         sessionBehavior: {
           hintPolicy: sessionBehavior.hintPolicy,
@@ -403,29 +401,13 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 onChange={handleInputChange} 
                 rows={4} 
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                placeholder="Add your custom teaching style, specific behaviors, or domain expertise..."
+                placeholder="Add custom examination instructions, question strategies, or subject-specific behavior..."
               />
               <p className="text-xs text-gray-500 mt-1">
-                Customize how the AI should teach. This will be combined with ProfSidekick&apos;s core instructions below.
+                Customize how the AI examiner should conduct this session. Combined with the core examiner instructions below.
               </p>
             </div>
 
-            {/* System Instructions (Read-only) */}
-            <div>
-              <label htmlFor="system_instructions" className="block text-sm font-medium text-gray-700 mb-1">
-                ProfSidekick Core Instructions (System)
-              </label>
-              <textarea 
-                id="system_instructions" 
-                value={settings.core_instructions || ""}
-                readOnly
-                rows={6} 
-                className="w-full p-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-600 text-sm" 
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Core ProfSidekick instructions including slide navigation tools and teaching behavior. This cannot be edited.
-              </p>
-            </div>
           </fieldset>
 
           {/* Session Behavior */}
@@ -542,11 +524,11 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="input_audio_noice_reduction.type" className="block text-sm font-medium text-gray-700 mb-1">Noise Reduction Type</label>
-                  <select 
-                    data-path="input_audio_noice_reduction.type" 
-                    id="input_audio_noice_reduction.type" 
-                    value={settings.input_audio_noice_reduction?.type || "near_field"} 
+                  <label htmlFor="input_audio_noise_reduction.type" className="block text-sm font-medium text-gray-700 mb-1">Noise Reduction Type</label>
+                  <select
+                    data-path="input_audio_noise_reduction.type"
+                    id="input_audio_noise_reduction.type"
+                    value={settings.input_audio_noise_reduction?.type || "near_field"}
                     onChange={handleInputChange} 
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >

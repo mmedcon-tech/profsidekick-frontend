@@ -6,9 +6,11 @@ import { ClassSession, CitedSource } from "@/types";
 import { useTranscript } from "@/contexts/TranscriptContext";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
+import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
+import { classifyTurn } from "@/lib/turnClassifier";
 import teachingAssistant from "@/constants/teachingAssistant";
-import { EXAMINER_BASE_PROMPT, USE_FRONTEND_EXAMINER_MODE } from "@/constants/examinerPrompt";
 import { config } from "@/lib/config";
 
 // Global connection tracking to prevent React Strict Mode issues
@@ -60,9 +62,6 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   }, []);
   const captionScrollRef = useRef<HTMLDivElement>(null);
   const [showStartPrompt, setShowStartPrompt] = useState(true); // Show from the beginning
-  const [rightPanelMode, setRightPanelMode] = useState<"transcript" | "feedback">("transcript");
-  const [activeFeedbackId, setActiveFeedbackId] = useState<number | null>(null);
-  const [highlightedKeywords, setHighlightedKeywords] = useState<string[]>([]);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -78,8 +77,25 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const MIN_VOICE_LENGTH = 0.8; // Minimum length in seconds
   const MIN_CONFIDENCE = 0.85;  // Minimum confidence from speech recognition
 
-  const { transcriptItems } = useTranscript();
+  const { token } = useAuth();
   const { logClientEvent,  } = useEvent();
+  const { currentQuestion, latestResponse, keyConcepts, rollingNotes, addStructuredTurn } = useStructuredTranscript();
+
+  const getRubricTerms = useCallback((): string[] => {
+    try {
+      const raw = classSession.classDetails.assistant_parameters?.instructions || "";
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.sessionBehavior?.rubric)) {
+        return parsed.sessionBehavior.rubric.map((r: { criterion: string }) => r.criterion).filter(Boolean);
+      }
+    } catch {}
+    return [];
+  }, [classSession]);
+
+  const handleTurnComplete = useCallback((role: "assistant" | "user", text: string) => {
+    const turn = classifyTurn(role, text, getRubricTerms());
+    addStructuredTurn(turn);
+  }, [addStructuredTurn, getRubricTerms]);
 
   const sendClientEvent = (eventObj: any, eventNameSuffix = "") => {
     if (dcRef.current && dcRef.current.readyState === "open") {
@@ -136,6 +152,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     setIsOutputAudioBufferActive: () => {},
     sessionId: classSession.sessionId,
     onCiteSlide: handleCiteSlide,
+    onTurnComplete: handleTurnComplete,
   });
 
   const fetchEphemeralKey = useCallback(async () => {
@@ -145,21 +162,28 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       if (sessionRunId) {
         url.searchParams.append('session_run_id', sessionRunId);
       }
-      
-      const response = await fetch(url.toString());
-      
+
+      // Send the auth token when available.
+      // Unauthenticated callers (shared-link / guest flow) omit the header;
+      // the backend permits them only when the run belongs to the guest user.
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url.toString(), { headers });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      console.log('Ephemeral token response:', data); // Debug log
-      return data.client_secret.value; // Changed from .token to .value
+      return data.client_secret.value;
     } catch (error) {
       console.error('Failed to fetch ephemeral key:', error);
       throw error;
     }
-  }, [classSession.sessionId, sessionRunId]);
+  }, [classSession.sessionId, sessionRunId, token]);
 
   const handleUserSpeech = useCallback(
     (recognizedText: string, confidence: number, duration: number) => {
@@ -213,65 +237,6 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   );
 
 
-  const buildFinalPrompt = (): string => {
-    const raw = classSession.classDetails.assistant_parameters?.instructions || "";
-    let core = "";
-    let editable = "";
-    let sb: { hintPolicy?: string; rubric?: Array<{ criterion: string; weight: number }>; sessionInstructions?: string } = {};
-
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") {
-        core = parsed.core || "";
-        editable = parsed.editable || "";
-        if (parsed.sessionBehavior) sb = parsed.sessionBehavior;
-      }
-    } catch {
-      // raw string fallback — treat entire value as editable note
-      editable = raw;
-    }
-
-    const hintPolicy = sb.hintPolicy || "NONE";
-    const rubric: Array<{ criterion: string; weight: number }> = Array.isArray(sb.rubric) ? sb.rubric : [];
-    const sessionInstructions = (sb.sessionInstructions || "").trim();
-
-    // When USE_FRONTEND_EXAMINER_MODE is true, always use the frontend examiner base.
-    // When false, fall back to backend-stored core (original behavior), with EXAMINER_BASE_PROMPT as safety net.
-    const basePrompt = USE_FRONTEND_EXAMINER_MODE
-      ? EXAMINER_BASE_PROMPT
-      : [core, editable].filter(Boolean).join("\n\n") || EXAMINER_BASE_PROMPT;
-
-    // Order: base → rubric → hint policy → professor instructions (when in override mode)
-    const parts: string[] = [basePrompt];
-
-    if (rubric.length > 0) {
-      const rubricLines = rubric.map(r => `- ${r.criterion}: ${r.weight}%`).join("\n");
-      parts.push(`[Rubric]\n${rubricLines}`);
-    }
-
-    const hintAllowed = hintPolicy !== "NONE" ? "YES" : "NO";
-    parts.push(
-      `[Hint Policy]\nAllowed: ${hintAllowed}\nMode: ${hintPolicy}\nRules:\n- ${
-        hintPolicy === "PENALIZED"
-          ? "Penalized mode applies rubric-based deduction for each hint used"
-          : hintPolicy === "FREE"
-          ? "Free mode allows hints without any score impact"
-          : "Hints are not permitted in this session"
-      }`
-    );
-
-    // Professor instructions appended last — only injected as a separate block in override mode
-    // (in non-override mode they are already part of basePrompt via core+editable)
-    if (USE_FRONTEND_EXAMINER_MODE && editable.trim()) {
-      parts.push(`[Professor Instructions]\n${editable.trim()}`);
-    }
-
-    if (sessionInstructions.length > 0) {
-      parts.push(`[Session Instructions]\n${sessionInstructions}`);
-    }
-
-    return parts.join("\n\n");
-  };
 
   const connectToRealtime = async () => {
     // Generate unique connection ID for this attempt
@@ -885,7 +850,6 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     const sessionUpdate = {
       type: "session.update",
       session: {
-        instructions: buildFinalPrompt(),
         tools: [
           {
             type: "function",
@@ -1232,28 +1196,31 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       }
 
       // --- Guard phrases: intercept intentional interruptions ---
-      if (serverEvent.type === "transcript.final") {
-        const recognizedText = serverEvent.text;
-        const confidence = serverEvent.confidence || 1;
-        const duration = serverEvent.duration || recognizedText.split(" ").length * 0.3;
-
-        // Debounce final transcript processing to avoid tiny interruptions
-        clearTimeout((window as any)._speechHandleTimer);
-        (window as any)._speechHandleTimer = setTimeout(() => {
-          handleUserSpeech(recognizedText, confidence, duration);
-        }, 400); // small delay for stabilization
+      // Fix 2: "transcript.final" does not exist in the Realtime API; use the correct event.
+      if (serverEvent.type === "conversation.item.input_audio_transcription.completed") {
+        const recognizedText = serverEvent.transcript || "";
+        if (recognizedText) {
+          clearTimeout((window as any)._speechHandleTimer);
+          (window as any)._speechHandleTimer = setTimeout(() => {
+            // confidence and duration are not available on this event; pass safe defaults
+            handleUserSpeech(recognizedText, 1.0, recognizedText.split(" ").length * 0.3);
+          }, 400);
+        }
       }
 
-
       // --- Handle tool calls for slide navigation ---
+      // Fix 1+3: send the real function result back to the Realtime API and do NOT forward
+      // tool-call events to handleServerEventRef (prevents duplicate processing and dummy results).
       if (serverEvent.type === "response.done" && serverEvent.response?.output) {
-        serverEvent.response.output.forEach((outputItem: any) => {
-          if (outputItem.type === "function_call" && outputItem.name) {
+        const toolCallItems = serverEvent.response.output.filter(
+          (item: any) => item.type === "function_call" && item.name
+        );
+
+        if (toolCallItems.length > 0) {
+          toolCallItems.forEach((outputItem: any) => {
             const args = outputItem.arguments ? JSON.parse(outputItem.arguments) : {};
-            
-            let functionResult = { success: false, message: "", data: {} };
-            
-            // nextSlide
+            let functionResult: { success: boolean; message: string; data: object } = { success: false, message: "", data: {} };
+
             if (outputItem.name === "nextSlide") {
               const currentSlideValue = currentSlideRef.current;
               if (currentSlideValue < classSession.slides.length - 1) {
@@ -1267,10 +1234,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
               } else {
                 functionResult = { success: false, message: "Already at last slide", data: {} };
               }
-            }
-
-            // previousSlide
-            else if (outputItem.name === "previousSlide") {
+            } else if (outputItem.name === "previousSlide") {
               const currentSlideValue = currentSlideRef.current;
               if (currentSlideValue > 0) {
                 const newSlide = currentSlideValue - 1;
@@ -1283,10 +1247,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
               } else {
                 functionResult = { success: false, message: "Already at first slide", data: {} };
               }
-            }
-
-            // goToSlide
-            else if (outputItem.name === "goToSlide" && args.slideNumber) {
+            } else if (outputItem.name === "goToSlide" && args.slideNumber) {
               const currentSlideValue = currentSlideRef.current;
               const targetSlide = parseInt(args.slideNumber) - 1;
               if (targetSlide >= 0 && targetSlide < classSession.slides.length) {
@@ -1302,11 +1263,23 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
             }
 
             console.log(`📤 Function Response:`, functionResult);
-          }
-        });
+            sendClientEvent({
+              type: "conversation.item.create",
+              item: {
+                type: "function_call_output",
+                call_id: outputItem.call_id,
+                output: JSON.stringify(functionResult),
+              },
+            });
+          });
+          // One response.create after all outputs are submitted
+          sendClientEvent({ type: "response.create" });
+          // Tool calls fully handled — do not forward to handleServerEventRef
+          return;
+        }
       }
 
-      // Pass to the default handler for other events
+      // Pass to the default handler for non-tool-call events
       handleServerEventRef.current(serverEvent);
     };
 
@@ -1334,14 +1307,6 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       }
     }
   }, [currentSlide, isHydrated]);
-
-  // Auto-scroll captions when new messages arrive
-  useEffect(() => {
-    if (captionScrollRef.current && showCaptions) {
-      const scrollElement = captionScrollRef.current;
-      scrollElement.scrollTop = scrollElement.scrollHeight;
-    }
-  }, [transcriptItems, showCaptions]);
 
   const currentSlideData = classSession.slides[currentSlide];
 
@@ -1373,38 +1338,6 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     return `${config.getApiUrl('/')}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
   };
 
-  // --- Mock feedback demo data (visual demo only, no backend) ---
-  const MOCK_FEEDBACK_ITEMS = [
-    { id: 1, text: "Variable mapping explanation unclear.", keywords: ["variable", "mapping"], severity: "warning" as const },
-    { id: 2, text: "Student did not justify distributive property.", keywords: ["distributive", "property"], severity: "error" as const },
-    { id: 3, text: "Function usage explanation incomplete.", keywords: ["function", "usage"], severity: "warning" as const },
-    { id: 4, text: "Correct application of substitution method.", keywords: ["substitution", "method"], severity: "success" as const },
-    { id: 5, text: "Loop termination condition not discussed.", keywords: ["loop", "termination"], severity: "error" as const },
-  ];
-
-  const KEYWORD_POSITIONS = [
-    { top: "28%", left: "12%" },
-    { top: "45%", left: "32%" },
-    { top: "61%", left: "22%" },
-    { top: "38%", left: "55%" },
-    { top: "72%", left: "45%" },
-  ];
-
-  const handleFeedbackItemClick = (id: number, keywords: string[]) => {
-    if (activeFeedbackId === id) {
-      setActiveFeedbackId(null);
-      setHighlightedKeywords([]);
-    } else {
-      setActiveFeedbackId(id);
-      setHighlightedKeywords(keywords);
-    }
-  };
-
-  const severityStyle = {
-    warning: { dot: "bg-amber-400", badge: "bg-amber-50 border-amber-200 text-amber-800", chip: "bg-amber-100 text-amber-700" },
-    error:   { dot: "bg-red-400",   badge: "bg-red-50 border-red-200 text-red-800",     chip: "bg-red-100 text-red-700"   },
-    success: { dot: "bg-emerald-400", badge: "bg-emerald-50 border-emerald-200 text-emerald-800", chip: "bg-emerald-100 text-emerald-700" },
-  };
   // --------------------------------------------------------------
 
   return (
@@ -1487,9 +1420,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                 <img
                   src={getCorrectImageUrl(currentSlideData.imagePath)}
                   alt={currentSlideData?.title}
-                  className={`w-full h-auto rounded-lg shadow-lg transition-all duration-300 ${
-                    highlightedKeywords.length > 0 ? "ring-2 ring-amber-400/70" : ""
-                  }`}
+                  className="w-full h-auto rounded-lg shadow-lg transition-all duration-300"
                   onError={(e) => {
                     console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
                     console.error('Error details:', e);
@@ -1498,23 +1429,6 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                     console.log('Successfully loaded slide image:', getCorrectImageUrl(currentSlideData.imagePath));
                   }}
                 />
-                {/* Mock keyword highlight overlay — visual demo only */}
-                {highlightedKeywords.length > 0 && (
-                  <div className="absolute inset-0 pointer-events-none rounded-lg overflow-hidden">
-                    {highlightedKeywords.map((kw, i) => {
-                      const pos = KEYWORD_POSITIONS[i % KEYWORD_POSITIONS.length];
-                      return (
-                        <div
-                          key={kw}
-                          className="absolute px-2 py-0.5 bg-amber-300/85 text-amber-900 text-xs font-semibold rounded shadow-md"
-                          style={{ top: pos.top, left: pos.left, transform: "translateY(-50%)" }}
-                        >
-                          {kw}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
               </>
             ) : (
               <div className="bg-gray-100 rounded-lg p-8 text-center">
@@ -1664,143 +1578,53 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           </div>
         </div>
 
-        {/* Transcript / Feedback Panel */}
+        {/* Session Notes Panel */}
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Tab header */}
-          <div className="px-4 py-2.5 border-b border-slate-200/50 flex items-center justify-between">
-            <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
-              <button
-                onClick={() => setRightPanelMode("transcript")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
-                  rightPanelMode === "transcript"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                <MessageSquare size={11} />
-                Transcript
-              </button>
-              <button
-                onClick={() => setRightPanelMode("feedback")}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
-                  rightPanelMode === "feedback"
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                Feedback
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-              </button>
+          <div className="px-4 py-2.5 border-b border-slate-200/50">
+            <div className="flex items-center gap-1.5">
+              <MessageSquare size={12} className="text-slate-400" />
+              <span className="text-xs font-medium text-slate-600">Session Notes</span>
             </div>
-            {rightPanelMode === "transcript" && (
-              <button
-                onClick={() => setShowCaptions(!showCaptions)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-                aria-label="Toggle captions"
-              >
-                {showCaptions ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-            )}
           </div>
 
-          {/* Transcript content — logic unchanged, gated by tab */}
-          {rightPanelMode === "transcript" && showCaptions && (
-            <div className="flex-1 flex flex-col min-h-0">
-              <div
-                ref={captionScrollRef}
-                className="flex-1 overflow-y-auto p-3 space-y-2 bg-slate-50/50"
-              >
-                {transcriptItems.length === 0 ? (
-                  <div className="text-center py-8">
-                    <MessageSquare size={24} className="text-slate-400 mx-auto mb-2" />
-                    <p className="text-xs text-slate-500">
-                      Conversation will appear here
-                    </p>
-                  </div>
-                ) : (
-                  transcriptItems
-                    .filter(item => item.type === "MESSAGE" && !item.isHidden)
-                    .map((item) => {
-                      const isUser = item.role === "user";
-                      const isComplete = item.status === "DONE";
-                      const messageText = item.title || "";
-
-                      const isTranscribing = messageText === "[Transcribing...]";
-                      const isInaudible = messageText === "[inaudible]";
-
-                      return (
-                        <div
-                          key={item.itemId}
-                          className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div
-                            className={`max-w-[85%] px-3 py-2 rounded-lg text-xs ${
-                              isUser
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-white text-slate-900 border border-slate-200'
-                            } ${
-                              !isComplete ? 'animate-pulse' : ''
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={`font-medium ${isUser ? 'text-blue-100' : 'text-slate-600'}`}>
-                                {isUser ? 'You' : 'AI'}
-                              </span>
-                              <span className={`text-xs ${isUser ? 'text-blue-200' : 'text-slate-400'}`}>
-                                {new Date(item.createdAtMs).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  second: '2-digit'
-                                })}
-                              </span>
-                            </div>
-                            <div className={`${
-                              isTranscribing || isInaudible ? 'italic opacity-70' : ''
-                            }`}>
-                              {messageText || (isUser ? 'Speaking...' : 'Thinking...')}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                )}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            {!currentQuestion && !latestResponse && keyConcepts.length === 0 && !rollingNotes && (
+              <div className="text-center py-8">
+                <MessageSquare size={22} className="text-slate-300 mx-auto mb-2" />
+                <p className="text-xs text-slate-400">Session notes will appear here as the conversation progresses.</p>
               </div>
-            </div>
-          )}
-
-          {/* Feedback panel — mock demo, visual only */}
-          {rightPanelMode === "feedback" && (
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              <p className="text-xs text-slate-400 px-1 pb-1">
-                Click an item to highlight keywords on the slide.
-              </p>
-              {MOCK_FEEDBACK_ITEMS.map((item) => {
-                const s = severityStyle[item.severity];
-                const isActive = activeFeedbackId === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleFeedbackItemClick(item.id, item.keywords)}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg border text-xs transition-all duration-150 ${s.badge} ${
-                      isActive ? "ring-2 ring-amber-400 ring-offset-1" : "hover:brightness-95"
-                    }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      <span className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
-                      <span className="flex-1 leading-snug">{item.text}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1.5 ml-4">
-                      {item.keywords.map((kw) => (
-                        <span key={kw} className={`px-1.5 py-0.5 rounded text-xs font-medium ${s.chip}`}>
-                          {kw}
-                        </span>
-                      ))}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            )}
+            {currentQuestion && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-blue-600 mb-1 uppercase tracking-wide">Current Question</p>
+                <p className="text-xs text-blue-900 leading-relaxed">{currentQuestion}</p>
+              </div>
+            )}
+            {latestResponse && (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Student Response</p>
+                <p className="text-xs text-slate-800 leading-relaxed">{latestResponse}</p>
+              </div>
+            )}
+            {keyConcepts.length > 0 && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide">Key Concepts</p>
+                <div className="flex flex-wrap gap-1">
+                  {keyConcepts.map((c) => (
+                    <span key={c} className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-medium rounded">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {rollingNotes && (
+              <div className="bg-white border border-slate-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Session Notes</p>
+                <pre className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-sans">{rollingNotes}</pre>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Controls */}

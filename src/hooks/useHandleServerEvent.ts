@@ -23,6 +23,7 @@ export interface UseHandleServerEventParams {
   sessionId?: string;
   /** Called when the AI cites a slide as a source via the citeSlide tool. */
   onCiteSlide?: (slideNumber: number) => void;
+  onTurnComplete?: (role: "assistant" | "user", text: string) => void;
 }
 
 export function useHandleServerEvent({
@@ -34,6 +35,7 @@ export function useHandleServerEvent({
   setIsOutputAudioBufferActive,
   sessionId,
   onCiteSlide,
+  onTurnComplete,
 }: UseHandleServerEventParams) {
   const {
     transcriptItems,
@@ -234,6 +236,9 @@ export function useHandleServerEvent({
             : serverEvent.transcript;
         if (itemId) {
           updateTranscriptMessage(itemId, finalTranscript, false);
+          if (onTurnComplete && finalTranscript !== "[inaudible]") {
+            onTurnComplete("user", finalTranscript);
+          }
         }
         break;
       }
@@ -262,6 +267,13 @@ export function useHandleServerEvent({
       }
 
       case "response.done": {
+        // Fix 4: clean up delta entries when a response is cancelled to prevent memory accumulation.
+        // Cancelled responses may emit response.done with an empty output array, leaving orphaned entries.
+        if (serverEvent.response?.status === "cancelled") {
+          (serverEvent.response.output || []).forEach((item: any) => {
+            if (item.id) delete assistantDeltasRef.current[item.id];
+          });
+        }
         if (serverEvent.response?.output) {
           serverEvent.response.output.forEach((outputItem) => {
             if (
@@ -275,14 +287,14 @@ export function useHandleServerEvent({
                 arguments: outputItem.arguments,
               });
             }
-            if (
-              outputItem.type === "message" &&
-              outputItem.role === "assistant"
-            ) {
-              // const itemId = outputItem.id;
-              // const text = outputItem.content[0].transcript;
-              // Final guardrail for this message
-              // processGuardrail(itemId, text);
+            if (outputItem.type === "message" && outputItem.role === "assistant") {
+              // Flush accumulated assistant text for structured notes
+              const itemId = outputItem.id;
+              const accText = assistantDeltasRef.current[itemId] || "";
+              if (accText.trim() && onTurnComplete) {
+                onTurnComplete("assistant", accText);
+              }
+              delete assistantDeltasRef.current[itemId];
             }
           });
         }
