@@ -148,7 +148,7 @@ export interface AvatarConfigurationCreate {
   additional_settings?: Record<string, unknown>;
 }
 
-export interface AvatarConfigurationUpdate extends AvatarConfigurationCreate {}
+export type AvatarConfigurationUpdate = AvatarConfigurationCreate;
 
 export interface AvatarConfigurationResponse {
   id: string;

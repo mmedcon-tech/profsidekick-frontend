@@ -15,14 +15,13 @@
  *   Roles      — add / edit / disable / delete session roles
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { templateApi, ApiError } from '@/lib/avatarApi';
 import type {
   AvatarTemplateDetailResponse,
   AvatarTemplateRoleResponse,
-  AvatarTemplateVersionResponse,
   TemplateDashboardStats,
   TemplatePublisherRow,
   TemplateCourseRow,
@@ -31,8 +30,8 @@ import type {
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 import {
   ArrowLeft, Save, Send, Users, BookOpen, Activity, Layers,
-  CheckCircle, Clock, XCircle, Plus, Trash2, GripVertical,
-  Eye, EyeOff, ChevronDown, ChevronUp, Tag, Camera, RefreshCw,
+  Plus, Trash2, GripVertical,
+  ChevronDown, ChevronUp, Tag, Camera, RefreshCw,
   BarChart2,
 } from 'lucide-react';
 

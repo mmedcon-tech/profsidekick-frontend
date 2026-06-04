@@ -142,8 +142,8 @@ function LeftSidebar({
 
 function RightSidebar({
   avatar,
-  avatarId,
-  onChangeAvatar,
+  avatarId: _avatarId,
+  onChangeAvatar: _onChangeAvatar,
 }: {
   avatar: AvatarResponse | null;
   avatarId: string | null;
@@ -233,7 +233,7 @@ function RightSidebar({
 
 function OptionCards({
   options,
-  userMessage,
+  userMessage: _userMessage,
   onSelect,
   selecting,
 }: {
@@ -523,7 +523,7 @@ function WorkspaceInner() {
               <h3 className="text-lg font-semibold text-gray-700">Publisher AI Workspace</h3>
               <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
                 Ask the AI to generate exam questions, test how your avatar responds,
-                or explore your rubric. Toggle "Generate multiple options" to get A/B/C choices.
+                or explore your rubric. Toggle &quot;Generate multiple options&quot; to get A/B/C choices.
               </p>
             </div>
           )}

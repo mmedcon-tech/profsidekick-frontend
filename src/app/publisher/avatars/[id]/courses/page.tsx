@@ -19,7 +19,7 @@ import { config } from '@/lib/config';
 import { avatarApi } from '@/lib/avatarApi';
 import type { AvatarResponse } from '@/types/avatar';
 import {
-  ArrowLeft, BookOpen, Plus, Calendar, Play,
+  BookOpen, Plus, Calendar, Play,
   ExternalLink, RefreshCw, AlertCircle,
 } from 'lucide-react';
 

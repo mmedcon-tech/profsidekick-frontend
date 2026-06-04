@@ -3,14 +3,12 @@
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useBilling } from '@/hooks/useBilling';
-import { LogOut, User, ChevronDown, Home, CreditCard, AlertTriangle, Sparkles } from 'lucide-react';
+import { LogOut, User, ChevronDown, Home, CreditCard, Sparkles } from 'lucide-react';
 
 export default function NavigationHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuth();
-  const { balance } = useBilling();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Don't show navigation on public pages

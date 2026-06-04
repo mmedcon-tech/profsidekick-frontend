@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
 import { avatarApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarResponse } from '@/types/avatar';
-import { Globe, ArrowLeft, RefreshCw, CheckCircle, Clock, Upload, BookOpen, Settings, Send } from 'lucide-react';
+import { Globe, ArrowLeft, RefreshCw, CheckCircle, Upload, BookOpen, Settings, Send } from 'lucide-react';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 
 const TABS = [
@@ -173,7 +173,7 @@ export default function AvatarDetailPage() {
               ))}
             </div>
             <p className="text-xs text-gray-400 mt-2">
-              You can continue training at any time. Click "Publish Updates" when you're ready to release a new version to subscribers.
+              You can continue training at any time. Click &quot;Publish Updates&quot; when you&apos;re ready to release a new version to subscribers.
             </p>
           </div>
         )}

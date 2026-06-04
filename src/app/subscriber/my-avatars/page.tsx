@@ -7,7 +7,7 @@ export default function MyAvatarsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">My Avatars</h1>
-      <p className="text-gray-500">Avatars you've subscribed to will appear here.</p>
+      <p className="text-gray-500">Avatars you&apos;ve subscribed to will appear here.</p>
       <div className="bg-white rounded-xl border border-dashed border-gray-300 p-16 text-center">
         <Bookmark size={48} className="mx-auto text-gray-300 mb-4" />
         <p className="text-gray-500 font-medium mb-2">No subscriptions yet</p>

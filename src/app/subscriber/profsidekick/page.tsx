@@ -92,7 +92,7 @@ export default function SubscriberProfSidekickPage() {
             <Play size={32} className="mx-auto text-gray-300 mb-2" />
             <p className="text-gray-500 text-sm">No sessions available yet.</p>
             <p className="text-gray-400 text-xs mt-1">
-              Your instructor hasn't published any sessions. Check back soon or ask them for a direct session link.
+              Your instructor hasn&apos;t published any sessions. Check back soon or ask them for a direct session link.
             </p>
           </div>
         ) : (
@@ -139,7 +139,7 @@ export default function SubscriberProfSidekickPage() {
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-3">
         <Info size={16} className="text-gray-500 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-gray-600">
-          Don't see a session? Your instructor may share a direct session link with you.
+          Don&apos;t see a session? Your instructor may share a direct session link with you.
           Ask them for the session URL or check your course materials.
         </p>
       </div>

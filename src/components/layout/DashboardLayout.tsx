@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  LayoutDashboard, Users, BookOpen, Calendar, ClipboardList,
-  CheckSquare, Presentation, Mic, BarChart2, LogOut, Bot,
-  UserCircle, Store, Bookmark, History, CreditCard, Settings,
-  Layers, ShieldCheck, Star, ChevronRight, Menu, X, PanelLeftOpen,
+  LayoutDashboard, Users, BarChart2, LogOut, Bot,
+  UserCircle, Store, Bookmark, History,
+  Layers, ShieldCheck, Star, Menu, X, PanelLeftOpen,
 } from 'lucide-react';
 
 // ─── nav item types ──────────────────────────────────────────────────────────

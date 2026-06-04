@@ -315,7 +315,7 @@ export default function CreateAvatarPage() {
             <div>
               <h2 className="text-base font-semibold text-gray-900">Teaching Style</h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                These preferences shape the AI's teaching persona. You can leave any unset to use the
+                These preferences shape the AI&apos;s teaching persona. You can leave any unset to use the
                 default behaviour.
               </p>
             </div>

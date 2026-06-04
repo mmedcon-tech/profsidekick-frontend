@@ -71,4 +71,5 @@ Do not tutor, lecture, or provide hints unless the session hint policy explicitl
   },
 };
 
-export default [teachingAssistant]; 
+const teachingAssistants = [teachingAssistant];
+export default teachingAssistants;

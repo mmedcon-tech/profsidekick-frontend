@@ -10,9 +10,9 @@ import type {
   AvatarTemplateVersionResponse,
 } from '@/types/avatar';
 import {
-  ArrowLeft, Save, Send, Clock, CheckCircle, XCircle, Plus,
+  ArrowLeft, Save, Send, Clock, Plus,
   Trash2, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp,
-  Tag, Layers, Users, Camera, X as XIcon,
+  Tag, Layers, Users, Camera,
 } from 'lucide-react';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 

@@ -22,7 +22,7 @@ import type { AvatarResponse } from '@/types/avatar';
 import RoleSelector, { type SelectedRole } from '@/components/sessions/RoleSelector';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 import {
-  ArrowLeft, Send, Bot, FileText, ClipboardList, BookOpen,
+  ArrowLeft, Send, FileText, ClipboardList, BookOpen,
   MessageSquare, Loader2, CheckCircle, Sparkles, Plus, RefreshCw,
   ChevronLeft, ChevronRight, Image as ImageIcon, Mic, MicOff, Users,
   Pencil, X, Check, Play,
@@ -203,7 +203,7 @@ function RoleSelectionModal({
             </div>
             <div>
               <h2 className="text-white font-semibold text-lg">Select a Role</h2>
-              <p className="text-blue-100 text-sm">Personalise the AI's behaviour for this session</p>
+              <p className="text-blue-100 text-sm">Personalise the AI&apos;s behaviour for this session</p>
             </div>
           </div>
         </div>
@@ -885,7 +885,7 @@ function SessionChatInner() {
               </span>
             ) : (
               <span className="text-xs text-amber-600 flex-shrink-0">
-                Select a role to personalize the AI's behaviour
+                Select a role to personalize the AI&apos;s behaviour
               </span>
             )}
           </div>
@@ -995,7 +995,7 @@ function SessionChatInner() {
               {/* Mic button — inside the textarea, bottom-right */}
               {voice.supported && (
                 <button
-                  onMouseDown={(e) => { e.preventDefault(); voice.listening ? voice.stop() : voice.start(); }}
+                  onMouseDown={(e) => { e.preventDefault(); if (voice.listening) voice.stop(); else voice.start(); }}
                   title={voice.listening ? 'Stop recording' : 'Start voice input'}
                   className={`absolute right-2.5 bottom-2.5 p-1.5 rounded-lg transition-colors ${
                     voice.listening

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { config } from '@/lib/config';
 import {
-  History, Calendar, Clock, CheckCircle, XCircle, AlertCircle,
+  History, Calendar, Clock, AlertCircle,
   Bot, Tag, Layers, Loader2, RefreshCw,
 } from 'lucide-react';
 
@@ -69,8 +69,6 @@ export default function LearningHistoryPage() {
   const [runs, setRuns] = useState<Record<string, SessionRun[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
-
   const loadSessions = useCallback(async () => {
     if (!token) return;
     setLoading(true); setError(null);
@@ -82,7 +80,6 @@ export default function LearningHistoryPage() {
       const data = await res.json();
       const sessionList: Session[] = data.sessions ?? [];
       setSessions(sessionList);
-      setTotal(data.pagination?.total ?? 0);
 
       // Eagerly load runs for all sessions
       const runMap: Record<string, SessionRun[]> = {};

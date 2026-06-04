@@ -2,13 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { templateApi, adminAvatarApi, adminUserApi } from '@/lib/avatarApi';
 import type { AvatarTemplateResponse } from '@/types/avatar';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 import {
   Layers, Users, ShieldCheck, Plus, ArrowRight, ChevronRight,
-  BookOpen, Activity, BarChart2,
+  BarChart2,
 } from 'lucide-react';
 
 function StatusPill({ state }: { state: string }) {
@@ -26,8 +25,6 @@ function StatusPill({ state }: { state: string }) {
 }
 
 export default function AdminDashboard() {
-  const router = useRouter();
-
   const [templateList, setTemplateList] = useState<AvatarTemplateResponse[]>([]);
   const [avatarCount,   setAvatarCount]   = useState(0);
   const [publishers,    setPublishers]    = useState(0);

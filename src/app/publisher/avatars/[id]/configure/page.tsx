@@ -79,7 +79,7 @@ export default function ConfigurePage() {
         {/* Difficulty */}
         <div className="p-6 space-y-3">
           <h2 className="font-semibold text-gray-900">Difficulty Level</h2>
-          <p className="text-sm text-gray-500">Sets how demanding and detailed the AI's responses are.</p>
+          <p className="text-sm text-gray-500">Sets how demanding and detailed the AI&apos;s responses are.</p>
           <div className="flex gap-3">
             {DIFFICULTIES.map((d) => (
               <button key={d} onClick={() => setForm((p) => ({ ...p, difficulty_level: d }))}
