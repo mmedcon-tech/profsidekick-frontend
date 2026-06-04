@@ -8,7 +8,7 @@ import { Eye, EyeOff, LogIn } from 'lucide-react';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading, user } = useAuth();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -18,13 +18,19 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated — role-based destination
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      const redirectTo = searchParams.get('redirect') || '/dashboard';
-      router.push(redirectTo);
+    if (isAuthenticated && !isLoading && user) {
+      const redirectParam = searchParams.get('redirect');
+      if (redirectParam) {
+        router.push(redirectParam);
+        return;
+      }
+      if (user.role === 'admin') router.push('/admin/dashboard');
+      else if (user.role === 'subscriber') router.push('/subscriber/marketplace');
+      else router.push('/publisher/dashboard');
     }
-  }, [isAuthenticated, isLoading, router, searchParams]);
+  }, [isAuthenticated, isLoading, user, router, searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,10 +57,7 @@ function LoginForm() {
 
     try {
       await login(formData.username, formData.password);
-      
-      // Redirect after successful login
-      const redirectTo = searchParams.get('redirect') || '/dashboard';
-      router.push(redirectTo);
+      // Redirect is handled by the useEffect above once isAuthenticated flips
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

@@ -37,7 +37,7 @@ export default function UnifiedDashboard() {
     });
   };
 
-  const isProfessor = user?.role === 'professor' || user?.role !== 'student'; // Default to professor for backward compatibility
+  const isPublisher = user?.role === 'publisher' || user?.role === 'admin';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -48,9 +48,9 @@ export default function UnifiedDashboard() {
             Welcome back, {user?.firstName}!
           </h1>
           <p className="text-xl text-gray-600">
-            {isProfessor 
-              ? 'Manage your courses and create amazing AI-powered teaching sessions.'
-              : 'Access your enrolled courses and join interactive learning sessions.'
+            {isPublisher
+              ? 'Manage your courses, sessions, and AI-powered avatars.'
+              : 'Browse your subscribed avatars and join interactive learning sessions.'
             }
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function UnifiedDashboard() {
             </div>
           </div>
           
-          {isProfessor && (
+          {isPublisher && (
             <button
               onClick={handleCreateCourse}
               className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
@@ -85,7 +85,7 @@ export default function UnifiedDashboard() {
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {isProfessor ? 'Your Courses' : 'Enrolled Courses'}
+              {isPublisher ? 'Your Courses' : 'Your Subscriptions'}
             </h2>
             <span className="text-sm text-gray-500">
               {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
@@ -123,22 +123,22 @@ export default function UnifiedDashboard() {
                 <GraduationCap className="w-10 h-10 text-gray-400" />
               </div>
               <p className="text-gray-600 text-lg">
-                {searchQuery 
-                  ? 'No courses match your search' 
-                  : isProfessor 
+                {searchQuery
+                  ? 'No courses match your search'
+                  : isPublisher
                     ? 'No courses created yet'
-                    : 'No courses enrolled yet'
+                    : 'No subscriptions yet'
                 }
               </p>
               <p className="text-gray-500 text-sm mt-2">
-                {searchQuery 
+                {searchQuery
                   ? 'Try adjusting your search terms'
-                  : isProfessor
+                  : isPublisher
                     ? 'Create your first course to get started!'
-                    : 'Contact your instructor to get enrolled in courses!'
+                    : 'Browse the marketplace to subscribe to an avatar!'
                 }
               </p>
-              {isProfessor && !searchQuery && (
+              {isPublisher && !searchQuery && (
                 <button
                   onClick={handleCreateCourse}
                   className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -164,11 +164,11 @@ export default function UnifiedDashboard() {
                         {course.code && <span className="font-medium">{course.code}</span>}
                         {course.section && <span>• Section {course.section}</span>}
                       </div>
-                                             {!isProfessor && (
-                         <p className="text-xs text-gray-500 mt-1">
-                           by {course.owner_name || course.username || 'Unknown'}
-                         </p>
-                       )}
+                                      {!isPublisher && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            by {course.owner_name || course.username || 'Unknown'}
+                          </p>
+                        )}
                     </div>
                     <div className="flex items-center gap-2 ml-2">
                       {course.is_public && (
@@ -220,10 +220,10 @@ export default function UnifiedDashboard() {
         {!loading && !error && (
           <div className="bg-white rounded-2xl shadow-lg p-8 mt-8">
                          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-               {isProfessor ? 'Teaching with ProfSidekick' : 'Learning with ProfSidekick'}
+               {isPublisher ? 'Publishing with ProfSidekick' : 'Learning with ProfSidekick'}
              </h2>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               {isProfessor ? (
+               {isPublisher ? (
                 <>
                   <div className="flex items-start gap-4">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
