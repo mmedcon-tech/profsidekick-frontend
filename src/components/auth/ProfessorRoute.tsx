@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import AuthLoadingSpinner from '@/components/auth/AuthLoadingSpinner';
 
 interface ProfessorRouteProps {
   children: React.ReactNode;
@@ -21,15 +22,17 @@ export default function ProfessorRoute({ children }: ProfessorRouteProps) {
     }
   }, [isLoading, isAuthenticated, user, isProfessor, router]);
 
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <AuthLoadingSpinner />
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
-      {isLoading ? (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-        </div>
-      ) : isProfessor ? (
-        children
-      ) : null}
+      {isProfessor ? children : <AuthLoadingSpinner />}
     </ProtectedRoute>
   );
 }

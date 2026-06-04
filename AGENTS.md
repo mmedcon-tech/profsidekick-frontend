@@ -238,11 +238,11 @@ Always check `response.ok` and read `detail` for user-facing messages. Do not as
 
 | Method | Backend Path | Auth | Frontend Caller |
 |---|---|---|---|
-| POST | `/api/auth/register` | No | Auth pages |
-| POST | `/api/auth/login` | No | Auth pages |
-| GET | `/api/auth/verify` | Yes | `AuthContext.checkAuth()` |
-| POST | `/api/auth/refresh` | Yes | `AuthContext.refreshToken()` |
-| POST | `/api/auth/logout` | Yes | `AuthContext.logout()` |
+| POST | `/api/auth/register` | No | Auth pages (direct backend via `config.getApiUrl`) |
+| POST | `/api/auth/login` | No | BFF `POST /api/auth/login` → `AuthContext.login()` |
+| GET | `/api/auth/verify-token` | Yes | BFF `GET /api/auth/verify` → `AuthContext.checkAuth()` |
+| POST | `/api/auth/refresh` | Yes | BFF `POST /api/auth/refresh` → `AuthContext.refreshToken()` |
+| POST | `/api/auth/logout` | Yes | BFF `POST /api/auth/logout` → `AuthContext.logout()` |
 | GET | `/api/sessions` | Yes | `useUserSessions` |
 | POST | `/api/sessions/create` | Yes | `ClassCreation` |
 | GET | `/api/sessions/{id}` | Yes | `TeachingInterface` |
