@@ -313,3 +313,39 @@ export interface EphemeralTokenResponse {
     expires_at: string;
   };
 }
+
+export interface Avatar {
+  id: string;
+  name: string;
+  description: string;
+  voice: string;
+  imageUrl: string;
+  accentColor: string;
+}
+
+export interface PersonaPreferenceSelections {
+  teachingStyle: string;
+  tone: string;
+  pace: string;
+  interactionLevel: string;
+  subjectFocus: string;
+}
+
+export interface ProfessorPersona {
+  id: string;
+  userId: string;
+  avatarId: string;
+  avatar: Avatar;
+  preferences: PersonaPreferenceSelections;
+  refinedPrompt: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const DEFAULT_PERSONA_PREFERENCES: PersonaPreferenceSelections = {
+  teachingStyle: "collaborative",
+  tone: "encouraging",
+  pace: "moderate",
+  interactionLevel: "high",
+  subjectFocus: "conceptual understanding",
+};

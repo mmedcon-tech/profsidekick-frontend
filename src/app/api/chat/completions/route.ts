@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
-
-const openai = new OpenAI();
 
 export async function POST(req: Request) {
   try {
-    // Retrieve the entire JSON object from the request.
     const body = await req.json();
 
-    // Spread the entire body into the API call.
-    const completion = await openai.chat.completions.create({
-      ...body,
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!backendUrl) {
+      return NextResponse.json({ error: "Backend URL not configured" }, { status: 500 });
+    }
+
+    const response = await fetch(`${backendUrl}/api/ai/answer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
 
-    return NextResponse.json(completion);
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
   } catch (error: any) {
     console.error("Error in /chat/completions:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
