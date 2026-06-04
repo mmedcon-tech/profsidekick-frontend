@@ -3,12 +3,14 @@
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { LogOut, User, ChevronDown, Home } from 'lucide-react';
+import { useBilling } from '@/hooks/useBilling';
+import { LogOut, User, ChevronDown, Home, CreditCard, AlertTriangle, Sparkles } from 'lucide-react';
 
 export default function NavigationHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuth();
+  const { balance } = useBilling();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Don't show navigation on public pages
@@ -36,6 +38,8 @@ export default function NavigationHeader() {
     return null;
   }
 
+  const isProfessor = user.role === 'professor' || user.role !== 'student';
+
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,7 +62,29 @@ export default function NavigationHeader() {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
-            {/* Sessions are now created within courses */}
+            {/* Balance chip */}
+            {/* {balance && (
+              <button
+                onClick={() => router.push('/billing/redeem')}
+                title={balance.source === 'none' ? 'No credits — click to add' : `Balance: ${balance.balance} credits`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  balance.source === 'none'
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                }`}
+              >
+                {balance.source === 'none' ? (
+                  <AlertTriangle size={14} />
+                ) : (
+                  <CreditCard size={14} />
+                )}
+                <span>
+                  {balance.source === 'none'
+                    ? 'Add credits'
+                    : `${parseFloat(balance.balance).toFixed(2)} cr`}
+                </span>
+              </button>
+            )} */}
 
             {/* User Menu */}
             <div className="relative">
@@ -134,6 +160,30 @@ export default function NavigationHeader() {
                       >
                         <Home size={16} />
                         Dashboard
+                      </button>
+
+                      {isProfessor && (
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            router.push('/professor/persona');
+                          }}
+                          className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                        >
+                          <Sparkles size={16} />
+                          My Persona
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          router.push('/billing/usage');
+                        }}
+                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+                      >
+                        <CreditCard size={16} />
+                        Credits &amp; Usage
                       </button>
                       
                       <button

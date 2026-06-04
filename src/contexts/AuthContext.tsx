@@ -1,7 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { config } from '@/lib/config';
+import { registerApiAuthHandlers, resetApiAuthHandlers } from '@/lib/api';
 
 export interface User {
   id: string;
@@ -50,41 +58,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
-  const checkAuth = async () => {
+  const restoreSessionFromStorage = (): boolean => {
+    const storedToken = localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('auth_user');
+    if (!storedToken || !storedUser) {
+      return false;
+    }
     try {
-      setIsLoading(true);
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
+      return true;
+    } catch {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      setToken(null);
+      setUser(null);
+      return false;
+    }
+  };
+
+  const checkAuth = async () => {
+    setIsLoading(true);
+    try {
       const storedToken = localStorage.getItem('auth_token');
       const storedUser = localStorage.getItem('auth_user');
 
-      if (storedToken && storedUser) {
-        // Verify token is still valid
-        const response = await fetch(config.getApiUrl('/api/auth/verify-token'), {
+      if (!storedToken || !storedUser) {
+        setToken(null);
+        setUser(null);
+        return;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      try {
+        const response = await fetch(config.getApiUrl(config.api.auth.verify), {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${storedToken}`,
+            Authorization: `Bearer ${storedToken}`,
             'Content-Type': 'application/json',
           },
+          signal: controller.signal,
         });
 
         if (response.ok) {
           const userData = await response.json();
           setToken(storedToken);
           setUser(userData.user);
-        } else {
-          // Token invalid, clear storage
+        } else if (response.status === 401 || response.status === 403) {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('auth_user');
           setToken(null);
           setUser(null);
+        } else {
+          restoreSessionFromStorage();
         }
+      } catch (error) {
+        console.error('Auth verify failed, using cached session:', error);
+        restoreSessionFromStorage();
+      } finally {
+        clearTimeout(timeoutId);
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      // Clear potentially corrupted auth data
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      setToken(null);
-      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -144,36 +179,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const refreshToken = async () => {
-    try {
-      if (!token) {
-        throw new Error('No token to refresh');
-      }
-
-      const response = await fetch(config.getApiUrl('/api/auth/refresh'), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Token refresh failed');
-      }
-
-      const { token: newToken } = data;
-      setToken(newToken);
-      localStorage.setItem('auth_token', newToken);
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      // If refresh fails, logout user
-      logout();
-      throw error;
+  const clearAuthAndRedirect = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    if (typeof window !== 'undefined') {
+      window.location.assign('/login');
     }
-  };
+  }, []);
+
+  const refreshToken = useCallback(async () => {
+    const currentToken = token ?? localStorage.getItem('auth_token');
+    if (!currentToken) {
+      throw new Error('No token to refresh');
+    }
+
+    const response = await fetch(config.getApiUrl(config.api.auth.refresh), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${currentToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || data.detail || 'Token refresh failed');
+    }
+
+    const { token: newToken } = data;
+    setToken(newToken);
+    localStorage.setItem('auth_token', newToken);
+  }, [token]);
+
+  useEffect(() => {
+    registerApiAuthHandlers({
+      refreshToken,
+      getToken: () => localStorage.getItem('auth_token'),
+      clearAuthAndRedirect,
+    });
+    return () => resetApiAuthHandlers();
+  }, [refreshToken, clearAuthAndRedirect]);
 
   const value: AuthContextType = {
     user,
