@@ -6,10 +6,18 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from 'react';
-import { config } from '@/lib/config';
 import { registerApiAuthHandlers, resetApiAuthHandlers } from '@/lib/api';
+import {
+  AUTH_EXPIRES_AT_KEY,
+  AUTH_TOKEN_KEY,
+  AUTH_USER_KEY,
+  clearAuthSession,
+  persistAuthSession,
+  shouldProactivelyRefresh,
+} from '@/lib/authSession';
 
 export interface User {
   id: string;
@@ -53,14 +61,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!token;
 
-  // Check for existing session on app start
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
   const restoreSessionFromStorage = (): boolean => {
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
+    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+    const storedUser = localStorage.getItem(AUTH_USER_KEY);
     if (!storedToken || !storedUser) {
       return false;
     }
@@ -69,19 +72,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(JSON.parse(storedUser));
       return true;
     } catch {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
+      clearAuthSession();
       setToken(null);
       setUser(null);
       return false;
     }
   };
 
-  const checkAuth = async () => {
+  const clearAuthAndRedirect = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    clearAuthSession();
+    if (typeof window !== 'undefined') {
+      window.location.assign('/login');
+    }
+  }, []);
+
+  const refreshTokenRef = useRef<() => Promise<void>>(async () => {});
+
+  const refreshToken = useCallback(async () => {
+    const currentToken = token ?? localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!currentToken) {
+      throw new Error('No token to refresh');
+    }
+
+    const response = await fetch('/api/auth/refresh', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${currentToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || data.detail || 'Token refresh failed');
+    }
+
+    const { token: newToken, expiresAt } = data;
+    setToken(newToken);
+    const storedUser = localStorage.getItem(AUTH_USER_KEY);
+    if (storedUser) {
+      persistAuthSession({
+        token: newToken,
+        user: JSON.parse(storedUser),
+        expiresAt: expiresAt ?? null,
+      });
+    } else {
+      localStorage.setItem(AUTH_TOKEN_KEY, newToken);
+      if (expiresAt) {
+        localStorage.setItem(AUTH_EXPIRES_AT_KEY, expiresAt);
+      }
+    }
+  }, [token]);
+
+  refreshTokenRef.current = refreshToken;
+
+  const checkAuth = useCallback(async () => {
     setIsLoading(true);
     try {
-      const storedToken = localStorage.getItem('auth_token');
-      const storedUser = localStorage.getItem('auth_user');
+      const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+      const storedUser = localStorage.getItem(AUTH_USER_KEY);
 
       if (!storedToken || !storedUser) {
         setToken(null);
@@ -89,14 +141,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
+      const expiresAt = localStorage.getItem(AUTH_EXPIRES_AT_KEY);
+      if (shouldProactivelyRefresh(expiresAt)) {
+        try {
+          await refreshTokenRef.current();
+        } catch (error) {
+          console.error('Proactive token refresh failed:', error);
+        }
+      }
+
+      const tokenForVerify =
+        localStorage.getItem(AUTH_TOKEN_KEY) ?? storedToken;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       try {
-        const response = await fetch(config.getApiUrl(config.api.auth.verify), {
+        const response = await fetch('/api/auth/verify', {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${storedToken}`,
+            Authorization: `Bearer ${tokenForVerify}`,
             'Content-Type': 'application/json',
           },
           signal: controller.signal,
@@ -104,11 +167,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (response.ok) {
           const userData = await response.json();
-          setToken(storedToken);
+          setToken(tokenForVerify);
           setUser(userData.user);
         } else if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('auth_user');
+          clearAuthSession();
           setToken(null);
           setUser(null);
         } else {
@@ -123,12 +185,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const login = async (username: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch(config.getApiUrl('/api/auth/login'), {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,15 +205,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.message || data.detail || 'Login failed');
       }
 
-      // Store auth data
-      const { user: userData, token: authToken } = data;
+      const { user: userData, token: authToken, expiresAt } = data;
       setUser(userData);
       setToken(authToken);
-      localStorage.setItem('auth_token', authToken);
-      localStorage.setItem('auth_user', JSON.stringify(userData));
+      persistAuthSession({
+        token: authToken,
+        user: userData,
+        expiresAt: expiresAt ?? null,
+      });
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -158,12 +226,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Call logout endpoint to invalidate token on server
-      if (token) {
-        await fetch(config.getApiUrl('/api/auth/logout'), {
+      const currentToken = token ?? localStorage.getItem(AUTH_TOKEN_KEY);
+      if (currentToken) {
+        await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${currentToken}`,
             'Content-Type': 'application/json',
           },
         });
@@ -171,53 +239,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear local state regardless of server response
       setUser(null);
       setToken(null);
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
+      clearAuthSession();
     }
   };
-
-  const clearAuthAndRedirect = useCallback(() => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    if (typeof window !== 'undefined') {
-      window.location.assign('/login');
-    }
-  }, []);
-
-  const refreshToken = useCallback(async () => {
-    const currentToken = token ?? localStorage.getItem('auth_token');
-    if (!currentToken) {
-      throw new Error('No token to refresh');
-    }
-
-    const response = await fetch(config.getApiUrl(config.api.auth.refresh), {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${currentToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || data.detail || 'Token refresh failed');
-    }
-
-    const { token: newToken } = data;
-    setToken(newToken);
-    localStorage.setItem('auth_token', newToken);
-  }, [token]);
 
   useEffect(() => {
     registerApiAuthHandlers({
       refreshToken,
-      getToken: () => localStorage.getItem('auth_token'),
+      getToken: () => localStorage.getItem(AUTH_TOKEN_KEY),
       clearAuthAndRedirect,
     });
     return () => resetApiAuthHandlers();
@@ -235,4 +266,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}; 
+};
