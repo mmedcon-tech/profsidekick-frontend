@@ -94,7 +94,7 @@ export function useProfessorPersona() {
   );
 
   const refinePersona = useCallback(
-    async (payload: RefinePayload): Promise<ProfessorPersona | null> => {
+    async (payload: RefinePayload): Promise<{ refinedPrompt: string } | null> => {
       if (!token) {
         setError('Not authenticated');
         return null;
@@ -108,12 +108,14 @@ export function useProfessorPersona() {
           headers: authHeaders(),
           body: JSON.stringify(payload),
         });
-        const data = (await response.json()) as ProfessorPersona & { detail?: string };
+        const data = (await response.json()) as { refinedPrompt?: string; detail?: string };
         if (!response.ok) {
           throw new Error(data.detail ?? 'Failed to refine persona');
         }
-        setPersona(data);
-        return data;
+        if (!data.refinedPrompt) {
+          throw new Error('Refine returned no prompt');
+        }
+        return { refinedPrompt: data.refinedPrompt };
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to refine persona');
         return null;
