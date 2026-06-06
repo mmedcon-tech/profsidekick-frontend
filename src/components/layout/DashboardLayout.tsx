@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -138,10 +139,12 @@ function Sidebar({ nav, open, onClose, focusMode }: SidebarProps) {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-5 border-b border-gray-700 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <img
+            <Image
               src="/images/logo.png"
               alt="ProfSidekick"
-              className="w-8 h-8 rounded-full object-contain"
+              width={32}
+              height={32}
+              className="rounded-full object-contain"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <span className="font-bold text-lg">ProfSidekick</span>
@@ -243,7 +246,7 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
   }, [pathname]);
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden">
       <Sidebar
         nav={nav}
         open={sidebarOpen}
@@ -277,18 +280,20 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
         ) : (
           // ── Normal mode: full header + padded main ───────────────────────
           <>
-            <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 lg:px-6 gap-4 flex-shrink-0">
+            <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 lg:px-6 gap-4 flex-shrink-0">
+              {/* Show hamburger on all screens smaller than lg (mobile + tablet) */}
               <button
-                className="lg:hidden text-gray-500 hover:text-gray-700"
+                className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 onClick={() => setSidebarOpen(true)}
+                aria-label="Open navigation menu"
               >
                 <Menu size={22} />
               </button>
               {title && (
-                <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+                <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h1>
               )}
             </header>
-            <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-gray-50 dark:bg-gray-950">
               {children}
             </main>
           </>

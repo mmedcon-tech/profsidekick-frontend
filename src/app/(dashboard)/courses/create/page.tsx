@@ -63,25 +63,25 @@ export default function CreateCoursePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
           <div className="mb-8">
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-4 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
               Back to Dashboard
             </button>
             <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">Create New Course</h1>
-              <p className="text-xl text-gray-600">Set up your course and start building amazing learning experiences</p>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Create New Course</h1>
+              <p className="text-xl text-gray-600 dark:text-gray-400">Set up your course and start building amazing learning experiences</p>
             </div>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
               <div>
@@ -102,7 +102,7 @@ export default function CreateCoursePage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       placeholder="e.g., Introduction to Computer Science"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
                   </div>
                   
@@ -118,7 +118,7 @@ export default function CreateCoursePage() {
                       value={formData.code}
                       onChange={handleInputChange}
                       placeholder="e.g., CS101"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
                   </div>
                   
@@ -133,7 +133,7 @@ export default function CreateCoursePage() {
                       value={formData.section}
                       onChange={handleInputChange}
                       placeholder="e.g., A, 001, Morning"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
                   </div>
                   
@@ -148,13 +148,13 @@ export default function CreateCoursePage() {
                       value={formData.department}
                       onChange={handleInputChange}
                       placeholder="e.g., Computer Science"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
                   </div>
                 </div>
                 
                 <div className="mt-6">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Course Description
                   </label>
                   <textarea
@@ -164,14 +164,14 @@ export default function CreateCoursePage() {
                     value={formData.description}
                     onChange={handleInputChange}
                     placeholder="Describe what students will learn in this course..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
               </div>
 
               {/* Schedule Information */}
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Schedule Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Schedule Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="semester" className="block text-sm font-medium text-gray-700 mb-2">
@@ -182,7 +182,7 @@ export default function CreateCoursePage() {
                       name="semester"
                       value={formData.semester}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     >
                       <option value="">Select semester</option>
                       <option value="Spring">Spring</option>
@@ -201,7 +201,7 @@ export default function CreateCoursePage() {
                       name="year"
                       value={formData.year}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     >
                       {years.map(year => (
                         <option key={year} value={year.toString()}>{year}</option>
@@ -230,7 +230,7 @@ export default function CreateCoursePage() {
                       value={formData.max_students}
                       onChange={handleInputChange}
                       placeholder="e.g., 30"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
                   </div>
                   
@@ -252,30 +252,38 @@ export default function CreateCoursePage() {
                   </div>
                 </div>
                 
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600">
-                    <strong>Public courses:</strong> Can be discovered and enrolled in by any student.<br />
-                    <strong>Private courses:</strong> Students need to be invited or provided with an enrollment code.
+                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong className="text-gray-900 dark:text-gray-200">Public courses:</strong> Can be discovered and enrolled in by any student.<br />
+                    <strong className="text-gray-900 dark:text-gray-200">Private courses:</strong> Students need to be invited or provided with an enrollment code.
                   </p>
                 </div>
               </div>
 
               {/* Submit Button */}
-              <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
+              <div className="flex justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                  className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                 >
                   Cancel
                 </button>
-                                  <button
-                    type="submit"
-                    disabled={loading || !formData.name.trim() || !formData.code.trim()}
-                    className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {loading ? 'Creating...' : 'Create Course'}
-                  </button>
+                <button
+                  type="submit"
+                  disabled={loading || !formData.name.trim() || !formData.code.trim()}
+                  aria-busy={loading}
+                  className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Course'
+                  )}
+                </button>
               </div>
             </form>
           </div>
