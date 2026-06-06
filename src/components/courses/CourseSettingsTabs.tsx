@@ -66,11 +66,11 @@ export default function CourseSettingsTabs({
     return (
       <div className="space-y-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Basic Information</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Course Name *
               </label>
               <input
@@ -83,7 +83,7 @@ export default function CourseSettingsTabs({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Course Code *
               </label>
               <input
@@ -97,7 +97,7 @@ export default function CourseSettingsTabs({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Section
               </label>
               <input
@@ -110,7 +110,7 @@ export default function CourseSettingsTabs({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Department
               </label>
               <input
@@ -123,7 +123,7 @@ export default function CourseSettingsTabs({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Semester
               </label>
               <select
@@ -140,7 +140,7 @@ export default function CourseSettingsTabs({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Year
               </label>
               <select
@@ -157,7 +157,7 @@ export default function CourseSettingsTabs({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Description
           </label>
           <textarea
@@ -170,7 +170,7 @@ export default function CourseSettingsTabs({
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Course Status</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Course Status</h3>
           
           <div className="flex items-center">
             <input
@@ -180,7 +180,7 @@ export default function CourseSettingsTabs({
               onChange={(e) => onCourseUpdate('is_active', e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label htmlFor="is_active" className="ml-3 block text-sm text-gray-900">
+            <label htmlFor="is_active" className="ml-3 block text-sm text-gray-900 dark:text-gray-100">
               Active course
             </label>
           </div>
@@ -192,8 +192,8 @@ export default function CourseSettingsTabs({
   const renderStudentsSettings = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Student Management</h3>
-        <p className="text-gray-600 mb-6">Control how students can access and enroll in your course.</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Student Management</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">Control how students can access and enroll in your course.</p>
         
         <div className="space-y-4">
           <div className="flex items-center">
@@ -204,13 +204,13 @@ export default function CourseSettingsTabs({
               onChange={(e) => onCourseUpdate('allow_self_enrollment', e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label htmlFor="allow_self_enrollment" className="ml-3 block text-sm text-gray-900">
+            <label htmlFor="allow_self_enrollment" className="ml-3 block text-sm text-gray-900 dark:text-gray-100">
               Allow self-enrollment
             </label>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Maximum Enrollment
             </label>
             <input
@@ -221,7 +221,7 @@ export default function CourseSettingsTabs({
               className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="No limit"
             />
-            <p className="text-sm text-gray-500 mt-1">Leave empty for no enrollment limit</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Leave empty for no enrollment limit</p>
           </div>
         </div>
       </div>
@@ -231,8 +231,8 @@ export default function CourseSettingsTabs({
   const renderPrivacySettings = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Privacy & Visibility</h3>
-        <p className="text-gray-600 mb-6">Control who can see and access your course.</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Privacy & Visibility</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">Control who can see and access your course.</p>
         
         <div className="space-y-4">
           <div className="flex items-center">
@@ -243,11 +243,11 @@ export default function CourseSettingsTabs({
               onChange={(e) => onCourseUpdate('is_public', e.target.checked)}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label htmlFor="is_public" className="ml-3 block text-sm text-gray-900">
+            <label htmlFor="is_public" className="ml-3 block text-sm text-gray-900 dark:text-gray-100">
               Public course
             </label>
           </div>
-          <p className="text-sm text-gray-500 ml-7">
+          <p className="text-sm text-gray-500 dark:text-gray-400 ml-7">
             Public courses can be discovered and viewed by other users
           </p>
         </div>

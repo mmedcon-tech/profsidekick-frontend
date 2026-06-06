@@ -46,29 +46,29 @@ export default function ConfigurePage() {
     }
   };
 
-  if (loading) return <div className="h-48 bg-gray-100 rounded-xl animate-pulse max-w-2xl" />;
+  if (loading) return <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse max-w-2xl" />;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Link href={`/publisher/avatars/${id}`} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 w-fit">
+      <Link href={`/publisher/avatars/${id}`} className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Back to Avatar
       </Link>
 
-      <h1 className="text-2xl font-bold text-gray-900">Configure Avatar</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Configure Avatar</h1>
 
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
       {success && <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">Configuration saved!</div>}
 
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800">
         {/* Voice */}
         <div className="p-6 space-y-3">
-          <h2 className="font-semibold text-gray-900">Voice</h2>
-          <p className="text-sm text-gray-500">The voice your avatar uses during sessions.</p>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Voice</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">The voice your avatar uses during sessions.</p>
           <div className="grid grid-cols-4 gap-2">
             {VOICES.map((v) => (
               <button key={v} onClick={() => setForm((p) => ({ ...p, voice: v }))}
                 className={`px-3 py-2 text-sm rounded-lg border transition-all capitalize ${
-                  form.voice === v ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                  form.voice === v ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
                 {v}
               </button>
@@ -78,13 +78,13 @@ export default function ConfigurePage() {
 
         {/* Difficulty */}
         <div className="p-6 space-y-3">
-          <h2 className="font-semibold text-gray-900">Difficulty Level</h2>
-          <p className="text-sm text-gray-500">Sets how demanding and detailed the AI&apos;s responses are.</p>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Difficulty Level</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Sets how demanding and detailed the AI&apos;s responses are.</p>
           <div className="flex gap-3">
             {DIFFICULTIES.map((d) => (
               <button key={d} onClick={() => setForm((p) => ({ ...p, difficulty_level: d }))}
                 className={`flex-1 py-2.5 text-sm rounded-lg border transition-all capitalize ${
-                  form.difficulty_level === d ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold' : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                  form.difficulty_level === d ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
                 {d}
               </button>
@@ -94,7 +94,7 @@ export default function ConfigurePage() {
 
         {/* Language */}
         <div className="p-6 space-y-3">
-          <h2 className="font-semibold text-gray-900">Language</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Language</h2>
           <select value={form.language} onChange={(e) => setForm((p) => ({ ...p, language: e.target.value }))}
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
             {LANGUAGES.map((l) => <option key={l}>{l}</option>)}

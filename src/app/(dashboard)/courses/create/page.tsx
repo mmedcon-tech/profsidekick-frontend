@@ -85,13 +85,13 @@ export default function CreateCoursePage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                   <BookOpen className="w-5 h-5" />
                   Basic Information
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Course Name *
                     </label>
                     <input
@@ -107,7 +107,7 @@ export default function CreateCoursePage() {
                   </div>
                   
                   <div>
-                    <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Course Code *
                     </label>
                     <input
@@ -123,7 +123,7 @@ export default function CreateCoursePage() {
                   </div>
                   
                   <div>
-                    <label htmlFor="section" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="section" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Section
                     </label>
                     <input
@@ -138,7 +138,7 @@ export default function CreateCoursePage() {
                   </div>
                   
                   <div>
-                    <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Department
                     </label>
                     <input
@@ -174,7 +174,7 @@ export default function CreateCoursePage() {
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Schedule Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="semester" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="semester" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Semester/Term
                     </label>
                     <select
@@ -193,7 +193,7 @@ export default function CreateCoursePage() {
                   </div>
                   
                   <div>
-                    <label htmlFor="year" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="year" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Year
                     </label>
                     <select
@@ -213,13 +213,13 @@ export default function CreateCoursePage() {
 
               {/* Access & Settings */}
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                   <Users className="w-5 h-5" />
                   Access & Settings
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="max_students" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="max_students" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Maximum Students
                     </label>
                     <input
@@ -245,7 +245,7 @@ export default function CreateCoursePage() {
                     />
                     <label htmlFor="is_public" className="ml-3 flex items-center gap-2">
                       {formData.is_public ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Make course publicly discoverable
                       </span>
                     </label>

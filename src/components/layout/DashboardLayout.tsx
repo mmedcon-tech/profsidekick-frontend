@@ -208,7 +208,7 @@ function Sidebar({ nav, open, onClose, focusMode }: SidebarProps) {
             }
             return (
               <div key={i}>
-                <p className="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <p className="px-3 pt-4 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   {entry.label}
                 </p>
                 {entry.items.map((item) => (

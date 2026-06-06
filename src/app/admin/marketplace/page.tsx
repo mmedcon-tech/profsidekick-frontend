@@ -37,8 +37,8 @@ export default function AdminMarketplacePage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Marketplace Management</h1>
-        <p className="text-gray-500 mt-1 text-sm">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Marketplace Management</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
           Published publisher avatar instances. Click any avatar to manage it.
         </p>
       </div>
@@ -53,21 +53,21 @@ export default function AdminMarketplacePage() {
         />
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-5 py-4">
-              <div className="w-10 h-10 rounded-lg bg-gray-100 animate-pulse flex-shrink-0" />
+              <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse flex-shrink-0" />
               <div className="flex-1 space-y-1.5">
-                <div className="h-4 w-48 bg-gray-100 rounded animate-pulse" />
-                <div className="h-3 w-32 bg-gray-100 rounded animate-pulse" />
+                <div className="h-4 w-48 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                <div className="h-3 w-32 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
               </div>
             </div>
           ))
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
             <Globe size={36} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               {query ? 'No avatars match your search.' : 'No published avatars yet.'}
             </p>
           </div>
@@ -88,7 +88,7 @@ export default function AdminMarketplacePage() {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-gray-900 group-hover:text-indigo-700 transition-colors">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-700 transition-colors">
                       {a.name}
                     </p>
                     <span className="flex items-center gap-1 text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">

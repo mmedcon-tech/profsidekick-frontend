@@ -14,11 +14,11 @@ function StatusPill({ state }: { state: string }) {
   const map: Record<string, string> = {
     published:   'bg-emerald-100 text-emerald-700',
     draft:       'bg-amber-100 text-amber-700',
-    unpublished: 'bg-gray-100 text-gray-500',
-    archived:    'bg-gray-100 text-gray-400',
+    unpublished: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
+    archived:    'bg-gray-100 dark:bg-gray-800 text-gray-400',
   };
   return (
-    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize ${map[state] ?? 'bg-gray-100 text-gray-500'}`}>
+    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize ${map[state] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
       {state}
     </span>
   );
@@ -85,32 +85,32 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-500 mt-1">Platform overview and management.</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Platform overview and management.</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
           <Link key={s.label} href={s.href}
-            className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all flex items-center gap-4">
+            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-blue-300 hover:shadow-sm transition-all flex items-center gap-4">
             <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
               {s.icon}
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-              <p className="text-sm text-gray-500">{s.label}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{s.label}</p>
             </div>
           </Link>
         ))}
       </div>
 
       {/* Avatar Templates — dynamic, links to per-template management dashboard */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-gray-900">Avatar Templates</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Avatar Templates</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Click a template to manage its prompts, roles, publishers, courses, and sessions.
             </p>
           </div>
@@ -123,19 +123,19 @@ export default function AdminDashboard() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl animate-pulse">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 flex-shrink-0" />
+              <div key={i} className="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-800 rounded-xl animate-pulse">
+                <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-40 bg-gray-100 rounded" />
-                  <div className="h-3 w-24 bg-gray-100 rounded" />
+                  <div className="h-4 w-40 bg-gray-100 dark:bg-gray-800 rounded" />
+                  <div className="h-3 w-24 bg-gray-100 dark:bg-gray-800 rounded" />
                 </div>
               </div>
             ))}
           </div>
         ) : templateList.length === 0 ? (
-          <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-xl">
+          <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
             <Layers size={32} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500 mb-3">No templates yet.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">No templates yet.</p>
             <Link href="/admin/templates/new"
               className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors">
               <Plus size={14} /> Create first template
@@ -147,13 +147,13 @@ export default function AdminDashboard() {
               <Link
                 key={t.id}
                 href={`/admin/avatars/${t.id}`}
-                className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/40 transition-all group"
+                className="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/40 transition-all group"
               >
                 <AvatarIcon imageUrl={t.avatar_image_url} name={t.name} size={48} rounded="lg" />
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-gray-900 text-sm">{t.name}</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{t.name}</span>
                     <StatusPill state={t.published_state} />
                     {t.category && (
                       <span className="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
@@ -188,8 +188,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-3">
           {actions.map((a) => (
             <Link key={a.label} href={a.href}
