@@ -1,0 +1,173 @@
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { marketplaceApi } from '@/lib/avatarApi';
+import { config } from '@/lib/config';
+import type { AvatarPublicResponse } from '@/types/avatar';
+import { Bot, ArrowLeft, Calendar, Play, Clock, Upload, Info } from 'lucide-react';
+
+interface PublicSession {
+  sessionId: string;
+  classDetails: { className: string; courseName: string; courseCode: string; duration: number };
+  status: string;
+  totalSlides: number;
+  runCount: number;
+}
+
+function useToken() {
+  return typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+}
+
+export default function SubscriberAvatarDetailPage() {
+  const { avatarId } = useParams<{ avatarId: string }>();
+  const router = useRouter();
+  const token = useToken();
+
+  const [avatar,    setAvatar]   = useState<AvatarPublicResponse | null>(null);
+  const [sessions,  setSessions] = useState<PublicSession[]>([]);
+  const [loading,   setLoading]  = useState(true);
+  const [error,     setError]    = useState<string | null>(null);
+  const [launching, setLaunching] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      marketplaceApi.get(avatarId),
+      fetch(config.getApiUrl(`/api/sessions?avatar_id=${avatarId}&limit=20`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+        .then((r) => r.ok ? r.json() : { sessions: [] })
+        .then((d) => d.sessions ?? [])
+        .catch(() => []),
+    ])
+      .then(([av, sess]) => { setAvatar(av); setSessions(sess); })
+      .catch((e) => setError(e.message ?? 'Failed to load'))
+      .finally(() => setLoading(false));
+  }, [avatarId, token]);
+
+  const handleLaunch = async (sessionId: string) => {
+    if (!token) { router.push('/login'); return; }
+    setLaunching(sessionId);
+    try {
+      const res = await fetch(config.getApiUrl(`/api/sessions/${sessionId}/run/start`), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || data.detail || 'Launch failed');
+      router.push(`/courses/${data.courseId}/sessions/${sessionId}/run/${data.sessionRunId}`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to start session');
+    } finally {
+      setLaunching(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="h-48 bg-gray-100 rounded-xl animate-pulse" />
+      </div>
+    );
+  }
+
+  if (error || !avatar) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-red-600">{error || 'Avatar not found'}</p>
+        <Link href="/subscriber/marketplace" className="text-blue-600 hover:underline text-sm mt-2 inline-block">
+          ← Back to Marketplace
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <Link href="/subscriber/marketplace"
+        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 w-fit">
+        <ArrowLeft size={16} /> Marketplace
+      </Link>
+
+      {/* Avatar hero */}
+      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
+          <Bot size={40} className="text-white" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900">{avatar.name}</h1>
+        <p className="text-gray-500 mt-2">{avatar.description || 'AI-powered educational avatar.'}</p>
+        <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-400">
+          <Calendar size={13} />
+          <span>Published {new Date(avatar.created_at).toLocaleDateString()}</span>
+        </div>
+      </div>
+
+      {/* Available sessions */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="font-semibold text-gray-900 mb-1">Available Sessions</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Choose a session and launch your AI-powered learning experience.
+        </p>
+
+        {sessions.length === 0 ? (
+          <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-lg">
+            <Calendar size={32} className="mx-auto text-gray-300 mb-2" />
+            <p className="text-gray-500 text-sm">No sessions available yet.</p>
+            <p className="text-gray-400 text-xs mt-1">The publisher is still setting things up. Check back soon.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {sessions.map((s) => (
+              <div key={s.sessionId}
+                className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-blue-200 hover:bg-blue-50 transition-all">
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <Play size={18} className="text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 text-sm">{s.classDetails.className}</p>
+                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
+                    <span className="flex items-center gap-1"><Clock size={11} />{s.classDetails.duration} min</span>
+                    <span>{s.totalSlides} slides</span>
+                    <span>{s.runCount} run{s.runCount !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleLaunch(s.sessionId)}
+                  disabled={!!launching}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium flex-shrink-0"
+                >
+                  {launching === s.sessionId
+                    ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Starting…</>
+                    : <><Play size={14} /> Launch</>}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Solution upload note */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-3">
+        <Upload size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-amber-800">
+          <p className="font-semibold mb-1">Uploading your solution</p>
+          <p>During a session you can upload one solution file (PDF, DOCX, or TXT).
+            The AI will review it against the rubric and give you feedback.
+            Only one upload per session run is allowed.</p>
+        </div>
+      </div>
+
+      {/* Mic note */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+        <Info size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-blue-700">
+          Sessions are voice-driven AI oral examinations. A working microphone is required.
+          Each run is independent — you can retake sessions multiple times.
+        </p>
+      </div>
+    </div>
+  );
+}
