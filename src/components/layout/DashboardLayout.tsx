@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, Users, BarChart2, LogOut, Bot,
-  UserCircle, Store, Bookmark, History,
+  UserCircle, Store, Bookmark, History, BookOpen,
   Layers, ShieldCheck, Star, Menu, X, PanelLeftOpen,
 } from 'lucide-react';
 
@@ -36,6 +36,12 @@ export const publisherNav: SidebarConfig = [
     ],
   },
   {
+    label: 'Courses & Sessions',
+    items: [
+      { label: 'My Courses', href: '/publisher/courses', icon: <BookOpen size={18} /> },
+    ],
+  },
+  {
     label: 'Analytics',
     items: [
       { label: 'Session History', href: '/publisher/history', icon: <History size={18} /> },
@@ -47,6 +53,7 @@ export const publisherNav: SidebarConfig = [
 export const subscriberNav: SidebarConfig = [
   { label: 'Marketplace',      href: '/subscriber/marketplace', icon: <Store size={18} /> },
   { label: 'My Avatars',       href: '/subscriber/my-avatars',  icon: <Bookmark size={18} /> },
+  { label: 'My Courses',       href: '/subscriber/courses',     icon: <BookOpen size={18} /> },
   { label: 'Learning History', href: '/subscriber/history',     icon: <History size={18} /> },
   { label: 'Profile',          href: '/subscriber/profile',     icon: <UserCircle size={18} /> },
 ];
