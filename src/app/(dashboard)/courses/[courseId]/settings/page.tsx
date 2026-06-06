@@ -27,7 +27,6 @@ interface CourseSettings {
 
 export default function CourseSettingsPage() {
   const params = useParams();
-  const router = useRouter();
   const { token } = useAuth();
   const courseId = params.courseId as string;
 
