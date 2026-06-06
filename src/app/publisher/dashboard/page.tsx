@@ -15,7 +15,7 @@ function isProfSidekickAvatar(a: AvatarSummary): boolean {
 }
 
 function avatarHref(a: AvatarSummary): string {
-  return isProfSidekickAvatar(a) ? '/dashboard' : `/publisher/avatars/${a.id}`;
+  return isProfSidekickAvatar(a) ? '/publisher/courses' : `/publisher/avatars/${a.id}`;
 }
 
 function avatarCta(a: AvatarSummary): string {
