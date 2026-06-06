@@ -38,26 +38,23 @@ export default function PromptCreationModal({ prompt, onSave, onClose }: PromptC
 
   // Function to get system instructions (same as AISettings)
   const getSystemInstructions = () => {
-    return `You are ProfSidekick, an AI teaching assistant for interactive classroom presentations.
+    return `You are ProfSidekick, an AI oral examiner conducting structured academic assessments.
 
 CORE FUNCTIONALITY:
 - Navigate slides using nextSlide(), previousSlide(), and goToSlide(slideNumber) functions
-- Receive real-time notifications when users manually change slides via [SLIDE CHANGE] messages
-- Provide clear explanations and engage with students during presentations
-- Stay interruptible and responsive to student questions at any time
+- Ask one focused question per turn, drawn strictly from slide content and rubric criteria
+- Wait for the student's full response before proceeding
+- Stay neutral and professional — do not teach, explain, or confirm correctness
 
-TEACHING BEHAVIOR:
-- Speak clearly and enthusiastically like a knowledgeable instructor
-- Reference specific slide numbers when discussing content
-- Pause and listen for student interruptions (questions, requests for clarification)
-- Adapt explanations to student comprehension levels
-- Encourage student participation and questions
+EXAMINATION BEHAVIOR:
+- Evaluate reasoning, precision, and depth — not verbal fluency
+- Do not provide hints unless the session hint policy explicitly permits it
+- Do not ask multiple questions in a single turn
+- Probe incomplete answers with targeted follow-up questions
 
 SLIDE NAVIGATION:
-- Use slide functions to control presentation flow
-- Acknowledge slide changes naturally when notified
-- Stay aware of current slide position and total slide count
-- Wait for user input before automatically advancing slides
+- Use slide functions to reference specific content during questioning
+- Navigate purposefully — only when it directly serves the current line of questioning
 
 Additional custom instructions will be provided separately.`;
   };
@@ -204,7 +201,7 @@ Additional custom instructions will be provided separately.`;
               {prompt ? 'Edit Prompt' : 'Create New Prompt'}
             </h2>
             <p className="text-gray-600">
-              {prompt ? 'Update your custom AI prompt' : 'Create a custom AI prompt for your teaching sessions'}
+              {prompt ? 'Update your custom AI prompt' : 'Create a custom AI prompt for your examination sessions'}
             </p>
           </div>
           <button
@@ -347,7 +344,7 @@ Additional custom instructions will be provided separately.`;
             {/* User-Editable Instructions */}
             <div>
               <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                Custom Teaching Instructions *
+                Custom Examination Instructions *
               </label>
               <textarea
                 id="content"
@@ -358,7 +355,7 @@ Additional custom instructions will be provided separately.`;
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                   errors.content ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="Add your custom teaching style, specific behaviors, or domain expertise..."
+                placeholder="Add custom examination instructions, question strategies, or subject-specific behavior..."
               />
               {errors.content && (
                 <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -367,8 +364,8 @@ Additional custom instructions will be provided separately.`;
                 </p>
               )}
               <p className="mt-2 text-sm text-gray-500">
-                Write clear, detailed instructions for how the AI should behave. Include teaching style, 
-                tone, and specific behaviors you want the AI to exhibit. This will be combined with ProfSidekick&apos;s core instructions below.
+                Write clear instructions for how the AI examiner should conduct this session. Include question strategy,
+                tone, and subject-specific behavior. Combined with the core examiner instructions below.
               </p>
             </div>
 

@@ -69,7 +69,7 @@ export default function ClassCreation() {
     description: "",
     duration: 75,
     visionInstructions:
-      "You are a helpful assistant that can analyze the slide image and provide a detailed description of the content.",
+      "You are an expert academic content analyst. Extract and describe the complete content of this examination slide for use by an AI oral examiner. Transcribe all text, equations (plain-text notation), code, diagrams (structure, axes, labels, key values), and tables. Be thorough and exact — this content will be used to generate examination questions and evaluate student responses.",
     assistant_parameters: {
       input_audio_format: "pcm16",
       input_audio_noice_reduction: {
@@ -96,48 +96,49 @@ export default function ClassCreation() {
     },
   });
 
-  const [userInstructions, setUserInstructions] = useState("");
-  // Function to get system instructions (same as in AISettings)
-  const [coreInstructions, setCoreInstructions] = useState("");
+  const [sessionMode, setSessionMode] = useState<'teaching' | 'examination'>('teaching');
+
+  // Avatar + role selection
+  const [availableAvatars, setAvailableAvatars] = useState<{ id: string; name: string; template_id: string; template_image_url: string | null }[]>([]);
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string>('');
+  const [selectedAvatarTemplateId, setSelectedAvatarTemplateId] = useState<string>('');
+  const [availableRoles, setAvailableRoles] = useState<{ id: string; name: string; description: string | null; prompt_context: string | null }[]>([]);
+  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
 
   useEffect(() => {
-    const fetchPrompt = async () => {
-      const res = await fetch("/prompts/ai_prompt.txt");
-      const res2 = await fetch("/prompts/core_prompt.txt");
-      const editable_default = await res.text();
-      const core_prompt = await res2.text();
+    if (!token) return;
+    fetch(config.getApiUrl('/api/publisher/avatars'), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setAvailableAvatars(data.avatars || []))
+      .catch(() => {});
+  }, [token]);
 
-      // setDefaultPrompt(editable_default);
-      // Set default user instructions from the prompt file
-      setUserInstructions(editable_default);
-      setCoreInstructions(core_prompt);
+  useEffect(() => {
+    if (!selectedAvatarTemplateId || !token) { setAvailableRoles([]); setSelectedRoleId(''); return; }
+    fetch(config.getApiUrl(`/api/publisher/avatar-templates/${selectedAvatarTemplateId}/roles`), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setAvailableRoles(Array.isArray(data) ? data : []))
+      .catch(() => setAvailableRoles([]));
+    setSelectedRoleId('');
+  }, [selectedAvatarTemplateId, token]);
 
-      // Create structured instructions JSON
-      const structuredInstructions = {
-        version: "1.0",
-        core: core_prompt,
-        editable: editable_default,
-        timestamp: new Date().toISOString(),
-      };
-
-      setClassDetails((prev) => ({
-        ...prev,
-        assistant_parameters: {
-          ...prev.assistant_parameters,
-          instructions: JSON.stringify(structuredInstructions),
-        },
-      }));
-    };
-
-
-    fetchPrompt();
-  }, []);
+  const handleAvatarChange = (avatarId: string) => {
+    setSelectedAvatarId(avatarId);
+    const avatar = availableAvatars.find((a) => a.id === avatarId);
+    setSelectedAvatarTemplateId(avatar?.template_id || '');
+  };
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedSolutionFile, setSelectedSolutionFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const solutionFileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle course selection
   const handleCourseSelect = (courseId: string, course?: CourseDetails) => {
@@ -155,35 +156,9 @@ export default function ClassCreation() {
   };
 
   const handleMaterialSelection = (materialId: string, checked: boolean) => {
-    setSelectedMaterialIds(prev => {
-      let updated: string[];
-      if (checked) {
-        updated = [...prev, materialId];
-      } else {
-        updated = prev.filter(id => id !== materialId);
-      }
-
-      // Update userInstructions based on selected materials
-      const selectedTitles = updated
-        .map(id => materials.find(m => m.id === id)?.title)
-        .filter(Boolean);
-
-      let newInstructions = userInstructions;
-
-      // Remove previous "This lecture should use..." lines
-      newInstructions = newInstructions.replace(
-        /This lecture should use the knowledge and align to the content of the following course material: .*/gi,
-        ""
-      ).trim();
-
-      if (selectedTitles.length > 0) {
-        newInstructions += `\n\nThis lecture should use the knowledge and align to the content of the following course material: ${selectedTitles.join(", ")}`;
-      }
-
-      setUserInstructions(newInstructions);
-
-      return updated;
-    });
+    setSelectedMaterialIds(prev =>
+      checked ? [...prev, materialId] : prev.filter(id => id !== materialId)
+    );
   };
 
 
@@ -260,15 +235,17 @@ export default function ClassCreation() {
     });
   };
 
-  const handleFileSelect = (file: File) => {
-    const allowedTypes = [
-      "application/pdf",
-      "application/vnd.ms-powerpoint",
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    ];
+  const SUPPORTED_MIME_TYPES = [
+    "application/pdf",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+  const SUPPORTED_FORMAT_LABEL = "PDF, PPTX, or DOCX";
 
-    if (!allowedTypes.includes(file.type)) {
-      setError("Please upload a PDF, PPT, or PPTX file");
+  const handleFileSelect = (file: File) => {
+    if (!SUPPORTED_MIME_TYPES.includes(file.type)) {
+      setError(`Please upload a ${SUPPORTED_FORMAT_LABEL} file`);
       return;
     }
 
@@ -305,6 +282,26 @@ export default function ClassCreation() {
     const files = e.target.files;
     if (files && files.length > 0) {
       handleFileSelect(files[0]);
+    }
+  };
+
+  const handleSolutionFileSelect = (file: File) => {
+    if (!SUPPORTED_MIME_TYPES.includes(file.type)) {
+      setError(`Solution file must be a ${SUPPORTED_FORMAT_LABEL}`);
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      setError("Solution file size must be less than 50MB");
+      return;
+    }
+    setSelectedSolutionFile(file);
+    setError(null);
+  };
+
+  const handleSolutionFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleSolutionFileSelect(files[0]);
     }
   };
 
@@ -365,20 +362,15 @@ export default function ClassCreation() {
     setError(null);
 
     try {
-      // Create structured instructions JSON
-      const structuredInstructions = {
-        version: "1.0",
-        core: coreInstructions,
-        editable: userInstructions,
-        timestamp: new Date().toISOString(),
-      };
-
       // Transform classDetails to sessionDetails format for backend
       const sessionDetails = {
-        courseId: selectedCourseId, // NEW: Use courseId instead of courseName/courseCode
+        courseId: selectedCourseId,
+        avatarId: selectedAvatarId || null,
+        selectedRoleId: selectedRoleId || null,
         className: classDetails.className,
         description: classDetails.description || "",
         duration: classDetails.duration,
+        sessionMode,
         visionInstructions: classDetails.visionInstructions,
         assistantParameters: {
           input_audio_format:
@@ -387,7 +379,7 @@ export default function ClassCreation() {
             classDetails.assistant_parameters.input_audio_noice_reduction,
           input_audio_transcription:
             classDetails.assistant_parameters.input_audio_transcription,
-          instructions: JSON.stringify(structuredInstructions),
+          instructions: "",
           model: classDetails.assistant_parameters.model,
           output_audio_format:
             classDetails.assistant_parameters.output_audio_format,
@@ -402,6 +394,9 @@ export default function ClassCreation() {
 
       const formData = new FormData();
       formData.append("presentation", selectedFile!);
+      if (selectedSolutionFile) {
+        formData.append("solution_file", selectedSolutionFile);
+      }
       formData.append("sessionDetails", JSON.stringify(sessionDetails));
 
       const response = await fetch(config.getApiUrl("/api/sessions/create"), {
@@ -544,6 +539,105 @@ export default function ClassCreation() {
                 </p>
               </div>
 
+              {/* Session Mode */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Session Mode *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSessionMode('teaching')}
+                    className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors ${
+                      sessionMode === 'teaching'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className={`text-sm font-semibold ${sessionMode === 'teaching' ? 'text-blue-700' : 'text-gray-700'}`}>
+                      📚 Teaching Mode
+                    </span>
+                    <span className="text-xs text-gray-500 leading-relaxed">
+                      The AI guides and explains concepts. Loads the Teaching Prompt from the avatar template.
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSessionMode('examination')}
+                    className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors ${
+                      sessionMode === 'examination'
+                        ? 'border-indigo-500 bg-indigo-50'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className={`text-sm font-semibold ${sessionMode === 'examination' ? 'text-indigo-700' : 'text-gray-700'}`}>
+                      📝 Examination Mode
+                    </span>
+                    <span className="text-xs text-gray-500 leading-relaxed">
+                      The AI assesses and evaluates. Loads the Examination Prompt with strict assessment rules.
+                    </span>
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  This determines which AI behaviour is used throughout the session and cannot be changed after creation.
+                </p>
+              </div>
+
+              {/* Avatar selection */}
+              {availableAvatars.length > 0 && (
+                <div>
+                  <label htmlFor="avatar_select" className="block text-sm font-medium text-gray-700 mb-1">
+                    Avatar (Optional)
+                  </label>
+                  <select
+                    id="avatar_select"
+                    value={selectedAvatarId}
+                    onChange={(e) => handleAvatarChange(e.target.value)}
+                    className="w-full input-style"
+                  >
+                    <option value="">— No avatar —</option>
+                    {availableAvatars.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Choose an avatar to apply its AI persona and enable role selection.
+                  </p>
+                </div>
+              )}
+
+              {/* Role selection — only shown when an avatar with roles is selected */}
+              {availableRoles.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Student Role
+                  </label>
+                  <div className="space-y-2">
+                    {availableRoles.map((role) => (
+                      <label key={role.id} className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedRoleId === role.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                        <input
+                          type="radio"
+                          name="session_role"
+                          value={role.id}
+                          checked={selectedRoleId === role.id}
+                          onChange={() => setSelectedRoleId(role.id)}
+                          className="mt-0.5 accent-blue-600"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{role.name}</p>
+                          {role.description && (
+                            <p className="text-xs text-gray-500 mt-0.5">{role.description}</p>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    The AI will adapt its behaviour to the selected role.
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Attach Materials from Course Materials (Optional)
@@ -655,7 +749,7 @@ export default function ClassCreation() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.ppt,.pptx"
+                  accept=".pdf,.ppt,.pptx,.docx"
                   onChange={handleFileInputChange}
                   className="hidden"
                 />
@@ -674,11 +768,59 @@ export default function ClassCreation() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-sm text-gray-600">
-                      Drag & drop or click to browse (PDF up to 50MB)
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-600">
+                        Drag &amp; drop or click to browse (up to 50MB)
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Supported formats: PDF, PowerPoint (PPTX), Word (DOCX)
+                      </p>
+                    </div>
                   </div>
                 )}
+              </div>
+
+              {/* Solution file upload (optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Professor Solution File{" "}
+                  <span className="text-gray-400 font-normal">(optional — AI reference only, never shown to student)</span>
+                </label>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                    selectedSolutionFile
+                      ? "border-purple-400 bg-purple-50"
+                      : "border-gray-300 hover:border-gray-400"
+                  }`}
+                  onClick={() => solutionFileInputRef.current?.click()}
+                >
+                  <input
+                    ref={solutionFileInputRef}
+                    type="file"
+                    accept=".pdf,.ppt,.pptx,.docx"
+                    onChange={handleSolutionFileInputChange}
+                    className="hidden"
+                  />
+                  {selectedSolutionFile ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-purple-700">
+                        {selectedSolutionFile.name} ({(selectedSolutionFile.size / 1024 / 1024).toFixed(1)} MB)
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setSelectedSolutionFile(null); }}
+                        className="text-xs text-red-500 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">Click to upload solution file (optional)</p>
+                      <p className="text-xs text-gray-400">Supported: PDF, PPTX, DOCX</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -695,7 +837,7 @@ export default function ClassCreation() {
                   onChange={handleInputChange}
                   rows={3}
                   className="w-full input-style"
-                  placeholder="You are a helpful assistant that can analyze the slide image and provide a detailed description of the content."
+                  placeholder="You are an expert academic content analyst. Extract and describe the complete content of this examination slide for use by an AI oral examiner..."
                 ></textarea>
               </div>
             </fieldset>
@@ -804,45 +946,6 @@ export default function ClassCreation() {
                 />
               </div>
 
-              {/* Custom Teaching Instructions */}
-              <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="user_instructions"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Custom Teaching Instructions
-                  </label>
-                  <textarea
-                    name="user_instructions"
-                    id="user_instructions"
-                    value={userInstructions}
-                    onChange={(e) => setUserInstructions(e.target.value)}
-                    rows={6}
-                    className="w-full input-style"
-                    placeholder="Add your custom teaching instructions here..."
-                  ></textarea>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Customize how the AI should behave during your specific teaching session.
-                  </p>
-                </div>
-
-                {/* System Instructions (Read-only) */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ProfSidekick Core Instructions (System)
-                  </label>
-                  <textarea
-                    value={coreInstructions}
-                    readOnly
-                    rows={8}
-                    className="w-full input-style bg-gray-50 text-gray-600 cursor-not-allowed"
-                  ></textarea>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Core ProfSidekick functionality - these instructions cannot be modified.
-                  </p>
-                </div>
-              </div>
             </fieldset>
             {/* Advanced Settings Sections */}
             {showSection && (

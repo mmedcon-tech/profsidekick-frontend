@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { TranscriptProvider } from "@/contexts/TranscriptContext";
 import { EventProvider } from "@/contexts/EventContext";
+import { StructuredTranscriptProvider } from "@/contexts/StructuredTranscriptContext";
 import TeachingRunWrapper from "./TeachingRunWrapper";
 import { config } from "@/lib/config";
 
@@ -35,11 +36,13 @@ export default async function SessionRunPage({ params }: { params: Promise<{ cou
     <Suspense fallback={<div>Loading teaching session...</div>}>
       <TranscriptProvider>
         <EventProvider>
-          <TeachingRunWrapper 
-            sessionRunDetails={sessionRunDetails} 
-            courseId={courseId}
-            sessionId={sessionId}
-          />
+          <StructuredTranscriptProvider>
+            <TeachingRunWrapper
+              sessionRunDetails={sessionRunDetails}
+              courseId={courseId}
+              sessionId={sessionId}
+            />
+          </StructuredTranscriptProvider>
         </EventProvider>
       </TranscriptProvider>
     </Suspense>

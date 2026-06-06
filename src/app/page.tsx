@@ -1,16 +1,29 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Users, Zap, ArrowRight, CheckCircle } from 'lucide-react';
+import { BookOpen, Users, Zap, ArrowRight, CheckCircle, LogOut } from 'lucide-react';
 
 export default function LandingPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, logout, user } = useAuth();
 
-  // Show loading while checking auth
-  if (isLoading) {
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
+
+  // Redirect authenticated users to their role dashboard immediately
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || !user) return;
+    if (user.role === 'admin')      router.replace('/admin/dashboard');
+    else if (user.role === 'subscriber') router.replace('/subscriber/marketplace');
+    else                            router.replace('/publisher/dashboard');
+  }, [isAuthenticated, isLoading, user, router]);
+
+  // Show spinner while auth check runs OR while redirect is in flight
+  if (isLoading || isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -39,37 +52,37 @@ export default function LandingPage() {
               <span className="text-2xl font-bold text-blue-900">ProfSidekick</span>
             </div>
             
-            <div className="hidden md:flex items-center space-x-8">
-              {/* <button
-                onClick={() => router.push('/about')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                About
-              </button>
-              <button
-                onClick={() => router.push('/contact')}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Contact
-              </button> */}
+            <div className="flex items-center gap-3">
               {isAuthenticated ? (
-                <button
-                  onClick={() => router.push('/dashboard')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Dashboard
-                </button>
+                <>
+                  <span className="hidden sm:block text-sm text-gray-600">
+                    {user?.firstName} · <span className="capitalize font-medium text-blue-700">{user?.role}</span>
+                  </span>
+                  <button
+                    onClick={() => router.push('/dashboard')}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-1 text-gray-500 hover:text-red-600 transition-colors text-sm px-3 py-2 rounded-lg border border-gray-300 hover:border-red-300"
+                  >
+                    <LogOut size={15} />
+                    <span className="hidden sm:inline">Sign Out</span>
+                  </button>
+                </>
               ) : (
                 <>
                   <button
                     onClick={() => router.push('/login')}
-                    className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                    className="text-blue-600 hover:text-blue-700 font-medium transition-colors text-sm px-3 py-2"
                   >
                     Sign In
                   </button>
                   <button
                     onClick={() => router.push('/register')}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm"
                   >
                     Get Started
                   </button>
