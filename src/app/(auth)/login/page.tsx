@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
@@ -68,7 +70,7 @@ function LoginForm() {
   // Show loading spinner while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -80,34 +82,36 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <img 
-              src="/images/logo.png" 
-              alt="ProfSidekick Logo" 
-              className="w-12 h-12 object-contain"
+            <Image
+              src="/images/logo.png"
+              alt="ProfSidekick Logo"
+              width={48}
+              height={48}
+              className="object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
-            <h1 className="text-2xl font-bold text-blue-900">ProfSidekick</h1>
+            <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400">ProfSidekick</h1>
           </div>
-          <p className="text-gray-600">Sign in to your account</p>
+          <p className="text-gray-600 dark:text-gray-400">Sign in to your account</p>
         </div>
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-800 text-sm">{error}</p>
+            <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+              <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>
             </div>
           )}
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Username
             </label>
             <input
@@ -116,7 +120,7 @@ function LoginForm() {
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               placeholder="Enter your username"
               disabled={isSubmitting}
               required
@@ -124,7 +128,7 @@ function LoginForm() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Password
             </label>
             <div className="relative">
@@ -134,7 +138,7 @@ function LoginForm() {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Enter your password"
                 disabled={isSubmitting}
                 required
@@ -142,7 +146,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 disabled={isSubmitting}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -153,6 +157,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
@@ -170,15 +175,15 @@ function LoginForm() {
         </form>
 
         {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-          <p className="text-sm text-gray-600">
+        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Do not have an account?{' '}
-            <button
-              onClick={() => router.push('/register')}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+            <Link
+              href="/register"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
             >
               Create one here
-            </button>
+            </Link>
           </p>
         </div>
       </div>
@@ -188,7 +193,7 @@ function LoginForm() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
   );

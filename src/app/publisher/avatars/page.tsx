@@ -70,7 +70,7 @@ export default function MyAvatarsPage() {
     <div className="max-w-5xl mx-auto space-y-6">
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">My Avatars</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Avatars</h1>
         <Link href="/publisher/avatars/new"
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
           <Plus size={16} /> Create Avatar
@@ -78,13 +78,13 @@ export default function MyAvatarsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
         {TABS.map((t) => (
           <button key={t.value} onClick={() => setTab(t.value)}
             className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               tab === t.value
                 ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
             }`}>
             {t.label}
           </button>
@@ -93,7 +93,7 @@ export default function MyAvatarsPage() {
 
       {loading ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <div key={i} className="h-44 bg-gray-100 rounded-xl animate-pulse" />)}
+          {[1, 2, 3].map((i) => <div key={i} className="h-44 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
         </div>
       ) : error ? (
         <div className="text-center py-16">
@@ -103,7 +103,7 @@ export default function MyAvatarsPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <Bot size={48} className="mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             {tab === 'all' ? 'No avatars yet. Create one from a template to get started.' : `No ${tab} avatars.`}
           </p>
           <Link href="/publisher/avatars/new"
@@ -114,7 +114,7 @@ export default function MyAvatarsPage() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((a) => (
-            <div key={a.id} className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3">
+            <div key={a.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3">
               <div className="flex items-start justify-between">
                 <AvatarIcon imageUrl={a.template_image_url} name={a.name} size={40} rounded="lg" />
                 <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
@@ -126,17 +126,17 @@ export default function MyAvatarsPage() {
 
               <div>
                 <Link href={`/publisher/avatars/${a.id}`}
-                  className="font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-1">
+                  className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 transition-colors line-clamp-1">
                   {a.name}
                 </Link>
-                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                   {a.description || 'No description'}
                 </p>
               </div>
 
               <div className="flex gap-2 mt-auto">
                 <Link href={`/publisher/avatars/${a.id}`}
-                  className="flex-1 text-center text-sm border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  className="flex-1 text-center text-sm border border-gray-300 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
                   Manage
                 </Link>
                 <button

@@ -94,8 +94,8 @@ export default function AvatarCoursesPage() {
     return (
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-        <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
-        <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
+        <div className="h-40 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+        <div className="h-40 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -103,27 +103,27 @@ export default function AvatarCoursesPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/publisher/avatars" className="hover:text-gray-700">Avatars</Link>
+      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <Link href="/publisher/avatars" className="hover:text-gray-700 dark:text-gray-300">Avatars</Link>
         <span>/</span>
-        <Link href={`/publisher/avatars/${id}`} className="hover:text-gray-700">
+        <Link href={`/publisher/avatars/${id}`} className="hover:text-gray-700 dark:text-gray-300">
           {avatar?.name ?? 'Avatar'}
         </Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">Courses &amp; Sessions</span>
+        <span className="text-gray-900 dark:text-gray-100 font-medium">Courses &amp; Sessions</span>
       </div>
 
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Courses &amp; Sessions</h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Courses &amp; Sessions</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
             Manage the teaching workflow for <span className="font-medium text-blue-700">{avatar?.name}</span>.
             Sessions created here are linked to this avatar — subscribers who launch this avatar
             run these sessions.
           </p>
         </div>
-        <button onClick={load} className="text-gray-400 hover:text-gray-600 mt-1">
+        <button onClick={load} className="text-gray-400 hover:text-gray-600 dark:text-gray-400 mt-1">
           <RefreshCw size={16} />
         </button>
       </div>
@@ -140,12 +140,12 @@ export default function AvatarCoursesPage() {
       )}
 
       {/* ── Sessions linked to this avatar ──────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-gray-900">Sessions using this Avatar</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              These sessions already have <code className="bg-gray-100 px-1 rounded">avatar_id</code> set to this avatar.
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Sessions using this Avatar</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              These sessions already have <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">avatar_id</code> set to this avatar.
               When a subscriber launches this avatar, one of these sessions runs.
             </p>
           </div>
@@ -155,9 +155,9 @@ export default function AvatarCoursesPage() {
         </div>
 
         {sessions.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
             <Calendar size={32} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-gray-500 text-sm">No sessions linked to this avatar yet.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No sessions linked to this avatar yet.</p>
             <p className="text-gray-400 text-xs mt-1 mb-4">
               Create a session inside one of your courses and select this avatar during setup.
             </p>
@@ -169,21 +169,21 @@ export default function AvatarCoursesPage() {
             </Link>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {sessions.map((s) => (
               <div key={s.sessionId} className="flex items-center gap-3 py-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <Play size={14} className="text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{s.classDetails.className}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{s.classDetails.className}</p>
                   <p className="text-xs text-gray-400">
                     {s.classDetails.courseName} · {s.runCount} run{s.runCount !== 1 ? 's' : ''} · {s.totalSlides} slides
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    s.runCount > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    s.runCount > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                   }`}>
                     {s.runCount > 0 ? 'Used' : 'Draft'}
                   </span>
@@ -201,24 +201,24 @@ export default function AvatarCoursesPage() {
       </div>
 
       {/* ── All publisher courses (entry point to create linked sessions) ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-gray-900">Your Courses</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Your Courses</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Open a course to create sessions that use <span className="font-medium">{avatar?.name}</span> as their AI avatar.
             </p>
           </div>
           <Link href="/dashboard"
-            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+            className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
             <ExternalLink size={13} /> Full Course Manager
           </Link>
         </div>
 
         {courses.length === 0 ? (
-          <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
             <BookOpen size={32} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-gray-500 text-sm">No courses yet.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No courses yet.</p>
             <Link href="/dashboard"
               className="mt-3 inline-flex items-center gap-1.5 text-blue-600 text-sm hover:underline">
               <Plus size={13} /> Create your first course
@@ -230,14 +230,14 @@ export default function AvatarCoursesPage() {
               <Link
                 key={c.course_id}
                 href={`/courses/${c.course_id}`}
-                className="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+                className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
               >
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                     <BookOpen size={14} className="text-purple-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900 text-sm group-hover:text-blue-700 truncate">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 text-sm group-hover:text-blue-700 truncate">
                       {c.name || 'Untitled Course'}
                     </p>
                     {c.code && <p className="text-xs text-gray-400">{c.code}</p>}

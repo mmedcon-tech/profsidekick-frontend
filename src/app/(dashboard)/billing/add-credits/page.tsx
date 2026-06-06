@@ -54,10 +54,10 @@ export default function AddCreditsPage() {
 
   return (
     <div className="max-w-lg mx-auto mt-12 px-4">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
         <div className="flex items-center gap-3 mb-6">
           <CreditCard className="text-blue-600" size={24} />
-          <h1 className="text-2xl font-bold text-gray-900">Add Credits</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add Credits</h1>
         </div>
 
         <div className="mb-6 p-4 bg-amber-50 rounded-lg flex gap-2 text-sm text-amber-800">
@@ -77,7 +77,7 @@ export default function AddCreditsPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Amount (USD)
             </label>
             <div className="flex gap-2 mb-3">
@@ -89,7 +89,7 @@ export default function AddCreditsPage() {
                   className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
                     amount === p
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      : 'border-gray-300 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900'
                   }`}
                 >
                   ${p}
@@ -107,7 +107,7 @@ export default function AddCreditsPage() {
               required
             />
             {amount && parseFloat(amount) > 0 && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 = {creditsPreview.toFixed(2)} credits
               </p>
             )}
@@ -145,7 +145,7 @@ export default function AddCreditsPage() {
           </button>
           <button
             onClick={() => router.push('/billing/usage')}
-            className="text-sm text-gray-500 hover:underline"
+            className="text-sm text-gray-500 dark:text-gray-400 hover:underline"
           >
             View usage
           </button>

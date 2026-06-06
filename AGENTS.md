@@ -362,3 +362,247 @@ Before marking any task done:
 9. **`NEXT_PUBLIC_BACKEND_URL` must not have a trailing slash.** `config.getApiUrl()` prepends `/` — double slashes silently break all API requests.
 
 10. **Auth token is in `localStorage`.** It persists across tabs and browser restarts. Multiple open tabs share auth state. Consider this before changing storage strategy.
+
+---
+
+## 9. UI / UX Standards — Required for All New Features
+
+> These standards were established during the **UX/Performance Audit (June 2025)** on branch `fix/ux-performance-audit`.
+> They are **mandatory** for every PR that touches UI. The §7 Agent Workflow Checklist has been updated accordingly.
+
+---
+
+### 9.1 Dark Mode
+
+The app supports light/dark/system themes via [`next-themes`](https://github.com/pacocoursey/next-themes).
+Tailwind is configured with `darkMode: 'class'` — the `dark` class is injected on `<html>` by `ThemeProvider`.
+
+#### Rules
+
+- **Never use hard-coded colours without a `dark:` counterpart** for any visible UI element.
+- **Every `<input>`, `<textarea>`, `<select>` must have explicit background and text colour classes.** Browser defaults cause invisible text in dark mode.
+- **Use the shared `.input-style` utility class** (defined in `src/app/globals.css`) for all standard form controls. It already carries the correct light/dark tokens:
+  ```
+  bg-white dark:bg-gray-800
+  text-gray-900 dark:text-gray-100
+  border-gray-300 dark:border-gray-600
+  placeholder-gray-400 dark:placeholder-gray-500
+  focus:ring-blue-500 dark:focus:ring-blue-400
+  ```
+- **Card / panel containers** must use `bg-white dark:bg-gray-800` (surface) and `border-gray-200 dark:border-gray-700` (border).
+- **Page backgrounds** must use `bg-gray-50 dark:bg-gray-950` (or the gradient equivalent `dark:from-gray-900 dark:to-gray-800`).
+- **Text** must use `text-gray-900 dark:text-gray-100` (primary) or `text-gray-600 dark:text-gray-400` (secondary).
+- **Never** add a dark mode rule inside a `@media (prefers-color-scheme: dark)` block. Use the `.dark` class only — `globals.css` already covers both class and OS-level activation.
+
+#### Reference colour palette
+
+| Token | Light | Dark | Usage |
+|---|---|---|---|
+| Surface | `bg-white` | `dark:bg-gray-800` | Cards, modals, panels |
+| Page bg | `bg-gray-50` | `dark:bg-gray-950` | Page/main background |
+| Input bg | `bg-white` | `dark:bg-gray-700` | All form controls |
+| Border | `border-gray-200` | `dark:border-gray-700` | Dividers, card borders |
+| Text primary | `text-gray-900` | `dark:text-gray-100` | Headings, body |
+| Text secondary | `text-gray-600` | `dark:text-gray-400` | Labels, hints |
+| Text placeholder | `placeholder-gray-400` | `dark:placeholder-gray-500` | Input placeholders |
+| Brand accent | `text-blue-600` | `dark:text-blue-400` | Links, active states |
+| Sidebar bg | `bg-gray-900` | _(unchanged)_ | Dashboard sidebar |
+| Nav header | `bg-white` | `dark:bg-gray-900` | Top navigation bar |
+| Danger | `text-red-600` | `dark:text-red-400` | Destructive actions |
+
+---
+
+### 9.2 Form Controls
+
+#### Input / Textarea / Select
+
+Always apply `.input-style` **or** the full equivalent inline set listed in §9.1.
+
+```tsx
+// ✅ Correct — uses shared utility
+<input className="w-full input-style" ... />
+
+// ✅ Correct — full explicit set (when .input-style doesn't fit)
+<input
+  className="w-full px-3 py-2
+             border border-gray-300 dark:border-gray-600 rounded-lg
+             bg-white dark:bg-gray-700
+             text-gray-900 dark:text-gray-100
+             placeholder-gray-400 dark:placeholder-gray-500
+             focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  ...
+/>
+
+// ❌ Wrong — missing bg/text → invisible in dark mode
+<input className="w-full border border-gray-300 rounded-lg" ... />
+```
+
+#### Labels
+
+```tsx
+<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+```
+
+---
+
+### 9.3 Buttons — Loading States & Duplicate Prevention
+
+**Every button that triggers a mutation or async operation must:**
+
+1. Be `disabled` while the operation is in-flight.
+2. Show a visual loading indicator (spinner or changed text).
+3. Carry `aria-busy={isPending}` for accessibility.
+4. Use `disabled:opacity-50 disabled:cursor-not-allowed` so the disabled state is clearly visible.
+
+```tsx
+<button
+  type="submit"
+  disabled={isPending}
+  aria-busy={isPending}
+  className="... disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  {isPending ? (
+    <>
+      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      Saving...
+    </>
+  ) : (
+    'Save Changes'
+  )}
+</button>
+```
+
+**Do not** rely on backend de-duplication as the only guard. The button must be disabled client-side immediately on the first click.
+
+---
+
+### 9.4 Notifications — Use Sonner, Not `alert()`
+
+`sonner` is installed and the `<Toaster>` is mounted in `src/app/layout.tsx`.
+
+```tsx
+import { toast } from 'sonner';
+
+// Success
+toast.success('Course saved successfully!');
+
+// Error
+toast.error(err instanceof Error ? err.message : 'Something went wrong');
+
+// Info
+toast.info('Changes will take effect on next session start.');
+```
+
+**Never use `window.alert()`, `window.confirm()`, or `window.prompt()`.** These block the UI thread and look unprofessional.
+
+---
+
+### 9.5 Navigation — Use `next/link`, Not `router.push`
+
+Use `<Link>` from `next/link` for all navigational elements (anchors, breadcrumbs, back buttons, footer links). This enables Next.js route prefetching on hover.
+
+```tsx
+// ✅ Correct — enables prefetch
+import Link from 'next/link';
+<Link href="/courses" className="...">Back to Courses</Link>
+
+// ❌ Wrong — no prefetch, no right-click "Open in new tab"
+<button onClick={() => router.push('/courses')}>Back to Courses</button>
+```
+
+`router.push()` is acceptable only when navigation must happen programmatically **after** an async operation completes (e.g. redirect after successful form submission):
+
+```tsx
+const handleSubmit = async () => {
+  const result = await createCourse(data);
+  router.push(`/courses/${result.id}`); // ✅ post-mutation redirect
+};
+```
+
+---
+
+### 9.6 Images — Use `next/image`
+
+Replace all `<img>` tags with `<Image>` from `next/image`. This enables:
+- Automatic format conversion (WebP/AVIF)
+- Lazy loading by default
+- Prevention of Cumulative Layout Shift (CLS) via explicit dimensions
+
+```tsx
+import Image from 'next/image';
+
+// ✅ Correct
+<Image src="/images/logo.png" alt="ProfSidekick" width={40} height={40} className="rounded-full" />
+
+// ❌ Wrong
+<img src="/images/logo.png" alt="ProfSidekick" className="w-10 h-10 rounded-full" />
+```
+
+If the image dimensions are unknown (e.g. user-uploaded), use `fill` with a positioned parent:
+
+```tsx
+<div className="relative w-10 h-10">
+  <Image src={avatarUrl} alt="Avatar" fill className="rounded-full object-cover" />
+</div>
+```
+
+---
+
+### 9.7 Responsive Layout
+
+All UI must be usable at the following breakpoints without horizontal scrolling or clipped content:
+
+| Breakpoint | Width | Target device |
+|---|---|---|
+| `sm` | ≥ 640px | Large phones (landscape) |
+| `md` | ≥ 768px | Tablets |
+| `lg` | ≥ 1024px | Laptops / desktops |
+
+#### Rules
+
+- **Mobile-first.** Write base styles for the smallest breakpoint and add `sm:` / `md:` / `lg:` overrides.
+- **Horizontally scrollable containers** — any `flex` or `grid` row that may overflow on mobile must have `overflow-x-auto` and child elements must have `flex-shrink-0` or `whitespace-nowrap`.
+  ```tsx
+  // ✅ Tab bars, action bars, tag lists
+  <nav className="flex gap-4 overflow-x-auto whitespace-nowrap px-4">
+    <button className="flex-shrink-0 ...">Tab A</button>
+    <button className="flex-shrink-0 ...">Tab B</button>
+  </nav>
+  ```
+- **Grids** must collapse to a single column on small screens:
+  ```tsx
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  ```
+- **Action button rows** (e.g. form submit + cancel) should stack vertically on mobile:
+  ```tsx
+  <div className="flex flex-col sm:flex-row gap-3 justify-end">
+  ```
+- **Text that truncates** — use `truncate` or `line-clamp-{n}` rather than letting it overflow.
+- **Touch targets** must be at least 44 × 44 px. Use `min-h-[44px] min-w-[44px]` where needed.
+- **Do not use fixed pixel widths** for containers that appear inside the content area. Use `max-w-*` with `w-full`.
+
+---
+
+### 9.8 Theme Toggle
+
+A `ThemeToggle` component (`src/components/ui/ThemeToggle.tsx`) is mounted inside `NavigationHeader`.
+It must remain present in the header at all authenticated breakpoints.
+
+- Do not remove or hide `<ThemeToggle />` behind a breakpoint class.
+- The component defers render until after hydration to avoid SSR mismatch — **do not** add `suppressHydrationWarning` to the toggle's wrapper.
+
+---
+
+### 9.9 Updated Agent Workflow Checklist (UI-specific additions)
+
+When the PR touches any UI component, verify **all** of the following before marking it done:
+
+- [ ] All `<input>` / `<textarea>` / `<select>` elements use `.input-style` or the full explicit bg/text/dark class set (§9.1–9.2)
+- [ ] All card/panel containers have `dark:bg-gray-800` and `dark:border-gray-700`
+- [ ] All page backgrounds have a `dark:` variant
+- [ ] Buttons triggering async operations are `disabled` + show a spinner while in-flight, with `aria-busy` (§9.3)
+- [ ] No `window.alert()` or `window.confirm()` — use `toast` from `sonner` (§9.4)
+- [ ] Navigational links use `<Link>` from `next/link`, not `router.push` (§9.5)
+- [ ] New images use `<Image>` from `next/image` with explicit `width`/`height` (§9.6)
+- [ ] Manually tested at 375px, 768px, and 1280px browser widths (§9.7)
+- [ ] Any horizontal flex/grid row that can overflow on mobile has `overflow-x-auto` (§9.7)

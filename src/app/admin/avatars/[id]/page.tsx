@@ -54,13 +54,13 @@ function StatCard({ label, value, icon, color = 'blue' }: {
     amber:   'bg-amber-50 text-amber-600',
   };
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex items-center gap-4">
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colors[color]}`}>
         {icon}
       </div>
       <div>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
       </div>
     </div>
   );
@@ -70,14 +70,14 @@ function StatusPill({ state }: { state: string }) {
   const map: Record<string, string> = {
     published:   'bg-emerald-100 text-emerald-700',
     draft:       'bg-amber-100 text-amber-700',
-    archived:    'bg-gray-100 text-gray-400',
-    unpublished: 'bg-gray-100 text-gray-500',
+    archived:    'bg-gray-100 dark:bg-gray-800 text-gray-400',
+    unpublished: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
     active:      'bg-emerald-100 text-emerald-700',
     completed:   'bg-blue-100 text-blue-700',
     failed:      'bg-red-100 text-red-600',
   };
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${map[state] ?? 'bg-gray-100 text-gray-500'}`}>
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${map[state] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
       {state}
     </span>
   );
@@ -98,11 +98,11 @@ function OverviewTab({ stats }: { stats: TemplateDashboardStats }) {
         <StatCard label="Session Runs" value={stats.session_run_count} color="amber"
           icon={<Activity size={22} />} />
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
-        <p className="text-sm font-medium text-gray-700">Template details</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-2">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Template details</p>
         <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-          <div><dt className="text-gray-400">Published state</dt><dd className="font-medium text-gray-800 capitalize">{stats.published_state}</dd></div>
-          <div><dt className="text-gray-400">Versions</dt><dd className="font-medium text-gray-800">{stats.version_count}</dd></div>
+          <div><dt className="text-gray-400">Published state</dt><dd className="font-medium text-gray-800 dark:text-gray-200 capitalize">{stats.published_state}</dd></div>
+          <div><dt className="text-gray-400">Versions</dt><dd className="font-medium text-gray-800 dark:text-gray-200">{stats.version_count}</dd></div>
         </dl>
       </div>
     </div>
@@ -112,35 +112,35 @@ function OverviewTab({ stats }: { stats: TemplateDashboardStats }) {
 // ─── Publishers Tab ───────────────────────────────────────────────────────────
 
 function PublishersTab({ rows, loading }: { rows: TemplatePublisherRow[]; loading: boolean }) {
-  if (loading) return <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />;
+  if (loading) return <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />;
   if (rows.length === 0) return (
-    <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+    <div className="text-center py-12 text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
       No publishers yet.
     </div>
   );
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <tr>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Publisher</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Avatar</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Created</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Publisher</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Avatar</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Created</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
           {rows.map((r) => (
-            <tr key={r.avatar_id} className="hover:bg-gray-50">
+            <tr key={r.avatar_id} className="hover:bg-gray-50 dark:bg-gray-900">
               <td className="px-4 py-3">
-                <p className="font-medium text-gray-900">{r.username}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{r.username}</p>
                 <p className="text-xs text-gray-400">{r.email}</p>
               </td>
-              <td className="px-4 py-3 text-gray-700">{r.avatar_name}</td>
+              <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{r.avatar_name}</td>
               <td className="px-4 py-3">
                 <StatusPill state={r.is_published ? 'published' : 'draft'} />
               </td>
-              <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
+              <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
             </tr>
           ))}
         </tbody>
@@ -152,32 +152,32 @@ function PublishersTab({ rows, loading }: { rows: TemplatePublisherRow[]; loadin
 // ─── Courses Tab ──────────────────────────────────────────────────────────────
 
 function CoursesTab({ rows, loading }: { rows: TemplateCourseRow[]; loading: boolean }) {
-  if (loading) return <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />;
+  if (loading) return <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />;
   if (rows.length === 0) return (
-    <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+    <div className="text-center py-12 text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
       No courses yet.
     </div>
   );
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <tr>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Course</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Publisher</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Sessions</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Course</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Publisher</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Sessions</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
           {rows.map((r) => (
-            <tr key={r.course_id} className="hover:bg-gray-50">
+            <tr key={r.course_id} className="hover:bg-gray-50 dark:bg-gray-900">
               <td className="px-4 py-3">
-                <p className="font-medium text-gray-900">{r.name || r.course_id}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{r.name || r.course_id}</p>
                 {r.code && <p className="text-xs text-gray-400">{r.code}</p>}
               </td>
-              <td className="px-4 py-3 text-gray-600">{r.publisher_username}</td>
-              <td className="px-4 py-3 font-medium text-gray-900">{r.session_count}</td>
+              <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{r.publisher_username}</td>
+              <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{r.session_count}</td>
               <td className="px-4 py-3">
                 <StatusPill state={r.is_active ? 'active' : 'archived'} />
               </td>
@@ -192,32 +192,32 @@ function CoursesTab({ rows, loading }: { rows: TemplateCourseRow[]; loading: boo
 // ─── Sessions Tab ─────────────────────────────────────────────────────────────
 
 function SessionsTab({ rows, loading }: { rows: TemplateSessionRunRow[]; loading: boolean }) {
-  if (loading) return <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />;
+  if (loading) return <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />;
   if (rows.length === 0) return (
-    <div className="text-center py-12 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+    <div className="text-center py-12 text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
       No session runs yet.
     </div>
   );
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <tr>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Session</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Publisher</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Started</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Session</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Publisher</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Role</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Status</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Started</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
           {rows.map((r) => (
-            <tr key={r.run_id} className="hover:bg-gray-50">
+            <tr key={r.run_id} className="hover:bg-gray-50 dark:bg-gray-900">
               <td className="px-4 py-3">
-                <p className="font-medium text-gray-900 text-xs">{r.session_name || r.session_id}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100 text-xs">{r.session_name || r.session_id}</p>
               </td>
-              <td className="px-4 py-3 text-gray-600">{r.publisher_username}</td>
-              <td className="px-4 py-3 text-gray-500 text-xs">{r.role_at_start || '—'}</td>
+              <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{r.publisher_username}</td>
+              <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">{r.role_at_start || '—'}</td>
               <td className="px-4 py-3"><StatusPill state={r.status} /></td>
               <td className="px-4 py-3 text-gray-400 text-xs">{new Date(r.start_time).toLocaleDateString()}</td>
             </tr>
@@ -253,28 +253,28 @@ function PromptBlock({
 }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
       <button
         onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 rounded-xl transition-colors"
+        className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 dark:bg-gray-900 rounded-xl transition-colors"
       >
         <div className="flex-1 min-w-0 pr-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-gray-900">{title}</p>
+            <p className="font-semibold text-gray-900 dark:text-gray-100">{title}</p>
             {badge && (
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badgeColor ?? 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badgeColor ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                 {badge}
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{description}</p>
         </div>
         {open
           ? <ChevronUp size={16} className="text-gray-400 flex-shrink-0" />
           : <ChevronDown size={16} className="text-gray-400 flex-shrink-0" />}
       </button>
       {open && (
-        <div className="px-5 pb-5 border-t border-gray-100">
+        <div className="px-5 pb-5 border-t border-gray-100 dark:border-gray-800">
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -346,12 +346,12 @@ function PromptsTab({ template, onReload }: {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <div>
-          <p className="text-sm font-medium text-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Published version: {current ? `v${current.version_number}` : 'None'}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {current
               ? `Published ${fmt(current.published_at!)}`
               : 'No version published yet.'}
@@ -398,8 +398,8 @@ function PromptsTab({ template, onReload }: {
       />
 
       {/* Change notes */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-        <label className="block text-sm font-medium text-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Change Notes <span className="text-gray-400 font-normal">(optional)</span>
         </label>
         <input value={notes} onChange={(e) => setNotes(e.target.value)}
@@ -409,7 +409,7 @@ function PromptsTab({ template, onReload }: {
 
       <div className="flex items-center gap-3">
         <button onClick={handleSaveDraft} disabled={saving}
-          className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium text-sm">
+          className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-300 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 transition-colors font-medium text-sm">
           <Save size={15} /> {saving ? 'Saving…' : 'Save Draft'}
         </button>
         <button onClick={handlePublish} disabled={publishing || !draftId}
@@ -469,19 +469,19 @@ function RoleRow({ role, templateId, onUpdated, onDeleted }: {
   };
 
   return (
-    <div className={`border rounded-xl ${role.is_enabled ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'}`}>
+    <div className={`border rounded-xl ${role.is_enabled ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900'}`}>
       <div className="flex items-center gap-3 p-4">
         <GripVertical size={16} className="text-gray-300 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className={`font-medium text-sm ${role.is_enabled ? 'text-gray-900' : 'text-gray-400'}`}>{role.name}</p>
+            <p className={`font-medium text-sm ${role.is_enabled ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400'}`}>{role.name}</p>
             {!role.is_enabled && <span className="text-xs text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">Disabled</span>}
           </div>
           {role.description && <p className="text-xs text-gray-400 mt-0.5 truncate">{role.description}</p>}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={handleToggle} disabled={toggling}
-            className="text-xs text-gray-500 border border-gray-200 px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40">
+            className="text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors disabled:opacity-40">
             {role.is_enabled ? 'Disable' : 'Enable'}
           </button>
           <button onClick={() => setExpanded((p) => !p)}
@@ -495,20 +495,20 @@ function RoleRow({ role, templateId, onUpdated, onDeleted }: {
         </div>
       </div>
       {expanded && (
-        <div className="px-4 pb-4 border-t border-gray-100 pt-4 space-y-3">
+        <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3">
           {error && <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">{error}</div>}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
             <input value={form.name} onChange={set('name')} maxLength={100}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
             <input value={form.description} onChange={set('description')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Prompt Context</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prompt Context</label>
             <textarea value={form.prompt_context} onChange={set('prompt_context')} rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-indigo-500"
               placeholder="Explain concepts slowly. Use examples." />
@@ -520,7 +520,7 @@ function RoleRow({ role, templateId, onUpdated, onDeleted }: {
               <Save size={13} /> {saving ? 'Saving…' : 'Save'}
             </button>
             <button onClick={() => setExpanded(false)}
-              className="text-sm text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200">
+              className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
               Cancel
             </button>
           </div>
@@ -565,7 +565,7 @@ function RolesTab({ template, onReload }: {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Role changes take effect immediately for new sessions — no republish required.
         </p>
         <button onClick={() => setAdding((p) => !p)}
@@ -580,18 +580,18 @@ function RolesTab({ template, onReload }: {
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-indigo-900">New Role</p>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name <span className="text-red-500">*</span></label>
             <input value={newRole.name} onChange={setNew('name')} maxLength={100}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
               placeholder="e.g., Beginner Student, Medical Resident…" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
             <input value={newRole.description} onChange={setNew('description')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Prompt Context</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prompt Context</label>
             <textarea value={newRole.prompt_context} onChange={setNew('prompt_context')} rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-indigo-500"
               placeholder="Explain concepts slowly. Avoid jargon." />
@@ -602,7 +602,7 @@ function RolesTab({ template, onReload }: {
               <Plus size={13} /> {saving ? 'Adding…' : 'Add Role'}
             </button>
             <button onClick={() => { setAdding(false); setError(null); }}
-              className="text-sm text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200">
+              className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
               Cancel
             </button>
           </div>
@@ -610,9 +610,9 @@ function RolesTab({ template, onReload }: {
       )}
 
       {roles.length === 0 && !adding ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+        <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
           <Users size={32} className="mx-auto text-gray-300 mb-2" />
-          <p className="text-sm text-gray-500">No roles defined yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No roles defined yet.</p>
           <button onClick={() => setAdding(true)} className="mt-3 text-sm text-indigo-600 hover:underline">Add the first role</button>
         </div>
       ) : (
@@ -696,8 +696,8 @@ export default function AdminAvatarDashboardPage() {
   if (loadingTemplate) return (
     <div className="max-w-5xl mx-auto space-y-4">
       <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-      <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />
-      <div className="h-48 bg-gray-100 rounded-xl animate-pulse" />
+      <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+      <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
     </div>
   );
   if (!template) return (
@@ -707,12 +707,12 @@ export default function AdminAvatarDashboardPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Back */}
-      <Link href="/admin/templates" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 w-fit">
+      <Link href="/admin/templates" className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Avatar Templates
       </Link>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-start gap-5">
           {/* Image with hover-to-upload */}
           <div className="relative group flex-shrink-0">
@@ -735,7 +735,7 @@ export default function AdminAvatarDashboardPage() {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900">{template.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{template.name}</h1>
               {template.category && (
                 <span className="flex items-center gap-1 text-xs text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-full">
                   <Tag size={11} /> {template.category}
@@ -743,7 +743,7 @@ export default function AdminAvatarDashboardPage() {
               )}
               <StatusPill state={template.published_state} />
             </div>
-            <p className="text-gray-500 text-sm mt-1">{template.description || 'No description'}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{template.description || 'No description'}</p>
             {!loadingStats && stats && (
               <p className="text-xs text-gray-400 mt-1.5">
                 {stats.publisher_count} publisher{stats.publisher_count !== 1 ? 's' : ''} ·{' '}
@@ -755,11 +755,11 @@ export default function AdminAvatarDashboardPage() {
 
           <div className="flex gap-2 flex-shrink-0">
             <Link href={`/admin/templates/${id}`}
-              className="text-sm text-gray-600 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+              className="text-sm text-gray-600 dark:text-gray-400 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
               Advanced edit
             </Link>
             <button onClick={loadTemplate}
-              className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
               <RefreshCw size={14} />
             </button>
           </div>
@@ -767,14 +767,14 @@ export default function AdminAvatarDashboardPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-1 overflow-x-auto">
           {TABS.map((t) => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 tab === t.id
                   ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:border-gray-300'
               }`}>
               {t.icon} {t.label}
             </button>
@@ -783,7 +783,7 @@ export default function AdminAvatarDashboardPage() {
       </div>
 
       {/* Tab content */}
-      {tab === 'overview'   && (loadingStats ? <div className="h-32 bg-gray-100 rounded-xl animate-pulse" /> : stats ? <OverviewTab stats={stats} /> : null)}
+      {tab === 'overview'   && (loadingStats ? <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" /> : stats ? <OverviewTab stats={stats} /> : null)}
       {tab === 'publishers' && <PublishersTab rows={publishers} loading={loadingPub} />}
       {tab === 'courses'    && <CoursesTab rows={courses} loading={loadingCourses} />}
       {tab === 'sessions'   && <SessionsTab rows={sessionRuns} loading={loadingSessions} />}

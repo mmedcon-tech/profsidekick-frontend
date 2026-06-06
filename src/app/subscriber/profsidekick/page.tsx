@@ -59,38 +59,38 @@ export default function SubscriberProfSidekickPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <Link href="/subscriber/marketplace"
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 w-fit">
+        className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Marketplace
       </Link>
 
       {/* Hero */}
-      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
           <Bot size={40} className="text-white" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">ProfSidekick</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ProfSidekick</h1>
         <p className="text-blue-700 text-sm font-medium mt-1">Platform Flagship Avatar</p>
-        <p className="text-gray-500 mt-3 text-sm max-w-sm mx-auto">
+        <p className="text-gray-500 dark:text-gray-400 mt-3 text-sm max-w-sm mx-auto">
           AI-powered educational assistant. Covers courses, sessions, oral examinations,
           rubrics, grading, and voice-driven learning.
         </p>
       </div>
 
       {/* Sessions */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-1">Available Sessions</h2>
-        <p className="text-sm text-gray-500 mb-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Available Sessions</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Sessions published by your instructors appear here. Launch one to start learning.
         </p>
 
         {loading ? (
           <div className="space-y-3">
-            {[1, 2].map((i) => <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />)}
+            {[1, 2].map((i) => <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />)}
           </div>
         ) : sessions.length === 0 ? (
-          <div className="text-center py-10 border-2 border-dashed border-gray-200 rounded-lg">
+          <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
             <Play size={32} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-gray-500 text-sm">No sessions available yet.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No sessions available yet.</p>
             <p className="text-gray-400 text-xs mt-1">
               Your instructor hasn&apos;t published any sessions. Check back soon or ask them for a direct session link.
             </p>
@@ -99,12 +99,12 @@ export default function SubscriberProfSidekickPage() {
           <div className="space-y-3">
             {sessions.map((s) => (
               <div key={s.sessionId}
-                className="flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-blue-200 hover:bg-blue-50 transition-all">
+                className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-200 hover:bg-blue-50 transition-all">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <Play size={18} className="text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm">{s.classDetails.className}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{s.classDetails.className}</p>
                   <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
                     <span className="flex items-center gap-1"><Clock size={11} />{s.classDetails.duration} min</span>
                     <span>{s.totalSlides} slides</span>
@@ -136,9 +136,9 @@ export default function SubscriberProfSidekickPage() {
         </p>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-3">
-        <Info size={16} className="text-gray-500 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-gray-600">
+      <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-start gap-3">
+        <Info size={16} className="text-gray-500 dark:text-gray-400 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-gray-600 dark:text-gray-400">
           Don&apos;t see a session? Your instructor may share a direct session link with you.
           Ask them for the session URL or check your course materials.
         </p>

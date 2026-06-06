@@ -42,7 +42,7 @@ export default function AdminPublishersPage() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <ShieldCheck size={24} className="text-purple-600" />
-        <h1 className="text-2xl font-bold text-gray-900">Publishers</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Publishers</h1>
       </div>
 
       <div className="relative max-w-sm">
@@ -54,20 +54,20 @@ export default function AdminPublishersPage() {
 
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Publisher</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Joined</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Publisher</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Email</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">Joined</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i}><td colSpan={4} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td></tr>
+                <tr key={i}><td colSpan={4} className="px-4 py-3"><div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" /></td></tr>
               ))
             ) : filtered.length === 0 ? (
               <tr>
@@ -77,20 +77,20 @@ export default function AdminPublishersPage() {
                 </td>
               </tr>
             ) : filtered.map((u) => (
-              <tr key={u.id} className="hover:bg-gray-50">
+              <tr key={u.id} className="hover:bg-gray-50 dark:bg-gray-900">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center text-xs font-semibold text-purple-700 flex-shrink-0">
                       {u.firstName[0]}{u.lastName[0]}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{u.firstName} {u.lastName}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{u.firstName} {u.lastName}</p>
                       <p className="text-xs text-gray-400">@{u.username}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{u.email}</td>
-                <td className="px-4 py-3 text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
+                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right">
                   <button onClick={() => handleDelete(u)} disabled={deleting === u.id}
                     className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-40">

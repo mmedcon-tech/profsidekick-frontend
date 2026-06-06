@@ -11,7 +11,7 @@ export default function AuthLoadingSpinner() {
           role="status"
           aria-label="Loading"
         />
-        <p className="text-gray-600">Loading...</p>
+        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
       </div>
     </div>
   );

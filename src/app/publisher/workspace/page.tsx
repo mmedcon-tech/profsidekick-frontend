@@ -111,11 +111,11 @@ function LeftSidebar({
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {loading && (
           <div className="text-center py-8">
-            <Loader2 size={20} className="animate-spin text-gray-500 mx-auto" />
+            <Loader2 size={20} className="animate-spin text-gray-500 dark:text-gray-400 mx-auto" />
           </div>
         )}
         {!loading && conversations.length === 0 && (
-          <p className="text-gray-500 text-xs text-center py-8">No conversations yet.</p>
+          <p className="text-gray-500 dark:text-gray-400 text-xs text-center py-8">No conversations yet.</p>
         )}
         {conversations.map((c) => (
           <button
@@ -128,7 +128,7 @@ function LeftSidebar({
             }`}
           >
             <p className="truncate font-medium">{c.title}</p>
-            <p className={`text-xs mt-0.5 ${activeId === c.id ? 'text-blue-200' : 'text-gray-500'}`}>
+            <p className={`text-xs mt-0.5 ${activeId === c.id ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'}`}>
               {c.message_count} message{c.message_count !== 1 ? 's' : ''}
             </p>
           </button>
@@ -152,8 +152,8 @@ function RightSidebar({
   const cfg = avatar?.configuration;
 
   return (
-    <aside className="w-64 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full">
-      <div className="p-5 border-b border-gray-200">
+    <aside className="w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col h-full">
+      <div className="p-5 border-b border-gray-200 dark:border-gray-700">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
           Active Avatar
         </p>
@@ -164,7 +164,7 @@ function RightSidebar({
                 <Bot size={20} className="text-blue-600" />
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate">{avatar.name}</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{avatar.name}</p>
                 <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
                   avatar.is_published ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                 }`}>
@@ -182,7 +182,7 @@ function RightSidebar({
       </div>
 
       {cfg && (
-        <div className="p-5 border-b border-gray-200 space-y-3">
+        <div className="p-5 border-b border-gray-200 dark:border-gray-700 space-y-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Content</p>
           {[
             { icon: <FileText size={14} />, label: 'Knowledge Docs', count: cfg.knowledge_documents?.length ?? 0, color: 'text-blue-600' },
@@ -192,22 +192,22 @@ function RightSidebar({
             <div key={row.label} className="flex items-center justify-between text-sm">
               <div className={`flex items-center gap-2 ${row.color}`}>
                 {row.icon}
-                <span className="text-gray-600">{row.label}</span>
+                <span className="text-gray-600 dark:text-gray-400">{row.label}</span>
               </div>
-              <span className="font-semibold text-gray-900">{row.count}</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{row.count}</span>
             </div>
           ))}
 
           {cfg.difficulty_level && (
-            <div className="pt-2 border-t border-gray-100">
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
               <p className="text-xs text-gray-400">Difficulty</p>
-              <p className="text-sm font-medium text-gray-700 capitalize">{cfg.difficulty_level}</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">{cfg.difficulty_level}</p>
             </div>
           )}
           {cfg.voice && (
             <div>
               <p className="text-xs text-gray-400">Voice</p>
-              <p className="text-sm font-medium text-gray-700 capitalize">{cfg.voice}</p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">{cfg.voice}</p>
             </div>
           )}
         </div>
@@ -217,7 +217,7 @@ function RightSidebar({
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
           Context in Prompt
         </p>
-        <div className="space-y-1 text-xs text-gray-500">
+        <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
           <p className="flex items-center gap-1"><CheckCircle size={11} className="text-green-500" /> Avatar system prompt</p>
           <p className="flex items-center gap-1"><CheckCircle size={11} className="text-green-500" /> Rubric criteria</p>
           <p className="flex items-center gap-1"><CheckCircle size={11} className="text-green-500" /> Knowledge excerpts</p>
@@ -264,16 +264,16 @@ function OptionCards({
           disabled={selecting}
           onClick={() => onSelect(opt, options.filter((o) => o.option_id !== opt.option_id))}
           className={`w-full text-left p-4 border-2 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-            colors[opt.option_id] ?? 'border-gray-200 hover:border-gray-400'
+            colors[opt.option_id] ?? 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
           }`}
         >
           <div className="flex items-center gap-2 mb-2">
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${labels[opt.option_id] ?? 'bg-gray-100 text-gray-600'}`}>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${labels[opt.option_id] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
               Option {opt.option_id}
             </span>
             {selecting && <Loader2 size={12} className="animate-spin text-gray-400" />}
           </div>
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{opt.content}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{opt.content}</p>
         </button>
       ))}
     </div>
@@ -496,12 +496,12 @@ function WorkspaceInner() {
       />
 
       {/* Center chat */}
-      <main className="flex-1 flex flex-col h-full min-w-0 bg-gray-50">
+      <main className="flex-1 flex flex-col h-full min-w-0 bg-gray-50 dark:bg-gray-900">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <MessageSquare size={18} className="text-blue-600" />
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-gray-900 dark:text-gray-100">
               {avatar ? `${avatar.name} — AI Workspace` : 'Publisher AI Workspace'}
             </span>
           </div>
@@ -509,7 +509,7 @@ function WorkspaceInner() {
             {error && (
               <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">{error}</span>
             )}
-            <button onClick={loadConversations} className="text-gray-400 hover:text-gray-600">
+            <button onClick={loadConversations} className="text-gray-400 hover:text-gray-600 dark:text-gray-400">
               <RefreshCw size={15} />
             </button>
           </div>
@@ -520,7 +520,7 @@ function WorkspaceInner() {
           {!activeConvId && messages.length === 0 && (
             <div className="text-center py-20">
               <Sparkles size={40} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700">Publisher AI Workspace</h3>
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Publisher AI Workspace</h3>
               <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto">
                 Ask the AI to generate exam questions, test how your avatar responds,
                 or explore your rubric. Toggle &quot;Generate multiple options&quot; to get A/B/C choices.
@@ -555,7 +555,7 @@ function WorkspaceInner() {
                 <div className={`max-w-[72%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                   cm.role === 'user'
                     ? 'bg-blue-600 text-white rounded-br-sm'
-                    : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
+                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-sm shadow-sm'
                 }`}>
                   {cm.content}
                 </div>
@@ -565,7 +565,7 @@ function WorkspaceInner() {
 
           {sending && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-3">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-bl-sm px-4 py-3">
                 <Loader2 size={16} className="animate-spin text-gray-400" />
               </div>
             </div>
@@ -575,7 +575,7 @@ function WorkspaceInner() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-gray-200 bg-white p-4 flex-shrink-0">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 flex-shrink-0">
           <div className="flex items-end gap-3">
             <div className="flex-1">
               <textarea
@@ -589,7 +589,7 @@ function WorkspaceInner() {
               />
               <div className="flex items-center gap-2 mt-2">
                 <Sparkles size={11} className="text-purple-500 flex-shrink-0" />
-                <span className="text-xs text-gray-500 select-none">Generate</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 select-none">Generate</span>
                 <select
                   value={responseCount}
                   onChange={(e) => setResponseCount(Number(e.target.value))}

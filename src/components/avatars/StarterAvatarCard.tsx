@@ -43,18 +43,18 @@ export default function StarterAvatarCard({ avatar, role, horizontal = false }: 
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900 text-sm">{avatar.name}</span>
+          <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{avatar.name}</span>
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${ac.badge}`}>
             {avatar.badge}
           </span>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">{avatar.tagline}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{avatar.tagline}</p>
         <p className="text-xs text-gray-400 mt-1 line-clamp-1">{avatar.description}</p>
       </div>
 
       <div className="flex-shrink-0">
         {disabled ? (
-          <span className="flex items-center gap-1 text-xs text-gray-400 border border-gray-200 px-3 py-1.5 rounded-lg">
+          <span className="flex items-center gap-1 text-xs text-gray-400 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg">
             <Lock size={10} /> Coming Soon
           </span>
         ) : (
@@ -78,14 +78,14 @@ export default function StarterAvatarCard({ avatar, role, horizontal = false }: 
       </div>
 
       {/* Name + tagline + description */}
-      <p className="font-bold text-gray-900">{avatar.name}</p>
+      <p className="font-bold text-gray-900 dark:text-gray-100">{avatar.name}</p>
       <p className="text-xs text-blue-600 font-medium mt-0.5">{avatar.tagline}</p>
       <p className="text-xs text-gray-400 mt-2 line-clamp-3 flex-1">{avatar.description}</p>
 
       {/* CTA */}
       <div className="mt-4">
         {disabled ? (
-          <span className="flex items-center justify-center gap-1 text-xs text-gray-400 border border-gray-200 px-3 py-2 rounded-lg w-full">
+          <span className="flex items-center justify-center gap-1 text-xs text-gray-400 border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg w-full">
             <Lock size={11} /> Coming Soon
           </span>
         ) : (
@@ -99,7 +99,7 @@ export default function StarterAvatarCard({ avatar, role, horizontal = false }: 
 
   /* ── wrapper ──────────────────────────────────────────────────── */
   const wrapperClass = [
-    'rounded-xl border-2 border-gray-200 bg-white transition-all',
+    'rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all',
     horizontal ? 'flex items-center gap-4 p-4' : 'flex flex-col p-5',
     !disabled && avatar.id === '__profsidekick__'
       ? `ring-2 ring-blue-200 border-blue-300 ${ac.border} hover:shadow-lg`
