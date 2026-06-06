@@ -5,10 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from 'next-themes';
 import {
   LayoutDashboard, Users, BarChart2, LogOut, Bot,
   UserCircle, Store, Bookmark, History, BookOpen,
   Layers, ShieldCheck, Star, Menu, X, PanelLeftOpen,
+  Sun, Moon
 } from 'lucide-react';
 
 // ─── nav item types ──────────────────────────────────────────────────────────
@@ -94,6 +96,35 @@ function isFocusRoute(pathname: string): boolean {
 
 function isSection(item: NavItem | NavSection): item is NavSection {
   return 'items' in item;
+}
+
+// ─── sidebar theme toggle ────────────────────────────────────────────────────
+
+function SidebarThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="w-full h-9 rounded-lg" aria-hidden="true" />;
+  }
+
+  const isDark = resolvedTheme === "dark";
+
+  return (
+    <button
+      type="button"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors mb-3"
+    >
+      {isDark ? <Sun size={18} /> : <Moon size={18} />}
+      <span>{isDark ? "Light Mode" : "Dark Mode"}</span>
+    </button>
+  );
 }
 
 // ─── sidebar ─────────────────────────────────────────────────────────────────
@@ -203,6 +234,7 @@ function Sidebar({ nav, open, onClose, focusMode }: SidebarProps) {
 
         {/* User card */}
         <div className="flex-shrink-0 border-t border-gray-700 p-4">
+          <SidebarThemeToggle />
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-semibold text-sm flex-shrink-0">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
