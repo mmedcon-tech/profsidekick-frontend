@@ -129,71 +129,42 @@ export default function SessionDetailsPage() {
     }
   };
 
-  const handleStartTeaching = async () => {
-    if (startingTeaching) return; // Prevent double-clicks
-    
+  const handleStartTeaching = () => {
+    // Route to the AI Chat workspace scoped to this session.
+    // The old Realtime flow is preserved below for future reactivation
+    // — just swap the router.push line back when Realtime is re-enabled.
+    router.push(`/publisher/sessions/${sessionId}/chat`);
+
+    /* ── REALTIME FLOW (disabled — uncomment to reactivate) ──────────
+    if (startingTeaching) return;
     try {
       setStartingTeaching(true);
-      
-      // Choose endpoint based on whether this is a shared link or authenticated user
-      const endpoint = isSharedLink 
+      const endpoint = isSharedLink
         ? `/api/sessions/${sessionId}/run/start/guest`
         : `/api/sessions/${sessionId}/run/start`;
-      
-      // Prepare headers
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-      
-      // Only add authorization for authenticated users
-      if (token && !isSharedLink) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      // Create a new session run
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (token && !isSharedLink) headers['Authorization'] = `Bearer ${token}`;
       const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          assistant_parameters: sessionDetails?.assistantParameters || {},
-        }),
+        method: 'POST', headers,
+        body: JSON.stringify({ assistant_parameters: sessionDetails?.assistantParameters || {} }),
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to create session run:', errorText);
-        throw new Error('Failed to start teaching session');
-      }
-      
+      if (!response.ok) throw new Error('Failed to start teaching session');
       const result = await response.json();
-      console.log('Session run created:', result);
-      
-      // Store the model information for the TeachingInterface to use
-      if (result.sessionRunId && result.assistantParameters?.model) {
+      if (result.sessionRunId && result.assistantParameters?.model)
         sessionStorage.setItem(`session_run_model_${result.sessionRunId}`, result.assistantParameters.model);
-        console.log(`🎯 Stored model for session run: ${result.assistantParameters.model}`);
-      } else {
-        console.error('No model information returned from API:', result);
-      }
-      
-      // Navigate to the new teaching run with updated URL structure
       if (result.sessionRunId) {
-        // Include shared parameter for guest users
-        const runUrl = isSharedLink 
+        const runUrl = isSharedLink
           ? `/courses/${courseId}/sessions/${sessionId}/run/${result.sessionRunId}?shared=true`
           : `/courses/${courseId}/sessions/${sessionId}/run/${result.sessionRunId}`;
         router.push(runUrl);
-      } else {
-        console.error('No sessionRunId returned from API:', result);
-        throw new Error('No sessionRunId returned from backend');
       }
     } catch (error) {
       console.error('Error starting teaching session:', error);
-      // Show error to user
       alert('Failed to start teaching session. Please try again.');
     } finally {
       setStartingTeaching(false);
     }
+    ─────────────────────────────────────────────────────────────── */
   };
 
   const handleBackToCourse = () => {
@@ -261,10 +232,10 @@ export default function SessionDetailsPage() {
               ) : (
                 <>
                   <Play className="w-5 h-5" />
-                  {user?.role === 'professor' && (
+                  {(user?.role === 'publisher' || user?.role === 'admin') && (
                     <span>Start Teaching</span>
                   )}
-                  {user?.role === 'student' && (
+                  {user?.role === 'subscriber' && (
                     <span>Start Learning with AI</span>
                   )}
                   {isSharedLink && (
@@ -353,7 +324,7 @@ export default function SessionDetailsPage() {
                   </div>
 
                   {/* Slides Preview */}
-                  {sessionDetails.slidesDetails && user?.role === 'professor' && (
+                  {sessionDetails.slidesDetails && (user?.role === 'publisher' || user?.role === 'admin') && (
                     <SlidesPreview 
                       slides={sessionDetails.slidesDetails} 
                       sessionId={sessionId}
@@ -362,7 +333,7 @@ export default function SessionDetailsPage() {
                   )}
 
                   {/* Session Materials */}
-                  {user?.role === 'professor' && !isSharedLink && (
+                  {user?.role === 'publisher' || user?.role === 'admin' && !isSharedLink && (
                     <div className="bg-white rounded-xl p-6 shadow-sm">
                       <SessionMaterials 
                         sessionId={sessionId} 
@@ -372,7 +343,7 @@ export default function SessionDetailsPage() {
                   )}
 
                   {/* Session Runs */}
-                  {user?.role === 'professor' && !isSharedLink && (
+                  {user?.role === 'publisher' || user?.role === 'admin' && !isSharedLink && (
                   <SessionRuns 
                     sessionId={sessionId} 
                     courseId={courseId}
@@ -395,10 +366,10 @@ export default function SessionDetailsPage() {
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
                     <Play className="w-4 h-4" />
-                    {user?.role === 'professor' && (
+                    {(user?.role === 'publisher' || user?.role === 'admin') && (
                       <span>Start New Run</span>
                     )}
-                    {user?.role === 'student' && (
+                    {user?.role === 'subscriber' && (
                       <span>Start Learning with AI</span>
                     )}
                     {isSharedLink && (
@@ -406,7 +377,7 @@ export default function SessionDetailsPage() {
                     )}
                   </button>
                   {/* AI Settings */}
-                  {user?.role === 'professor' && (
+                  {(user?.role === 'publisher' || user?.role === 'admin') && (
                   <button
                     onClick={() => setShowAISettings(true)}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -416,7 +387,7 @@ export default function SessionDetailsPage() {
                   </button>
                   )}
                   {/* Copy Session Link */}
-                  {user?.role === 'professor' && (
+                  {(user?.role === 'publisher' || user?.role === 'admin') && (
                   <button
                     onClick={handleCopySessionLink}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"

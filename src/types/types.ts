@@ -265,6 +265,7 @@ export interface ServerEvent {
     }[];
   };
   response?: {
+    status?: string;
     output?: {
       id: string;
       type?: string;

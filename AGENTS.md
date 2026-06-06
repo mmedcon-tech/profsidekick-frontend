@@ -224,7 +224,7 @@ All authenticated requests carry:
 Authorization: Bearer <jwt_token>
 ```
 
-The token is issued by `POST /api/auth/login` and stored in `localStorage` by `AuthContext`. It expires in 24 hours. Refresh via `POST /api/auth/refresh`.
+The token is issued by `POST /api/auth/login` and stored in `localStorage` by `AuthContext`. It expires in 24 hours. Refresh via `POST /api/auth/refresh`. User passwords are securely managed and validated using the **bcrypt** hashing algorithm on the backend.
 
 ### Error Response Shape
 

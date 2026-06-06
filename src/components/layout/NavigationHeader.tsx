@@ -3,14 +3,12 @@
 import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useBilling } from '@/hooks/useBilling';
-import { LogOut, User, ChevronDown, Home, CreditCard, AlertTriangle, Sparkles } from 'lucide-react';
+import { LogOut, User, ChevronDown, Home, CreditCard, Sparkles } from 'lucide-react';
 
 export default function NavigationHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuth();
-  const { balance } = useBilling();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Don't show navigation on public pages
@@ -93,10 +91,10 @@ export default function NavigationHeader() {
                 className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors"
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  user?.role === 'student' ? 'bg-green-100' : 'bg-blue-100'
+                  user?.role === 'subscriber' ? 'bg-green-100' : 'bg-blue-100'
                 }`}>
                   <User size={16} className={`${
-                    user?.role === 'student' ? 'text-green-600' : 'text-blue-600'
+                    user?.role === 'subscriber' ? 'text-green-600' : 'text-blue-600'
                   }`} />
                 </div>
                 <span className="hidden sm:block font-medium">
@@ -127,11 +125,13 @@ export default function NavigationHeader() {
                       )}
                       {user.role && (
                         <p className={`text-xs font-medium mt-1 px-2 py-1 rounded-full inline-block ${
-                          user.role === 'student' 
-                            ? 'bg-green-100 text-green-800' 
+                          user.role === 'subscriber'
+                            ? 'bg-green-100 text-green-800'
+                            : user.role === 'admin'
+                            ? 'bg-purple-100 text-purple-800'
                             : 'bg-blue-100 text-blue-800'
                         }`}>
-                          {user.role === 'student' ? 'Student' : 'Professor'}
+                          {user.role === 'subscriber' ? 'Subscriber' : user.role === 'admin' ? 'Admin' : 'Publisher'}
                         </p>
                       )}
                     </div>
