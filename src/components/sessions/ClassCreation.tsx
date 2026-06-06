@@ -22,19 +22,19 @@ const showSection = false;
 
 function CollapsibleSection({ title, isOpen, onToggle, children }: CollapsibleSectionProps) { 
   return ( 
-    <div className="border border-gray-200 rounded-lg"> 
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg"> 
     <button 
       type="button" 
       onClick={onToggle} 
-      className="w-full px-4 py-3 text-left flex justify-between items-center bg-gray-50 hover:bg-gray-100 rounded-t-lg transition-colors" 
+      className="w-full px-4 py-3 text-left flex justify-between items-center bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:bg-gray-800 rounded-t-lg transition-colors" 
     > 
-      <span className="font-medium text-gray-700">{title}</span> 
+      <span className="font-medium text-gray-700 dark:text-gray-300">{title}</span> 
       <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}> 
       ▼ 
       </span> 
     </button> 
     {isOpen && ( 
-      <div className="p-4 border-t border-gray-200"> 
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700"> 
         {children} 
       </div> 
     )} 
@@ -484,27 +484,27 @@ export default function ClassCreation() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <audio ref={audioPlayerRef} />{" "}
         {/* Hidden audio player controlled by the ref */}
-        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8">
+        <div className="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-4 mb-4">
               <button
                 onClick={() => router.push("/dashboard")}
-                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                className="p-2 hover:bg-white dark:bg-gray-800/50 rounded-lg transition-colors"
               >
-                <ChevronLeft className="w-6 h-6 text-gray-700" />
+                <ChevronLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />
               </button>
               <h1 className="text-3xl font-bold text-blue-900">
                 Create New Session
               </h1>
             </div>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Upload your presentation and configure your AI teaching assistant
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Section 1: Basic Class Information */}
-            <fieldset className="space-y-4 p-4 border border-gray-200 rounded-lg">
+            <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
               <legend className="text-lg font-semibold text-blue-700 px-2">
                 Basic Class Information
               </legend>
@@ -520,7 +520,7 @@ export default function ClassCreation() {
               <div>
                 <label
                   htmlFor="className"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Session Name *
                 </label>
@@ -534,14 +534,14 @@ export default function ClassCreation() {
                   className="w-full input-style"
                   placeholder="Introduction to AI - Lecture 1"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Name for this specific teaching session
                 </p>
               </div>
 
               {/* Session Mode */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Session Mode *
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -551,13 +551,13 @@ export default function ClassCreation() {
                     className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors ${
                       sessionMode === 'teaching'
                         ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:bg-gray-900'
                     }`}
                   >
-                    <span className={`text-sm font-semibold ${sessionMode === 'teaching' ? 'text-blue-700' : 'text-gray-700'}`}>
+                    <span className={`text-sm font-semibold ${sessionMode === 'teaching' ? 'text-blue-700' : 'text-gray-700 dark:text-gray-300'}`}>
                       📚 Teaching Mode
                     </span>
-                    <span className="text-xs text-gray-500 leading-relaxed">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                       The AI guides and explains concepts. Loads the Teaching Prompt from the avatar template.
                     </span>
                   </button>
@@ -567,18 +567,18 @@ export default function ClassCreation() {
                     className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors ${
                       sessionMode === 'examination'
                         ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:bg-gray-900'
                     }`}
                   >
-                    <span className={`text-sm font-semibold ${sessionMode === 'examination' ? 'text-indigo-700' : 'text-gray-700'}`}>
+                    <span className={`text-sm font-semibold ${sessionMode === 'examination' ? 'text-indigo-700' : 'text-gray-700 dark:text-gray-300'}`}>
                       📝 Examination Mode
                     </span>
-                    <span className="text-xs text-gray-500 leading-relaxed">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                       The AI assesses and evaluates. Loads the Examination Prompt with strict assessment rules.
                     </span>
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
                   This determines which AI behaviour is used throughout the session and cannot be changed after creation.
                 </p>
               </div>
@@ -586,7 +586,7 @@ export default function ClassCreation() {
               {/* Avatar selection */}
               {availableAvatars.length > 0 && (
                 <div>
-                  <label htmlFor="avatar_select" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="avatar_select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Avatar (Optional)
                   </label>
                   <select
@@ -600,7 +600,7 @@ export default function ClassCreation() {
                       <option key={a.id} value={a.id}>{a.name}</option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Choose an avatar to apply its AI persona and enable role selection.
                   </p>
                 </div>
@@ -609,12 +609,12 @@ export default function ClassCreation() {
               {/* Role selection — only shown when an avatar with roles is selected */}
               {availableRoles.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Student Role
                   </label>
                   <div className="space-y-2">
                     {availableRoles.map((role) => (
-                      <label key={role.id} className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedRoleId === role.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                      <label key={role.id} className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedRoleId === role.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}>
                         <input
                           type="radio"
                           name="session_role"
@@ -624,25 +624,25 @@ export default function ClassCreation() {
                           className="mt-0.5 accent-blue-600"
                         />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{role.name}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
                           {role.description && (
-                            <p className="text-xs text-gray-500 mt-0.5">{role.description}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{role.description}</p>
                           )}
                         </div>
                       </label>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     The AI will adapt its behaviour to the selected role.
                   </p>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Attach Materials from Course Materials (Optional)
                 </label>
-                <div className="space-y-2 max-h-48 overflow-y-auto border p-2 rounded-lg bg-gray-50">
+                <div className="space-y-2 max-h-48 overflow-y-auto border p-2 rounded-lg bg-gray-50 dark:bg-gray-900">
                   {materials.map((m) => (
                     <div key={m.id} className="flex items-center gap-2">
                       <input
@@ -651,16 +651,16 @@ export default function ClassCreation() {
                         checked={selectedMaterialIds.includes(m.id)}
                         onChange={(e) => handleMaterialSelection(m.id, e.target.checked)}
                       />
-                      <label htmlFor={`material-${m.id}`} className="text-gray-700">
+                      <label htmlFor={`material-${m.id}`} className="text-gray-700 dark:text-gray-300">
                         {m.title}
                       </label>
                     </div>
                   ))}
                   {materials.length === 0 && (
-                    <p className="text-xs text-gray-500">No course materials available.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">No course materials available.</p>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Choose one or more existing course materials to include in this session.
                 </p>
               </div>
@@ -670,7 +670,7 @@ export default function ClassCreation() {
                 <div>
                   <label
                     htmlFor="duration"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                   >
                     Duration (minutes)
                   </label>
@@ -692,7 +692,7 @@ export default function ClassCreation() {
                 <div>
                   <label
                     htmlFor="sessionNumber"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                   >
                     Session Number (Optional)
                   </label>
@@ -704,7 +704,7 @@ export default function ClassCreation() {
                     placeholder="1"
                     min="1"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Sequential session number
                   </p>
                 </div>
@@ -713,7 +713,7 @@ export default function ClassCreation() {
               <div>
                 <label
                   htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Session Description (Optional)
                 </label>
@@ -729,7 +729,7 @@ export default function ClassCreation() {
               </div>
             </fieldset>
             {/* Section 2: Presentation File */}
-            <fieldset className="space-y-4 p-4 border border-gray-200 rounded-lg">
+            <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
               <legend className="text-lg font-semibold text-blue-700 px-2">
                 Presentation File
               </legend>
@@ -769,7 +769,7 @@ export default function ClassCreation() {
                 ) : (
                   <div className="space-y-2">
                     <div className="space-y-1">
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         Drag &amp; drop or click to browse (up to 50MB)
                       </p>
                       <p className="text-xs text-gray-400">
@@ -782,7 +782,7 @@ export default function ClassCreation() {
 
               {/* Solution file upload (optional) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Professor Solution File{" "}
                   <span className="text-gray-400 font-normal">(optional — AI reference only, never shown to student)</span>
                 </label>
@@ -816,7 +816,7 @@ export default function ClassCreation() {
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <p className="text-sm text-gray-500">Click to upload solution file (optional)</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Click to upload solution file (optional)</p>
                       <p className="text-xs text-gray-400">Supported: PDF, PPTX, DOCX</p>
                     </div>
                   )}
@@ -826,7 +826,7 @@ export default function ClassCreation() {
               <div>
                 <label
                   htmlFor="visionInstructions"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Instruction to vision model
                 </label>
@@ -843,7 +843,7 @@ export default function ClassCreation() {
             </fieldset>
 
             {/* Section 3: Core AI Settings */}
-            <fieldset className="space-y-4 p-4 border border-gray-200 rounded-lg">
+            <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
               <legend className="text-lg font-semibold text-blue-700 px-2">
                 Core AI Settings
               </legend>
@@ -851,7 +851,7 @@ export default function ClassCreation() {
               <div>
                 <label
                   htmlFor="assistant_parameters.model"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   AI Model
                 </label>
@@ -875,7 +875,7 @@ export default function ClassCreation() {
               <div>
                 <label
                   htmlFor="assistant_parameters.voice"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Assistant Voice
                 </label>
@@ -898,7 +898,7 @@ export default function ClassCreation() {
                   <button
                     type="button"
                     onClick={() => playVoiceSample(classDetails.assistant_parameters.voice)}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     aria-label={`Preview voice ${classDetails.assistant_parameters.voice}`}
                   >
                     {currentlyPlayingVoice === classDetails.assistant_parameters.voice ? (
@@ -929,7 +929,7 @@ export default function ClassCreation() {
               <div>
                 <label
                   htmlFor="assistant_parameters.temperature"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Temperature (Creativity): {classDetails.assistant_parameters.temperature}
                 </label>
@@ -958,7 +958,7 @@ export default function ClassCreation() {
                   <div>
                     <label
                       htmlFor="assistant_parameters.tool_choice"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                     >
                       Tool Choice
                     </label>
@@ -973,7 +973,7 @@ export default function ClassCreation() {
                       <option value="none">None</option>
                       <option value="required">Required</option>
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Controls if/how the model uses tools. Tools array itself is pre-configured.
                     </p>
                   </div>
@@ -989,12 +989,12 @@ export default function ClassCreation() {
                 onToggle={() => setShowAdvancedAudio(!showAdvancedAudio)}
               >
                 <div className="space-y-6">
-                  <h4 className="text-md font-semibold text-gray-700 border-b pb-1">Input Audio</h4>
+                  <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Input Audio</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label
                         htmlFor="assistant_parameters.input_audio_format"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                       >
                         Format
                       </label>
@@ -1016,7 +1016,7 @@ export default function ClassCreation() {
                     <div>
                       <label
                         htmlFor="assistant_parameters.input_audio_noice_reduction.type"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                       >
                         Noise Reduction Type
                       </label>
@@ -1037,7 +1037,7 @@ export default function ClassCreation() {
                     <div>
                       <label
                         htmlFor="assistant_parameters.input_audio_transcription.model"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                       >
                         Transcription Model
                       </label>
@@ -1057,7 +1057,7 @@ export default function ClassCreation() {
                     <div>
                       <label
                         htmlFor="assistant_parameters.input_audio_transcription.language"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                       >
                         Transcription Language
                       </label>
@@ -1070,15 +1070,15 @@ export default function ClassCreation() {
                         className="w-full input-style"
                         placeholder="e.g., en, es, fr"
                       />
-                      <p className="text-xs text-gray-500 mt-1">ISO 639-1 code (e.g., en for English).</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">ISO 639-1 code (e.g., en for English).</p>
                     </div>
                   </div>
 
-                  <h4 className="text-md font-semibold text-gray-700 border-b pb-1 mt-4">Output Audio</h4>
+                  <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 border-b pb-1 mt-4">Output Audio</h4>
                   <div>
                     <label
                       htmlFor="assistant_parameters.output_audio_format"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                     >
                       Format
                     </label>
@@ -1110,7 +1110,7 @@ export default function ClassCreation() {
                   <div>
                     <label
                       htmlFor="turn_detection_type"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                     >
                       Turn Detection Type
                     </label>
@@ -1146,7 +1146,7 @@ export default function ClassCreation() {
                       <option value="server_vad">Server VAD</option>
                       <option value="semantic_vad">Semantic VAD</option>
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Choose how the AI detects when users stop speaking
                     </p>
                   </div>
@@ -1157,7 +1157,7 @@ export default function ClassCreation() {
                         <div>
                           <label
                             htmlFor="assistant_parameters.turn_detection.threshold"
-                            className="block text-sm font-medium text-gray-700 mb-1"
+                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                           >
                             Threshold ({classDetails.assistant_parameters.turn_detection.threshold})
                           </label>
@@ -1177,7 +1177,7 @@ export default function ClassCreation() {
                         <div>
                           <label
                             htmlFor="assistant_parameters.turn_detection.silence_duration_ms"
-                            className="block text-sm font-medium text-gray-700 mb-1"
+                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                           >
                             Silence Duration (ms)
                           </label>
@@ -1196,7 +1196,7 @@ export default function ClassCreation() {
                       <div>
                         <label
                           htmlFor="assistant_parameters.turn_detection.prefix_padding_ms"
-                          className="block text-sm font-medium text-gray-700 mb-1"
+                          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                         >
                           Prefix Padding (ms)
                         </label>
@@ -1217,7 +1217,7 @@ export default function ClassCreation() {
                     <div>
                       <label
                         htmlFor="assistant_parameters.turn_detection.eagerness"
-                        className="block text-sm font-medium text-gray-700 mb-1"
+                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                       >
                         Eagerness
                       </label>

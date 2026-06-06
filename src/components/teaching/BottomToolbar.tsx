@@ -26,16 +26,16 @@ function VoiceDisclaimerModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
         <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4">
           <h2 className="text-white font-semibold text-base">Voice Mode Notice</h2>
         </div>
         <div className="p-6 space-y-4">
-          <p className="text-sm text-gray-700 leading-relaxed">
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
             Voice interactions consume more system resources and may use credits faster
             than text-based interactions.
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             You can disconnect at any time using the Disconnect button.
           </p>
           <div className="flex gap-3 pt-1">
@@ -47,7 +47,7 @@ function VoiceDisclaimerModal({
             </button>
             <button
               onClick={onCancel}
-              className="flex-1 border border-gray-200 text-gray-600 text-sm px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex-1 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm px-4 py-2.5 rounded-xl hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             >
               Cancel
             </button>
@@ -144,7 +144,7 @@ function BottomToolbar({
             className={
               (isPTTUserSpeaking ? "bg-gray-300" : "bg-gray-200") +
               " py-1 px-4 cursor-pointer rounded-md" +
-              (!isPTTActive ? " bg-gray-100 text-gray-400" : "")
+              (!isPTTActive ? " bg-gray-100 dark:bg-gray-800 text-gray-400" : "")
             }
           >
             Talk

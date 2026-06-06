@@ -195,10 +195,10 @@ function RoleSelectionModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800/20 flex items-center justify-center">
               <Users size={20} className="text-white" />
             </div>
             <div>
@@ -208,7 +208,7 @@ function RoleSelectionModal({
           </div>
         </div>
         <div className="p-6 space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Choose the role of the person the AI will be interacting with. This is per-session — you can change it next time.
           </p>
           <RoleSelector
@@ -220,7 +220,7 @@ function RoleSelectionModal({
           <div className="flex gap-3 pt-2">
             <button
               onClick={onSkip}
-              className="flex-1 text-sm text-gray-500 border border-gray-200 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+              className="flex-1 text-sm text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 px-4 py-2.5 rounded-xl hover:bg-gray-50 dark:bg-gray-900 transition-colors">
               Skip for now
             </button>
           </div>
@@ -299,7 +299,7 @@ function EditableResponse({
           </button>
           <button
             onClick={handleCancel}
-            className="flex items-center gap-1 text-xs text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-100 border border-gray-200 transition-colors">
+            className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 transition-colors">
             <X size={11} /> Cancel
           </button>
           <span className="text-[10px] text-gray-400 ml-auto">
@@ -336,8 +336,8 @@ function DocumentViewer({ slides }: { slides: SlideData[] }) {
   if (studentSlides.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 bg-gray-900">
-        <ImageIcon size={40} className="text-gray-700" />
-        <p className="text-xs text-center text-gray-500 leading-relaxed max-w-[180px]">
+        <ImageIcon size={40} className="text-gray-700 dark:text-gray-300" />
+        <p className="text-xs text-center text-gray-500 dark:text-gray-400 leading-relaxed max-w-[180px]">
           No document uploaded.<br />Upload a PDF when creating the session.
         </p>
       </div>
@@ -359,7 +359,7 @@ function DocumentViewer({ slides }: { slides: SlideData[] }) {
           {slide.title && (
             <p className="text-gray-300 text-[11px] font-medium truncate">{slide.title}</p>
           )}
-          <p className="text-gray-600 text-[10px]">{current + 1} / {studentSlides.length}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-[10px]">{current + 1} / {studentSlides.length}</p>
         </div>
         <button onClick={() => setCurrent((p) => Math.min(studentSlides.length - 1, p + 1))}
           disabled={current === studentSlides.length - 1}
@@ -384,8 +384,8 @@ function DocumentViewer({ slides }: { slides: SlideData[] }) {
         ) : null}
         <div style={{ display: imageUrl ? 'none' : 'flex' }}
           className="w-full h-32 flex-col items-center justify-center gap-2 text-center p-4">
-          <ImageIcon size={24} className="text-gray-700" />
-          <p className="text-xs text-gray-600">Slide image unavailable</p>
+          <ImageIcon size={24} className="text-gray-700 dark:text-gray-300" />
+          <p className="text-xs text-gray-600 dark:text-gray-400">Slide image unavailable</p>
         </div>
       </div>
 
@@ -435,13 +435,13 @@ function LeftPanel({
       <div className="flex border-b border-gray-800 flex-shrink-0">
         <button onClick={() => setTab('doc')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-            tab === 'doc' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'
+            tab === 'doc' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-300'
           }`}>
           <FileText size={12} /> Document
         </button>
         <button onClick={() => setTab('convs')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-            tab === 'convs' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-300'
+            tab === 'convs' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-300'
           }`}>
           <MessageSquare size={12} /> History
         </button>
@@ -458,9 +458,9 @@ function LeftPanel({
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
-            {convsLoading && <div className="flex justify-center py-6"><Loader2 size={16} className="animate-spin text-gray-500" /></div>}
+            {convsLoading && <div className="flex justify-center py-6"><Loader2 size={16} className="animate-spin text-gray-500 dark:text-gray-400" /></div>}
             {!convsLoading && conversations.length === 0 && (
-              <p className="text-gray-500 text-xs text-center py-6">No conversations yet.</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs text-center py-6">No conversations yet.</p>
             )}
             {conversations.map((c) => (
               <button key={c.id} onClick={() => onSelectConv(c.id)}
@@ -468,7 +468,7 @@ function LeftPanel({
                   activeConvId === c.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800'
                 }`}>
                 <p className="truncate text-xs font-medium leading-tight">{c.title}</p>
-                <p className={`text-[10px] mt-0.5 ${activeConvId === c.id ? 'text-blue-200' : 'text-gray-600'}`}>
+                <p className={`text-[10px] mt-0.5 ${activeConvId === c.id ? 'text-blue-200' : 'text-gray-600 dark:text-gray-400'}`}>
                   {c.message_count} msg{c.message_count !== 1 ? 's' : ''}
                 </p>
               </button>
@@ -494,7 +494,7 @@ function DragHandle({ onMouseDown }: { onMouseDown: (e: React.MouseEvent) => voi
     >
       {/* Visual dots hint */}
       <div className="absolute inset-y-0 left-0 w-full flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {[0,1,2].map((i) => <div key={i} className="w-1 h-1 rounded-full bg-white/60" />)}
+        {[0,1,2].map((i) => <div key={i} className="w-1 h-1 rounded-full bg-white dark:bg-gray-800/60" />)}
       </div>
     </div>
   );
@@ -513,7 +513,7 @@ function OptionCards({ options, onSelect, selecting }: {
         <Sparkles size={12} /> Choose the best response:
       </p>
       {options.map((opt) => {
-        const dim = OPTION_DIMENSIONS[opt.option_id] ?? { label: `Option ${opt.option_id}`, badge: 'bg-gray-100 text-gray-600', border: 'border-gray-200 hover:border-gray-400' };
+        const dim = OPTION_DIMENSIONS[opt.option_id] ?? { label: `Option ${opt.option_id}`, badge: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400', border: 'border-gray-200 dark:border-gray-700 hover:border-gray-400' };
         return (
           <button key={opt.option_id} disabled={selecting}
             onClick={() => onSelect(opt, options.filter((o) => o.option_id !== opt.option_id))}
@@ -522,7 +522,7 @@ function OptionCards({ options, onSelect, selecting }: {
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${dim.badge}`}>{dim.label}</span>
               {selecting && <Loader2 size={12} className="animate-spin text-gray-400" />}
             </div>
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{opt.content}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{opt.content}</p>
           </button>
         );
       })}
@@ -538,30 +538,30 @@ function RightPanel({ session, avatar }: {
 }) {
   const cfg = avatar?.configuration;
   return (
-    <aside className="w-44 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col h-full overflow-y-auto">
+    <aside className="w-44 flex-shrink-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col h-full overflow-y-auto">
       {session && (
-        <div className="p-3 border-b border-gray-100">
+        <div className="p-3 border-b border-gray-100 dark:border-gray-800">
           <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Session</p>
-          <p className="font-semibold text-gray-900 text-xs leading-tight truncate">{session.classDetails.className}</p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100 text-xs leading-tight truncate">{session.classDetails.className}</p>
           <p className="text-[10px] text-gray-400 truncate">{session.classDetails.courseName}</p>
           <div className="mt-2 flex gap-1.5 text-[10px]">
-            <div className="flex-1 bg-gray-50 rounded p-1.5 text-center">
-              <p className="font-bold text-gray-900">{session.totalSlides}</p>
+            <div className="flex-1 bg-gray-50 dark:bg-gray-900 rounded p-1.5 text-center">
+              <p className="font-bold text-gray-900 dark:text-gray-100">{session.totalSlides}</p>
               <p className="text-gray-400">Slides</p>
             </div>
-            <div className="flex-1 bg-gray-50 rounded p-1.5 text-center">
-              <p className="font-bold text-gray-900">{session.runCount}</p>
+            <div className="flex-1 bg-gray-50 dark:bg-gray-900 rounded p-1.5 text-center">
+              <p className="font-bold text-gray-900 dark:text-gray-100">{session.runCount}</p>
               <p className="text-gray-400">Runs</p>
             </div>
           </div>
         </div>
       )}
       {avatar && (
-        <div className="p-3 border-b border-gray-100">
+        <div className="p-3 border-b border-gray-100 dark:border-gray-800">
           <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Avatar</p>
           <div className="flex items-center gap-1.5 mb-2">
             <AvatarIcon imageUrl={avatar.template_image_url ?? null} name={avatar.name} size={24} rounded="md" />
-            <p className="text-xs font-semibold text-gray-900 truncate">{avatar.name}</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{avatar.name}</p>
           </div>
           {cfg && (
             <div className="space-y-1 text-[10px]">
@@ -570,9 +570,9 @@ function RightPanel({ session, avatar }: {
                 { icon: <ClipboardList size={10} />, label: 'Rubrics',   n: cfg.rubrics?.length ?? 0 },
                 { icon: <BookOpen size={10} />,      label: 'References', n: cfg.reference_solutions?.length ?? 0 },
               ].map((r) => (
-                <div key={r.label} className="flex items-center justify-between text-gray-500">
+                <div key={r.label} className="flex items-center justify-between text-gray-500 dark:text-gray-400">
                   <span className="flex items-center gap-1">{r.icon} {r.label}</span>
-                  <span className="font-semibold text-gray-700">{r.n}</span>
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">{r.n}</span>
                 </div>
               ))}
             </div>
@@ -845,15 +845,15 @@ function SessionChatInner() {
       <DragHandle onMouseDown={startDrag} />
 
       {/* ── Center: Chat ── */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50 select-text">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50 dark:bg-gray-900 select-text">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between flex-shrink-0">
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <button onClick={() => router.back()} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex-shrink-0 transition-colors">
+            <button onClick={() => router.back()} className="p-1 rounded hover:bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-gray-700 dark:text-gray-300 flex-shrink-0 transition-colors">
               <ArrowLeft size={16} />
             </button>
             <div className="min-w-0">
-              <p className="font-semibold text-gray-900 text-sm truncate">
+              <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">
                 {loading ? 'Loading…' : (session?.classDetails.className ?? 'Session Chat')}
               </p>
               {avatar && <p className="text-[11px] text-gray-400 truncate">{avatar.name}</p>}
@@ -861,7 +861,7 @@ function SessionChatInner() {
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {error && <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded max-w-[160px] truncate">{error}</span>}
-            <button onClick={loadConversations} className="p-1 rounded hover:bg-gray-100 text-gray-400 transition-colors">
+            <button onClick={loadConversations} className="p-1 rounded hover:bg-gray-100 dark:bg-gray-800 text-gray-400 transition-colors">
               <RefreshCw size={14} />
             </button>
           </div>
@@ -873,7 +873,7 @@ function SessionChatInner() {
             selectedRole ? 'bg-blue-50 border-blue-100' : 'bg-amber-50 border-amber-100'
           }`}>
             <Users size={14} className={selectedRole ? 'text-blue-500' : 'text-amber-500'} />
-            <span className="text-xs font-medium text-gray-600 flex-shrink-0">Role:</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 flex-shrink-0">Role:</span>
             <RoleSelector
               templateId={avatar.template_id}
               selected={selectedRole}
@@ -896,7 +896,7 @@ function SessionChatInner() {
           {!activeConvId && messages.length === 0 && !messagesLoading && !starting && (
             <div className="text-center py-16">
               <Sparkles size={36} className="mx-auto text-gray-300 mb-3" />
-              <h3 className="text-sm font-semibold text-gray-700">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {avatar ? `${avatar.name} — AI Workspace` : 'Session AI Workspace'}
               </h3>
               <p className="text-gray-400 text-xs mt-1 max-w-xs mx-auto">
@@ -916,7 +916,7 @@ function SessionChatInner() {
           {starting && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <Loader2 size={24} className="animate-spin text-blue-500" />
-              <p className="text-sm text-gray-500">Starting session…</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Starting session…</p>
             </div>
           )}
           {messagesLoading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-gray-400" /></div>}
@@ -936,7 +936,7 @@ function SessionChatInner() {
                   <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                     cm.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-sm'
-                      : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
+                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-sm shadow-sm'
                   }`}>
                     {cm.content}
                   </div>
@@ -957,7 +957,7 @@ function SessionChatInner() {
           })}
           {sending && (
             <div className="flex justify-start">
-              <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
                 <Loader2 size={15} className="animate-spin text-gray-400" />
               </div>
             </div>
@@ -966,7 +966,7 @@ function SessionChatInner() {
         </div>
 
         {/* Input area */}
-        <div className="border-t border-gray-200 bg-white px-4 py-3 flex-shrink-0">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 flex-shrink-0">
           {/* Voice mode hint */}
           {voice.listening && (
             <div className="flex items-center gap-2 mb-2 px-1">
@@ -1000,7 +1000,7 @@ function SessionChatInner() {
                   className={`absolute right-2.5 bottom-2.5 p-1.5 rounded-lg transition-colors ${
                     voice.listening
                       ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                      : 'text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800'
                   }`}>
                   {voice.listening ? <MicOff size={15} /> : <Mic size={15} />}
                 </button>
@@ -1020,7 +1020,7 @@ function SessionChatInner() {
           {/* Response count selector */}
           <div className="flex items-center gap-2 mt-2">
             <Sparkles size={11} className="text-purple-500 flex-shrink-0" />
-            <span className="text-xs text-gray-500 select-none">Generate</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 select-none">Generate</span>
             <select
               value={responseCount}
               onChange={(e) => changeResponseCount(Number(e.target.value))}

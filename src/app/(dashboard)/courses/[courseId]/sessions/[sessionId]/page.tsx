@@ -203,14 +203,14 @@ export default function SessionDetailsPage() {
               {!isSharedLink && (
                 <button
                   onClick={handleBackToCourse}
-                  className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                  className="p-2 hover:bg-white dark:bg-gray-800/50 rounded-lg transition-colors"
                 >
-                  <ChevronLeft className="w-6 h-6 text-gray-700" />
+                  <ChevronLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />
                 </button>
               )}
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Session Details</h1>
-                <p className="text-gray-600">Course: {sessionDetails?.classDetails.courseName || 'Loading...'}</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Session Details</h1>
+                <p className="text-gray-600 dark:text-gray-400">Course: {sessionDetails?.classDetails.courseName || 'Loading...'}</p>
                 {isSharedLink && (
                   <p className="text-sm text-blue-600 mt-1">
                     👋 You are viewing a shared session. Start learning with AI!
@@ -250,7 +250,7 @@ export default function SessionDetailsPage() {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
               {loading ? (
-                <div className="bg-white rounded-xl p-8 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm">
                   <div className="animate-pulse space-y-4">
                     <div className="h-6 bg-gray-200 rounded w-3/4"></div>
                     <div className="h-4 bg-gray-200 rounded w-1/2"></div>
@@ -258,7 +258,7 @@ export default function SessionDetailsPage() {
                   </div>
                 </div>
               ) : error ? (
-                <div className="bg-white rounded-xl p-8 shadow-sm">
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm">
                   <div className="text-center text-red-600">
                     Error: {error}
                   </div>
@@ -266,13 +266,13 @@ export default function SessionDetailsPage() {
               ) : sessionDetails ? (
                 <>
                   {/* Session Overview */}
-                  <div className="bg-white rounded-xl p-6 shadow-sm">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                           {sessionDetails.classDetails.className}
                         </h2>
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                           <div className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
                             <span>Created {new Date(sessionDetails.createdAt).toLocaleDateString()}</span>
@@ -300,13 +300,13 @@ export default function SessionDetailsPage() {
                     </div>
                     
                     {sessionDetails.classDetails.description && (
-                      <p className="text-gray-700 mb-4">{sessionDetails.classDetails.description}</p>
+                      <p className="text-gray-700 dark:text-gray-300 mb-4">{sessionDetails.classDetails.description}</p>
                     )}
                     
                     {/* Session ID */}
-                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm text-gray-600">Session ID:</span>
-                      <code className="flex-1 text-sm font-mono bg-white px-2 py-1 rounded border">
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Session ID:</span>
+                      <code className="flex-1 text-sm font-mono bg-white dark:bg-gray-800 px-2 py-1 rounded border">
                         {sessionId}
                       </code>
                       <button
@@ -317,7 +317,7 @@ export default function SessionDetailsPage() {
                         {copiedId ? (
                           <Check className="w-4 h-4 text-green-600" />
                         ) : (
-                          <Copy className="w-4 h-4 text-gray-600" />
+                          <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                         )}
                       </button>
                     </div>
@@ -334,7 +334,7 @@ export default function SessionDetailsPage() {
 
                   {/* Session Materials */}
                   {user?.role === 'publisher' || user?.role === 'admin' && !isSharedLink && (
-                    <div className="bg-white rounded-xl p-6 shadow-sm">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
                       <SessionMaterials 
                         sessionId={sessionId} 
                         courseId={courseId}
@@ -357,8 +357,8 @@ export default function SessionDetailsPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Quick Actions */}
-              <div className="bg-white rounded-xl p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
                 <div className="space-y-3">
                   <button
                     onClick={handleStartTeaching}
@@ -380,7 +380,7 @@ export default function SessionDetailsPage() {
                   {(user?.role === 'publisher' || user?.role === 'admin') && (
                   <button
                     onClick={() => setShowAISettings(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
                   >
                     <Settings2 className="w-4 h-4" />
                     AI Settings
@@ -390,7 +390,7 @@ export default function SessionDetailsPage() {
                   {(user?.role === 'publisher' || user?.role === 'admin') && (
                   <button
                     onClick={handleCopySessionLink}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
                   >
                     {linkCopied ? (
                       <>
@@ -410,24 +410,24 @@ export default function SessionDetailsPage() {
 
               {/* Session Stats */}
               {sessionDetails && (
-                <div className="bg-white rounded-xl p-6 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Session Statistics</h3>
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Session Statistics</h3>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Total Runs</span>
+                      <span className="text-gray-600 dark:text-gray-400">Total Runs</span>
                       <span className="font-semibold">{sessionDetails.runCount}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Total Slides</span>
+                      <span className="text-gray-600 dark:text-gray-400">Total Slides</span>
                       <span className="font-semibold">{sessionDetails.totalSlides}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Duration</span>
+                      <span className="text-gray-600 dark:text-gray-400">Duration</span>
                       <span className="font-semibold">{sessionDetails.classDetails.duration} min</span>
                     </div>
                     {sessionDetails.lastRunAt && (
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Last Run</span>
+                        <span className="text-gray-600 dark:text-gray-400">Last Run</span>
                         <span className="font-semibold text-sm">
                           {new Date(sessionDetails.lastRunAt).toLocaleDateString()}
                         </span>

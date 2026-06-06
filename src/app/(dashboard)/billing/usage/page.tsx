@@ -82,10 +82,10 @@ export default function UsagePage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <CreditCard className="text-blue-600" size={24} />
-          <h1 className="text-2xl font-bold text-gray-900">Usage History</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Usage History</h1>
         </div>
         {balance && (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Balance:{' '}
             <span className="font-semibold text-blue-700">
               {parseFloat(balance.balance).toFixed(2)} credits
@@ -103,7 +103,7 @@ export default function UsagePage() {
         </button>
         <button
           onClick={() => router.push('/billing/add-credits')}
-          className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-4 py-2 text-sm border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
         >
           Add Credits
         </button>
@@ -114,42 +114,42 @@ export default function UsagePage() {
       )}
 
       {isLoading ? (
-        <div className="text-center py-12 text-gray-500">Loading…</div>
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">Loading…</div>
       ) : usage && usage.records.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">No usage records yet.</div>
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">No usage records yet.</div>
       ) : (
         <>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="text-left px-4 py-3 text-gray-600 font-medium">Operation</th>
-                  <th className="text-right px-4 py-3 text-gray-600 font-medium">Tokens in</th>
-                  <th className="text-right px-4 py-3 text-gray-600 font-medium">Tokens out</th>
-                  <th className="text-right px-4 py-3 text-gray-600 font-medium">Credits</th>
-                  <th className="text-left px-4 py-3 text-gray-600 font-medium">Funded by</th>
-                  <th className="text-right px-4 py-3 text-gray-600 font-medium">Date</th>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Operation</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Tokens in</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Tokens out</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Credits</th>
+                  <th className="text-left px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Funded by</th>
+                  <th className="text-right px-4 py-3 text-gray-600 dark:text-gray-400 font-medium">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {usage?.records.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900 capitalize">
+                  <tr key={r.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 capitalize">
                       {r.operation_type.replace('_', ' ')}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-600">
+                    <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
                       {r.input_tokens.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-600">
+                    <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
                       {r.output_tokens.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-blue-700">
                       {parseFloat(r.credits_charged).toFixed(4)}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 capitalize">
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400 capitalize">
                       {r.funded_by.replace('_', ' ')}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-500">
+                    <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400">
                       {formatDate(r.created_at)}
                     </td>
                   </tr>
@@ -160,21 +160,21 @@ export default function UsagePage() {
 
           {usage && usage.pagination.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Page {usage.pagination.page} of {usage.pagination.totalPages} ({usage.total} records)
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="p-2 rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+                  className="p-2 rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:bg-gray-900"
                 >
                   <ChevronLeft size={16} />
                 </button>
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page >= usage.pagination.totalPages}
-                  className="p-2 rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+                  className="p-2 rounded-lg border border-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:bg-gray-900"
                 >
                   <ChevronRight size={16} />
                 </button>

@@ -261,7 +261,7 @@ export default function ManageStudentsPage() {
       case 'pending':
         return <Clock className="w-4 h-4 text-yellow-600" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-600" />;
+        return <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -279,9 +279,9 @@ export default function ManageStudentsPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-8 text-center max-w-md">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Students</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center max-w-md">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Error Loading Students</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
             <button
               onClick={() => router.push(`/courses/${courseId}`)}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -318,7 +318,7 @@ export default function ManageStudentsPage() {
               </div>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="ml-3 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+                className="ml-3 p-1 hover:bg-white dark:bg-gray-800 hover:bg-opacity-20 rounded transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -331,17 +331,17 @@ export default function ManageStudentsPage() {
           <div className="mb-8">
             <button
               onClick={() => router.push(`/courses/${courseId}`)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors mb-4"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Course
             </button>
 
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Students</h1>
-                  <p className="text-gray-600">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Manage Students</h1>
+                  <p className="text-gray-600 dark:text-gray-400">
                     {course?.name} {course?.code && `(${course.code})`}
                   </p>
                 </div>
@@ -359,9 +359,9 @@ export default function ManageStudentsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Students List */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl shadow-lg p-8">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Enrolled Students</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Enrolled Students</h2>
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -373,7 +373,7 @@ export default function ManageStudentsPage() {
                         className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
                       {filteredStudents.length} student{filteredStudents.length !== 1 ? 's' : ''}
                     </span>
                   </div>
@@ -382,10 +382,10 @@ export default function ManageStudentsPage() {
                 {filteredStudents.length === 0 ? (
                   <div className="text-center py-12">
                     <UserPlus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg">
+                    <p className="text-gray-600 dark:text-gray-400 text-lg">
                       {searchTerm ? 'No students match your search' : 'No students enrolled yet'}
                     </p>
-                    <p className="text-gray-500 text-sm mt-2">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                       {searchTerm ? 'Try adjusting your search terms' : 'Invite students to get started!'}
                     </p>
                   </div>
@@ -394,7 +394,7 @@ export default function ManageStudentsPage() {
                     {filteredStudents.map((student) => (
                       <div
                         key={student.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -404,13 +404,13 @@ export default function ManageStudentsPage() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-gray-900">
+                              <h3 className="font-medium text-gray-900 dark:text-gray-100">
                                 {student.full_name || student.username || 'Unknown'}
                               </h3>
                               {getStatusIcon(student.status)}
                             </div>
-                            <p className="text-sm text-gray-600">{student.email}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{student.email}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               Enrolled {formatDate(student.enrolled_at)}
                             </p>
                           </div>
@@ -427,7 +427,7 @@ export default function ManageStudentsPage() {
                           <div className="relative">
                             <button
                               onClick={() => setSelectedStudent(student)}
-                              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                              className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
                             >
                               <MoreVertical className="w-4 h-4" />
                             </button>
@@ -442,19 +442,19 @@ export default function ManageStudentsPage() {
 
             {/* Sidebar - Quick Stats */}
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Stats</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total Students</span>
+                    <span className="text-gray-600 dark:text-gray-400">Total Students</span>
                     <span className="font-semibold">{students.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Active Students</span>
+                    <span className="text-gray-600 dark:text-gray-400">Active Students</span>
                     <span className="font-semibold">{students.filter(s => s.status === 'active').length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Recent Enrollments</span>
+                    <span className="text-gray-600 dark:text-gray-400">Recent Enrollments</span>
                     <span className="font-semibold">
                       {students.filter(s => {
                         const enrollDate = new Date(s.enrolled_at);
@@ -473,12 +473,12 @@ export default function ManageStudentsPage() {
       {/* Enroll Modal */}
       {showEnrollModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Enroll Student</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Enroll Student</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Student Email Address
                 </label>
                 <input
@@ -489,7 +489,7 @@ export default function ManageStudentsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   onKeyPress={(e) => e.key === 'Enter' && !enrollingStudent && handleEnrollStudent()}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Enter the email address of the student you want to enroll
                 </p>
               </div>
@@ -501,7 +501,7 @@ export default function ManageStudentsPage() {
                   setShowEnrollModal(false);
                   setEnrollEmail('');
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
               >
                 Cancel
               </button>
@@ -525,9 +525,9 @@ export default function ManageStudentsPage() {
       {/* Remove Student Confirmation */}
       {showRemoveConfirm && selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Remove Student</h3>
-            <p className="text-gray-600 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md w-full">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Remove Student</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Are you sure you want to remove <strong>{selectedStudent.full_name || selectedStudent.email}</strong> from this course? 
               This action cannot be undone.
             </p>
@@ -538,7 +538,7 @@ export default function ManageStudentsPage() {
                   setShowRemoveConfirm(false);
                   setSelectedStudent(null);
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
               >
                 Cancel
               </button>
@@ -557,8 +557,8 @@ export default function ManageStudentsPage() {
       {/* Student Actions Menu */}
       {selectedStudent && !showRemoveConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
               {selectedStudent.full_name || selectedStudent.email}
             </h3>
             
@@ -576,7 +576,7 @@ export default function ManageStudentsPage() {
             
             <button
               onClick={() => setSelectedStudent(null)}
-              className="w-full mt-4 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="w-full mt-4 px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
             >
               Cancel
             </button>

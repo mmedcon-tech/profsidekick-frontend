@@ -29,7 +29,7 @@ function PrefGroup({
 }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-gray-800">{title}</p>
+      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{title}</p>
       <div className="grid sm:grid-cols-3 gap-2">
         {options.map((opt) => {
           const selected = value === opt.value;
@@ -41,10 +41,10 @@ function PrefGroup({
               className={`text-left p-3 rounded-xl border-2 transition-all ${
                 selected
                   ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300 bg-white'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
               }`}
             >
-              <p className={`text-xs font-semibold ${selected ? 'text-blue-700' : 'text-gray-800'}`}>
+              <p className={`text-xs font-semibold ${selected ? 'text-blue-700' : 'text-gray-800 dark:text-gray-200'}`}>
                 {opt.label}
               </p>
             </button>
@@ -168,10 +168,10 @@ export default function CreateAvatarPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={goBack} className="text-gray-400 hover:text-gray-700 transition-colors">
+        <button onClick={goBack} className="text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Create Avatar</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create Avatar</h1>
       </div>
 
       {/* Step indicator */}
@@ -185,7 +185,7 @@ export default function CreateAvatarPage() {
                 active ? 'text-blue-600' : done ? 'text-green-600' : 'text-gray-400'
               }`}>
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
-                  active ? 'bg-blue-600 text-white' : done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'
+                  active ? 'bg-blue-600 text-white' : done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 dark:text-gray-400'
                 }`}>
                   {done ? <CheckCircle size={12} /> : i + 1}
                 </div>
@@ -200,15 +200,15 @@ export default function CreateAvatarPage() {
       {/* ── Step 1: template picker ─────────────────────────────────────────── */}
       {step === 'template' && (
         <div className="space-y-4">
-          <p className="text-gray-500 text-sm">Select a template. Only published templates are available.</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Select a template. Only published templates are available.</p>
           {loadingT ? (
             <div className="grid sm:grid-cols-2 gap-4">
-              {[1, 2, 3].map((i) => <div key={i} className="h-32 bg-gray-100 rounded-xl animate-pulse" />)}
+              {[1, 2, 3].map((i) => <div key={i} className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
             </div>
           ) : templates.length === 0 ? (
-            <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-xl">
+            <div className="text-center py-16 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
               <Layers size={40} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500">No published templates available yet.</p>
+              <p className="text-gray-500 dark:text-gray-400">No published templates available yet.</p>
               <p className="text-gray-400 text-sm mt-1">Ask your admin to publish a template first.</p>
             </div>
           ) : (
@@ -220,13 +220,13 @@ export default function CreateAvatarPage() {
                     className={`text-left p-5 rounded-xl border-2 transition-all ${
                       isSelected
                         ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500 ring-offset-1'
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
                     }`}>
                     <div className="flex items-start gap-3">
                       <AvatarIcon imageUrl={t.avatar_image_url} name={t.name} size={40} rounded="lg" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-gray-900">{t.name}</span>
+                          <span className="font-semibold text-gray-900 dark:text-gray-100">{t.name}</span>
                           {isSelected && <CheckCircle size={15} className="text-blue-600 flex-shrink-0" />}
                         </div>
                         {t.category && (
@@ -234,7 +234,7 @@ export default function CreateAvatarPage() {
                             <Tag size={10} /> {t.category}
                           </span>
                         )}
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
                           {t.description || 'No description'}
                         </p>
                       </div>
@@ -269,9 +269,9 @@ export default function CreateAvatarPage() {
 
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 Avatar Name <span className="text-red-500">*</span>
               </label>
               <input value={name} onChange={(e) => setName(e.target.value)} maxLength={200}
@@ -280,7 +280,7 @@ export default function CreateAvatarPage() {
               <p className="text-xs text-gray-400 mt-1">Auto-filled from your name + template. You can customise it.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
               <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3}
                 placeholder="What will this avatar specialise in for your students?"
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
@@ -293,7 +293,7 @@ export default function CreateAvatarPage() {
               Next — Teaching Style <ArrowRight size={16} />
             </button>
             <button onClick={() => setStep('template')}
-              className="text-sm text-gray-500 px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors">
+              className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2.5 rounded-lg hover:bg-gray-100 dark:bg-gray-800 transition-colors">
               Back
             </button>
           </div>
@@ -311,10 +311,10 @@ export default function CreateAvatarPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-6">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Teaching Style</h2>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Teaching Style</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 These preferences shape the AI&apos;s teaching persona. You can leave any unset to use the
                 default behaviour.
               </p>
@@ -329,14 +329,14 @@ export default function CreateAvatarPage() {
 
             {/* Post-Session Check — UI only, not sent to backend */}
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-800">Post-Session Check</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Post-Session Check</p>
               <div className="flex gap-3">
                 {(['enabled', 'disabled'] as const).map((val) => (
                   <button key={val} type="button" onClick={() => setPostSessionCheck(val)}
                     className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all capitalize ${
                       postSessionCheck === val
                         ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300'
                     }`}>
                     {val}
                   </button>
@@ -356,7 +356,7 @@ export default function CreateAvatarPage() {
               {submitting ? 'Creating…' : 'Create Avatar'}
             </button>
             <button onClick={() => setStep('info')}
-              className="text-sm text-gray-500 px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors">
+              className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2.5 rounded-lg hover:bg-gray-100 dark:bg-gray-800 transition-colors">
               Back
             </button>
           </div>

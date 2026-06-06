@@ -132,15 +132,15 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Prompt Library</h2>
-            <p className="text-gray-600">Choose from default prompts or your custom saved prompts</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Prompt Library</h2>
+            <p className="text-gray-600 dark:text-gray-400">Choose from default prompts or your custom saved prompts</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-lg"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -191,7 +191,7 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
           {loading && (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading prompts...</span>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading prompts...</span>
             </div>
           )}
 
@@ -214,12 +214,12 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
             {filteredPrompts.map((prompt) => (
               <div
                 key={prompt.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">{prompt.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{prompt.description}</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">{prompt.name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{prompt.description}</p>
                   </div>
                   {prompt.isDefault && (
                     <Star className="w-4 h-4 text-yellow-500 flex-shrink-0 ml-2" />
@@ -231,19 +231,19 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
                   {parseTagsString(prompt.tags).slice(0, 3).map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700"
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                     >
                       <Tag className="w-3 h-3 mr-1" />
                       {tag}
                     </span>
                   ))}
                   {parseTagsString(prompt.tags).length > 3 && (
-                    <span className="text-xs text-gray-500">+{parseTagsString(prompt.tags).length - 3} more</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">+{parseTagsString(prompt.tags).length - 3} more</span>
                   )}
                 </div>
 
                 {/* Stats */}
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1">
                       <User className="w-3 h-3" />
@@ -269,21 +269,21 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
                   </button>
                   <button
                     onClick={() => handleCopyPrompt(prompt)}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
                   >
                     {copiedId === prompt.id ? (
                       <Check className="w-4 h-4 text-green-600" />
                     ) : (
-                      <Copy className="w-4 h-4 text-gray-600" />
+                      <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     )}
                   </button>
                   {!prompt.isDefault && (
                     <>
                       <button
                         onClick={() => setEditingPrompt(prompt)}
-                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors"
                       >
-                        <Edit className="w-4 h-4 text-gray-600" />
+                        <Edit className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       </button>
                       <button
                         onClick={() => handleDeletePrompt(prompt.id)}
@@ -302,7 +302,7 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
           {!loading && !error && filteredPrompts.length === 0 && (
             <div className="text-center py-12">
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No prompts found matching your criteria</p>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">No prompts found matching your criteria</p>
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

@@ -25,7 +25,7 @@ function PublishedBadge({ state }: { state: string }) {
     );
   }
   return (
-    <span className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full font-medium">
+    <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-medium">
       <XCircle size={10} /> Unpublished
     </span>
   );
@@ -55,24 +55,24 @@ function DeleteModal({ name, onDeleteTemplate, onDeleteAll, onCancel }: DeleteMo
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl max-w-lg w-full p-6 space-y-5">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl max-w-lg w-full p-6 space-y-5">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
             <AlertTriangle size={20} className="text-red-600" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Delete Template</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Choose how to delete <strong className="text-gray-800">{name}</strong>:
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Delete Template</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              Choose how to delete <strong className="text-gray-800 dark:text-gray-200">{name}</strong>:
             </p>
           </div>
         </div>
 
         <div className="space-y-3">
           {/* Option A */}
-          <div className="border border-gray-200 rounded-xl p-4 space-y-2">
-            <p className="font-semibold text-sm text-gray-900">Option A — Delete Template Only</p>
-            <p className="text-xs text-gray-500">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-2">
+            <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">Option A — Delete Template Only</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Removes this template. All publisher-created avatar instances that originated from it
               remain intact and continue to work normally. No new avatars can be created from
               this template.
@@ -110,7 +110,7 @@ function DeleteModal({ name, onDeleteTemplate, onDeleteAll, onCancel }: DeleteMo
           <button
             onClick={onCancel}
             disabled={busy !== null}
-            className="text-sm text-gray-600 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            className="text-sm text-gray-600 dark:text-gray-400 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 transition-colors"
           >
             Cancel
           </button>
@@ -180,8 +180,8 @@ export default function AdminTemplatesPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Avatar Templates</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Avatar Templates</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
             Manage AI persona templates that publishers instantiate into avatars.
           </p>
         </div>
@@ -201,25 +201,25 @@ export default function AdminTemplatesPage() {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800">
           {/* Header */}
-          <div className="grid grid-cols-12 gap-4 px-5 py-2.5 bg-gray-50 rounded-t-xl">
-            <div className="col-span-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">Template</div>
-            <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Category</div>
-            <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Version</div>
-            <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</div>
-            <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</div>
+          <div className="grid grid-cols-12 gap-4 px-5 py-2.5 bg-gray-50 dark:bg-gray-900 rounded-t-xl">
+            <div className="col-span-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Template</div>
+            <div className="col-span-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Category</div>
+            <div className="col-span-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Version</div>
+            <div className="col-span-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Status</div>
+            <div className="col-span-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Actions</div>
           </div>
 
           {/* DB-backed templates */}
           {templates.length === 0 && placeholders.length === 0 ? (
             <div className="text-center py-16">
               <Layers size={40} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500 mb-4">No templates yet. Create the first one.</p>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">No templates yet. Create the first one.</p>
               <Link
                 href="/admin/templates/new"
                 className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
@@ -239,7 +239,7 @@ export default function AdminTemplatesPage() {
                   <div className="col-span-4 min-w-0 flex items-center gap-2">
                     <AvatarIcon imageUrl={t.avatar_image_url} name={t.name} size={36} rounded="lg" />
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 truncate group-hover:text-indigo-700 transition-colors">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-indigo-700 transition-colors">
                         {t.name}
                       </p>
                       <p className="text-xs text-gray-400 truncate">{t.description || 'No description'}</p>
@@ -260,7 +260,7 @@ export default function AdminTemplatesPage() {
                   {/* Version */}
                   <div className="col-span-2">
                     {t.version_count > 0 ? (
-                      <span className="text-sm text-gray-700 font-mono">
+                      <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">
                         v{t.current_version?.version_number ?? '—'}{' '}
                         <span className="text-gray-400 text-xs">({t.version_count} total)</span>
                       </span>
@@ -284,7 +284,7 @@ export default function AdminTemplatesPage() {
                     {t.is_active && (
                       <button
                         onClick={() => setDeleteTarget({ id: t.id, name: t.name })}
-                        className="flex items-center gap-1.5 text-sm text-gray-500 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors whitespace-nowrap"
+                        className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors whitespace-nowrap"
                       >
                         <Trash2 size={13} /> Delete
                       </button>
@@ -300,11 +300,11 @@ export default function AdminTemplatesPage() {
                   className="grid grid-cols-12 gap-4 items-center px-5 py-4 opacity-60"
                 >
                   <div className="col-span-4 min-w-0 flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                       <Lock size={16} className="text-gray-400" />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-700 truncate">{sa.name}</p>
+                      <p className="font-semibold text-gray-700 dark:text-gray-300 truncate">{sa.name}</p>
                       <p className="text-xs text-gray-400 truncate">{sa.tagline}</p>
                     </div>
                   </div>
@@ -315,7 +315,7 @@ export default function AdminTemplatesPage() {
                     <span className="text-xs text-gray-400">—</span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
                       Coming Soon
                     </span>
                   </div>
