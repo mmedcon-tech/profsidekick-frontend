@@ -247,7 +247,9 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={uploading}
+          aria-busy={uploading}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
           Add Material
@@ -288,7 +290,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                   type="text"
                   value={materialForm.title}
                   onChange={(e) => setMaterialForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
@@ -301,7 +303,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                 <select
                   value={materialForm.material_type}
                   onChange={(e) => setMaterialForm(prev => ({ ...prev, material_type: e.target.value as MaterialType }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
                   {MATERIAL_TYPE_OPTIONS.map(option => (
@@ -335,7 +337,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                   value={materialForm.description}
                   onChange={(e) => setMaterialForm(prev => ({ ...prev, description: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -349,7 +351,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                     type="url"
                     value={materialForm.url}
                     onChange={(e) => setMaterialForm(prev => ({ ...prev, url: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
@@ -364,7 +366,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                   <input
                     type="file"
                     onChange={(e) => setMaterialForm(prev => ({ ...prev, file: e.target.files?.[0] }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     accept={materialForm.material_type === MaterialType.VIDEO ? "video/*" : ".pdf,.doc,.docx,.txt"}
                   />
                 </div>
@@ -379,7 +381,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                   type="text"
                   value={materialForm.author}
                   onChange={(e) => setMaterialForm(prev => ({ ...prev, author: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -394,7 +396,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                   max="2030"
                   value={materialForm.publication_year || ''}
                   onChange={(e) => setMaterialForm(prev => ({ ...prev, publication_year: e.target.value ? parseInt(e.target.value) : undefined }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -409,7 +411,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                       type="text"
                       value={materialForm.publisher}
                       onChange={(e) => setMaterialForm(prev => ({ ...prev, publisher: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -420,7 +422,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                       type="text"
                       value={materialForm.isbn}
                       onChange={(e) => setMaterialForm(prev => ({ ...prev, isbn: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </>
@@ -436,7 +438,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
                     type="text"
                     value={materialForm.doi}
                     onChange={(e) => setMaterialForm(prev => ({ ...prev, doi: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="10.1000/example"
                   />
                 </div>
@@ -455,6 +457,7 @@ export default function CourseMaterials({ courseId }: CourseMaterialsProps) {
               <button
                 type="submit"
                 disabled={uploading}
+                aria-busy={uploading}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
               >
                 {uploading ? (
