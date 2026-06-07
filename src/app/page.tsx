@@ -43,13 +43,13 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <img 
                 src="/images/logo.png" 
-                alt="ProfSidekick Logo" 
+                alt="MyOS Logo" 
                 className="w-10 h-10 object-contain rounded-full"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <span className="text-2xl font-bold text-blue-900">ProfSidekick</span>
+              <span className="text-2xl font-bold text-blue-900">MyOS</span>
             </div>
             
             <div className="flex items-center gap-3">
@@ -201,7 +201,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                Why Choose ProfSidekick?
+                Why Choose MyOS?
               </h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
@@ -377,13 +377,13 @@ export default function LandingPage() {
               <div className="flex items-center gap-3 mb-4">
                 <img 
                   src="/images/logo.png" 
-                  alt="ProfSidekick Logo" 
+                  alt="MyOS Logo" 
                   className="w-8 h-8 object-contain rounded-full"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
-                <span className="text-xl font-bold">ProfSidekick</span>
+                <span className="text-xl font-bold">MyOS</span>
               </div>
               <p className="text-gray-400 mb-4 max-w-md">
                 Empowering educators with AI-powered teaching tools to create more engaging and interactive learning experiences.
@@ -414,7 +414,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 ProfSidekick. All rights reserved.</p>
+            <p>&copy; 2025 MyOS. All rights reserved.</p>
           </div>
         </div>
       </footer>

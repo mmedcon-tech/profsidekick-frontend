@@ -5,7 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ConditionalHeader from "@/components/layout/ConditionalHeader";
 
 export const metadata: Metadata = {
-  title: "ProfSidekick",
+  title: "MyOS",
   description: "Interactive AI-powered presentations for professors",
   icons: {
     icon: [

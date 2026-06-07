@@ -49,13 +49,13 @@ export default function NavigationHeader() {
           >
             <img 
               src="/images/logo.png" 
-              alt="ProfSidekick Logo" 
+              alt="MyOS Logo" 
               className="w-10 h-10 object-contain rounded-full"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
-            <span className="text-2xl font-bold text-blue-900">ProfSidekick</span>
+            <span className="text-2xl font-bold text-blue-900">MyOS</span>
           </button>
 
           {/* Actions */}
