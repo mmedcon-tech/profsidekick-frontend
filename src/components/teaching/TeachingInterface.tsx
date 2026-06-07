@@ -1319,7 +1319,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   // --------------------------------------------------------------
 
   return (
-    <div className="h-screen bg-gray-100 flex relative">
+    <div className="h-screen bg-gray-100 dark:bg-gray-800 flex relative">
       {/* Start Conversation Prompt - Floating notification */}
       {showStartPrompt && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
@@ -1328,7 +1328,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
               ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30"
               : "bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/30"
           } text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all duration-300`}>
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+            <div className="w-10 h-10 bg-white dark:bg-gray-800/20 rounded-full flex items-center justify-center animate-pulse">
               {sessionStatus === "CONNECTED" ? (
                 <Mic size={20} className="text-white" />
               ) : (
@@ -1362,7 +1362,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       )}
 
       {/* Left Side - Slide Viewer (70%) */}
-      <div className="w-[80%] bg-white flex flex-col">
+      <div className="w-[80%] bg-white dark:bg-gray-800 flex flex-col">
         {/* Header */}
         <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
@@ -1409,8 +1409,8 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                 />
               </>
             ) : (
-              <div className="bg-gray-100 rounded-lg p-8 text-center">
-                <p className="text-gray-500">No slide image available</p>
+              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
+                <p className="text-gray-500 dark:text-gray-400">No slide image available</p>
                 <div className="mt-4 text-xs text-gray-400">
                   Debug: {JSON.stringify(currentSlideData, null, 2)}
                 </div>
@@ -1420,7 +1420,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
         </div>
 
         {/* Slide Navigation */}
-        <div className="bg-gray-50 p-4 border-t flex justify-between items-center">
+        <div className="bg-gray-50 dark:bg-gray-900 p-4 border-t flex justify-between items-center">
           <button
             onClick={previousSlide}
             disabled={currentSlide === 0}
@@ -1432,7 +1432,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           
           <div className="text-center">
             <p className="text-lg font-medium">{currentSlideData?.title}</p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Slide {currentSlide + 1} of {classSession.totalSlides}
             </p>
           </div>
@@ -1497,7 +1497,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           )}
           
           {/* AI Status */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-200/60 shadow-sm">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-slate-200/60 shadow-sm">
             <div className={`w-10 h-10 rounded-full border-2 transition-all duration-300 ${
               isAISpeaking 
                 ? "bg-emerald-100 border-emerald-400 shadow-lg shadow-emerald-400/20" 
@@ -1524,7 +1524,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           </div>
 
           {/* User Status */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-slate-200/60 shadow-sm">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-slate-200/60 shadow-sm">
             <div className={`w-10 h-10 rounded-full border-2 transition-all duration-300 ${
               isMicMuted
                 ? "bg-red-100 border-red-400"
@@ -1591,7 +1591,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
               </div>
             )}
             {rollingNotes && (
-              <div className="bg-white border border-slate-200 rounded-lg p-3">
+              <div className="bg-white dark:bg-gray-800 border border-slate-200 rounded-lg p-3">
                 <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Session Notes</p>
                 <pre className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-sans">{rollingNotes}</pre>
               </div>
@@ -1648,13 +1648,13 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       {/* Feedback Modal */}
       {showFeedbackModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Session Feedback</h2>
-            <p className="text-gray-600 mb-6">Help us improve by sharing your experience with this teaching session.</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Session Feedback</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">Help us improve by sharing your experience with this teaching session.</p>
             
             {/* Rating */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Overall Rating</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Overall Rating</label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -1667,7 +1667,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                     ★
                   </button>
                 ))}
-                <span className="ml-3 text-sm text-gray-600">
+                <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">
                   {feedbackData.rating}/5 stars
                 </span>
               </div>
@@ -1675,7 +1675,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
 
             {/* General Feedback */}
             <div className="mb-6">
-              <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 General Feedback
               </label>
               <textarea
@@ -1690,7 +1690,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
 
             {/* Issues Encountered */}
             <div className="mb-6">
-              <label htmlFor="issues" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="issues" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Issues Encountered (For Debugging)
               </label>
               <textarea
@@ -1705,7 +1705,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
 
             {/* Suggestions */}
             <div className="mb-8">
-              <label htmlFor="suggestions" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="suggestions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Suggestions for Improvement
               </label>
               <textarea
@@ -1722,7 +1722,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
             <div className="flex gap-4 justify-end">
               <button
                 onClick={handleSkipFeedback}
-                className="px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors"
               >
                 Skip Feedback
               </button>

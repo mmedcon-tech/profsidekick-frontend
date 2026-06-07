@@ -47,7 +47,7 @@ export default function AvatarPicker({
             className={`relative text-left p-4 rounded-xl border-2 transition-all ${
               selected
                 ? 'border-blue-600 bg-blue-50 shadow-md'
-                : 'border-gray-200 bg-white hover:border-blue-300'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300'
             }`}
           >
             {selected && (
@@ -61,9 +61,9 @@ export default function AvatarPicker({
             >
               {avatar.name.charAt(0)}
             </div>
-            <h3 className="font-semibold text-gray-900">{avatar.name}</h3>
-            <p className="text-sm text-gray-600 mt-1">{avatar.description}</p>
-            <p className="text-xs text-gray-500 mt-2">Voice: {avatar.voice}</p>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">{avatar.name}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{avatar.description}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Voice: {avatar.voice}</p>
           </button>
         );
       })}

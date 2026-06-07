@@ -53,10 +53,10 @@ export default function RedeemPage() {
 
   return (
     <div className="max-w-lg mx-auto mt-12 px-4">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
         <div className="flex items-center gap-3 mb-6">
           <CreditCard className="text-blue-600" size={24} />
-          <h1 className="text-2xl font-bold text-gray-900">Redeem Access Code</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Redeem Access Code</h1>
         </div>
 
         {balance && (
@@ -75,7 +75,7 @@ export default function RedeemPage() {
 
         <form onSubmit={handleRedeem} className="space-y-4">
           <div>
-            <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Access Code
             </label>
             <input

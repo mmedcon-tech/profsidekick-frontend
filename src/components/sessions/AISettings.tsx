@@ -14,7 +14,7 @@ interface CollapsibleSectionProps {
  
 function CollapsibleSection({ title, isOpen, onToggle, children }: CollapsibleSectionProps) {
   return (
-    <fieldset className="space-y-4 p-4 border border-gray-200 rounded-lg">
+    <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
       <legend 
         className="text-lg font-semibold text-blue-700 px-2 cursor-pointer flex items-center gap-2"
         onClick={onToggle}
@@ -299,12 +299,12 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">AI Settings</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b p-6 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">AI Settings</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-lg"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -314,21 +314,21 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Core AI Settings */}
-          <fieldset className="space-y-4 p-4 border border-gray-200 rounded-lg">
+          <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <legend className="text-lg font-semibold text-blue-700 px-2">Core AI Settings</legend>
             
             <div>
-              <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-1">AI Model</label>
+              <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">AI Model</label>
               <input
                 type="text"
                 value="GPT Realtime"
                 readOnly
-                className="w-full p-2 border border-gray-200 bg-gray-50 rounded-lg text-gray-600"
+                className="w-full p-2 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg text-gray-600 dark:text-gray-400"
               />
             </div>
 
             <div>
-              <label htmlFor="voice" className="block text-sm font-medium text-gray-700 mb-1">Assistant Voice</label>
+              <label htmlFor="voice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Assistant Voice</label>
               <div className="flex items-center gap-2">
                 <select 
                   data-path="voice" 
@@ -344,7 +344,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 <button 
                   type="button" 
                   onClick={() => playVoiceSample(settings.voice)} 
-                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   aria-label={`Preview voice ${settings.voice}`}
                 >
                   {currentlyPlayingVoice === settings.voice ? (
@@ -361,7 +361,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
             </div>
 
             <div>
-              <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Temperature (Creativity): {settings.temperature}
               </label>
               <input 
@@ -380,7 +380,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
             {/* User-Editable Instructions */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label htmlFor="user_instructions" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="user_instructions" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Custom Teaching Instructions
                 </label>
                 <button
@@ -403,7 +403,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                 placeholder="Add custom examination instructions, question strategies, or subject-specific behavior..."
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Customize how the AI examiner should conduct this session. Combined with the core examiner instructions below.
               </p>
             </div>
@@ -418,7 +418,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
           >
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hint Policy</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hint Policy</label>
                 <select
                   value={sessionBehavior.hintPolicy}
                   onChange={(e) => setSessionBehavior(prev => ({ ...prev, hintPolicy: e.target.value as "NONE" | "FREE" | "PENALIZED" }))}
@@ -428,11 +428,11 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   <option value="FREE">Free — hints given freely</option>
                   <option value="PENALIZED">Penalized — hints reduce score</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">Controls whether the AI offers hints and how they affect scoring.</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Controls whether the AI offers hints and how they affect scoring.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rubric (JSON array)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rubric (JSON array)</label>
                 <textarea
                   value={sessionBehaviorRubricInput}
                   onChange={(e) => {
@@ -459,11 +459,11 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   placeholder={'[\n  { "criterion": "Understanding", "weight": 40 },\n  { "criterion": "Clarity", "weight": 60 }\n]'}
                 />
                 {sessionBehaviorRubricError && <p className="text-xs text-red-500 mt-1">{sessionBehaviorRubricError}</p>}
-                <p className="text-xs text-gray-500 mt-1">Grading criteria and weights injected into the AI prompt at session start.</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Grading criteria and weights injected into the AI prompt at session start.</p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Session-Specific Instructions</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Session-Specific Instructions</label>
                 <textarea
                   value={sessionBehavior.sessionInstructions}
                   onChange={(e) => setSessionBehavior(prev => ({ ...prev, sessionInstructions: e.target.value }))}
@@ -471,7 +471,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g. Focus on Chapter 5 material only. Ask follow-up questions if the student is vague."
                 />
-                <p className="text-xs text-gray-500 mt-1">Extra behavioral instructions appended to the prompt for this session.</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Extra behavioral instructions appended to the prompt for this session.</p>
               </div>
             </div>
           </CollapsibleSection>
@@ -483,7 +483,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
             onToggle={() => setShowAdvancedTools(!showAdvancedTools)}
           >
             <div>
-              <label htmlFor="tool_choice" className="block text-sm font-medium text-gray-700 mb-1">Tool Choice</label>
+              <label htmlFor="tool_choice" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tool Choice</label>
               <select 
                 data-path="tool_choice" 
                 id="tool_choice" 
@@ -495,7 +495,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 <option value="none">None</option>
                 <option value="required">Required</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Controls if/how the model uses tools. Tools array itself is pre-configured.
               </p>
             </div>
@@ -507,10 +507,10 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
             onToggle={() => setShowAdvancedAudio(!showAdvancedAudio)}
           >
             <div className="space-y-6">
-              <h4 className="text-md font-semibold text-gray-700 border-b pb-1">Input Audio</h4>
+              <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Input Audio</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="input_audio_format" className="block text-sm font-medium text-gray-700 mb-1">Format</label>
+                  <label htmlFor="input_audio_format" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Format</label>
                   <select 
                     data-path="input_audio_format" 
                     id="input_audio_format" 
@@ -524,7 +524,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="input_audio_noise_reduction.type" className="block text-sm font-medium text-gray-700 mb-1">Noise Reduction Type</label>
+                  <label htmlFor="input_audio_noise_reduction.type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Noise Reduction Type</label>
                   <select
                     data-path="input_audio_noise_reduction.type"
                     id="input_audio_noise_reduction.type"
@@ -540,7 +540,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="input_audio_transcription.model" className="block text-sm font-medium text-gray-700 mb-1">Transcription Model</label>
+                  <label htmlFor="input_audio_transcription.model" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Transcription Model</label>
                   <select 
                     data-path="input_audio_transcription.model" 
                     id="input_audio_transcription.model" 
@@ -554,7 +554,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="input_audio_transcription.language" className="block text-sm font-medium text-gray-700 mb-1">Transcription Language</label>
+                  <label htmlFor="input_audio_transcription.language" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Transcription Language</label>
                   <input 
                     type="text" 
                     data-path="input_audio_transcription.language" 
@@ -564,13 +564,13 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                     placeholder="e.g., en, es, fr" 
                   />
-                  <p className="text-xs text-gray-500 mt-1">ISO 639-1 code (e.g., en for English).</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">ISO 639-1 code (e.g., en for English).</p>
                 </div>
               </div>
 
-              <h4 className="text-md font-semibold text-gray-700 border-b pb-1 mt-4">Output Audio</h4>
+              <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 border-b pb-1 mt-4">Output Audio</h4>
               <div>
-                <label htmlFor="output_audio_format" className="block text-sm font-medium text-gray-700 mb-1">Format</label>
+                <label htmlFor="output_audio_format" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Format</label>
                 <select 
                   data-path="output_audio_format" 
                   id="output_audio_format" 
@@ -593,7 +593,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
           >
             <div className="space-y-4">
               <div>
-                <label htmlFor="turn_detection_type" className="block text-sm font-medium text-gray-700 mb-1">Turn Detection Type</label>
+                <label htmlFor="turn_detection_type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Turn Detection Type</label>
                 <select 
                   id="turn_detection_type" 
                   value={settings.turn_detection?.type || 'none'} 
@@ -620,7 +620,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   <option value="server_vad">Server VAD</option>
                   <option value="semantic_vad">Semantic VAD</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Choose how the AI detects when users stop speaking
                 </p>
               </div>
@@ -629,7 +629,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="turn_detection.threshold" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="turn_detection.threshold" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Threshold ({settings.turn_detection.threshold})
                       </label>
                       <input 
@@ -645,7 +645,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                       />
                     </div>
                     <div>
-                      <label htmlFor="turn_detection.silence_duration_ms" className="block text-sm font-medium text-gray-700 mb-1">Silence Duration (ms)</label>
+                      <label htmlFor="turn_detection.silence_duration_ms" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Silence Duration (ms)</label>
                       <input 
                         type="number" 
                         data-path="turn_detection.silence_duration_ms" 
@@ -658,7 +658,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="turn_detection.prefix_padding_ms" className="block text-sm font-medium text-gray-700 mb-1">Prefix Padding (ms)</label>
+                    <label htmlFor="turn_detection.prefix_padding_ms" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prefix Padding (ms)</label>
                     <input 
                       type="number" 
                       data-path="turn_detection.prefix_padding_ms" 
@@ -674,7 +674,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
 
               {settings.turn_detection?.type === "semantic_vad" && (
                 <div>
-                  <label htmlFor="turn_detection.eagerness" className="block text-sm font-medium text-gray-700 mb-1">Eagerness</label>
+                  <label htmlFor="turn_detection.eagerness" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Eagerness</label>
                   <select 
                     data-path="turn_detection.eagerness" 
                     id="turn_detection.eagerness" 
@@ -708,7 +708,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Cancel
             </button>

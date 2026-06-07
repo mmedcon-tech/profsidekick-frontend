@@ -57,7 +57,7 @@ function StatusBadge({ status }: { status: string }) {
     ACTIVE:    { color: 'bg-blue-100 text-blue-800' },
     FAILED:    { color: 'bg-red-100 text-red-800' },
   };
-  const c = cfg[status] ?? { color: 'bg-gray-100 text-gray-700' };
+  const c = cfg[status] ?? { color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' };
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.color}`}>{status}</span>
   );
@@ -122,16 +122,16 @@ export default function LearningHistoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <History size={22} className="text-indigo-500" />
             Learning History
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Your completed avatar sessions and learning activity.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Your completed avatar sessions and learning activity.</p>
         </div>
         <button
           onClick={loadSessions}
           disabled={loading}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40"
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors disabled:opacity-40"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Refresh
@@ -146,9 +146,9 @@ export default function LearningHistoryPage() {
             { label: 'Completed', value: completedCount },
             { label: 'Total Time', value: formatDuration(totalMinutes) },
           ].map((s) => (
-            <div key={s.label} className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-center">
-              <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-              <p className="text-xs text-gray-500">{s.label}</p>
+            <div key={s.label} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-center">
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
             </div>
           ))}
         </div>
@@ -164,15 +164,15 @@ export default function LearningHistoryPage() {
       {!loading && error && (
         <div className="text-center py-12">
           <AlertCircle size={36} className="mx-auto text-red-400 mb-3" />
-          <p className="text-gray-700 font-medium">{error}</p>
+          <p className="text-gray-700 dark:text-gray-300 font-medium">{error}</p>
           <button onClick={loadSessions} className="mt-3 text-blue-600 text-sm hover:underline">Try again</button>
         </div>
       )}
 
       {!loading && !error && allRuns.length === 0 && (
-        <div className="bg-white rounded-xl border border-dashed border-gray-300 p-16 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 p-16 text-center">
           <History size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-600 font-medium">No sessions yet</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">No sessions yet</p>
           <p className="text-gray-400 text-sm mt-1">
             Start a session with an avatar to see your learning history here.
           </p>
@@ -182,16 +182,16 @@ export default function LearningHistoryPage() {
       {!loading && !error && allRuns.length > 0 && (
         <div className="space-y-3">
           {allRuns.map((run) => (
-            <div key={run.sessionRunId} className="bg-white border border-gray-200 rounded-xl p-4">
+            <div key={run.sessionRunId} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
               <div className="flex items-start justify-between gap-4 mb-2">
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{run.sessionName}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{run.sessionName}</p>
                   <p className="text-xs text-gray-400 truncate">{run.courseName}</p>
                 </div>
                 <StatusBadge status={run.status} />
               </div>
 
-              <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+              <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <Calendar size={11} /> {formatDate(run.startedAt)}
                 </span>

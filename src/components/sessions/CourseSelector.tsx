@@ -94,7 +94,7 @@ export default function CourseSelector({
   if (error) {
     return (
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Course {required && <span className="text-red-500">*</span>}
         </label>
         <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -108,7 +108,7 @@ export default function CourseSelector({
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="course-select" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="course-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Course {required && <span className="text-red-500">*</span>}
         </label>
         
@@ -139,7 +139,7 @@ export default function CourseSelector({
             <button
               type="button"
               onClick={() => setShowCreateForm(true)}
-              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               title="Create new course"
             >
               <Plus className="w-4 h-4" />
@@ -174,8 +174,8 @@ export default function CourseSelector({
       {/* Create Course Modal - Using Portal to avoid nested forms */}
       {showCreateForm && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Create New Course</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Create New Course</h3>
             
             <form onSubmit={handleCreateCourse} className="space-y-4">
               {createError && (
@@ -185,7 +185,7 @@ export default function CourseSelector({
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Course Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -201,7 +201,7 @@ export default function CourseSelector({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Course Code</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course Code</label>
                   <input
                     type="text"
                     value={newCourse.code}
@@ -212,7 +212,7 @@ export default function CourseSelector({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Section</label>
                   <input
                     type="text"
                     value={newCourse.section}
@@ -225,7 +225,7 @@ export default function CourseSelector({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                 <textarea
                   value={newCourse.description}
                   onChange={(e) => setNewCourse({...newCourse, description: e.target.value})}
@@ -238,7 +238,7 @@ export default function CourseSelector({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
                   <input
                     type="text"
                     value={newCourse.department}
@@ -249,7 +249,7 @@ export default function CourseSelector({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year</label>
                   <input
                     type="number"
                     value={newCourse.year}
@@ -261,7 +261,7 @@ export default function CourseSelector({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Semester</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Semester</label>
                 <select
                   value={newCourse.semester}
                   onChange={(e) => setNewCourse({...newCourse, semester: e.target.value})}
@@ -285,7 +285,7 @@ export default function CourseSelector({
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   disabled={createLoading}
                 />
-                <label htmlFor="is_public" className="text-sm font-medium text-gray-700">
+                <label htmlFor="is_public" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Make course publicly accessible
                 </label>
               </div>
@@ -297,7 +297,7 @@ export default function CourseSelector({
                     setShowCreateForm(false);
                     setCreateError(null);
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500 transition-colors"
                   disabled={createLoading}
                 >
                   Cancel

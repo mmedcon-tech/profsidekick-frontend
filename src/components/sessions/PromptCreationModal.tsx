@@ -194,19 +194,19 @@ Additional custom instructions will be provided separately.`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               {prompt ? 'Edit Prompt' : 'Create New Prompt'}
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {prompt ? 'Update your custom AI prompt' : 'Create a custom AI prompt for your examination sessions'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:bg-gray-800 rounded-lg transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
@@ -215,11 +215,11 @@ Additional custom instructions will be provided separately.`;
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Basic Information</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b pb-2">Basic Information</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Prompt Name *
                 </label>
                 <input
@@ -242,7 +242,7 @@ Additional custom instructions will be provided separately.`;
               </div>
 
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Category *
                 </label>
                 <div className="relative">
@@ -271,7 +271,7 @@ Additional custom instructions will be provided separately.`;
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Description *
               </label>
               <input
@@ -296,10 +296,10 @@ Additional custom instructions will be provided separately.`;
 
           {/* Tags */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Tags</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b pb-2">Tags</h3>
             
             <div>
-              <label htmlFor="tagInput" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="tagInput" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Add Tags (Press Enter to add)
               </label>
               <div className="relative">
@@ -339,11 +339,11 @@ Additional custom instructions will be provided separately.`;
 
           {/* Prompt Content */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Prompt Content</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b pb-2">Prompt Content</h3>
             
             {/* User-Editable Instructions */}
             <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Custom Examination Instructions *
               </label>
               <textarea
@@ -363,7 +363,7 @@ Additional custom instructions will be provided separately.`;
                   {errors.content}
                 </p>
               )}
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Write clear instructions for how the AI examiner should conduct this session. Include question strategy,
                 tone, and subject-specific behavior. Combined with the core examiner instructions below.
               </p>
@@ -371,7 +371,7 @@ Additional custom instructions will be provided separately.`;
 
             {/* System Instructions Preview (Read-only) */}
             <div>
-              <label htmlFor="system_preview" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="system_preview" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 ProfSidekick Core Instructions (Preview)
               </label>
               <textarea 
@@ -379,9 +379,9 @@ Additional custom instructions will be provided separately.`;
                 value={getSystemInstructions()}
                 readOnly
                 rows={6} 
-                className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-lg text-gray-600 text-sm" 
+                className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-lg text-gray-600 dark:text-gray-400 text-sm" 
               />
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Core ProfSidekick instructions that will be automatically included with your custom instructions.
               </p>
             </div>
@@ -389,7 +389,7 @@ Additional custom instructions will be provided separately.`;
 
           {/* Settings */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">Settings</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b pb-2">Settings</h3>
             
             <div className="flex items-center">
               <input
@@ -400,7 +400,7 @@ Additional custom instructions will be provided separately.`;
                 onChange={handleInputChange}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="isPublic" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="isPublic" className="ml-2 block text-sm text-gray-900 dark:text-gray-100">
                 Make this prompt public (other users can discover and use it)
               </label>
             </div>
@@ -411,7 +411,7 @@ Additional custom instructions will be provided separately.`;
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
+              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors"
             >
               Cancel
             </button>

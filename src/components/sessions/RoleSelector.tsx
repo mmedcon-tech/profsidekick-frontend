@@ -66,10 +66,10 @@ export default function RoleSelector({ templateId, selected, onSelect, className
       {/* Trigger */}
       <button
         onClick={() => setOpen((p) => !p)}
-        className="flex items-center gap-2 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white hover:bg-gray-50 transition-colors min-w-[160px] justify-between">
+        className="flex items-center gap-2 text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:bg-gray-900 transition-colors min-w-[160px] justify-between">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Users size={14} className="text-gray-500 flex-shrink-0" />
-          <span className={`truncate ${selected ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+          <Users size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
+          <span className={`truncate ${selected ? 'text-gray-900 dark:text-gray-100 font-medium' : 'text-gray-400'}`}>
             {selected ? selected.name : 'Choose role…'}
           </span>
         </div>
@@ -77,7 +77,7 @@ export default function RoleSelector({ templateId, selected, onSelect, className
           {selected && (
             <button
               onClick={handleClear}
-              className="text-gray-400 hover:text-gray-600 text-xs leading-none px-1"
+              className="text-gray-400 hover:text-gray-600 dark:text-gray-400 text-xs leading-none px-1"
               title="Clear role">
               ×
             </button>
@@ -88,8 +88,8 @@ export default function RoleSelector({ templateId, selected, onSelect, className
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden w-full min-w-[200px] max-w-xs">
-          <div className="p-2 border-b border-gray-100">
+        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden w-full min-w-[200px] max-w-xs">
+          <div className="p-2 border-b border-gray-100 dark:border-gray-800">
             <p className="text-xs text-gray-400 px-2">
               Role is per-session — you can change it next time.
             </p>
@@ -101,7 +101,7 @@ export default function RoleSelector({ templateId, selected, onSelect, className
                 <button
                   key={role.id}
                   onClick={() => handleSelect(role)}
-                  className={`w-full text-left px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 transition-colors ${
+                  className={`w-full text-left px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 dark:bg-gray-900 transition-colors ${
                     isSelected ? 'bg-blue-50' : ''
                   }`}>
                   <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 ${
@@ -110,7 +110,7 @@ export default function RoleSelector({ templateId, selected, onSelect, className
                     {isSelected && <Check size={10} className="text-white" />}
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-sm font-medium leading-tight ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>
+                    <p className={`text-sm font-medium leading-tight ${isSelected ? 'text-blue-700' : 'text-gray-900 dark:text-gray-100'}`}>
                       {role.name}
                     </p>
                     {role.description && (

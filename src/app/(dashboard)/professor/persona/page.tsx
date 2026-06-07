@@ -100,8 +100,8 @@ export default function ProfessorPersonaPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">My Persona</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Persona</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Configure how your AI teaching assistant presents itself in sessions.
             </p>
           </div>
@@ -115,7 +115,7 @@ export default function ProfessorPersonaPage() {
                     ? 'bg-blue-600 text-white'
                     : index < step
                     ? 'bg-blue-100 text-blue-800'
-                    : 'bg-white text-gray-500 border border-gray-200'
+                    : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
                 }`}
               >
                 {index + 1}. {label}
@@ -123,7 +123,7 @@ export default function ProfessorPersonaPage() {
             ))}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8">
             {personaError && step !== 2 && (
               <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 text-sm">
                 {personaError}
@@ -143,7 +143,7 @@ export default function ProfessorPersonaPage() {
             {step === 1 && (
               <>
                 <PreferencesForm preferences={preferences} onChange={setPreferences} />
-                <p className="mt-4 text-sm text-gray-500">
+                <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                   You can save your profile now, or optionally refine it with AI in
                   the next step.
                 </p>
@@ -172,12 +172,12 @@ export default function ProfessorPersonaPage() {
               </p>
             )}
 
-            <div className="flex flex-wrap justify-between gap-3 mt-8 pt-6 border-t border-gray-100">
+            <div className="flex flex-wrap justify-between gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.max(s - 1, 0))}
                 disabled={step === 0}
-                className="inline-flex items-center gap-1 px-4 py-2 text-gray-700 disabled:opacity-40"
+                className="inline-flex items-center gap-1 px-4 py-2 text-gray-700 dark:text-gray-300 disabled:opacity-40"
               >
                 <ChevronLeft size={18} />
                 Back

@@ -22,10 +22,10 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     published: 'bg-emerald-100 text-emerald-700',
     draft:     'bg-amber-100 text-amber-700',
-    archived:  'bg-gray-100 text-gray-500',
+    archived:  'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
   };
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${map[status] ?? 'bg-gray-100 text-gray-500'}`}>
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${map[status] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
       {status}
     </span>
   );
@@ -62,24 +62,24 @@ function PromptBlock({
 }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
       <button
         onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 rounded-xl transition-colors"
+        className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 dark:bg-gray-900 rounded-xl transition-colors"
       >
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-semibold text-gray-900">{title}</p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100">{title}</p>
           {badge && (
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badgeColor ?? 'bg-gray-100 text-gray-600'}`}>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badgeColor ?? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
               {badge}
             </span>
           )}
-          <p className="text-xs text-gray-500 mt-0.5 w-full">{description}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 w-full">{description}</p>
         </div>
         {open ? <ChevronUp size={16} className="text-gray-400 flex-shrink-0" /> : <ChevronDown size={16} className="text-gray-400 flex-shrink-0" />}
       </button>
       {open && (
-        <div className="px-5 pb-5 border-t border-gray-100">
+        <div className="px-5 pb-5 border-t border-gray-100 dark:border-gray-800">
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
@@ -166,12 +166,12 @@ function PromptsTab({ template, onReload }: {
   return (
     <div className="space-y-6">
       {/* Published state banner */}
-      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
         <div>
-          <p className="text-sm font-medium text-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Published version: {current ? `v${current.version_number}` : 'None'}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {current
               ? `Published ${fmt(current.published_at!)}`
               : 'No version published yet. Save a draft and publish it.'}
@@ -218,8 +218,8 @@ function PromptsTab({ template, onReload }: {
       />
 
       {/* Change notes */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-        <label className="block text-sm font-medium text-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Change Notes <span className="text-gray-400 font-normal">(optional)</span>
         </label>
         <input
@@ -235,7 +235,7 @@ function PromptsTab({ template, onReload }: {
         <button
           onClick={handleSaveDraft}
           disabled={saving}
-          className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium text-sm"
+          className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-300 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 disabled:opacity-50 transition-colors font-medium text-sm"
         >
           <Save size={15} /> {saving ? 'Saving...' : 'Save Draft'}
         </button>
@@ -316,19 +316,19 @@ function RoleRow({
   };
 
   return (
-    <div className={`border rounded-xl ${role.is_enabled ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'}`}>
+    <div className={`border rounded-xl ${role.is_enabled ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900'}`}>
       <div className="flex items-center gap-3 p-4">
         <GripVertical size={16} className="text-gray-300 cursor-grab flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className={`font-medium text-sm ${role.is_enabled ? 'text-gray-900' : 'text-gray-400'}`}>{role.name}</p>
+            <p className={`font-medium text-sm ${role.is_enabled ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400'}`}>{role.name}</p>
             {!role.is_enabled && <span className="text-xs text-gray-400 bg-gray-200 px-1.5 py-0.5 rounded">Disabled</span>}
           </div>
           {role.description && <p className="text-xs text-gray-400 mt-0.5 truncate">{role.description}</p>}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button onClick={handleToggle} disabled={toggling}
-            className="text-xs text-gray-500 border border-gray-200 px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40">
+            className="text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors disabled:opacity-40">
             {role.is_enabled ? 'Disable' : 'Enable'}
           </button>
           <button onClick={() => setExpanded((p) => !p)}
@@ -343,21 +343,21 @@ function RoleRow({
       </div>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-gray-100 pt-4 space-y-3">
+        <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3">
           {error && <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">{error}</div>}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
             <input value={form.name} onChange={set('name')} maxLength={100}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
             <input value={form.description} onChange={set('description')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
               placeholder="Brief description of this role" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Prompt Context</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prompt Context</label>
             <textarea value={form.prompt_context} onChange={set('prompt_context')} rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-indigo-500"
               placeholder="Explain concepts slowly. Avoid jargon. Use examples." />
@@ -369,7 +369,7 @@ function RoleRow({
               <Save size={13} /> {saving ? 'Saving...' : 'Save'}
             </button>
             <button onClick={() => setExpanded(false)}
-              className="text-sm text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors">
+              className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 transition-colors">
               Cancel
             </button>
           </div>
@@ -424,7 +424,7 @@ function RolesTab({ template, onReload }: {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Define which roles are available for this template. Publishers and subscribers will be able to select from these roles when creating sessions.
           </p>
           <p className="text-xs text-gray-400 mt-1">Role selection for publishers and subscribers is not yet active — this prepares the configuration.</p>
@@ -441,19 +441,19 @@ function RolesTab({ template, onReload }: {
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-indigo-900">New Role</p>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name <span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name <span className="text-red-500">*</span></label>
             <input value={newRole.name} onChange={setNew('name')} maxLength={100}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
               placeholder="e.g., Beginner Student, Medical Resident..." />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
             <input value={newRole.description} onChange={setNew('description')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
               placeholder="Who is this role for?" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Prompt Context</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prompt Context</label>
             <textarea value={newRole.prompt_context} onChange={setNew('prompt_context')} rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono resize-y focus:ring-2 focus:ring-indigo-500"
               placeholder="Explain concepts slowly. Avoid jargon. Use examples." />
@@ -464,7 +464,7 @@ function RolesTab({ template, onReload }: {
               <Plus size={13} /> {saving ? 'Adding...' : 'Add Role'}
             </button>
             <button onClick={() => { setAdding(false); setError(null); }}
-              className="text-sm text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200">
+              className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
               Cancel
             </button>
           </div>
@@ -472,9 +472,9 @@ function RolesTab({ template, onReload }: {
       )}
 
       {roles.length === 0 && !adding ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+        <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
           <Users size={32} className="mx-auto text-gray-300 mb-2" />
-          <p className="text-sm text-gray-500">No roles defined yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No roles defined yet.</p>
           <button onClick={() => setAdding(true)}
             className="mt-3 text-sm text-indigo-600 hover:underline">Add the first role</button>
         </div>
@@ -521,9 +521,9 @@ function VersionHistoryTab({ template, onReload }: {
 
   if (versions.length === 0) {
     return (
-      <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+      <div className="text-center py-16 bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
         <Clock size={32} className="mx-auto text-gray-300 mb-2" />
-        <p className="text-sm text-gray-500">No versions yet. Save a draft to start the version history.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No versions yet. Save a draft to start the version history.</p>
       </div>
     );
   }
@@ -531,15 +531,15 @@ function VersionHistoryTab({ template, onReload }: {
   return (
     <div className="space-y-3">
       {versions.map((v) => (
-        <div key={v.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div key={v.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
           <div className="flex items-center gap-4 p-4">
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-gray-600">v{v.version_number}</span>
+            <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-bold text-gray-600 dark:text-gray-400">v{v.version_number}</span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <StatusBadge status={v.status} />
-                {v.change_notes && <p className="text-sm text-gray-700 truncate">{v.change_notes}</p>}
+                {v.change_notes && <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{v.change_notes}</p>}
               </div>
               <p className="text-xs text-gray-400 mt-0.5">
                 Created {fmt(v.created_at)}
@@ -549,7 +549,7 @@ function VersionHistoryTab({ template, onReload }: {
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => setExpanded((p) => p === v.id ? null : v.id)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 border border-gray-200 px-2.5 py-1.5 rounded-lg hover:bg-gray-50">
+                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900">
                 {expanded === v.id ? <EyeOff size={12} /> : <Eye size={12} />} Prompts
               </button>
               {v.status === 'draft' && (
@@ -563,28 +563,28 @@ function VersionHistoryTab({ template, onReload }: {
             </div>
           </div>
           {expanded === v.id && (
-            <div className="border-t border-gray-100 p-4 space-y-3 bg-gray-50">
+            <div className="border-t border-gray-100 dark:border-gray-800 p-4 space-y-3 bg-gray-50 dark:bg-gray-900">
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
                   Examination Prompt
                 </p>
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono bg-white rounded-lg border border-gray-200 p-3 max-h-48 overflow-y-auto">
+                <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 max-h-48 overflow-y-auto">
                   {v.examination_prompt || <span className="text-gray-400">(empty)</span>}
                 </pre>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
                   Teaching Prompt
                 </p>
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono bg-white rounded-lg border border-gray-200 p-3 max-h-48 overflow-y-auto">
+                <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 max-h-48 overflow-y-auto">
                   {v.teaching_prompt || <span className="text-gray-400">(empty)</span>}
                 </pre>
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
                   Document Analysis Prompt
                 </p>
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono bg-white rounded-lg border border-gray-200 p-3 max-h-48 overflow-y-auto">
+                <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 max-h-48 overflow-y-auto">
                   {v.document_analysis_prompt || <span className="text-gray-400">(empty)</span>}
                 </pre>
               </div>
@@ -734,8 +734,8 @@ export default function EditTemplatePage() {
   if (loading) return (
     <div className="max-w-4xl mx-auto space-y-4">
       <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
-      <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />
-      <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+      <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+      <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
     </div>
   );
 
@@ -752,12 +752,12 @@ export default function EditTemplatePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Back link */}
-      <Link href="/admin/templates" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 w-fit">
+      <Link href="/admin/templates" className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Templates
       </Link>
 
       {/* Header card */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         {!editMeta ? (
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4 flex-1 min-w-0">
@@ -769,17 +769,17 @@ export default function EditTemplatePage() {
               />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-gray-900">{template.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{template.name}</h1>
                 {template.category && (
                   <span className="flex items-center gap-1 text-xs text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-full">
                     <Tag size={11} /> {template.category}
                   </span>
                 )}
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${template.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${template.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
                   {template.is_active ? 'Active' : 'Archived'}
                 </span>
               </div>
-              <p className="text-gray-500 text-sm mt-1">{template.description || 'No description'}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{template.description || 'No description'}</p>
               <p className="text-xs text-gray-400 mt-1">
                 {template.version_count} version{template.version_count !== 1 ? 's' : ''}
                 {' · '}
@@ -790,29 +790,29 @@ export default function EditTemplatePage() {
             </div>
             </div>
             <button onClick={() => setEditMeta(true)}
-              className="text-sm text-gray-600 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0">
+              className="text-sm text-gray-600 dark:text-gray-400 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors flex-shrink-0">
               Edit Info
             </button>
           </div>
         ) : (
           <div className="space-y-3">
-            <h2 className="font-semibold text-gray-900">Edit Template Info</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Edit Template Info</h2>
             {metaError && <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{metaError}</div>}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
                 <input value={metaForm.name} onChange={setMeta('name')} maxLength={200}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Category</label>
                 <input value={metaForm.category} onChange={setMeta('category')} maxLength={100}
                   placeholder="e.g., Education, Medical, Legal..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500" />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
               <textarea value={metaForm.description} onChange={setMeta('description')} rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-indigo-500" />
             </div>
@@ -822,7 +822,7 @@ export default function EditTemplatePage() {
                 <Save size={13} /> {savingMeta ? 'Saving...' : 'Save'}
               </button>
               <button onClick={() => { setEditMeta(false); setMetaError(null); }}
-                className="text-sm text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200">
+                className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
                 Cancel
               </button>
             </div>
@@ -831,7 +831,7 @@ export default function EditTemplatePage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-1">
           {tabs.map((t) => (
             <button
@@ -840,7 +840,7 @@ export default function EditTemplatePage() {
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
                 tab === t.id
                   ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:border-gray-300'
               }`}>
               {t.icon} {t.label}
             </button>
