@@ -88,8 +88,12 @@ export const adminNav: SidebarConfig = [
 // ─── Routes that should hide the sidebar and chrome for maximum workspace ────
 // Any path matching these patterns will enter "focus mode":
 //   • /publisher/sessions/*/chat
+//   • /courses/*/sessions/*/run/*  (live teaching-run view)
 function isFocusRoute(pathname: string): boolean {
-  return /\/sessions\/[^/]+\/chat/.test(pathname);
+  return (
+    /\/sessions\/[^/]+\/chat/.test(pathname) ||
+    /\/courses\/[^/]+\/sessions\/[^/]+\/run\//.test(pathname)
+  );
 }
 
 // ─── helper ─────────────────────────────────────────────────────────────────
