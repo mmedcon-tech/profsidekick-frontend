@@ -105,7 +105,7 @@ export default function CourseDetailPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="flex items-center justify-center py-24">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       </ProtectedRoute>
@@ -115,7 +115,7 @@ export default function CourseDetailPage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="flex items-center justify-center py-24 px-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center max-w-md">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <GraduationCap className="w-8 h-8 text-red-600" />
@@ -137,7 +137,7 @@ export default function CourseDetailPage() {
   if (!course) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="flex items-center justify-center py-24 px-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center max-w-md">
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <GraduationCap className="w-8 h-8 text-gray-400" />
@@ -161,8 +161,7 @@ export default function CourseDetailPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Header */}
           <div className="mb-8">
             <button
@@ -379,7 +378,6 @@ export default function CourseDetailPage() {
               </div>
             </div>
           )}
-        </div>
       </div>
     </ProtectedRoute>
   );
