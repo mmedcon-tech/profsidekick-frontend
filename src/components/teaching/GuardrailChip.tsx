@@ -41,7 +41,7 @@ export function GuardrailChip({
     case "PENDING":
       IconComponent = ClockIcon;
       label = "Pending";
-      textColorClass = "text-gray-600";
+      textColorClass = "text-gray-600 dark:text-gray-400";
       break;
     case "PASS":
       IconComponent = CheckCircledIcon;
@@ -56,7 +56,7 @@ export function GuardrailChip({
     default:
       IconComponent = ClockIcon;
       label = "Pending";
-      textColorClass = "text-gray-600";
+      textColorClass = "text-gray-600 dark:text-gray-400";
   }
 
   return (

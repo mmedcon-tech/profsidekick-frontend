@@ -59,7 +59,7 @@ export default function AvatarDetailPage() {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
-        <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />
+        <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -83,7 +83,7 @@ export default function AvatarDetailPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <Link href="/publisher/avatars"
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors w-fit">
+        className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors w-fit">
         <ArrowLeft size={16} /> All Avatars
       </Link>
 
@@ -101,13 +101,13 @@ export default function AvatarDetailPage() {
       )}
 
       {/* Header card */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={56} rounded="lg" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{avatar.name}</h1>
-              <p className="text-sm text-gray-500 mt-0.5">{avatar.description || 'No description'}</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{avatar.name}</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{avatar.description || 'No description'}</p>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                   avatar.is_published ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
@@ -154,9 +154,9 @@ export default function AvatarDetailPage() {
 
         {/* Training workflow explanation (when already published) */}
         {avatar.is_published && (
-          <div className="mt-5 pt-5 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Publisher Training Loop</p>
-            <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500">
+          <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Publisher Training Loop</p>
+            <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 dark:text-gray-400">
               {[
                 { icon: <Settings size={11} />, label: 'Configure' },
                 { icon: <Upload size={11} />, label: 'Upload Materials' },
@@ -165,7 +165,7 @@ export default function AvatarDetailPage() {
                 { icon: <Globe size={11} />, label: 'Publish Updates' },
               ].map((step, i) => (
                 <React.Fragment key={step.label}>
-                  <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1">
+                  <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1">
                     {step.icon} {step.label}
                   </div>
                   {i < 4 && <span className="text-gray-300">→</span>}
@@ -180,13 +180,13 @@ export default function AvatarDetailPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="border-b border-gray-200 flex gap-1 overflow-x-auto">
+      <div className="border-b border-gray-200 dark:border-gray-700 flex gap-1 overflow-x-auto">
         {TABS.map((tab) => (
           <Link key={tab.label} href={tab.href(id)}
             className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
               isTabActive(tab)
                 ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
             }`}>
             {tab.label}
           </Link>
@@ -194,26 +194,26 @@ export default function AvatarDetailPage() {
       </div>
 
       {/* Overview content */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-        <h2 className="font-semibold text-gray-900">Avatar Overview</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
+        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Avatar Overview</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-          <div><p className="text-gray-500 text-xs mb-0.5">Created</p><p className="font-medium">{fmtDate(avatar.created_at)}</p></div>
-          <div><p className="text-gray-500 text-xs mb-0.5">Last updated</p><p className="font-medium">{fmtDate(avatar.updated_at)}</p></div>
-          <div><p className="text-gray-500 text-xs mb-0.5">Status</p><p className={`font-medium ${avatar.is_published ? 'text-green-700' : 'text-amber-700'}`}>{avatar.is_published ? 'Published' : 'Draft'}</p></div>
+          <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Created</p><p className="font-medium">{fmtDate(avatar.created_at)}</p></div>
+          <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Last updated</p><p className="font-medium">{fmtDate(avatar.updated_at)}</p></div>
+          <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Status</p><p className={`font-medium ${avatar.is_published ? 'text-green-700' : 'text-amber-700'}`}>{avatar.is_published ? 'Published' : 'Draft'}</p></div>
           {avatar.configuration && (
             <>
-              <div><p className="text-gray-500 text-xs mb-0.5">Voice</p><p className="font-medium capitalize">{avatar.configuration.voice || 'Default'}</p></div>
-              <div><p className="text-gray-500 text-xs mb-0.5">Difficulty</p><p className="font-medium capitalize">{avatar.configuration.difficulty_level || 'Not set'}</p></div>
-              <div><p className="text-gray-500 text-xs mb-0.5">Knowledge docs</p><p className="font-medium">{avatar.configuration.knowledge_documents.length}</p></div>
-              <div><p className="text-gray-500 text-xs mb-0.5">Reference solutions</p><p className="font-medium">{avatar.configuration.reference_solutions.length}</p></div>
-              <div><p className="text-gray-500 text-xs mb-0.5">Rubrics</p><p className="font-medium">{avatar.configuration.rubrics.length}</p></div>
+              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Voice</p><p className="font-medium capitalize">{avatar.configuration.voice || 'Default'}</p></div>
+              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Difficulty</p><p className="font-medium capitalize">{avatar.configuration.difficulty_level || 'Not set'}</p></div>
+              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Knowledge docs</p><p className="font-medium">{avatar.configuration.knowledge_documents.length}</p></div>
+              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Reference solutions</p><p className="font-medium">{avatar.configuration.reference_solutions.length}</p></div>
+              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Rubrics</p><p className="font-medium">{avatar.configuration.rubrics.length}</p></div>
             </>
           )}
         </div>
 
         {/* Setup checklist */}
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Setup checklist</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Setup checklist</p>
           {[
             { done: !!avatar.configuration,                                      label: 'Configure voice & difficulty' },
             { done: (avatar.configuration?.knowledge_documents.length ?? 0) > 0, label: 'Upload knowledge documents' },
@@ -226,7 +226,7 @@ export default function AvatarDetailPage() {
               }`}>
                 {step.done && <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 5l2 2 4-4"/></svg>}
               </span>
-              <span className={step.done ? 'text-gray-400 line-through' : 'text-gray-700'}>{step.label}</span>
+              <span className={step.done ? 'text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}>{step.label}</span>
             </div>
           ))}
         </div>
@@ -239,7 +239,7 @@ export default function AvatarDetailPage() {
           </Link>
           {!avatar.configuration && (
             <Link href={`/publisher/avatars/${id}/configure`}
-              className="flex-1 min-w-[140px] text-center py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              className="flex-1 min-w-[140px] text-center py-2.5 border border-gray-300 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
               Configure First →
             </Link>
           )}

@@ -15,16 +15,16 @@ export default function AboutPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-800">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <button
@@ -45,7 +45,7 @@ export default function AboutPage() {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => router.push('/')}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100 transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Home
@@ -73,10 +73,10 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
             About ProfSidekick
           </h1>
-          <p className="text-xl text-gray-600 leading-relaxed">
+          <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
             We are on a mission to revolutionize education by empowering educators with 
             cutting-edge AI technology that makes teaching more interactive, engaging, and effective.
           </p>
@@ -91,14 +91,14 @@ export default function AboutPage() {
             {/* <div>
               <div className="flex items-center gap-3 mb-6">
                 <Target className="w-8 h-8 text-blue-600" />
-                <h2 className="text-3xl font-bold text-gray-900">Our Mission</h2>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Our Mission</h2>
               </div>
-              <p className="text-lg text-gray-600 leading-relaxed mb-6">
+              <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
                 Education is the foundation of progress, yet many educators struggle with outdated tools 
                 and one-size-fits-all approaches. We believe that every teacher deserves access to 
                 intelligent, adaptive technology that enhances their natural teaching abilities.
               </p>
-              <p className="text-lg text-gray-600 leading-relaxed">
+              <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
                 ProfSidekick bridges the gap between traditional presentations and interactive learning 
                 by providing AI-powered assistance that understands your content and responds to your 
                 teaching style in real-time.
@@ -107,26 +107,26 @@ export default function AboutPage() {
                          <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-8">
                <div className="text-center">
                  <h3 className="text-2xl font-bold text-blue-900 mb-4">🚀 Coming Soon</h3>
-                 <p className="text-gray-700 mb-6">
+                 <p className="text-gray-700 dark:text-gray-300 mb-6">
                    We are building something amazing for educators worldwide. 
                    ProfSidekick is currently in active development.
                  </p>
                  {/* <div className="grid grid-cols-2 gap-4 text-center">
                    <div>
                      <div className="text-2xl font-bold text-blue-600 mb-1">✨</div>
-                     <div className="text-sm text-gray-600">AI-Powered</div>
+                     <div className="text-sm text-gray-600 dark:text-gray-400">AI-Powered</div>
                    </div>
                    <div>
                      <div className="text-2xl font-bold text-blue-600 mb-1">🎯</div>
-                     <div className="text-sm text-gray-600">Educator-Focused</div>
+                     <div className="text-sm text-gray-600 dark:text-gray-400">Educator-Focused</div>
                    </div>
                    <div>
                      <div className="text-2xl font-bold text-blue-600 mb-1">🔮</div>
-                     <div className="text-sm text-gray-600">Future-Ready</div>
+                     <div className="text-sm text-gray-600 dark:text-gray-400">Future-Ready</div>
                    </div>
                    <div>
                      <div className="text-2xl font-bold text-blue-600 mb-1">💡</div>
-                     <div className="text-sm text-gray-600">Innovative</div>
+                     <div className="text-sm text-gray-600 dark:text-gray-400">Innovative</div>
                    </div>
                  </div> */}
                </div>
@@ -136,44 +136,44 @@ export default function AboutPage() {
       </section>
 
       {/* Values Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Values</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Our Values</h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               The principles that guide everything we do at ProfSidekick
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-8 bg-white rounded-2xl shadow-lg">
+            <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Lightbulb className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Innovation</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Innovation</h3>
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 We continuously push the boundaries of what is possible in educational technology, 
                 bringing cutting-edge AI capabilities to everyday teaching scenarios.
               </p>
             </div>
 
-            <div className="text-center p-8 bg-white rounded-2xl shadow-lg">
+            <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Users className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Accessibility</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Accessibility</h3>
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 Great teaching tools should be available to everyone. We are committed to making 
                 advanced AI technology accessible and affordable for educators worldwide.
               </p>
             </div>
 
-            <div className="text-center p-8 bg-white rounded-2xl shadow-lg">
+            <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Award className="w-8 h-8 text-purple-600" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">Excellence</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Excellence</h3>
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 We hold ourselves to the highest standards, ensuring that every feature we build 
                 genuinely improves the teaching and learning experience.
               </p>
@@ -186,8 +186,8 @@ export default function AboutPage() {
       {/* <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
-            <div className="prose prose-lg mx-auto text-gray-600">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-6">Our Story</h2>
+            <div className="prose prose-lg mx-auto text-gray-600 dark:text-gray-400">
               <p className="mb-6">
                 ProfSidekick was born from a simple observation: despite decades of technological advancement, 
                 most classroom presentations still rely on static slides and one-way communication. 
@@ -227,21 +227,21 @@ export default function AboutPage() {
              {isAuthenticated ? (
                <button
                  onClick={() => router.push('/dashboard')}
-                 className="bg-white text-blue-600 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                 className="bg-white dark:bg-gray-800 text-blue-600 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                >
                  Go to Dashboard
                </button>
              ) : (
                <button
                  onClick={() => router.push('/register')}
-                 className="bg-white text-blue-600 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                 className="bg-white dark:bg-gray-800 text-blue-600 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                >
                  Get Started Free
                </button>
              )}
              <button
                onClick={() => router.push('/contact')}
-               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-medium hover:bg-white hover:text-blue-600 transition-colors"
+               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-medium hover:bg-white dark:bg-gray-800 hover:text-blue-600 transition-colors"
              >
                Contact Us
              </button>

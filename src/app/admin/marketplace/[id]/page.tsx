@@ -40,7 +40,7 @@ function StatusPill({ published }: { published: boolean }) {
       <Globe size={10} /> Live
     </span>
   ) : (
-    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
       Draft
     </span>
   );
@@ -57,10 +57,10 @@ function OverviewTab({
 }) {
   return (
     <div className="space-y-5">
-      <div className="bg-white rounded-xl border border-gray-200 p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div>
           <p className="text-gray-400 text-xs mb-0.5">Avatar Name</p>
-          <p className="font-semibold text-gray-900">{avatar.name}</p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100">{avatar.name}</p>
         </div>
         <div>
           <p className="text-gray-400 text-xs mb-0.5">Status</p>
@@ -68,11 +68,11 @@ function OverviewTab({
         </div>
         <div>
           <p className="text-gray-400 text-xs mb-0.5">Description</p>
-          <p className="text-gray-700">{avatar.description || '—'}</p>
+          <p className="text-gray-700 dark:text-gray-300">{avatar.description || '—'}</p>
         </div>
         <div>
           <p className="text-gray-400 text-xs mb-0.5">Created</p>
-          <p className="text-gray-700">{fmt(avatar.created_at)}</p>
+          <p className="text-gray-700 dark:text-gray-300">{fmt(avatar.created_at)}</p>
         </div>
         {template && (
           <div className="md:col-span-2">
@@ -88,32 +88,32 @@ function OverviewTab({
       </div>
 
       {avatar.configuration && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
-          <p className="text-sm font-semibold text-gray-800">Configuration</p>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Configuration</p>
           <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
             <div>
               <dt className="text-gray-400 text-xs">Voice</dt>
-              <dd className="font-medium text-gray-800">{avatar.configuration.voice || '—'}</dd>
+              <dd className="font-medium text-gray-800 dark:text-gray-200">{avatar.configuration.voice || '—'}</dd>
             </div>
             <div>
               <dt className="text-gray-400 text-xs">Language</dt>
-              <dd className="font-medium text-gray-800">{avatar.configuration.language || '—'}</dd>
+              <dd className="font-medium text-gray-800 dark:text-gray-200">{avatar.configuration.language || '—'}</dd>
             </div>
             <div>
               <dt className="text-gray-400 text-xs">Difficulty</dt>
-              <dd className="font-medium text-gray-800">{avatar.configuration.difficulty_level || '—'}</dd>
+              <dd className="font-medium text-gray-800 dark:text-gray-200">{avatar.configuration.difficulty_level || '—'}</dd>
             </div>
             <div>
               <dt className="text-gray-400 text-xs">Rubrics</dt>
-              <dd className="font-medium text-gray-800">{avatar.configuration.rubrics.length}</dd>
+              <dd className="font-medium text-gray-800 dark:text-gray-200">{avatar.configuration.rubrics.length}</dd>
             </div>
             <div>
               <dt className="text-gray-400 text-xs">Knowledge Docs</dt>
-              <dd className="font-medium text-gray-800">{avatar.configuration.knowledge_documents.length}</dd>
+              <dd className="font-medium text-gray-800 dark:text-gray-200">{avatar.configuration.knowledge_documents.length}</dd>
             </div>
             <div>
               <dt className="text-gray-400 text-xs">Reference Solutions</dt>
-              <dd className="font-medium text-gray-800">{avatar.configuration.reference_solutions.length}</dd>
+              <dd className="font-medium text-gray-800 dark:text-gray-200">{avatar.configuration.reference_solutions.length}</dd>
             </div>
           </dl>
         </div>
@@ -129,9 +129,9 @@ function ConfigurationTab({ avatar }: { avatar: AvatarResponse }) {
 
   if (!cfg) {
     return (
-      <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+      <div className="text-center py-16 bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
         <Settings size={32} className="mx-auto text-gray-300 mb-2" />
-        <p className="text-sm text-gray-500">No configuration set for this avatar.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No configuration set for this avatar.</p>
       </div>
     );
   }
@@ -139,8 +139,8 @@ function ConfigurationTab({ avatar }: { avatar: AvatarResponse }) {
   return (
     <div className="space-y-5">
       {/* Basic settings */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-sm font-semibold text-gray-800 mb-4">Basic Settings</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Basic Settings</p>
         <dl className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
           {[
             { label: 'Voice', value: cfg.voice },
@@ -149,39 +149,39 @@ function ConfigurationTab({ avatar }: { avatar: AvatarResponse }) {
           ].map(({ label, value }) => (
             <div key={label}>
               <dt className="text-xs text-gray-400 mb-0.5">{label}</dt>
-              <dd className="font-medium text-gray-800">{value || '—'}</dd>
+              <dd className="font-medium text-gray-800 dark:text-gray-200">{value || '—'}</dd>
             </div>
           ))}
         </dl>
       </div>
 
       {/* Rubrics */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-sm font-semibold text-gray-800 mb-3">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
           Rubrics ({cfg.rubrics.length})
         </p>
         {cfg.rubrics.length === 0 ? (
           <p className="text-xs text-gray-400">No rubrics uploaded.</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {cfg.rubrics.map((r) => (
-              <li key={r.id} className="py-2 text-sm text-gray-700">{r.title}</li>
+              <li key={r.id} className="py-2 text-sm text-gray-700 dark:text-gray-300">{r.title}</li>
             ))}
           </ul>
         )}
       </div>
 
       {/* Knowledge docs */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-sm font-semibold text-gray-800 mb-3">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
           Knowledge Documents ({cfg.knowledge_documents.length})
         </p>
         {cfg.knowledge_documents.length === 0 ? (
           <p className="text-xs text-gray-400">No knowledge documents uploaded.</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {cfg.knowledge_documents.map((d) => (
-              <li key={d.id} className="py-2 text-sm text-gray-700">
+              <li key={d.id} className="py-2 text-sm text-gray-700 dark:text-gray-300">
                 {d.title} {d.file_name && <span className="text-xs text-gray-400">({d.file_name})</span>}
               </li>
             ))}
@@ -190,16 +190,16 @@ function ConfigurationTab({ avatar }: { avatar: AvatarResponse }) {
       </div>
 
       {/* Reference solutions */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <p className="text-sm font-semibold text-gray-800 mb-3">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
           Reference Solutions ({cfg.reference_solutions.length})
         </p>
         {cfg.reference_solutions.length === 0 ? (
           <p className="text-xs text-gray-400">No reference solutions uploaded.</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {cfg.reference_solutions.map((s) => (
-              <li key={s.id} className="py-2 text-sm text-gray-700">
+              <li key={s.id} className="py-2 text-sm text-gray-700 dark:text-gray-300">
                 {s.title} {s.file_name && <span className="text-xs text-gray-400">({s.file_name})</span>}
               </li>
             ))}
@@ -271,13 +271,13 @@ function RoleRow({
 
   return (
     <div
-      className={`border rounded-xl ${role.is_enabled ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50'}`}
+      className={`border rounded-xl ${role.is_enabled ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800' : 'border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900'}`}
     >
       <div className="flex items-center gap-3 p-4">
         <GripVertical size={16} className="text-gray-300 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className={`font-medium text-sm ${role.is_enabled ? 'text-gray-900' : 'text-gray-400'}`}>
+            <p className={`font-medium text-sm ${role.is_enabled ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400'}`}>
               {role.name}
             </p>
             {!role.is_enabled && (
@@ -292,7 +292,7 @@ function RoleRow({
           <button
             onClick={handleToggle}
             disabled={toggling}
-            className="text-xs text-gray-500 border border-gray-200 px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40"
+            className="text-xs text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 px-2.5 py-1 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors disabled:opacity-40"
           >
             {role.is_enabled ? 'Disable' : 'Enable'}
           </button>
@@ -311,12 +311,12 @@ function RoleRow({
         </div>
       </div>
       {expanded && (
-        <div className="px-4 pb-4 border-t border-gray-100 pt-4 space-y-3">
+        <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3">
           {error && (
             <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">{error}</div>
           )}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Name</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
             <input
               value={form.name}
               onChange={set('name')}
@@ -325,7 +325,7 @@ function RoleRow({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
             <input
               value={form.description}
               onChange={set('description')}
@@ -333,7 +333,7 @@ function RoleRow({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Prompt Context</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prompt Context</label>
             <textarea
               value={form.prompt_context}
               onChange={set('prompt_context')}
@@ -355,7 +355,7 @@ function RoleRow({
             </button>
             <button
               onClick={() => setExpanded(false)}
-              className="text-sm text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200"
+              className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
             >
               Cancel
             </button>
@@ -408,7 +408,7 @@ function RolesTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Roles are shared across all avatars created from the{' '}
             <Link href={`/admin/avatars/${template.id}`} className="text-indigo-600 hover:underline">
               {template.name}
@@ -435,7 +435,7 @@ function RolesTab({
         <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-indigo-900">New Role</p>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -447,7 +447,7 @@ function RolesTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
             <input
               value={newRole.description}
               onChange={setNew('description')}
@@ -455,7 +455,7 @@ function RolesTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Prompt Context</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prompt Context</label>
             <textarea
               value={newRole.prompt_context}
               onChange={setNew('prompt_context')}
@@ -474,7 +474,7 @@ function RolesTab({
             </button>
             <button
               onClick={() => { setAdding(false); setError(null); }}
-              className="text-sm text-gray-500 px-4 py-2 rounded-lg hover:bg-gray-50 border border-gray-200"
+              className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
             >
               Cancel
             </button>
@@ -483,9 +483,9 @@ function RolesTab({
       )}
 
       {roles.length === 0 && !adding ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+        <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
           <Users size={32} className="mx-auto text-gray-300 mb-2" />
-          <p className="text-sm text-gray-500">No roles defined yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No roles defined yet.</p>
           <button
             onClick={() => setAdding(true)}
             className="mt-3 text-sm text-indigo-600 hover:underline"
@@ -550,8 +550,8 @@ export default function AdminAvatarInstancePage() {
     return (
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
-        <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />
-        <div className="h-48 bg-gray-100 rounded-xl animate-pulse" />
+        <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+        <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
       </div>
     );
   }
@@ -567,21 +567,21 @@ export default function AdminAvatarInstancePage() {
       {/* Back */}
       <Link
         href="/admin/marketplace"
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 w-fit"
+        className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit"
       >
         <ArrowLeft size={16} /> Marketplace
       </Link>
 
       {/* Header */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-start gap-5">
           <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={72} rounded="lg" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900">{avatar.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avatar.name}</h1>
               <StatusPill published={avatar.is_published} />
             </div>
-            <p className="text-gray-500 text-sm mt-1">{avatar.description || 'No description'}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{avatar.description || 'No description'}</p>
             {template && (
               <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
                 <Layers size={11} />
@@ -595,7 +595,7 @@ export default function AdminAvatarInstancePage() {
           {template && (
             <Link
               href={`/admin/avatars/${template.id}`}
-              className="text-sm text-gray-600 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0"
+              className="text-sm text-gray-600 dark:text-gray-400 border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors flex-shrink-0"
             >
               View Template
             </Link>
@@ -604,7 +604,7 @@ export default function AdminAvatarInstancePage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-1 overflow-x-auto">
           {TABS.map((t) => (
             <button
@@ -613,7 +613,7 @@ export default function AdminAvatarInstancePage() {
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 tab === t.id
                   ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 hover:border-gray-300'
               }`}
             >
               {t.icon} {t.label}

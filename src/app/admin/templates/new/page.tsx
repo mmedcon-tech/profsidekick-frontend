@@ -71,7 +71,7 @@ export default function NewTemplatePage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Link href="/admin/templates" className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 w-fit">
+      <Link href="/admin/templates" className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Templates
       </Link>
 
@@ -80,8 +80,8 @@ export default function NewTemplatePage() {
           <Layers size={20} className="text-indigo-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">New Template</h1>
-          <p className="text-sm text-gray-500">Create a template that publishers can instantiate into avatars.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">New Template</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Create a template that publishers can instantiate into avatars.</p>
         </div>
       </div>
 
@@ -89,13 +89,13 @@ export default function NewTemplatePage() {
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800">
         <div className="p-6 space-y-5">
-          <h2 className="font-semibold text-gray-900">Basic Information</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Basic Information</h2>
 
           {/* Avatar image upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Avatar Image <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <div className="flex items-center gap-4">
@@ -141,7 +141,7 @@ export default function NewTemplatePage() {
                 </button>
                 {imageFile && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-gray-500 truncate max-w-[180px]">{imageFile.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[180px]">{imageFile.name}</span>
                     <button
                       type="button"
                       onClick={clearImage}
@@ -159,7 +159,7 @@ export default function NewTemplatePage() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Template Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -173,11 +173,11 @@ export default function NewTemplatePage() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Category</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
             <select
               value={form.category}
               onChange={set('category')}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white dark:bg-gray-800"
             >
               <option value="">Select a category...</option>
               {CATEGORY_OPTIONS.map((c) => (
@@ -188,7 +188,7 @@ export default function NewTemplatePage() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
             <textarea
               value={form.description}
               onChange={set('description')}
@@ -199,14 +199,14 @@ export default function NewTemplatePage() {
           </div>
         </div>
 
-        <div className="p-6 bg-gray-50 rounded-b-xl">
+        <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-b-xl">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
               <Layers size={14} className="text-indigo-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700">Prompts are added after creation</p>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Prompts are added after creation</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 After creating the template you will be taken to the template editor where you can write
                 and publish the Conversation Prompt and Document Analysis Prompt, manage roles, and track version history.
               </p>
@@ -224,7 +224,7 @@ export default function NewTemplatePage() {
           {saving ? 'Creating...' : 'Create Template'}
         </button>
         <Link href="/admin/templates"
-          className="text-sm text-gray-500 px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors">
+          className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2.5 rounded-lg hover:bg-gray-100 dark:bg-gray-800 transition-colors">
           Cancel
         </Link>
       </div>

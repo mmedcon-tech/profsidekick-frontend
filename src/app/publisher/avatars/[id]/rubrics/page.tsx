@@ -80,15 +80,15 @@ export default function RubricsPage() {
     }
   };
 
-  if (loading) return <div className="h-48 bg-gray-100 rounded-xl animate-pulse max-w-2xl" />;
+  if (loading) return <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse max-w-2xl" />;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Link href={`/publisher/avatars/${id}`} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 w-fit">
+      <Link href={`/publisher/avatars/${id}`} className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Back to Avatar
       </Link>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Rubrics</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Rubrics</h1>
         {!noConfig && !showForm && (
           <button onClick={() => setShowForm(true)}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
@@ -108,14 +108,14 @@ export default function RubricsPage() {
 
       {/* New rubric form */}
       {showForm && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">New Rubric</h2>
-            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">New Rubric</h2>
+            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 dark:text-gray-400"><X size={18} /></button>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rubric Title</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rubric Title</label>
             <input value={rubricTitle} onChange={(e) => setRubricTitle(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="e.g., Oral Examination Rubric" />
@@ -123,14 +123,14 @@ export default function RubricsPage() {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">Criteria</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Criteria</label>
               <span className={`text-xs font-medium ${totalWeight === 100 ? 'text-green-600' : 'text-red-500'}`}>
                 Total: {totalWeight}% {totalWeight !== 100 && '(must be 100%)'}
               </span>
             </div>
 
             {criteria.map((c, i) => (
-              <div key={i} className="grid grid-cols-[1fr_80px_auto] gap-2 items-start p-3 bg-gray-50 rounded-lg">
+              <div key={i} className="grid grid-cols-[1fr_80px_auto] gap-2 items-start p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <div className="space-y-2">
                   <input value={c.name} onChange={(e) => updateCriterion(i, 'name', e.target.value)}
                     className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
@@ -160,7 +160,7 @@ export default function RubricsPage() {
 
           <div className="flex gap-3">
             <button onClick={() => setShowForm(false)}
-              className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 text-sm transition-colors">
+              className="flex-1 border border-gray-300 text-gray-700 dark:text-gray-300 py-2 rounded-lg hover:bg-gray-50 dark:bg-gray-900 text-sm transition-colors">
               Cancel
             </button>
             <button onClick={handleSave} disabled={saving}
@@ -174,14 +174,14 @@ export default function RubricsPage() {
       {/* Rubric list */}
       <div className="space-y-3">
         {rubrics.length === 0 && !showForm ? (
-          <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
             <ClipboardList size={36} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-gray-500 text-sm">No rubrics yet.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No rubrics yet.</p>
           </div>
         ) : rubrics.map((r) => (
-          <div key={r.id} className="bg-white rounded-xl border border-gray-200 p-5">
+          <div key={r.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900">{r.title}</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{r.title}</h3>
               <button onClick={() => handleDelete(r.id)} disabled={deleting === r.id}
                 className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-40">
                 <Trash2 size={15} />
@@ -190,7 +190,7 @@ export default function RubricsPage() {
             <div className="space-y-1.5">
               {Object.entries(r.content as Record<string, { weight: number; description?: string }>).map(([name, val]) => (
                 <div key={name} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700">{name}</span>
+                  <span className="text-gray-700 dark:text-gray-300">{name}</span>
                   <div className="flex items-center gap-2">
                     {val.description && <span className="text-gray-400 text-xs">{val.description}</span>}
                     <span className="font-medium text-blue-600">{val.weight}%</span>

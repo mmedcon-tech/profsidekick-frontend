@@ -116,12 +116,12 @@ export default function CourseDetailPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-8 text-center max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center max-w-md">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <GraduationCap className="w-8 h-8 text-red-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Course</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Error Loading Course</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
             <button
               onClick={() => router.push('/dashboard')}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -138,12 +138,12 @@ export default function CourseDetailPage() {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-8 text-center max-w-md">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center max-w-md">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
               <GraduationCap className="w-8 h-8 text-gray-400" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Course Not Found</h2>
-            <p className="text-gray-600 mb-4">The course you are looking for does not exist or you do not have access to it.</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Course Not Found</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">The course you are looking for does not exist or you do not have access to it.</p>
             <button
               onClick={() => router.push('/dashboard')}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -167,13 +167,13 @@ export default function CourseDetailPage() {
           <div className="mb-8">
             <button
               onClick={() => router.push('/dashboard')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors mb-4"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors mb-4"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Courses
             </button>
 
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4 flex-1">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -181,42 +181,42 @@ export default function CourseDetailPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h1 className="text-3xl font-bold text-gray-900">{course.name}</h1>
+                      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{course.name}</h1>
                       {course.is_public ? (
                         <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                           <Globe className="w-3 h-3" />
                           Public
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                        <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-xs">
                           <Lock className="w-3 h-3" />
                           Private
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
                       {course.code && <span className="font-medium">{course.code}</span>}
                       {course.section && <span>Section {course.section}</span>}
                       {course.department && <span>{course.department}</span>}
                       {course.semester && course.year && <span>{course.semester} {course.year}</span>}
                     </div>
                     {course.description && (
-                      <p className="text-gray-700 mb-4">{course.description}</p>
+                      <p className="text-gray-700 dark:text-gray-300 mb-4">{course.description}</p>
                     )}
                     <div className="flex items-center gap-6 text-sm">
                       <div className="flex items-center gap-1">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">
+                        <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <span className="text-gray-600 dark:text-gray-400">
                           {isOwner ? 'You' : `Instructor: ${course.owner_name || course.username || 'Unknown'}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <BookOpen className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
+                        <BookOpen className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <span className="text-gray-600 dark:text-gray-400">{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4 text-gray-500" />
-                        <span className="text-gray-600">{course.enrollment_count || 0} student{course.enrollment_count !== 1 ? 's' : ''}</span>
+                        <Users className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <span className="text-gray-600 dark:text-gray-400">{course.enrollment_count || 0} student{course.enrollment_count !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </div>
@@ -234,14 +234,14 @@ export default function CourseDetailPage() {
                     </button>
                     <button
                       onClick={handleManageStudents}
-                      className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                      className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                     >
                       <UserPlus className="w-4 h-4" />
                       Manage Students
                     </button>
                     <button
                       onClick={handleCourseSettings}
-                      className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                      className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                     >
                       <Settings className="w-4 h-4" />
                       Course Settings
@@ -253,11 +253,11 @@ export default function CourseDetailPage() {
           </div>
 
           {/* Sessions List */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Course Sessions</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Course Sessions</h2>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {sessions.length} session{sessions.length !== 1 ? 's' : ''} available
                 </span>
                 {isOwner && sessions.length > 0 && (
@@ -274,13 +274,13 @@ export default function CourseDetailPage() {
 
             {sessions.length === 0 ? (
               <div className="text-center py-12">
-                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                   <BookOpen className="w-10 h-10 text-gray-400" />
                 </div>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-600 dark:text-gray-400 text-lg">
                   {isOwner ? 'No sessions created yet' : 'No sessions available yet'}
                 </p>
-                <p className="text-gray-500 text-sm mt-2 mb-6">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 mb-6">
                   {isOwner 
                     ? 'Create your first teaching session to get started!' 
                     : 'Check back later for new sessions from your instructor!'
@@ -300,7 +300,7 @@ export default function CourseDetailPage() {
                 {sessions.map((session, index) => (
                   <div
                     key={session.sessionId}
-                    className="p-6 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all duration-200 group"
+                    className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all duration-200 group"
                     onClick={() => handleJoinSession(session.sessionId)}
                   >
                     <div className="flex items-start justify-between">
@@ -309,16 +309,16 @@ export default function CourseDetailPage() {
                           <span className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold group-hover:bg-blue-200">
                             {session.session_number || index + 1}
                           </span>
-                          <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-700">
+                          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-700">
                             {session.class_name}
                           </h3>
                         </div>
                         
                         {session.description && (
-                          <p className="text-gray-600 mb-3 ml-11">{session.description}</p>
+                          <p className="text-gray-600 dark:text-gray-400 mb-3 ml-11">{session.description}</p>
                         )}
                         
-                        <div className="flex items-center gap-6 text-sm text-gray-500 ml-11">
+                        <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400 ml-11">
                           {session.session_date && (
                             <div className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
@@ -334,7 +334,7 @@ export default function CourseDetailPage() {
                       </div>
                       
                       <div className="flex items-center gap-2 ml-4">
-                        <div className="text-right text-sm text-gray-500">
+                        <div className="text-right text-sm text-gray-500 dark:text-gray-400">
                           <div>{isOwner ? 'Manage' : 'Join Session'}</div>
                         </div>
                         <Play className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
@@ -348,33 +348,33 @@ export default function CourseDetailPage() {
 
           {/* Course Statistics (for course owners) */}
           {isOwner && (
-            <div className="bg-white rounded-2xl shadow-lg p-8 mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Analytics</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mt-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Course Analytics</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center p-6 bg-blue-50 rounded-xl">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <BookOpen className="w-6 h-6 text-blue-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900">{sessions.length}</h3>
-                  <p className="text-gray-600">Teaching Sessions</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{sessions.length}</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Teaching Sessions</p>
                 </div>
                 
                 <div className="text-center p-6 bg-green-50 rounded-xl">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Users className="w-6 h-6 text-green-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900">{course.enrollment_count || 0}</h3>
-                  <p className="text-gray-600">Enrolled Students</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{course.enrollment_count || 0}</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Enrolled Students</p>
                 </div>
                 
                 <div className="text-center p-6 bg-purple-50 rounded-xl">
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                     <Play className="w-6 h-6 text-purple-600" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                     {sessions.reduce((total, session) => total + (session.run_count || 0), 0)}
                   </h3>
-                  <p className="text-gray-600">Total Session Runs</p>
+                  <p className="text-gray-600 dark:text-gray-400">Total Session Runs</p>
                 </div>
               </div>
             </div>

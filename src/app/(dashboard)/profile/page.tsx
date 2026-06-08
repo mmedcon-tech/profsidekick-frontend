@@ -265,11 +265,11 @@ export default function ProfilePage() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">General Information</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">General Information</h2>
               <form onSubmit={handlePersonalInfoSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       First Name
                     </label>
                     <input
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Last Name
                     </label>
                     <input
@@ -299,7 +299,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email Address
                   </label>
                   <input
@@ -314,7 +314,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Username
                   </label>
                   <input
@@ -330,7 +330,7 @@ export default function ProfilePage() {
 
                 {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="jobTitle" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Job Title
                     </label>
                     <input
@@ -344,7 +344,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="organization" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Organization
                     </label>
                     <input
@@ -360,7 +360,7 @@ export default function ProfilePage() {
                 </div> */}
 
                 {/* <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Bio
                   </label>
                   <textarea
@@ -401,8 +401,8 @@ export default function ProfilePage() {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Saved Prompts</h2>
-                <p className="text-gray-600">Manage your custom AI prompts and templates</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Saved Prompts</h2>
+                <p className="text-gray-600 dark:text-gray-400">Manage your custom AI prompts and templates</p>
               </div>
               <button 
                 onClick={() => setShowPromptModal(true)}
@@ -417,7 +417,7 @@ export default function ProfilePage() {
             {promptsLoading && (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Loading your prompts...</span>
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading your prompts...</span>
               </div>
             )}
 
@@ -435,9 +435,9 @@ export default function ProfilePage() {
             )}
 
             {!promptsLoading && !promptsError && savedPrompts.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300">
                 <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg mb-2">No saved prompts yet</p>
+                <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">No saved prompts yet</p>
                 <p className="text-gray-400 mb-4">Create your first custom AI prompt to get started</p>
                 <button 
                   onClick={() => setShowPromptModal(true)}
@@ -449,25 +449,25 @@ export default function ProfilePage() {
             ) : !promptsLoading && !promptsError && (
               <div className="grid gap-4">
                 {savedPrompts.map((prompt) => (
-                  <div key={prompt.id} className="bg-white rounded-lg p-6 border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+                  <div key={prompt.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:shadow-md transition-all duration-200">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-gray-900 text-lg">{prompt.name}</h3>
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{prompt.name}</h3>
                           {prompt.isPublic && (
                             <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                               Public
                             </span>
                           )}
                         </div>
-                        <p className="text-gray-600 mb-3">{prompt.description}</p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-3">{prompt.description}</p>
                         
                         {/* Tags */}
                         <div className="flex flex-wrap gap-2 mb-3">
                           {prompt.tags && prompt.tags.split(',').map(t => t.trim()).filter(t => t).map((tag) => (
                             <span
                               key={tag}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700"
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                             >
                               <Tag className="w-3 h-3 mr-1" />
                               {tag}
@@ -476,7 +476,7 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Stats */}
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(prompt.updatedAt).toLocaleDateString()}
@@ -499,7 +499,7 @@ export default function ProfilePage() {
                               setMessage({ type: 'error', text: 'Failed to copy prompt' });
                             }
                           }}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Copy prompt"
                         >
                           <Copy className="w-4 h-4" />
@@ -509,14 +509,14 @@ export default function ProfilePage() {
                             setEditingPrompt(prompt);
                             setShowPromptModal(true);
                           }}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Edit prompt"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleDeletePrompt(prompt.id)}
-                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete prompt"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -525,8 +525,8 @@ export default function ProfilePage() {
                     </div>
                     
                     {/* Prompt Content Preview */}
-                    <div className="bg-gray-50 rounded-lg p-3 border-l-4 border-blue-500">
-                      <p className="text-sm text-gray-700 line-clamp-3">
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border-l-4 border-blue-500">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">
                         {prompt.content}
                       </p>
                     </div>
@@ -540,11 +540,11 @@ export default function ProfilePage() {
       case 'security':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Security Settings</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Security Settings</h2>
             
             <form onSubmit={handlePasswordSubmit} className="space-y-6">
               <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Current Password
                 </label>
                 <div className="relative">
@@ -560,7 +560,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors"
                   >
                     {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -569,7 +569,7 @@ export default function ProfilePage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     New Password
                   </label>
                   <div className="relative">
@@ -585,14 +585,14 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors"
                     >
                       {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Confirm New Password
                   </label>
                   <div className="relative">
@@ -608,7 +608,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors"
                     >
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -616,7 +616,7 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Password must be at least 8 characters long and contain a mix of letters, numbers, and symbols.
               </p>
 
@@ -644,16 +644,16 @@ export default function ProfilePage() {
       case 'notifications':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Notification Preferences</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notification Preferences</h2>
             <p>Coming soon</p>
             {/* <div className="space-y-4">
               {Object.entries(notifications).map(([key, value]) => (
-                <div key={key} className="flex items-center justify-between py-3 border-b border-gray-200">
+                <div key={key} className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
                   <div>
-                    <h3 className="font-medium text-gray-900">
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
                       {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {key === 'emailNotifications' && 'Receive email notifications for important updates'}
                       {key === 'sessionReminders' && 'Get reminders before scheduled teaching sessions'}
                       {key === 'weeklyReports' && 'Weekly summary of your teaching activities'}
@@ -668,7 +668,7 @@ export default function ProfilePage() {
                       onChange={(e) => handleNotificationChange(key, e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
               ))}
@@ -679,11 +679,11 @@ export default function ProfilePage() {
       case 'preferences':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">App Preferences</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">App Preferences</h2>
             <p>Coming soon</p>
             {/* <div className="space-y-6">
               <div>
-                <label htmlFor="theme" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="theme" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Theme
                 </label>
                 <select
@@ -699,7 +699,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="language" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Language
                 </label>
                 <select
@@ -716,7 +716,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Timezone
                 </label>
                 <select
@@ -734,7 +734,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Date Format
                 </label>
                 <select
@@ -755,7 +755,7 @@ export default function ProfilePage() {
       case 'account':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Account Management</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Account Management</h2>
             
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-red-900 mb-2">Delete Account</h3>
@@ -794,7 +794,7 @@ export default function ProfilePage() {
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+                      className="bg-gray-300 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg font-medium hover:bg-gray-400 transition-colors"
                     >
                       Cancel
                     </button>
@@ -816,14 +816,14 @@ export default function ProfilePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Settings</h1>
-            <p className="text-xl text-gray-600">Manage your account and preferences</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">Settings</h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400">Manage your account and preferences</p>
           </div>
 
           <div className="flex gap-8">
             {/* Sidebar */}
             <div className="w-80 flex-shrink-0">
-              <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sticky top-8">
                 <nav className="space-y-2">
                   {TABS.map((tab) => {
                     const Icon = tab.icon;
@@ -836,13 +836,13 @@ export default function ProfilePage() {
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                           isActive
                             ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600 shadow-sm'
-                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 hover:text-gray-900 dark:text-gray-100'
                         }`}
                       >
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                        <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'}`} />
                         <div className="flex-1 min-w-0">
                           <div className="font-medium">{tab.label}</div>
-                          <div className="text-xs text-gray-500 truncate">{tab.description}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{tab.description}</div>
                         </div>
                         {isActive && <ChevronRight className="w-4 h-4 text-blue-600" />}
                       </button>
@@ -866,7 +866,7 @@ export default function ProfilePage() {
               )}
 
               {/* Tab Content */}
-              <div className="bg-white rounded-2xl shadow-lg p-8">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
                 {renderTabContent()}
               </div>
             </div>

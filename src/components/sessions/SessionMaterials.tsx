@@ -275,8 +275,8 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Session Materials</h3>
-          <p className="text-sm text-gray-500">Select which course materials to include in this session</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Session Materials</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Select which course materials to include in this session</p>
         </div>
         <button
           onClick={fetchAvailableMaterials}
@@ -300,7 +300,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
         {sessionMaterials.length === 0 ? (
           <div className="text-center py-8">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500 mb-4">No materials selected for this session</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">No materials selected for this session</p>
             <button
               onClick={fetchAvailableMaterials}
               className="text-blue-600 hover:text-blue-700 font-medium"
@@ -319,7 +319,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                 className={`border rounded-lg p-4 transition-all ${
                   isIncluded 
                     ? 'border-green-200 bg-green-50' 
-                    : 'border-gray-200 bg-gray-50'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -330,7 +330,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                       className={`mt-1 p-1 rounded-full transition-colors ${
                         isIncluded 
                           ? 'text-green-600 hover:text-green-700' 
-                          : 'text-gray-400 hover:text-gray-600'
+                          : 'text-gray-400 hover:text-gray-600 dark:text-gray-400'
                       }`}
                     >
                       {isIncluded ? (
@@ -343,7 +343,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-lg">{getTypeIcon(material.material_type)}</span>
-                        <h4 className={`text-lg font-medium ${isIncluded ? 'text-gray-900' : 'text-gray-500'}`}>
+                        <h4 className={`text-lg font-medium ${isIncluded ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>
                           {material.title}
                         </h4>
                         {material.is_required && (
@@ -359,12 +359,12 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                       </div>
                       
                       {material.description && (
-                        <p className={`mb-2 ${isIncluded ? 'text-gray-600' : 'text-gray-400'}`}>
+                        <p className={`mb-2 ${isIncluded ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400'}`}>
                           {material.description}
                         </p>
                       )}
                       
-                      <div className={`flex items-center gap-4 text-sm ${isIncluded ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <div className={`flex items-center gap-4 text-sm ${isIncluded ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400'}`}>
                         <span className="capitalize">{material.material_type}</span>
                         {material.author && <span>by {material.author}</span>}
                         {material.publication_year && <span>({material.publication_year})</span>}
@@ -391,24 +391,24 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                                 </button>
                                 <button
                                   onClick={() => setEditingInstructions(null)}
-                                  className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+                                  className="px-3 py-1 bg-gray-200 text-gray-700 dark:text-gray-300 text-sm rounded hover:bg-gray-300"
                                 >
                                   Cancel
                                 </button>
                               </div>
                             </div>
                           ) : (
-                            <div className="bg-white border border-gray-200 rounded-lg p-3">
+                            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                  <h5 className="text-sm font-medium text-gray-700 mb-1">Usage Instructions</h5>
-                                  <p className="text-sm text-gray-600">
+                                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usage Instructions</h5>
+                                  <p className="text-sm text-gray-600 dark:text-gray-400">
                                     {sessionMaterial.usage_instructions || 'No specific instructions provided.'}
                                   </p>
                                 </div>
                                 <button
                                   onClick={() => startEditInstructions(sessionMaterial)}
-                                  className="ml-2 p-1 text-gray-500 hover:text-blue-600 rounded"
+                                  className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 rounded"
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
@@ -427,7 +427,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                         href={material.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 text-gray-500 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
                         title="Open link"
                       >
                         <ExternalLink className="w-4 h-4" />
@@ -439,7 +439,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                         href={material.file_path.startsWith('http') ? material.file_path : config.getApiUrl(material.file_path)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 text-gray-500 hover:text-green-600 rounded-lg hover:bg-green-50"
+                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50"
                         title="Download file"
                       >
                         <Download className="w-4 h-4" />
@@ -448,7 +448,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                     
                     <button
                       onClick={() => removeMaterialFromSession(sessionMaterial.id)}
-                      className="p-2 text-gray-500 hover:text-red-600 rounded-lg hover:bg-red-50"
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
                       title="Remove from session"
                     >
                       <X className="w-4 h-4" />
@@ -464,13 +464,13 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
       {/* Material Selection Modal */}
       {materialModal.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Add Materials to Session</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Add Materials to Session</h3>
                 <button
                   onClick={() => setMaterialModal(prev => ({ ...prev, isOpen: false }))}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-400"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -479,7 +479,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
             
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               {materialModal.availableMaterials.length === 0 ? (
-                <p className="text-center text-gray-500 py-8">
+                <p className="text-center text-gray-500 dark:text-gray-400 py-8">
                   No available materials. All course materials are already added to this session.
                 </p>
               ) : (
@@ -490,7 +490,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                       className={`border rounded-lg p-4 cursor-pointer transition-all ${
                         materialModal.selectedMaterials.has(material.id)
                           ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                       }`}
                       onClick={() => toggleMaterialSelection(material.id)}
                     >
@@ -506,7 +506,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-lg">{getTypeIcon(material.material_type)}</span>
-                            <h4 className="font-medium text-gray-900">{material.title}</h4>
+                            <h4 className="font-medium text-gray-900 dark:text-gray-100">{material.title}</h4>
                             {material.is_required && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 Required
@@ -515,10 +515,10 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                           </div>
                           
                           {material.description && (
-                            <p className="text-gray-600 text-sm mb-2">{material.description}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{material.description}</p>
                           )}
                           
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                             <span className="capitalize">{material.material_type}</span>
                             {material.author && <span>by {material.author}</span>}
                             {material.publication_year && <span>({material.publication_year})</span>}
@@ -531,10 +531,10 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
               )}
             </div>
             
-            <div className="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3">
               <button
                 onClick={() => setMaterialModal(prev => ({ ...prev, isOpen: false }))}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200"
               >
                 Cancel
               </button>

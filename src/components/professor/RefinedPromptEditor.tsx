@@ -34,7 +34,7 @@ export default function RefinedPromptEditor({
         </div>
       )}
 
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
         Optional: describe anything not covered by the preference dropdowns, then
         click Refine to generate an AI teaching prompt. You can edit the result
         before saving.
@@ -43,7 +43,7 @@ export default function RefinedPromptEditor({
       <div>
         <label
           htmlFor="additional-instructions"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
           Additional instructions (optional)
         </label>
@@ -52,7 +52,7 @@ export default function RefinedPromptEditor({
           value={additionalInstructions}
           onChange={(e) => onAdditionalInstructionsChange(e.target.value)}
           rows={4}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="e.g. Use examples from clinical medicine, encourage debate, avoid jargon..."
         />
       </div>
@@ -72,7 +72,7 @@ export default function RefinedPromptEditor({
           <div>
             <label
               htmlFor="refined-prompt"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
               Refined prompt (editable)
             </label>
@@ -81,7 +81,7 @@ export default function RefinedPromptEditor({
               value={refinedPrompt}
               onChange={(e) => onRefinedPromptChange(e.target.value)}
               rows={12}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <button
