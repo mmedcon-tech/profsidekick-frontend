@@ -44,10 +44,12 @@ export function useSubscriberStats(coursesEnrolled: number) {
       );
 
       const allRuns = perSession.flatMap((s) => s.runs);
-      const completedRuns = allRuns.filter((r) => r.status === 'COMPLETED');
+      const completedRuns = allRuns.filter(
+        (r) => r.status?.toUpperCase() === 'COMPLETED',
+      );
       const totalRunMinutes = allRuns.reduce((sum, r) => sum + (r.duration ?? 0), 0);
       const sessionsWithCompletedRun = perSession.filter((s) =>
-        s.runs.some((r) => r.status === 'COMPLETED'),
+        s.runs.some((r) => r.status?.toUpperCase() === 'COMPLETED'),
       ).length;
       const overallProgressPct =
         sessions.length > 0

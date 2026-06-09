@@ -86,7 +86,7 @@ export default function ReferencesPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm"
               placeholder="e.g., Problem Set 1 — Model Answer" />
           </div>
           <div>
@@ -95,7 +95,7 @@ export default function ReferencesPage() {
               className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-lg file:text-sm file:bg-gray-50 dark:bg-gray-900 file:text-gray-700 dark:text-gray-300 hover:file:bg-gray-100 dark:bg-gray-800" />
           </div>
           <button onClick={handleUpload} disabled={uploading || !title.trim()}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium">
+            className="flex items-center gap-2 bg-[#133221] text-white px-4 py-2 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 transition-colors text-sm font-medium">
             <Upload size={15} /> {uploading ? 'Uploading...' : 'Upload'}
           </button>
         </div>

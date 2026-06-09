@@ -54,7 +54,7 @@ export default function AdminAvatarsPage() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm"
           placeholder="Search avatars…"
         />
       </div>
@@ -98,7 +98,7 @@ export default function AdminAvatarsPage() {
                     <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{t.name}</span>
                     <StatusBadge state={t.published_state} />
                     {t.category && (
-                      <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-indigo-600 bg-gray-50 px-2 py-0.5 rounded-full">
                         {t.category}
                       </span>
                     )}

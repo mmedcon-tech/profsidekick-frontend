@@ -68,7 +68,7 @@ export default function AvatarDetailPage() {
     return (
       <div className="text-center py-20">
         <p className="text-red-600">{error || 'Avatar not found'}</p>
-        <Link href="/publisher/avatars" className="text-blue-600 hover:underline text-sm mt-2 inline-block">
+        <Link href="/publisher/avatars" className="text-[#133221] hover:underline text-sm mt-2 inline-block">
           ← Back to avatars
         </Link>
       </div>
@@ -115,7 +115,7 @@ export default function AvatarDetailPage() {
                   {avatar.is_published ? '● Published' : '○ Unpublished draft'}
                 </span>
                 {avatar.configuration && (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-[#BA984E]/20 text-[#133221] font-medium">
                     Configured
                   </span>
                 )}
@@ -133,7 +133,7 @@ export default function AvatarDetailPage() {
               disabled={publishing}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                 avatar.is_published
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  ? 'bg-[#133221] hover:bg-[#0a1e13] text-white'
                   : 'bg-green-600 hover:bg-green-700 text-white'
               }`}>
               {publishing ? (
@@ -185,7 +185,7 @@ export default function AvatarDetailPage() {
           <Link key={tab.label} href={tab.href(id)}
             className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
               isTabActive(tab)
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-[#133221] text-[#133221]'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
             }`}>
             {tab.label}
@@ -234,7 +234,7 @@ export default function AvatarDetailPage() {
         {/* Actions */}
         <div className="pt-2 flex gap-3 flex-wrap">
           <Link href={`/publisher/avatars/${id}/courses`}
-            className="flex-1 min-w-[140px] text-center py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            className="flex-1 min-w-[140px] text-center py-2.5 bg-[#133221] text-white text-sm font-medium rounded-lg hover:bg-[#0a1e13] transition-colors">
             Manage Courses &amp; Sessions →
           </Link>
           {!avatar.configuration && (
