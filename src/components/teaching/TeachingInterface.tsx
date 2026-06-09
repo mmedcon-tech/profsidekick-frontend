@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare } from "lucide-react";
+import StreamingAvatar, {
+  AvatarQuality,
+  StreamingEvents,
+  TaskType,
+} from "@heygen/streaming-avatar";
 import { ClassSession,  } from "@/types";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
@@ -11,6 +17,17 @@ import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConn
 import { classifyTurn } from "@/lib/turnClassifier";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
+
+// HeyGen is the visual rendering layer (§5.2 SYSTEM_DESIGN). When not configured,
+// the session falls back to OpenAI Realtime voice-only with a static avatar image.
+const HEYGEN_CONFIGURED = !!(
+  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
+  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE
+);
+const DEFAULT_HEYGEN_AVATAR_ID =
+  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
+  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE ||
+  '';
 
 // Global connection tracking to prevent React Strict Mode issues
 let globalConnectionId: string | null = null;
@@ -53,6 +70,13 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const isIntentionallyDisconnectedRef = useRef(false);
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
+
+  // HeyGen visual layer — only initialised when HEYGEN_CONFIGURED
+  const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
+  const heygenVideoRef = useRef<HTMLVideoElement>(null);
+  const [heygenConnected, setHeygenConnected] = useState(false);
+  // Session-level avatar ID: backend may override DEFAULT via ephemeral response
+  const heygenAvatarIdRef = useRef(DEFAULT_HEYGEN_AVATAR_ID);
   const GUARD_PHRASES = ["stop", "pause", "end session", "wait"]; // Guard phrases to allow intentional interruptions
   const MIN_VOICE_LENGTH = 0.8; // Minimum length in seconds
   const MIN_CONFIDENCE = 0.85;  // Minimum confidence from speech recognition
@@ -156,6 +180,10 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       }
 
       const data = await response.json();
+      // Backend may include heygen_avatar_id once §6.3 of SYSTEM_DESIGN is implemented
+      if (data.heygen_avatar_id) {
+        heygenAvatarIdRef.current = data.heygen_avatar_id;
+      }
       return data.client_secret.value;
     } catch (error) {
       console.error('Failed to fetch ephemeral key:', error);
@@ -215,6 +243,53 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   );
 
 
+
+  // ── HeyGen visual layer ──────────────────────────────────────────────────────
+
+  const stopHeyGen = useCallback(async () => {
+    if (heygenAvatarRef.current) {
+      try { await heygenAvatarRef.current.stopAvatar(); } catch (_) {}
+      heygenAvatarRef.current = null;
+    }
+    if (heygenVideoRef.current) heygenVideoRef.current.srcObject = null;
+    setHeygenConnected(false);
+  }, []);
+
+  const initHeyGen = useCallback(async () => {
+    if (!HEYGEN_CONFIGURED || !heygenAvatarIdRef.current) return;
+    try {
+      const res = await fetch('/api/heygen/token', { method: 'POST' });
+      if (!res.ok) return;
+      const { token: heygenToken } = await res.json();
+
+      const avatar = new StreamingAvatar({ token: heygenToken });
+      heygenAvatarRef.current = avatar;
+
+      avatar.on(StreamingEvents.STREAM_READY, () => {
+        const stream = avatar.mediaStream;
+        if (heygenVideoRef.current && stream) {
+          heygenVideoRef.current.srcObject = stream;
+          heygenVideoRef.current.play().catch(() => {});
+        }
+        setHeygenConnected(true);
+      });
+
+      avatar.on(StreamingEvents.STREAM_DISCONNECTED, () => {
+        setHeygenConnected(false);
+        heygenAvatarRef.current = null;
+      });
+
+      await avatar.createStartAvatar({
+        avatarName: heygenAvatarIdRef.current,
+        quality: AvatarQuality.Medium,
+      });
+    } catch (err) {
+      console.error('HeyGen init error:', err);
+      heygenAvatarRef.current = null;
+    }
+  }, []);
+
+  // ── OpenAI Realtime connection ───────────────────────────────────────────────
 
   const connectToRealtime = async () => {
     // Generate unique connection ID for this attempt
@@ -303,11 +378,14 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           isIntentionallyDisconnectedRef.current = false; // Reset disconnect flag for active connection
           globalConnectionId = null;
           globalConnectionPromise = null;
-          
+
           // Set up message handler immediately when data channel opens
           setMessageHandler();
-          
+
           initializeSession(); // Enable tools for AI
+
+          // Start HeyGen visual layer alongside OpenAI voice (no-op if not configured)
+          initHeyGen();
         });
         dc.addEventListener("close", () => {
           logClientEvent({}, "data_channel.close");
@@ -406,7 +484,10 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
 
   const disconnectFromRealtime = () => {
     console.log('Disconnecting from realtime... (user initiated)');
-    
+
+    // Stop HeyGen visual layer cleanly
+    stopHeyGen();
+
     // Mark as intentionally disconnected to prevent auto-reconnection
     isIntentionallyDisconnectedRef.current = true;
     
@@ -617,7 +698,9 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   // Separate function for React Strict Mode cleanup
   const disconnectFromRealtimeReactCleanup = () => {
     console.log('Disconnecting from realtime... (React Strict Mode cleanup)');
-    
+
+    stopHeyGen();
+
     // Mark as intentionally disconnected to prevent auto-reconnection
     isIntentionallyDisconnectedRef.current = true;
     
@@ -1173,6 +1256,18 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
         setIsAISpeaking(false);
       }
 
+      // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
+      // response.audio_transcript.done fires when a full assistant turn completes
+      if (
+        serverEvent.type === "response.audio_transcript.done" &&
+        serverEvent.transcript &&
+        heygenAvatarRef.current
+      ) {
+        heygenAvatarRef.current
+          .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
+          .catch(() => {});
+      }
+
       // --- Guard phrases: intercept intentional interruptions ---
       // Fix 2: "transcript.final" does not exist in the Realtime API; use the correct event.
       if (serverEvent.type === "conversation.item.input_audio_transcription.completed") {
@@ -1486,68 +1581,67 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           </p>
         </div>
 
-        {/* Voice Status */}
-        <div className="p-4 space-y-3">
-          {/* Connection Status Warning */}
-          {sessionStatus === "CONNECTED" && (!dcRef.current || dcRef.current.readyState !== "open") && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-800 font-medium">⚠️ AI Connection Lost</p>
-              <p className="text-xs text-yellow-600">Slide controls work, but AI cannot respond. Reconnecting...</p>
+        {/* Avatar visual — HeyGen stream when configured, static image otherwise */}
+        <div className="relative bg-gray-900 flex-shrink-0" style={{ aspectRatio: '9/16' }}>
+          {HEYGEN_CONFIGURED ? (
+            <>
+              <video
+                ref={heygenVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              {!heygenConnected && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 gap-2">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-gray-500 text-[11px]">Connecting avatar…</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <Image
+              src={
+                process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE
+                  ? '/images/avatar-female.png'
+                  : '/images/avatar-male.png'
+              }
+              alt="AI Assistant"
+              fill
+              className="object-cover object-top"
+              priority
+            />
+          )}
+
+          {/* Speaking indicator overlay */}
+          {isAISpeaking && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 items-end h-4">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-1 bg-blue-400 rounded-full animate-pulse"
+                  style={{ height: `${8 + i * 4}px`, animationDelay: `${i * 100}ms` }}
+                />
+              ))}
             </div>
           )}
-          
-          {/* AI Status */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-slate-200/60 shadow-sm">
-            <div className={`w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-              isAISpeaking 
-                ? "bg-emerald-100 border-emerald-400 shadow-lg shadow-emerald-400/20" 
-                : sessionStatus === "CONNECTED" && dcRef.current?.readyState === "open"
-                  ? "bg-slate-100 border-slate-300"
-                  : "bg-red-100 border-red-300"
-            }`}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className={`transition-all duration-300 ${
-                  isAISpeaking ? "animate-pulse scale-110" : ""
-                }`}>
-                  🎤
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-slate-900">AI Assistant</p>
-              <p className="text-xs text-slate-500 truncate">
-                {sessionStatus !== "CONNECTED" ? "Disconnected" :
-                 dcRef.current?.readyState !== "open" ? "Connection Lost" :
-                 isAISpeaking ? "Speaking..." : "Listening"}
-              </p>
-            </div>
-          </div>
+        </div>
 
-          {/* User Status */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-slate-200/60 shadow-sm">
-            <div className={`w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-              isMicMuted
-                ? "bg-red-100 border-red-400"
-                : isUserSpeaking 
-                  ? "bg-blue-100 border-blue-400 shadow-lg shadow-blue-400/20" 
-                  : "bg-slate-100 border-slate-300"
-            }`}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className={`transition-all duration-300 ${
-                  isUserSpeaking && !isMicMuted ? "animate-pulse scale-110" : ""
-                }`}>
-                  {isMicMuted ? "🔇" : "👤"}
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-slate-900">You</p>
-              <p className="text-xs text-slate-500 truncate">
-                {isMicMuted ? "Microphone Muted" : 
-                 isUserSpeaking ? "Speaking..." : "Ready"}
-              </p>
-            </div>
-          </div>
+        {/* Voice status strip */}
+        <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-200/50 bg-slate-50 flex-shrink-0">
+          {/* AI indicator */}
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+            isAISpeaking ? 'bg-blue-500 animate-pulse' :
+            sessionStatus === 'CONNECTED' ? 'bg-emerald-500' : 'bg-slate-300'
+          }`} />
+          <span className="text-[11px] text-slate-500 truncate flex-1">
+            {sessionStatus !== 'CONNECTED' ? 'Disconnected' :
+             isAISpeaking ? 'AI speaking…' :
+             isUserSpeaking ? 'You speaking…' : 'Listening'}
+          </span>
+          {/* Mic indicator */}
+          {isMicMuted && (
+            <span className="text-[11px] text-red-500 flex-shrink-0">Muted</span>
+          )}
         </div>
 
         {/* Session Notes Panel */}

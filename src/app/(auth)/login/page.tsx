@@ -89,7 +89,7 @@ function LoginForm() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <Image
               src="/images/logo.png"
-              alt="ProfSidekick Logo"
+              alt="MyOS Logo"
               width={48}
               height={48}
               className="object-contain"
@@ -97,7 +97,7 @@ function LoginForm() {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
-            <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400">ProfSidekick</h1>
+            <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400">MyOS</h1>
           </div>
           <p className="text-gray-600 dark:text-gray-400">Sign in to your account</p>
         </div>

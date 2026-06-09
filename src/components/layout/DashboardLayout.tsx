@@ -177,13 +177,13 @@ function Sidebar({ nav, open, onClose, focusMode }: SidebarProps) {
           <div className="flex items-center gap-2">
             <Image
               src="/images/logo.png"
-              alt="ProfSidekick"
+              alt="MyOS"
               width={32}
               height={32}
               className="rounded-full object-contain"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
-            <span className="font-bold text-lg">ProfSidekick</span>
+            <span className="font-bold text-lg">MyOS</span>
           </div>
           <button className="text-gray-400 hover:text-white" onClick={onClose}>
             <X size={20} />
