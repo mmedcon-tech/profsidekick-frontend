@@ -40,11 +40,11 @@ function PrefGroup({
               onClick={() => onChange(opt.value)}
               className={`text-left p-3 rounded-xl border-2 transition-all ${
                 selected
-                  ? 'border-blue-500 bg-blue-50'
+                  ? 'border-[#133221] bg-green-50 dark:bg-gray-800'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
               }`}
             >
-              <p className={`text-xs font-semibold ${selected ? 'text-blue-700' : 'text-gray-800 dark:text-gray-200'}`}>
+              <p className={`text-xs font-semibold ${selected ? 'text-[#133221]' : 'text-gray-800 dark:text-gray-200'}`}>
                 {opt.label}
               </p>
             </button>
@@ -182,10 +182,10 @@ export default function CreateAvatarPage() {
           return (
             <React.Fragment key={s}>
               <div className={`flex items-center gap-1.5 text-xs font-medium ${
-                active ? 'text-blue-600' : done ? 'text-green-600' : 'text-gray-400'
+                active ? 'text-[#133221]' : done ? 'text-green-600' : 'text-gray-400'
               }`}>
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
-                  active ? 'bg-blue-600 text-white' : done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 dark:text-gray-400'
+                  active ? 'bg-[#133221] text-white' : done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 dark:text-gray-400'
                 }`}>
                   {done ? <CheckCircle size={12} /> : i + 1}
                 </div>
@@ -219,7 +219,7 @@ export default function CreateAvatarPage() {
                   <button key={t.id} onClick={() => handleSelectTemplate(t)}
                     className={`text-left p-5 rounded-xl border-2 transition-all ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500 ring-offset-1'
+                        ? 'border-[#133221] bg-green-50 dark:bg-gray-800 ring-2 ring-[#133221] ring-offset-1'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
                     }`}>
                     <div className="flex items-start gap-3">
@@ -227,7 +227,7 @@ export default function CreateAvatarPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-gray-900 dark:text-gray-100">{t.name}</span>
-                          {isSelected && <CheckCircle size={15} className="text-blue-600 flex-shrink-0" />}
+                          {isSelected && <CheckCircle size={15} className="text-[#133221] flex-shrink-0" />}
                         </div>
                         {t.category && (
                           <span className="inline-flex items-center gap-1 text-xs text-indigo-600 mt-0.5">
@@ -248,7 +248,7 @@ export default function CreateAvatarPage() {
           <div className="flex justify-end pt-2">
             <button onClick={() => { if (selectedT) { setError(null); setStep('info'); } }}
               disabled={!selectedT}
-              className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              className="flex items-center gap-2 bg-[#133221] text-white px-5 py-2.5 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               Next <ArrowRight size={16} />
             </button>
           </div>
@@ -259,11 +259,11 @@ export default function CreateAvatarPage() {
       {step === 'info' && selectedT && (
         <div className="space-y-5">
           {/* Selected template badge */}
-          <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-gray-800 border border-[#133221]/30 rounded-xl">
             <AvatarIcon imageUrl={selectedT.avatar_image_url} name={selectedT.name} size={36} rounded="lg" />
             <div>
-              <p className="text-sm font-semibold text-blue-900">{selectedT.name}</p>
-              {selectedT.category && <p className="text-xs text-blue-600">{selectedT.category}</p>}
+              <p className="text-sm font-semibold text-[#133221]">{selectedT.name}</p>
+              {selectedT.category && <p className="text-xs text-[#133221]">{selectedT.category}</p>}
             </div>
           </div>
 
@@ -276,20 +276,20 @@ export default function CreateAvatarPage() {
               </label>
               <input value={name} onChange={(e) => setName(e.target.value)} maxLength={200}
                 placeholder={`e.g., ${user?.firstName ? `${user.firstName}'s ${selectedT.name}` : selectedT.name}`}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" />
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm" />
               <p className="text-xs text-gray-400 mt-1">Auto-filled from your name + template. You can customise it.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
               <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3}
                 placeholder="What will this avatar specialise in for your students?"
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm resize-none" />
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button onClick={() => { setError(null); setStep('preferences'); }} disabled={!name.trim()}
-              className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              className="flex items-center gap-2 bg-[#133221] text-white px-5 py-2.5 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               Next — Teaching Style <ArrowRight size={16} />
             </button>
             <button onClick={() => setStep('template')}
@@ -303,11 +303,11 @@ export default function CreateAvatarPage() {
       {/* ── Step 3: teaching preferences ───────────────────────────────────── */}
       {step === 'preferences' && selectedT && (
         <div className="space-y-6">
-          <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-gray-800 border border-[#133221]/30 rounded-xl">
             <AvatarIcon imageUrl={selectedT.avatar_image_url} name={selectedT.name} size={36} rounded="lg" />
             <div>
-              <p className="text-sm font-semibold text-blue-900">{name}</p>
-              <p className="text-xs text-blue-600">{selectedT.name}</p>
+              <p className="text-sm font-semibold text-[#133221]">{name}</p>
+              <p className="text-xs text-[#133221]">{selectedT.name}</p>
             </div>
           </div>
 
@@ -335,7 +335,7 @@ export default function CreateAvatarPage() {
                   <button key={val} type="button" onClick={() => setPostSessionCheck(val)}
                     className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all capitalize ${
                       postSessionCheck === val
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-[#133221] bg-green-50 dark:bg-gray-800 text-[#133221]'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300'
                     }`}>
                     {val}
@@ -352,7 +352,7 @@ export default function CreateAvatarPage() {
 
           <div className="flex items-center gap-3">
             <button onClick={handleCreate} disabled={submitting}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium">
+              className="flex items-center gap-2 bg-[#133221] text-white px-6 py-2.5 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium">
               {submitting ? 'Creating…' : 'Create Avatar'}
             </button>
             <button onClick={() => setStep('info')}

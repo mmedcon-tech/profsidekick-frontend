@@ -54,7 +54,7 @@ export default function PublisherDashboard() {
           </p>
         </div>
         <Link href="/publisher/avatars/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+          className="flex items-center gap-2 bg-[#133221] text-white px-4 py-2.5 rounded-lg hover:bg-[#0a1e13] transition-colors text-sm font-medium">
           <Plus size={16} /> Create Avatar
         </Link>
       </div>
@@ -62,7 +62,7 @@ export default function PublisherDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'My Avatars', value: avatarLoading ? null : avatars.length, icon: <Bot size={20} className="text-blue-600" />,    bg: 'bg-blue-50' },
+          { label: 'My Avatars', value: avatarLoading ? null : avatars.length, icon: <Bot size={20} className="text-[#133221]" />,    bg: 'bg-green-50 dark:bg-gray-800' },
           { label: 'Published',  value: avatarLoading ? null : published,      icon: <BarChart2 size={20} className="text-green-600" />, bg: 'bg-green-50' },
           { label: 'Drafts',     value: avatarLoading ? null : drafts,         icon: <BookOpen size={20} className="text-yellow-600" />, bg: 'bg-yellow-50' },
         ].map((s) => (
@@ -115,7 +115,7 @@ export default function PublisherDashboard() {
               Create an avatar from a template to get started.
             </p>
             <Link href="/publisher/avatars/new"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+              className="inline-flex items-center gap-2 bg-[#133221] text-white px-4 py-2 rounded-lg hover:bg-[#0a1e13] transition-colors text-sm">
               <Plus size={14} /> Create Avatar
             </Link>
           </div>
@@ -136,7 +136,7 @@ export default function PublisherDashboard() {
                     {a.is_published ? 'Published' : 'Draft'}
                   </span>
                 </div>
-                <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors text-sm line-clamp-1">
+                <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#133221] transition-colors text-sm line-clamp-1">
                   {a.name}
                 </p>
                 {a.template_name && (
@@ -145,7 +145,7 @@ export default function PublisherDashboard() {
                   </p>
                 )}
                 <p className="text-xs text-gray-400 mt-1 line-clamp-2">{a.description || ''}</p>
-                <p className="mt-3 text-xs text-blue-600 font-medium group-hover:underline flex items-center gap-1">
+                <p className="mt-3 text-xs text-[#133221] font-medium group-hover:underline flex items-center gap-1">
                   {avatarCta(a)} <ArrowRight size={11} />
                 </p>
               </Link>

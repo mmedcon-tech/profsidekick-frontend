@@ -60,7 +60,7 @@ function formatDuration(minutes?: number) {
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { color: string; icon: React.ReactNode }> = {
     COMPLETED: { color: 'bg-green-100 text-green-800', icon: <CheckCircle size={11} /> },
-    ACTIVE:    { color: 'bg-blue-100 text-blue-800',   icon: <Play size={11} /> },
+    ACTIVE:    { color: 'bg-[#BA984E]/20 text-[#133221]',   icon: <Play size={11} /> },
     FAILED:    { color: 'bg-red-100 text-red-800',     icon: <XCircle size={11} /> },
   };
   const c = cfg[status] ?? { color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300', icon: <AlertCircle size={11} /> };
@@ -109,7 +109,7 @@ function SessionHistoryRow({ session, token }: { session: Session; token: string
             <div className="flex items-center gap-2 mb-0.5">
               <p className="font-semibold text-gray-900 dark:text-gray-100 truncate text-sm">{session.classDetails.className}</p>
               {session.runCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-semibold rounded">
+                <span className="px-1.5 py-0.5 bg-gray-50 text-indigo-700 text-[10px] font-semibold rounded">
                   {session.runCount} {session.runCount === 1 ? 'run' : 'runs'}
                 </span>
               )}
@@ -272,7 +272,7 @@ export default function PublisherHistoryPage() {
         <div className="text-center py-12">
           <AlertCircle size={36} className="mx-auto text-red-400 mb-3" />
           <p className="text-gray-700 dark:text-gray-300 font-medium">{error}</p>
-          <button onClick={() => loadSessions(page)} className="mt-3 text-blue-600 text-sm hover:underline">
+          <button onClick={() => loadSessions(page)} className="mt-3 text-[#133221] text-sm hover:underline">
             Try again
           </button>
         </div>

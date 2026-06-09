@@ -118,7 +118,7 @@ export default function AvatarCoursesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Courses &amp; Sessions</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-            Manage the teaching workflow for <span className="font-medium text-blue-700">{avatar?.name}</span>.
+            Manage the teaching workflow for <span className="font-medium text-[#133221]">{avatar?.name}</span>.
             Sessions created here are linked to this avatar — subscribers who launch this avatar
             run these sessions.
           </p>
@@ -149,7 +149,7 @@ export default function AvatarCoursesPage() {
               When a subscriber launches this avatar, one of these sessions runs.
             </p>
           </div>
-          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+          <span className="text-xs bg-[#BA984E]/20 text-[#133221] px-2 py-1 rounded-full font-medium">
             {sessions.length} session{sessions.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -163,7 +163,7 @@ export default function AvatarCoursesPage() {
             </p>
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              className="inline-flex items-center gap-2 bg-[#133221] text-white px-4 py-2 rounded-lg hover:bg-[#0a1e13] transition-colors text-sm"
             >
               <Plus size={14} /> Create Session in Course Manager
             </Link>
@@ -172,8 +172,8 @@ export default function AvatarCoursesPage() {
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             {sessions.map((s) => (
               <div key={s.sessionId} className="flex items-center gap-3 py-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <Play size={14} className="text-blue-600" />
+                <div className="w-8 h-8 rounded-lg bg-[#BA984E]/20 flex items-center justify-center flex-shrink-0">
+                  <Play size={14} className="text-[#133221]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{s.classDetails.className}</p>
@@ -189,7 +189,7 @@ export default function AvatarCoursesPage() {
                   </span>
                   <Link
                     href={`/courses/${s.classDetails.courseId || s.classDetails.courseCode}/sessions/${s.sessionId}`}
-                    className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                    className="text-xs text-[#133221] hover:underline flex items-center gap-1"
                   >
                     Open <ExternalLink size={11} />
                   </Link>
@@ -220,7 +220,7 @@ export default function AvatarCoursesPage() {
             <BookOpen size={32} className="mx-auto text-gray-300 mb-2" />
             <p className="text-gray-500 dark:text-gray-400 text-sm">No courses yet.</p>
             <Link href="/dashboard"
-              className="mt-3 inline-flex items-center gap-1.5 text-blue-600 text-sm hover:underline">
+              className="mt-3 inline-flex items-center gap-1.5 text-[#133221] text-sm hover:underline">
               <Plus size={13} /> Create your first course
             </Link>
           </div>
@@ -230,14 +230,14 @@ export default function AvatarCoursesPage() {
               <Link
                 key={c.course_id}
                 href={`/courses/${c.course_id}`}
-                className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+                className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-[#133221] hover:bg-green-50 dark:bg-gray-800 transition-colors group"
               >
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                     <BookOpen size={14} className="text-purple-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-gray-100 text-sm group-hover:text-blue-700 truncate">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 text-sm group-hover:text-[#133221] truncate">
                       {c.name || 'Untitled Course'}
                     </p>
                     {c.code && <p className="text-xs text-gray-400">{c.code}</p>}
@@ -251,9 +251,9 @@ export default function AvatarCoursesPage() {
       </div>
 
       {/* How-to guide */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-sm text-blue-800 space-y-2">
+      <div className="bg-green-50 dark:bg-gray-800 border border-[#133221]/30 rounded-xl p-5 text-sm text-[#133221] space-y-2">
         <p className="font-semibold">How to link a session to this avatar</p>
-        <ol className="list-decimal list-inside space-y-1 text-blue-700">
+        <ol className="list-decimal list-inside space-y-1 text-[#133221]">
           <li>Open a course above (or create a new one).</li>
           <li>Create a new session inside the course.</li>
           <li>In the session creation form, select <strong>{avatar?.name}</strong> as the avatar.</li>

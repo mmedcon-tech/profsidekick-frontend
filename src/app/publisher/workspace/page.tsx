@@ -102,7 +102,7 @@ function LeftSidebar({
         </h2>
         <button
           onClick={onNew}
-          className="w-full flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="w-full flex items-center gap-2 bg-[#133221] hover:bg-[#0a1e13] text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <Plus size={15} /> New Conversation
         </button>
@@ -123,7 +123,7 @@ function LeftSidebar({
             onClick={() => onSelect(c.id)}
             className={`w-full text-left px-3 py-2.5 rounded-lg transition-colors text-sm ${
               activeId === c.id
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#133221] text-white'
                 : 'text-gray-300 hover:bg-gray-800'
             }`}
           >
@@ -160,8 +160,8 @@ function RightSidebar({
         {avatar ? (
           <>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <Bot size={20} className="text-blue-600" />
+              <div className="w-10 h-10 rounded-xl bg-[#BA984E]/20 flex items-center justify-center flex-shrink-0">
+                <Bot size={20} className="text-[#133221]" />
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{avatar.name}</p>
@@ -185,7 +185,7 @@ function RightSidebar({
         <div className="p-5 border-b border-gray-200 dark:border-gray-700 space-y-3">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Content</p>
           {[
-            { icon: <FileText size={14} />, label: 'Knowledge Docs', count: cfg.knowledge_documents?.length ?? 0, color: 'text-blue-600' },
+            { icon: <FileText size={14} />, label: 'Knowledge Docs', count: cfg.knowledge_documents?.length ?? 0, color: 'text-[#133221]' },
             { icon: <ClipboardList size={14} />, label: 'Rubrics', count: cfg.rubrics?.length ?? 0, color: 'text-purple-600' },
             { icon: <BookOpen size={14} />, label: 'References', count: cfg.reference_solutions?.length ?? 0, color: 'text-green-600' },
           ].map((row) => (
@@ -243,12 +243,12 @@ function OptionCards({
   selecting: boolean;
 }) {
   const colors: Record<string, string> = {
-    A: 'border-blue-300 hover:border-blue-500 hover:bg-blue-50',
+    A: 'border-[#133221] hover:border-[#133221] hover:bg-green-50 dark:bg-gray-800',
     B: 'border-purple-300 hover:border-purple-500 hover:bg-purple-50',
     C: 'border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50',
   };
   const labels: Record<string, string> = {
-    A: 'bg-blue-100 text-blue-700',
+    A: 'bg-[#BA984E]/20 text-[#133221]',
     B: 'bg-purple-100 text-purple-700',
     C: 'bg-emerald-100 text-emerald-700',
   };
@@ -500,7 +500,7 @@ function WorkspaceInner() {
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
-            <MessageSquare size={18} className="text-blue-600" />
+            <MessageSquare size={18} className="text-[#133221]" />
             <span className="font-semibold text-gray-900 dark:text-gray-100">
               {avatar ? `${avatar.name} — AI Workspace` : 'Publisher AI Workspace'}
             </span>
@@ -554,7 +554,7 @@ function WorkspaceInner() {
               <div key={cm.id} className={`flex ${cm.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[72%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                   cm.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-sm'
+                    ? 'bg-[#133221] text-white rounded-br-sm'
                     : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-sm shadow-sm'
                 }`}>
                   {cm.content}
@@ -584,7 +584,7 @@ function WorkspaceInner() {
                 onKeyDown={handleKeyDown}
                 placeholder={responseCount > 1 ? `Ask a question — get ${responseCount} response options to choose from…` : 'Ask anything…'}
                 rows={2}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#133221] focus:border-[#133221] resize-none text-sm"
                 disabled={sending}
               />
               <div className="flex items-center gap-2 mt-2">
@@ -607,7 +607,7 @@ function WorkspaceInner() {
             <button
               onClick={handleSend}
               disabled={!input.trim() || sending}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium text-sm flex-shrink-0 h-[42px]"
+              className="flex items-center gap-2 bg-[#133221] text-white px-4 py-2.5 rounded-xl hover:bg-[#0a1e13] disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium text-sm flex-shrink-0 h-[42px]"
             >
               {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               {responseCount > 1 ? 'Generate' : 'Send'}
