@@ -791,10 +791,22 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                   </button>
                 </div>
               ) : (
-                <div className="mb-6 h-64 bg-gray-50 dark:bg-gray-900 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                  <div className="text-center">
-                    <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500 dark:text-gray-400">No image preview available</p>
+                <div className="mb-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  {selectedSlide?.title && (
+                    <div className="bg-gray-50 dark:bg-gray-800 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{selectedSlide.title}</p>
+                    </div>
+                  )}
+                  <div className="px-5 py-4 max-h-64 overflow-y-auto">
+                    {selectedSlide?.content ? (
+                      <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                        {selectedSlide.content}
+                      </p>
+                    ) : (
+                      <div className="flex items-center justify-center h-20">
+                        <p className="text-gray-400 italic text-sm">No content available</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

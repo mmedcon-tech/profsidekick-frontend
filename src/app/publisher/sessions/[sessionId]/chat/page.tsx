@@ -368,25 +368,45 @@ function DocumentViewer({ slides }: { slides: SlideData[] }) {
         </button>
       </div>
 
-      {/* Image — fills all space */}
+      {/* Slide content — image if available, text card otherwise */}
       <div className="flex-1 overflow-y-auto flex items-start justify-center min-h-0">
         {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={slide.title || `Slide ${slide.slideNumber}`}
-            className="w-full h-auto object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              const fb = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
-              if (fb) fb.style.display = 'flex';
-            }}
-          />
-        ) : null}
-        <div style={{ display: imageUrl ? 'none' : 'flex' }}
-          className="w-full h-32 flex-col items-center justify-center gap-2 text-center p-4">
-          <ImageIcon size={24} className="text-gray-700 dark:text-gray-300" />
-          <p className="text-xs text-gray-600 dark:text-gray-400">Slide image unavailable</p>
-        </div>
+          <>
+            <img
+              src={imageUrl}
+              alt={slide.title || `Slide ${slide.slideNumber}`}
+              className="w-full h-auto object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                const fb = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
+                if (fb) fb.style.display = 'flex';
+              }}
+            />
+            {/* Fallback shown by onError handler above */}
+            <div style={{ display: 'none' }}
+              className="w-full flex-col items-center justify-center gap-2 text-center p-4">
+              <ImageIcon size={24} className="text-gray-700 dark:text-gray-300" />
+              <p className="text-xs text-gray-600 dark:text-gray-400">Image failed to load</p>
+            </div>
+          </>
+        ) : (
+          <div className="w-full h-full flex flex-col bg-gray-800 text-white">
+            {slide.title && (
+              <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0">
+                <p className="text-xs font-semibold text-gray-100 leading-snug">{slide.title}</p>
+              </div>
+            )}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              {slide.content ? (
+                <p className="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">
+                  {slide.content}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-600 italic">No content for this section.</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Thumbnails */}
@@ -401,7 +421,12 @@ function DocumentViewer({ slides }: { slides: SlideData[] }) {
                 }`} style={{ width: 40, height: 30 }}>
                 {tUrl
                   ? <img src={tUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  : <span className="w-full h-full bg-gray-700 text-[9px] text-gray-400 font-bold flex items-center justify-center">{s.slideNumber}</span>
+                  : (
+                    <div className="w-full h-full bg-gray-700 flex flex-col items-center justify-center gap-0.5 px-1 overflow-hidden">
+                      <span className="text-[8px] text-gray-500 font-bold leading-none">{s.slideNumber}</span>
+                      {s.title && <span className="text-[7px] text-gray-400 truncate w-full text-center leading-tight">{s.title}</span>}
+                    </div>
+                  )
                 }
               </button>
             );

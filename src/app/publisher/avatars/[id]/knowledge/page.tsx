@@ -17,6 +17,7 @@ export default function KnowledgePage() {
   const [deleting, setDeleting]   = useState<string | null>(null);
   const [error, setError]         = useState<string | null>(null);
   const [title, setTitle]         = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     configApi.get(id)
@@ -28,20 +29,39 @@ export default function KnowledgePage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const MAX_KB_SIZE = 30 * 1024 * 1024; // 30 MB
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) { setSelectedFile(null); return; }
+    if (file.size > MAX_KB_SIZE) {
+      setError(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum is 30 MB.`);
+      setSelectedFile(null);
+      e.target.value = '';
+      return;
+    }
+    setError(null);
+    setSelectedFile(file);
+  };
+
   const handleUpload = async () => {
-    const file = fileRef.current?.files?.[0];
-    if (!file || !title.trim()) { setError('Provide a title and select a file'); return; }
+    if (!selectedFile || !title.trim()) { setError('Provide a title and select a file'); return; }
     const fd = new FormData();
     fd.append('title', title.trim());
-    fd.append('file', file);
+    fd.append('file', selectedFile);
     setUploading(true); setError(null);
     try {
       const doc = await knowledgeApi.add(id, fd);
       setDocs((prev) => [...prev, doc]);
       setTitle('');
+      setSelectedFile(null);
       if (fileRef.current) fileRef.current.value = '';
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Upload failed');
+      if (e instanceof ApiError && e.status === 413) {
+        setError('File is too large. Please upload a file under 30 MB.');
+      } else {
+        setError(e instanceof ApiError ? e.message : 'Upload failed');
+      }
     } finally {
       setUploading(false);
     }
@@ -92,9 +112,14 @@ export default function KnowledgePage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">File</label>
-            <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt,.md"
+            <input ref={fileRef} type="file" accept=".pdf,.pptx,.ppt,.docx,.txt,.md"
+              onChange={handleFileChange}
               className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-3 file:py-2 file:px-4 file:border file:border-gray-300 file:rounded-lg file:text-sm file:bg-gray-50 dark:bg-gray-900 file:text-gray-700 dark:text-gray-300 hover:file:bg-gray-100 dark:bg-gray-800" />
-            <p className="text-xs text-gray-400 mt-1">PDF, DOCX, TXT, MD — max 50 MB</p>
+            {selectedFile ? (
+              <p className="text-xs text-gray-500 mt-1">{selectedFile.name} — {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+            ) : (
+              <p className="text-xs text-gray-400 mt-1">PDF, PPTX, DOCX, TXT, MD — max 30 MB</p>
+            )}
           </div>
           <button onClick={handleUpload} disabled={uploading || !title.trim()}
             className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium">

@@ -1,74 +1,124 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { marketplaceApi } from '@/lib/avatarApi';
+import { marketplaceApi, subscriptionApi, ApiError } from '@/lib/avatarApi';
 import { config } from '@/lib/config';
+import { useBilling } from '@/hooks/useBilling';
+import { useAuth } from '@/contexts/AuthContext';
 import type { AvatarPublicResponse } from '@/types/avatar';
-import { Bot, ArrowLeft, Calendar, Play, Clock, Upload, Info } from 'lucide-react';
+import type { SubscriptionResponse, InsufficientCreditsError } from '@/types/subscription';
+import {
+  Bot, ArrowLeft, BookOpen, Info, ExternalLink,
+  CheckCircle2, Coins, Lock, AlertTriangle, Loader2,
+} from 'lucide-react';
+import JoinCourseModal from '@/components/courses/JoinCourseModal';
+import AvatarIcon from '@/components/avatars/AvatarIcon';
 
-interface PublicSession {
-  sessionId: string;
-  classDetails: { className: string; courseName: string; courseCode: string; duration: number };
-  status: string;
-  totalSlides: number;
-  runCount: number;
-}
-
-function useToken() {
-  return typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+interface PublicCourse {
+  course_id: string;
+  name?: string;
+  code?: string;
+  description?: string;
+  session_count?: number;
+  enrolled: boolean;
 }
 
 export default function SubscriberAvatarDetailPage() {
   const { avatarId } = useParams<{ avatarId: string }>();
   const router = useRouter();
-  const token = useToken();
+  const { token } = useAuth();
+  const { balance, refetch: refetchBalance } = useBilling();
 
-  const [avatar,    setAvatar]   = useState<AvatarPublicResponse | null>(null);
-  const [sessions,  setSessions] = useState<PublicSession[]>([]);
-  const [loading,   setLoading]  = useState(true);
-  const [error,     setError]    = useState<string | null>(null);
-  const [launching, setLaunching] = useState<string | null>(null);
+  const [avatar,          setAvatar]          = useState<AvatarPublicResponse | null>(null);
+  const [courses,         setCourses]         = useState<PublicCourse[]>([]);
+  const [subscription,    setSubscription]    = useState<SubscriptionResponse | null>(null);
+  const [loading,         setLoading]         = useState(true);
+  const [error,           setError]           = useState<string | null>(null);
+  const [subscribing,     setSubscribing]     = useState(false);
+  const [unsubscribing,   setUnsubscribing]   = useState(false);
+  const [creditError,     setCreditError]     = useState<InsufficientCreditsError | null>(null);
+  const [joinModalOpen,   setJoinModalOpen]   = useState(false);
 
-  useEffect(() => {
-    Promise.all([
-      marketplaceApi.get(avatarId),
-      fetch(config.getApiUrl(`/api/sessions?avatar_id=${avatarId}&limit=20`), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-        .then((r) => r.ok ? r.json() : { sessions: [] })
-        .then((d) => d.sessions ?? [])
-        .catch(() => []),
-    ])
-      .then(([av, sess]) => { setAvatar(av); setSessions(sess); })
-      .catch((e) => setError(e.message ?? 'Failed to load'))
-      .finally(() => setLoading(false));
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [av, coursesData, statusData] = await Promise.all([
+        marketplaceApi.get(avatarId),
+        fetch(config.getApiUrl(`/api/courses?avatar_id=${avatarId}`), {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+          .then((r) => r.ok ? r.json() : [])
+          .catch(() => []),
+        token
+          ? subscriptionApi.status(avatarId).catch(() => ({ subscribed: false, subscription: null }))
+          : Promise.resolve({ subscribed: false, subscription: null }),
+      ]);
+      setAvatar(av);
+      setCourses(Array.isArray(coursesData) ? coursesData : []);
+      setSubscription(statusData.subscribed ? statusData.subscription : null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load');
+    } finally {
+      setLoading(false);
+    }
   }, [avatarId, token]);
 
-  const handleLaunch = async (sessionId: string) => {
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const handleSubscribe = async () => {
     if (!token) { router.push('/login'); return; }
-    setLaunching(sessionId);
+    setCreditError(null);
+    setSubscribing(true);
     try {
-      const res = await fetch(config.getApiUrl(`/api/sessions/${sessionId}/run/start`), {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.detail || 'Launch failed');
-      router.push(`/courses/${data.courseId}/sessions/${sessionId}/run/${data.sessionRunId}`);
+      const sub = await subscriptionApi.subscribe(avatarId);
+      setSubscription(sub);
+      refetchBalance();
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Failed to start session');
+      if (e instanceof ApiError && e.status === 402) {
+        try {
+          const body = JSON.parse(e.message);
+          setCreditError(body as InsufficientCreditsError);
+        } catch {
+          setCreditError({ error: 'insufficient_credits', required: 0, available: 0, message: e.message });
+        }
+      } else if (e instanceof ApiError && e.status === 409) {
+        // Already subscribed — reload status
+        await loadData();
+      } else {
+        alert(e instanceof Error ? e.message : 'Subscription failed. Please try again.');
+      }
     } finally {
-      setLaunching(null);
+      setSubscribing(false);
     }
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!confirm('Cancel your subscription to this avatar?')) return;
+    setUnsubscribing(true);
+    try {
+      await subscriptionApi.unsubscribe(avatarId);
+      setSubscription(null);
+      refetchBalance();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Unsubscribe failed.');
+    } finally {
+      setUnsubscribing(false);
+    }
+  };
+
+  const handleOpenCourse = (courseId: string) => {
+    if (!token) { router.push('/login'); return; }
+    router.push(`/courses/${courseId}`);
   };
 
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+        <div className="h-64 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
         <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
       </div>
     );
@@ -85,89 +135,200 @@ export default function SubscriberAvatarDetailPage() {
     );
   }
 
+  const cost = avatar.subscription_cost ?? 0;
+  const isSubscribed = subscription !== null;
+  const userBalance = balance ? parseFloat(balance.balance) : null;
+  const canAfford = cost <= 0 || (userBalance !== null && userBalance >= cost);
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <Link href="/subscriber/marketplace"
-        className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
-        <ArrowLeft size={16} /> Marketplace
-      </Link>
+    <>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Link href="/subscriber/marketplace"
+          className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
+          <ArrowLeft size={16} /> Marketplace
+        </Link>
 
-      {/* Avatar hero */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
-          <Bot size={40} className="text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avatar.name}</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">{avatar.description || 'AI-powered educational avatar.'}</p>
-        <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-400">
-          <Calendar size={13} />
-          <span>Published {new Date(avatar.created_at).toLocaleDateString()}</span>
-        </div>
-      </div>
-
-      {/* Available sessions */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Available Sessions</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Choose a session and launch your AI-powered learning experience.
-        </p>
-
-        {sessions.length === 0 ? (
-          <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-            <Calendar size={32} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-gray-500 dark:text-gray-400 text-sm">No sessions available yet.</p>
-            <p className="text-gray-400 text-xs mt-1">The publisher is still setting things up. Check back soon.</p>
+        {/* Avatar hero */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
+          <div className="flex flex-col items-center text-center mb-6">
+            <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={80} rounded="2xl" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-4">{avatar.name}</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-2 max-w-sm">
+              {avatar.description || 'AI-powered educational avatar.'}
+            </p>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {sessions.map((s) => (
-              <div key={s.sessionId}
-                className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-200 hover:bg-blue-50 transition-all">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <Play size={18} className="text-blue-600" />
+
+          {/* Subscription action area */}
+          {isSubscribed ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-center gap-2 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium">
+                <CheckCircle2 size={18} />
+                You are subscribed
+              </div>
+              <button
+                onClick={handleUnsubscribe}
+                disabled={unsubscribing}
+                className="w-full py-2 text-sm text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+              >
+                {unsubscribing ? 'Cancelling…' : 'Cancel subscription'}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Cost display */}
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Subscription cost</span>
+                {cost <= 0 ? (
+                  <span className="text-sm font-semibold text-green-600">Free</span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-amber-600">
+                    <Coins size={14} /> {cost} credits
+                  </span>
+                )}
+              </div>
+
+              {/* Credit balance */}
+              {cost > 0 && (
+                <div className="flex items-center justify-between px-4 py-2 text-sm">
+                  <span className="text-gray-500 dark:text-gray-400">Your balance</span>
+                  <span className={`font-medium ${canAfford ? 'text-gray-700 dark:text-gray-300' : 'text-red-600'}`}>
+                    {userBalance !== null ? `${userBalance} credits` : '—'}
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{s.classDetails.className}</p>
-                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
-                    <span className="flex items-center gap-1"><Clock size={11} />{s.classDetails.duration} min</span>
-                    <span>{s.totalSlides} slides</span>
-                    <span>{s.runCount} run{s.runCount !== 1 ? 's' : ''}</span>
+              )}
+
+              {/* Insufficient credits error */}
+              {creditError && (
+                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <AlertTriangle size={16} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-700">Not enough credits</p>
+                    <p className="text-xs text-red-600 mt-0.5">
+                      You need {creditError.required} credits but have {creditError.available}.{' '}
+                      <Link href="/billing/redeem" className="underline hover:no-underline">Redeem a code</Link> or{' '}
+                      <Link href="/billing/add-credits" className="underline hover:no-underline">purchase credits</Link>.
+                    </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleLaunch(s.sessionId)}
-                  disabled={!!launching}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium flex-shrink-0"
-                >
-                  {launching === s.sessionId
-                    ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Starting…</>
-                    : <><Play size={14} /> Launch</>}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              )}
 
-      {/* Solution upload note */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-3">
-        <Upload size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-amber-800">
-          <p className="font-semibold mb-1">Uploading your solution</p>
-          <p>During a session you can upload one solution file (PDF, DOCX, or TXT).
-            The AI will review it against the rubric and give you feedback.
-            Only one upload per session run is allowed.</p>
+              {/* Subscribe button */}
+              {!token ? (
+                <button
+                  onClick={() => router.push('/login')}
+                  className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  Sign in to Subscribe
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubscribe}
+                  disabled={subscribing || (cost > 0 && !canAfford)}
+                  className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {subscribing ? (
+                    <><Loader2 size={16} className="animate-spin" /> Subscribing…</>
+                  ) : cost <= 0 ? (
+                    'Subscribe for Free'
+                  ) : canAfford ? (
+                    `Subscribe for ${cost} credits`
+                  ) : (
+                    'Insufficient credits'
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Courses */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Courses</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            {isSubscribed
+              ? 'Enroll in a course to access its AI-powered sessions.'
+              : 'Subscribe to this avatar first, then enroll in a course to start learning.'}
+          </p>
+
+          {courses.length === 0 ? (
+            <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+              <BookOpen size={32} className="mx-auto text-gray-300 mb-2" />
+              <p className="text-gray-500 dark:text-gray-400 text-sm">No courses available yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {courses.map((course) => (
+                <div
+                  key={course.course_id}
+                  className={`flex items-center gap-4 p-4 border rounded-xl transition-all ${
+                    course.enrolled
+                      ? 'border-green-200 bg-green-50'
+                      : isSubscribed
+                      ? 'border-gray-200 dark:border-gray-700 hover:border-blue-200 hover:bg-blue-50'
+                      : 'border-gray-200 dark:border-gray-700 opacity-60'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    course.enrolled ? 'bg-green-100' : 'bg-gray-100 dark:bg-gray-700'
+                  }`}>
+                    {course.enrolled
+                      ? <BookOpen size={18} className="text-green-600" />
+                      : <Lock size={18} className="text-gray-400" />}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">
+                      {course.name || 'Untitled Course'}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-gray-400 mt-0.5">
+                      {course.code && <span>{course.code}</span>}
+                      {course.session_count !== undefined && (
+                        <span>{course.session_count} session{course.session_count !== 1 ? 's' : ''}</span>
+                      )}
+                      {course.enrolled && <span className="text-green-600 font-medium">Enrolled</span>}
+                    </div>
+                  </div>
+
+                  {course.enrolled ? (
+                    <button
+                      onClick={() => handleOpenCourse(course.course_id)}
+                      className="flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium flex-shrink-0"
+                    >
+                      Open <ExternalLink size={13} />
+                    </button>
+                  ) : isSubscribed ? (
+                    <button
+                      onClick={() => setJoinModalOpen(true)}
+                      className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex-shrink-0"
+                    >
+                      Enter Code
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+          <Info size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-blue-700">
+            Sessions are AI-powered oral examinations and teaching interactions. A working microphone may be required
+            depending on the session format. Each run is independent — you can retake sessions multiple times.
+          </p>
         </div>
       </div>
 
-      {/* Mic note */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-        <Info size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-blue-700">
-          Sessions are voice-driven AI oral examinations. A working microphone is required.
-          Each run is independent — you can retake sessions multiple times.
-        </p>
-      </div>
-    </div>
+      {joinModalOpen && (
+        <JoinCourseModal
+          onClose={() => setJoinModalOpen(false)}
+          onSuccess={(_courseName, courseId) => {
+            setJoinModalOpen(false);
+            loadData();
+            router.push(`/courses/${courseId}`);
+          }}
+        />
+      )}
+    </>
   );
 }

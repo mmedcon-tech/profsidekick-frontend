@@ -3,6 +3,7 @@
 import React, {  } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import TeachingInterface from "@/components/teaching/TeachingInterface";
+import SubscriberChatRuntime from "@/components/sessions/SubscriberChatRuntime";
 import { SessionRunDetails } from "@/types/types";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -53,18 +54,27 @@ export default function TeachingRunWrapper({ sessionRunDetails, courseId, sessio
       }
 
       // Choose stop endpoint based on whether this is a shared link or authenticated user
-      const stopEndpoint = isSharedLink 
+      const stopEndpoint = isSharedLink
         ? `/api/sessions/${sessionRunDetails.sessionId}/run/${sessionRunDetails.sessionRunId}/stop/guest`
         : `/api/sessions/${sessionRunDetails.sessionId}/run/${sessionRunDetails.sessionRunId}/stop`;
+
+      // Extract token usage (added by TeachingInterface) from the metadata object.
+      // Token counts are sent as top-level fields so the backend can bill them separately
+      // from session_run_metadata (which is persisted as JSONB).
+      const { _tokenUsage, ...sessionRunMetadata } = metadata || {};
+      const inputTokens: number = _tokenUsage?.input_tokens ?? 0;
+      const outputTokens: number = _tokenUsage?.output_tokens ?? 0;
 
       // Stop the session run
       await fetch(stopEndpoint, {
         method: "POST",
         headers,
         body: JSON.stringify({
-          session_run_metadata: metadata || {
-            ended_by_user: true
-          }
+          session_run_metadata: Object.keys(sessionRunMetadata).length > 0
+            ? sessionRunMetadata
+            : { ended_by_user: true },
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
         }),
       });
     } catch (error) {
@@ -116,9 +126,21 @@ export default function TeachingRunWrapper({ sessionRunDetails, courseId, sessio
     status: "RUNNING" as const,
   };
 
+  if (sessionRunDetails.runtimeModeUsed === "chat") {
+    return (
+      <ProtectedRoute requireAuth={!isSharedLink}>
+        <SubscriberChatRuntime
+          sessionRunId={sessionRunDetails.sessionRunId}
+          sessionId={sessionRunDetails.sessionId}
+          onEndSession={() => handleEndSession()}
+        />
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute requireAuth={!isSharedLink}>
-      <TeachingInterface 
+      <TeachingInterface
         classSession={classSession}
         onEndSession={handleEndSession}
         sessionRunId={sessionRunDetails.sessionRunId}

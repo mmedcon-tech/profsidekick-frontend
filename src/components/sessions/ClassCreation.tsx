@@ -97,6 +97,7 @@ export default function ClassCreation() {
   });
 
   const [sessionMode, setSessionMode] = useState<'teaching' | 'examination'>('teaching');
+  const [subscriberRuntimeMode, setSubscriberRuntimeMode] = useState<'avatar' | 'chat' | 'choice'>('avatar');
 
   // Avatar + role selection
   const [availableAvatars, setAvailableAvatars] = useState<{ id: string; name: string; template_id: string; template_image_url: string | null }[]>([]);
@@ -249,9 +250,8 @@ export default function ClassCreation() {
       return;
     }
 
-    if (file.size > 50 * 1024 * 1024) {
-      // 50MB limit
-      setError("File size must be less than 50MB");
+    if (file.size > 30 * 1024 * 1024) {
+      setError(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 30 MB.`);
       return;
     }
 
@@ -290,8 +290,8 @@ export default function ClassCreation() {
       setError(`Solution file must be a ${SUPPORTED_FORMAT_LABEL}`);
       return;
     }
-    if (file.size > 50 * 1024 * 1024) {
-      setError("Solution file size must be less than 50MB");
+    if (file.size > 30 * 1024 * 1024) {
+      setError(`Solution file is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 30 MB.`);
       return;
     }
     setSelectedSolutionFile(file);
@@ -316,10 +316,6 @@ export default function ClassCreation() {
     }
     if (!selectedFile) {
       setError("Please upload a presentation file");
-      return false;
-    }
-    if (!classDetails.visionInstructions.trim()) {
-      setError("Vision instructions are required");
       return false;
     }
     return true;
@@ -390,6 +386,7 @@ export default function ClassCreation() {
           voice: classDetails.assistant_parameters.voice,
         },
         materialId: selectedMaterialIds || null,
+        subscriberRuntimeMode,
       };
 
       const formData = new FormData();
@@ -407,10 +404,13 @@ export default function ClassCreation() {
         body: formData,
       });
 
+      if (response.status === 413) {
+        throw new Error("File is too large. Please upload a file under 30 MB.");
+      }
       const result = await response.json();
       if (!response.ok) {
         throw new Error(
-          result.error || result.message || "Failed to create session"
+          result.detail || result.message || result.error || "Failed to create session"
         );
       }
 
@@ -580,6 +580,53 @@ export default function ClassCreation() {
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
                   This determines which AI behaviour is used throughout the session and cannot be changed after creation.
+                </p>
+              </div>
+
+              {/* Subscriber Runtime Mode */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Subscriber Experience *
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(
+                    [
+                      {
+                        value: 'avatar',
+                        label: '🎙 Avatar',
+                        desc: 'Full realtime voice session with the AI avatar. Premium experience.',
+                      },
+                      {
+                        value: 'chat',
+                        label: '💬 Chat',
+                        desc: 'Text-based chat with the AI. Lower cost, always available.',
+                      },
+                      {
+                        value: 'choice',
+                        label: '⚙ Let Subscriber Choose',
+                        desc: 'Subscriber picks avatar or chat when they start a run.',
+                      },
+                    ] as const
+                  ).map(({ value, label, desc }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSubscriberRuntimeMode(value)}
+                      className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors ${
+                        subscriberRuntimeMode === value
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:bg-gray-900'
+                      }`}
+                    >
+                      <span className={`text-sm font-semibold ${subscriberRuntimeMode === value ? 'text-purple-700' : 'text-gray-700 dark:text-gray-300'}`}>
+                        {label}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  Controls how subscribers interact with the AI when they join this session.
                 </p>
               </div>
 
@@ -756,7 +803,7 @@ export default function ClassCreation() {
                 {selectedFile ? (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-green-700">
-                      {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
+                      {selectedFile.name} ({selectedFile.size >= 1024 * 1024 ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB` : `${(selectedFile.size / 1024).toFixed(0)} KB`})
                     </p>
                     <button
                       type="button"
@@ -770,7 +817,7 @@ export default function ClassCreation() {
                   <div className="space-y-2">
                     <div className="space-y-1">
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Drag &amp; drop or click to browse (up to 50MB)
+                        Drag &amp; drop or click to browse (up to 30 MB)
                       </p>
                       <p className="text-xs text-gray-400">
                         Supported formats: PDF, PowerPoint (PPTX), Word (DOCX)
@@ -804,7 +851,7 @@ export default function ClassCreation() {
                   {selectedSolutionFile ? (
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-purple-700">
-                        {selectedSolutionFile.name} ({(selectedSolutionFile.size / 1024 / 1024).toFixed(1)} MB)
+                        {selectedSolutionFile.name} ({selectedSolutionFile.size >= 1024 * 1024 ? `${(selectedSolutionFile.size / 1024 / 1024).toFixed(1)} MB` : `${(selectedSolutionFile.size / 1024).toFixed(0)} KB`})
                       </p>
                       <button
                         type="button"
@@ -823,23 +870,6 @@ export default function ClassCreation() {
                 </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="visionInstructions"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Instruction to vision model
-                </label>
-                <textarea
-                  name="visionInstructions"
-                  id="visionInstructions"
-                  value={classDetails.visionInstructions}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full input-style"
-                  placeholder="You are an expert academic content analyst. Extract and describe the complete content of this examination slide for use by an AI oral examiner..."
-                ></textarea>
-              </div>
             </fieldset>
 
             {/* Section 3: Core AI Settings */}

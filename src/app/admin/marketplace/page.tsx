@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { adminAvatarApi, templateApi } from '@/lib/avatarApi';
 import type { AvatarSummary, AvatarTemplateResponse } from '@/types/avatar';
-import { Globe, ChevronRight, Search } from 'lucide-react';
+import { Globe, ChevronRight, Search, Coins } from 'lucide-react';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 
 export default function AdminMarketplacePage() {
@@ -94,6 +94,13 @@ export default function AdminMarketplacePage() {
                     <span className="flex items-center gap-1 text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">
                       <Globe size={10} /> Live
                     </span>
+                    {a.subscription_cost != null && a.subscription_cost > 0 ? (
+                      <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-medium">
+                        <Coins size={10} /> {Number(a.subscription_cost)} cr
+                      </span>
+                    ) : (
+                      <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-medium">Free</span>
+                    )}
                   </div>
                   {a.description && (
                     <p className="text-xs text-gray-400 truncate mt-0.5">{a.description}</p>

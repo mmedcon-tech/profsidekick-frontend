@@ -9,6 +9,8 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import AISettings from '@/components/sessions/AISettings';
 import SlidesPreview from '@/components/sessions/SlidesPreview';
 import SessionMaterials from '@/components/sessions/SessionMaterials';
+import SubscriberRuntimeSelector from '@/components/courses/SubscriberRuntimeSelector';
+import { subscriptionApi } from '@/lib/avatarApi';
 // import { config } from '@/lib/config';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -36,6 +38,8 @@ interface SessionDetails {
   };
   slidesDetails?: any[];
   assistantParameters?: any;
+  subscriberRuntimeMode?: string;
+  avatarId?: string;
 }
 
 export default function SessionDetailsPage() {
@@ -53,6 +57,7 @@ export default function SessionDetailsPage() {
   const [showAISettings, setShowAISettings] = useState(false);
   const [startingTeaching, setStartingTeaching] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showRuntimeSelector, setShowRuntimeSelector] = useState(false);
   const { user } = useAuth();
 
   // Fetch session details from backend
@@ -104,6 +109,8 @@ export default function SessionDetailsPage() {
           presentationDetails: data.presentationDetails,
           slidesDetails: data.slidesDetails,
           assistantParameters: data.assistantParameters,
+          subscriberRuntimeMode: data.subscriberRuntimeMode || 'avatar',
+          avatarId: data.avatarId || null,
         };
         
         console.log('Transformed session data:', transformedData);
@@ -130,28 +137,52 @@ export default function SessionDetailsPage() {
   };
 
   const handleStartTeaching = () => {
-    // Route to the AI Chat workspace scoped to this session.
-    // The old Realtime flow is preserved below for future reactivation
-    // — just swap the router.push line back when Realtime is re-enabled.
-    router.push(`/publisher/sessions/${sessionId}/chat`);
+    const isPublisher = user?.role === 'publisher' || user?.role === 'admin';
+    if (isPublisher) {
+      router.push(`/publisher/sessions/${sessionId}/chat`);
+      return;
+    }
 
-    /* ── REALTIME FLOW (disabled — uncomment to reactivate) ──────────
+    // Subscriber flow: branch on subscriberRuntimeMode
+    const runtimeMode = sessionDetails?.subscriberRuntimeMode || 'avatar';
+    if (runtimeMode === 'choice') {
+      setShowRuntimeSelector(true);
+    } else {
+      startSubscriberRun(runtimeMode as 'avatar' | 'chat');
+    }
+  };
+
+  const startSubscriberRun = async (chosenMode: 'avatar' | 'chat') => {
     if (startingTeaching) return;
+    setShowRuntimeSelector(false);
     try {
       setStartingTeaching(true);
+
+      // Subscription gate: if this session has an avatar, subscriber must be subscribed
+      const avatarId = sessionDetails?.avatarId;
+      if (avatarId && token && !isSharedLink) {
+        const status = await subscriptionApi.status(avatarId).catch(() => ({ subscribed: true, subscription: null }));
+        if (!status.subscribed) {
+          router.push(`/subscriber/marketplace/${avatarId}`);
+          return;
+        }
+      }
       const endpoint = isSharedLink
         ? `/api/sessions/${sessionId}/run/start/guest`
         : `/api/sessions/${sessionId}/run/start`;
       const headers: HeadersInit = { 'Content-Type': 'application/json' };
       if (token && !isSharedLink) headers['Authorization'] = `Bearer ${token}`;
-      const response = await fetch(endpoint, {
-        method: 'POST', headers,
-        body: JSON.stringify({ assistant_parameters: sessionDetails?.assistantParameters || {} }),
-      });
-      if (!response.ok) throw new Error('Failed to start teaching session');
-      const result = await response.json();
-      if (result.sessionRunId && result.assistantParameters?.model)
-        sessionStorage.setItem(`session_run_model_${result.sessionRunId}`, result.assistantParameters.model);
+      const body: Record<string, any> = {
+        assistant_parameters: sessionDetails?.assistantParameters || {},
+      };
+      if (sessionDetails?.subscriberRuntimeMode === 'choice') {
+        body.chosen_mode = chosenMode;
+      }
+      const response = await fetch(endpoint, { method: 'POST', headers, body: JSON.stringify(body) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.detail || result.message || result.error || 'Failed to start session');
+      }
       if (result.sessionRunId) {
         const runUrl = isSharedLink
           ? `/courses/${courseId}/sessions/${sessionId}/run/${result.sessionRunId}?shared=true`
@@ -159,12 +190,11 @@ export default function SessionDetailsPage() {
         router.push(runUrl);
       }
     } catch (error) {
-      console.error('Error starting teaching session:', error);
-      alert('Failed to start teaching session. Please try again.');
+      console.error('Error starting session:', error);
+      alert((error as Error).message || 'Failed to start session. Please try again.');
     } finally {
       setStartingTeaching(false);
     }
-    ─────────────────────────────────────────────────────────────── */
   };
 
   const handleBackToCourse = () => {
@@ -440,6 +470,15 @@ export default function SessionDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Subscriber Runtime Selector Modal */}
+      {showRuntimeSelector && (
+        <SubscriberRuntimeSelector
+          loading={startingTeaching}
+          onSelect={(mode) => startSubscriberRun(mode)}
+          onClose={() => setShowRuntimeSelector(false)}
+        />
+      )}
 
       {/* AI Settings Modal */}
       {showAISettings && sessionDetails && (

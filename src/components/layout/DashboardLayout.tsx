@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Users, BarChart2, LogOut, Bot,
   UserCircle, Store, Bookmark, History, BookOpen,
   Layers, ShieldCheck, Star, Menu, X, PanelLeftOpen,
-  Sun, Moon
+  Sun, Moon, CreditCard, Wallet
 } from 'lucide-react';
 
 // ─── nav item types ──────────────────────────────────────────────────────────
@@ -58,6 +58,7 @@ export const subscriberNav: SidebarConfig = [
   { label: 'My Avatars',       href: '/subscriber/my-avatars',  icon: <Bookmark size={18} /> },
   { label: 'My Courses',       href: '/subscriber/courses',     icon: <BookOpen size={18} /> },
   { label: 'Learning History', href: '/subscriber/history',     icon: <History size={18} /> },
+  { label: 'Wallet',           href: '/billing',                icon: <Wallet size={18} /> },
   { label: 'Profile',          href: '/subscriber/profile',     icon: <UserCircle size={18} /> },
 ];
 
@@ -81,6 +82,12 @@ export const adminNav: SidebarConfig = [
     label: 'Insights',
     items: [
       { label: 'Analytics', href: '/admin/analytics', icon: <BarChart2 size={18} /> },
+    ],
+  },
+  {
+    label: 'Credits',
+    items: [
+      { label: 'Credits',    href: '/admin/billing',            icon: <CreditCard size={18} /> },
     ],
   },
 ];

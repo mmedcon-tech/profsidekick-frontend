@@ -36,6 +36,11 @@ import type {
   TemplateSessionRunRow,
   UserRecord,
 } from '@/types/avatar';
+import type {
+  SubscriptionResponse,
+  SubscriptionStatusResponse,
+  SubscriptionListResponse,
+} from '@/types/subscription';
 
 // ─── error type ─────────────────────────────────────────────────────────────
 
@@ -78,8 +83,11 @@ async function req<T>(
   const json = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    const rawDetail = json.detail;
     const msg =
-      json.message || json.detail || `Request failed (${res.status})`;
+      json.message ||
+      (typeof rawDetail === 'string' ? rawDetail : JSON.stringify(rawDetail)) ||
+      `Request failed (${res.status})`;
     throw new ApiError(msg, res.status);
   }
 
@@ -165,6 +173,10 @@ export const templateApi = {
       `/api/admin/avatar-templates/${templateId}/image`,
       'DELETE',
     ),
+
+  // ── Pricing ──────────────────────────────────────────────────────
+  setPricing: (templateId: string, cost: number) =>
+    req<AvatarTemplateResponse>(`/api/admin/avatar-templates/${templateId}/pricing`, 'PATCH', { subscription_cost: cost }),
 
   // ── Dashboard stats ──────────────────────────────────────────────
   getStats: (templateId: string) =>
@@ -287,12 +299,30 @@ export const marketplaceApi = {
   get: (id: string) => req<AvatarPublicResponse>(`/api/avatars/${id}`),
 };
 
+// ─── Subscriptions ───────────────────────────────────────────────────────────
+
+export const subscriptionApi = {
+  subscribe: (avatarId: string) =>
+    req<SubscriptionResponse>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'POST'),
+
+  unsubscribe: (avatarId: string) =>
+    req<void>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'DELETE'),
+
+  status: (avatarId: string) =>
+    req<SubscriptionStatusResponse>(`/api/subscriber/avatars/${avatarId}/subscription-status`),
+
+  list: () =>
+    req<SubscriptionListResponse>('/api/subscriber/avatars'),
+};
+
 // ─── Admin ───────────────────────────────────────────────────────────────────
 
 export const adminAvatarApi = {
   list: () => req<AvatarListResponse>('/api/admin/avatars'),
   get: (id: string) => req<AvatarResponse>(`/api/admin/avatars/${id}`),
   delete: (id: string) => req<void>(`/api/admin/avatars/${id}`, 'DELETE'),
+  setPricing: (avatarId: string, cost: number) =>
+    req<AvatarResponse>(`/api/admin/avatars/${avatarId}/pricing`, 'PATCH', { subscription_cost: cost }),
 };
 
 export const adminUserApi = {

@@ -24,6 +24,8 @@ export interface CourseDetails {
   owner_name?: string;
   enrollment_count?: number;
   session_count?: number;
+  allow_subscriber_sessions?: boolean;
+  enrolled?: boolean;
 }
 
 export interface CourseStudent {

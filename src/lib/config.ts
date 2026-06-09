@@ -47,6 +47,13 @@ export const config = {
       addCredits: '/api/billing/add-credits',
       usage: '/api/billing/usage',
     },
+    adminBilling: {
+      accessCodes: '/api/admin/billing/access-codes',
+      accessCodeDeactivate: (id: string) => `/api/admin/billing/access-codes/${id}/deactivate`,
+      userBalance: (userId: string) => `/api/admin/billing/users/${userId}/balance`,
+      userAdjust: (userId: string) => `/api/admin/billing/users/${userId}/adjust-balance`,
+      usage: '/api/admin/billing/usage',
+    },
   },
   
   // Get full URL for API calls

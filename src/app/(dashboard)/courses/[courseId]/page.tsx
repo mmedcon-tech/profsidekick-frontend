@@ -5,14 +5,14 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourses, CourseDetails, CourseSessionSummary } from '@/hooks/useCourses';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { 
-  ArrowLeft, 
-  BookOpen, 
-  Clock, 
-  Play, 
-  Calendar, 
-  User, 
-  GraduationCap, 
+import {
+  ArrowLeft,
+  BookOpen,
+  Clock,
+  Play,
+  Calendar,
+  User,
+  GraduationCap,
   Plus,
   Settings,
   UserPlus,
@@ -20,6 +20,7 @@ import {
   Lock,
   Users
 } from 'lucide-react';
+import AccessCodePanel from '@/components/courses/AccessCodePanel';
 
 export default function CourseDetailPage() {
   const router = useRouter();
@@ -269,6 +270,15 @@ export default function CourseDetailPage() {
                     Create Session
                   </button>
                 )}
+                {!isOwner && course.allow_subscriber_sessions && (
+                  <button
+                    onClick={handleCreateSession}
+                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Session
+                  </button>
+                )}
               </div>
             </div>
 
@@ -286,7 +296,7 @@ export default function CourseDetailPage() {
                     : 'Check back later for new sessions from your instructor!'
                   }
                 </p>
-                {isOwner && (
+                {(isOwner || course.allow_subscriber_sessions) && (
                   <button
                     onClick={handleCreateSession}
                     className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
@@ -345,6 +355,9 @@ export default function CourseDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Access Code Management (for course owners) */}
+          {isOwner && <AccessCodePanel courseId={courseId} />}
 
           {/* Course Statistics (for course owners) */}
           {isOwner && (

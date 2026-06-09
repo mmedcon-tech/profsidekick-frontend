@@ -209,6 +209,24 @@ export default function CourseSettingsTabs({
             </label>
           </div>
 
+          <div className="flex items-start">
+            <input
+              type="checkbox"
+              id="allow_subscriber_sessions"
+              checked={course.allow_subscriber_sessions || false}
+              onChange={(e) => onCourseUpdate('allow_subscriber_sessions', e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-0.5"
+            />
+            <div className="ml-3">
+              <label htmlFor="allow_subscriber_sessions" className="block text-sm text-gray-900 dark:text-gray-100">
+                Allow subscriber sessions
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Enrolled subscribers can start AI learning sessions for this course
+              </p>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Maximum Enrollment

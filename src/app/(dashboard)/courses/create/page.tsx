@@ -22,6 +22,7 @@ export default function CreateCoursePage() {
     semester: '',
     year: new Date().getFullYear().toString(),
     is_public: false,
+    allow_subscriber_sessions: false,
     max_students: '',
   });
 
@@ -250,12 +251,31 @@ export default function CreateCoursePage() {
                       </span>
                     </label>
                   </div>
+
+                  <div className="flex items-start mt-4">
+                    <input
+                      type="checkbox"
+                      id="allow_subscriber_sessions"
+                      name="allow_subscriber_sessions"
+                      checked={formData.allow_subscriber_sessions}
+                      onChange={handleInputChange}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
+                    />
+                    <label htmlFor="allow_subscriber_sessions" className="ml-3">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Allow enrolled subscribers to start AI sessions
+                      </span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Subscribers can run your published sessions using their credit balance. You can change this later in course settings.
+                      </p>
+                    </label>
+                  </div>
                 </div>
-                
+
                 <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     <strong className="text-gray-900 dark:text-gray-200">Public courses:</strong> Can be discovered and enrolled in by any student.<br />
-                    <strong className="text-gray-900 dark:text-gray-200">Private courses:</strong> Students need to be invited or provided with an enrollment code.
+                    <strong className="text-gray-900 dark:text-gray-200">Private courses:</strong> Students need an enrollment code to join.
                   </p>
                 </div>
               </div>

@@ -12,7 +12,7 @@ import type {
 import {
   ArrowLeft, Save, Send, Clock, Plus,
   Trash2, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp,
-  Tag, Layers, Users, Camera,
+  Tag, Layers, Users, Camera, Coins,
 } from 'lucide-react';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 
@@ -694,11 +694,18 @@ export default function EditTemplatePage() {
   const [savingMeta, setSavingMeta] = useState(false);
   const [metaError, setMetaError]   = useState<string | null>(null);
 
+  // Pricing edit
+  const [pricingCost, setPricingCost]   = useState<number>(3);
+  const [savingPrice, setSavingPrice]   = useState(false);
+  const [priceError, setPriceError]     = useState<string | null>(null);
+  const [priceSaved, setPriceSaved]     = useState(false);
+
   const load = useCallback(() => {
     templateApi.get(id)
       .then((t) => {
         setTemplate(t);
         setMetaForm({ name: t.name, description: t.description ?? '', category: t.category ?? '' });
+        setPricingCost(t.subscription_cost != null ? Number(t.subscription_cost) : 3);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -713,6 +720,20 @@ export default function EditTemplatePage() {
 
   const setMeta = (f: keyof typeof metaForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setMetaForm((p) => ({ ...p, [f]: e.target.value }));
+
+  const handleSavePrice = async () => {
+    setSavingPrice(true); setPriceError(null);
+    try {
+      await templateApi.setPricing(id, pricingCost);
+      setPriceSaved(true);
+      setTimeout(() => setPriceSaved(false), 3000);
+      load();
+    } catch (e) {
+      setPriceError(e instanceof ApiError ? e.message : 'Save failed');
+    } finally {
+      setSavingPrice(false);
+    }
+  };
 
   const handleSaveMeta = async () => {
     setSavingMeta(true); setMetaError(null);
@@ -828,6 +849,39 @@ export default function EditTemplatePage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Pricing */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Coins size={16} className="text-amber-500" />
+            <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">Subscription Cost</span>
+            <span className="text-xs text-gray-400">Inherited by new avatars at creation</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {priceError && <span className="text-xs text-red-500">{priceError}</span>}
+            {priceSaved && <span className="text-xs text-green-600">Saved</span>}
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={pricingCost}
+                onChange={(e) => setPricingCost(Number(e.target.value))}
+                className="w-20 px-2 py-1.5 text-sm border-r border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <span className="px-2 text-xs text-gray-500 dark:text-gray-400 select-none">credits</span>
+            </div>
+            <button
+              onClick={handleSavePrice}
+              disabled={savingPrice}
+              className="flex items-center gap-1.5 text-sm bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            >
+              <Save size={13} /> {savingPrice ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}

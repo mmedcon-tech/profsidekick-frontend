@@ -64,6 +64,7 @@ export interface AvatarTemplateSummary {
   description: string | null;
   category: string | null;
   is_active: boolean;
+  subscription_cost: number | null;
   published_state: 'unpublished' | 'draft' | 'published' | 'archived';
   avatar_image_url: string | null;
   created_at: string;
@@ -86,6 +87,7 @@ export interface AvatarTemplateCreate {
   name: string;
   description?: string;
   category?: string;
+  subscription_cost?: number;
 }
 
 export interface AvatarTemplateUpdate {
@@ -217,6 +219,7 @@ export interface AvatarSummary {
   name: string;
   description: string | null;
   is_published: boolean;
+  subscription_cost: number | null;
   template_image_url: string | null;
   template_name: string | null;
   profile: PublisherAvatarProfile | null;
@@ -234,6 +237,7 @@ export interface AvatarPublicResponse {
   description: string | null;
   is_published: boolean;
   template_image_url: string | null;
+  subscription_cost: number | null;
   created_at: string;
   updated_at: string;
 }

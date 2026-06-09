@@ -96,6 +96,7 @@ export interface SessionRunDetails {
   slidesDetails: SlideData[];
   startTime: string;
   endTime?: string;
+  runtimeModeUsed?: string;
 }
 
 // Legacy types for backward compatibility (will be removed)

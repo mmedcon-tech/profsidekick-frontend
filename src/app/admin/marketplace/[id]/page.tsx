@@ -23,7 +23,7 @@ import type {
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 import {
   ArrowLeft, Users, Layers, Globe, Settings, BarChart2,
-  Plus, Trash2, GripVertical, Save,
+  Plus, Trash2, GripVertical, Save, Coins,
 } from 'lucide-react';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
@@ -51,10 +51,31 @@ function StatusPill({ published }: { published: boolean }) {
 function OverviewTab({
   avatar,
   template,
+  onReload,
 }: {
   avatar: AvatarResponse;
   template: AvatarTemplateDetailResponse | null;
+  onReload: () => void;
 }) {
+  const [cost, setCost]       = useState<number>(avatar.subscription_cost != null ? Number(avatar.subscription_cost) : 3);
+  const [saving, setSaving]   = useState(false);
+  const [saved, setSaved]     = useState(false);
+  const [err, setErr]         = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setSaving(true); setErr(null);
+    try {
+      await adminAvatarApi.setPricing(avatar.id, cost);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      onReload();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -73,6 +94,31 @@ function OverviewTab({
         <div>
           <p className="text-gray-400 text-xs mb-0.5">Created</p>
           <p className="text-gray-700 dark:text-gray-300">{fmt(avatar.created_at)}</p>
+        </div>
+        <div>
+          <p className="text-gray-400 text-xs mb-1">Subscription Cost</p>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={cost}
+                onChange={(e) => setCost(Number(e.target.value))}
+                className="w-20 px-2 py-1.5 text-sm border-r border-gray-300 focus:outline-none"
+              />
+              <span className="px-2 text-xs text-gray-500 dark:text-gray-400 select-none">credits</span>
+            </div>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            >
+              <Coins size={11} /> {saving ? 'Saving…' : 'Save'}
+            </button>
+            {saved && <span className="text-xs text-green-600">Saved</span>}
+            {err && <span className="text-xs text-red-500">{err}</span>}
+          </div>
         </div>
         {template && (
           <div className="md:col-span-2">
@@ -535,6 +581,10 @@ export default function AdminAvatarInstancePage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const reloadAvatar = useCallback(() => {
+    adminAvatarApi.get(id).then(setAvatar).catch(() => {});
+  }, [id]);
+
   const reloadTemplate = useCallback(() => {
     if (!avatar) return;
     templateApi.get(avatar.template_id).then(setTemplate).catch(() => {});
@@ -623,7 +673,7 @@ export default function AdminAvatarInstancePage() {
       </div>
 
       {/* Tab content */}
-      {tab === 'overview'      && <OverviewTab avatar={avatar} template={template} />}
+      {tab === 'overview'      && <OverviewTab avatar={avatar} template={template} onReload={reloadAvatar} />}
       {tab === 'configuration' && <ConfigurationTab avatar={avatar} />}
       {tab === 'roles'         && template && (
         <RolesTab template={template} onTemplateReload={reloadTemplate} />

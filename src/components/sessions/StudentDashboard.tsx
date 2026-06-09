@@ -4,16 +4,16 @@ import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourses } from '@/hooks/useCourses';
-import { BookOpen, Search, Users, GraduationCap } from 'lucide-react';
+import { BookOpen, Search, Users, GraduationCap, Key } from 'lucide-react';
+import JoinCourseModal from '@/components/courses/JoinCourseModal';
 
 export default function StudentDashboard() {
   const router = useRouter();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  // const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  
-  // Fetch enrolled courses
-  const { courses, loading, error, refetch,  } = useCourses();
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
+
+  const { courses, loading, error, refetch } = useCourses();
 
   // Filter courses based on search query
   const filteredCourses = useMemo(() => {
@@ -40,6 +40,7 @@ export default function StudentDashboard() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Section */}
@@ -47,9 +48,16 @@ export default function StudentDashboard() {
           <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Welcome, {user?.firstName}!
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-6">
             Ready to join your next interactive learning session?
           </p>
+          <button
+            onClick={() => setJoinModalOpen(true)}
+            className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors shadow-sm"
+          >
+            <Key className="w-5 h-5" />
+            Join a Course
+          </button>
         </div>
 
         {/* Search Section */}
@@ -106,11 +114,22 @@ export default function StudentDashboard() {
                 <GraduationCap className="w-10 h-10 text-gray-400" />
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-lg">
-                {searchQuery ? 'No courses match your search' : 'No courses enrolled'}
+                {searchQuery ? 'No courses match your search' : 'No courses enrolled yet'}
               </p>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
-                {searchQuery ? 'Try adjusting your search terms' : 'Contact your instructor to get enrolled in courses!'}
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 mb-6">
+                {searchQuery
+                  ? 'Try adjusting your search terms'
+                  : 'Have an access code? Use it to join your first course.'}
               </p>
+              {!searchQuery && (
+                <button
+                  onClick={() => setJoinModalOpen(true)}
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <Key className="w-5 h-5" />
+                  Enter Access Code
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -181,6 +200,7 @@ export default function StudentDashboard() {
         {/* Getting Started Guide for Students */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mt-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">How to Access Course Sessions</h2>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-start gap-4">
               <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -215,5 +235,16 @@ export default function StudentDashboard() {
         </div>
       </div>
     </div>
+
+    {joinModalOpen && (
+      <JoinCourseModal
+        onClose={() => setJoinModalOpen(false)}
+        onSuccess={() => {
+          refetch();
+          setJoinModalOpen(false);
+        }}
+      />
+    )}
+    </>
   );
-} 
+}

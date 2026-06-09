@@ -52,6 +52,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const messageHandlerRef = useRef<((e: MessageEvent) => void) | null>(null);
   const isIntentionallyDisconnectedRef = useRef(false);
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
+  const tokenUsageRef = useRef({ input_tokens: 0, output_tokens: 0 });
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
   const GUARD_PHRASES = ["stop", "pause", "end session", "wait"]; // Guard phrases to allow intentional interruptions
   const MIN_VOICE_LENGTH = 0.8; // Minimum length in seconds
@@ -948,23 +949,24 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           suggestions: feedbackData.suggestions,
           ended_at: new Date().toISOString(),
           session_duration_minutes: Math.round((Date.now() - new Date(classSession.createdAt).getTime()) / 60000)
-        }
+        },
+        _tokenUsage: { ...tokenUsageRef.current },
       };
 
       console.log('Submitting feedback:', sessionRunMetadata);
-      
+
       // Call the original onEndSession with metadata
       if (typeof onEndSession === 'function') {
         await onEndSession(sessionRunMetadata);
       }
-      
+
       setShowFeedbackModal(false);
     } catch (error) {
       console.error('Error submitting feedback:', error);
       // Still close modal and end session even if feedback fails
       setShowFeedbackModal(false);
       if (typeof onEndSession === 'function') {
-        onEndSession({ ended_by_user: true });
+        onEndSession({ ended_by_user: true, _tokenUsage: { ...tokenUsageRef.current } });
       }
     }
   };
@@ -972,7 +974,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const handleSkipFeedback = () => {
     setShowFeedbackModal(false);
     if (typeof onEndSession === 'function') {
-      onEndSession({ ended_by_user: true });
+      onEndSession({ ended_by_user: true, _tokenUsage: { ...tokenUsageRef.current } });
     }
   };
 
@@ -1184,6 +1186,12 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
             handleUserSpeech(recognizedText, 1.0, recognizedText.split(" ").length * 0.3);
           }, 400);
         }
+      }
+
+      // --- Accumulate token usage for billing (sent to backend on session stop) ---
+      if (serverEvent.type === "response.done" && serverEvent.response?.usage) {
+        tokenUsageRef.current.input_tokens += serverEvent.response.usage.input_tokens || 0;
+        tokenUsageRef.current.output_tokens += serverEvent.response.usage.output_tokens || 0;
       }
 
       // --- Handle tool calls for slide navigation ---
@@ -1409,10 +1417,22 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                 />
               </>
             ) : (
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
-                <p className="text-gray-500 dark:text-gray-400">No slide image available</p>
-                <div className="mt-4 text-xs text-gray-400">
-                  Debug: {JSON.stringify(currentSlideData, null, 2)}
+              <div className="w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden" style={{ aspectRatio: '16/9', display: 'flex', flexDirection: 'column' }}>
+                {currentSlideData?.title && (
+                  <div className="bg-gray-50 dark:bg-gray-900 px-8 py-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                      {currentSlideData.title}
+                    </h2>
+                  </div>
+                )}
+                <div className="flex-1 px-8 py-6 overflow-y-auto">
+                  {currentSlideData?.content ? (
+                    <p className="text-base text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                      {currentSlideData.content}
+                    </p>
+                  ) : (
+                    <p className="text-gray-400 dark:text-gray-500 italic">No content for this section.</p>
+                  )}
                 </div>
               </div>
             )}

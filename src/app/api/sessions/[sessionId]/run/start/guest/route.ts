@@ -16,17 +16,13 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
+    const responseBody = await response.json().catch(() => ({ error: 'Failed to start guest session run' }));
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Backend error:', errorData);
-      return NextResponse.json(
-        { error: 'Failed to start guest session run' }, 
-        { status: response.status }
-      );
+      console.error('Backend error:', responseBody);
+      return NextResponse.json(responseBody, { status: response.status });
     }
 
-    const sessionRunData = await response.json();
-    return NextResponse.json(sessionRunData);
+    return NextResponse.json(responseBody);
   } catch (error) {
     console.error('Error starting guest session run:', error);
     return NextResponse.json(
