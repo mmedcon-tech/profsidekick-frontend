@@ -50,14 +50,14 @@ export default function AdminDashboard() {
       label: 'Templates',
       value: loading ? '—' : templateList.length,
       icon: <Layers size={20} className="text-indigo-600" />,
-      bg: 'bg-indigo-50',
+      bg: 'bg-gray-50',
       href: '/admin/templates',
     },
     {
       label: 'Avatars',
       value: loading ? '—' : avatarCount,
-      icon: <AvatarIcon imageUrl={null} name="" size={20} className="text-blue-600" />,
-      bg: 'bg-blue-50',
+      icon: <AvatarIcon imageUrl={null} name="" size={20} className="text-[#133221]" />,
+      bg: 'bg-green-50 dark:bg-gray-800',
       href: '/admin/marketplace',
     },
     {
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
 
   const actions = [
     { label: 'Create Template',    href: '/admin/templates/new', icon: <Plus size={16} />,       color: 'bg-indigo-600 hover:bg-indigo-700' },
-    { label: 'All Templates',      href: '/admin/templates',     icon: <Layers size={16} />,     color: 'bg-blue-600 hover:bg-blue-700'    },
+    { label: 'All Templates',      href: '/admin/templates',     icon: <Layers size={16} />,     color: 'bg-[#133221] hover:bg-[#0a1e13]'    },
     { label: 'Manage Marketplace', href: '/admin/marketplace',   icon: <ArrowRight size={16} />, color: 'bg-gray-800 hover:bg-gray-900'   },
   ];
 
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
           <Link key={s.label} href={s.href}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-blue-300 hover:shadow-sm transition-all flex items-center gap-4">
+            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-[#133221] hover:shadow-sm transition-all flex items-center gap-4">
             <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
               {s.icon}
             </div>
@@ -147,7 +147,7 @@ export default function AdminDashboard() {
               <Link
                 key={t.id}
                 href={`/admin/avatars/${t.id}`}
-                className="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:border-indigo-200 hover:bg-indigo-50/40 transition-all group"
+                className="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:border-indigo-200 hover:bg-gray-50/40 transition-all group"
               >
                 <AvatarIcon imageUrl={t.avatar_image_url} name={t.name} size={48} rounded="lg" />
 
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
                     <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{t.name}</span>
                     <StatusPill state={t.published_state} />
                     {t.category && (
-                      <span className="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] text-indigo-600 bg-gray-50 px-2 py-0.5 rounded-full">
                         {t.category}
                       </span>
                     )}
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
 
                 {/* Right: CTA */}
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg group-hover:bg-indigo-100 transition-colors">
+                  <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-indigo-600 bg-gray-50 border border-indigo-200 px-3 py-1.5 rounded-lg group-hover:bg-indigo-100 transition-colors">
                     <BarChart2 size={13} /> Manage
                   </span>
                   <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 transition-colors" />
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
 
       {/* Info cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-indigo-50 rounded-xl border border-indigo-200 p-5">
+        <div className="bg-gray-50 rounded-xl border border-indigo-200 p-5">
           <h3 className="font-semibold text-indigo-900 mb-2">Prompt Isolation</h3>
           <p className="text-sm text-indigo-700">
             All AI prompts are stored exclusively in Templates. Publishers and subscribers never see

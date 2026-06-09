@@ -68,7 +68,7 @@ export default function ConfigurePage() {
             {VOICES.map((v) => (
               <button key={v} onClick={() => setForm((p) => ({ ...p, voice: v }))}
                 className={`px-3 py-2 text-sm rounded-lg border transition-all capitalize ${
-                  form.voice === v ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                  form.voice === v ? 'border-[#133221] bg-green-50 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
                 {v}
               </button>
@@ -84,7 +84,7 @@ export default function ConfigurePage() {
             {DIFFICULTIES.map((d) => (
               <button key={d} onClick={() => setForm((p) => ({ ...p, difficulty_level: d }))}
                 className={`flex-1 py-2.5 text-sm rounded-lg border transition-all capitalize ${
-                  form.difficulty_level === d ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                  form.difficulty_level === d ? 'border-[#133221] bg-green-50 dark:bg-gray-800 text-[#133221] font-semibold' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
                 {d}
               </button>
@@ -96,14 +96,14 @@ export default function ConfigurePage() {
         <div className="p-6 space-y-3">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">Language</h2>
           <select value={form.language} onChange={(e) => setForm((p) => ({ ...p, language: e.target.value }))}
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] text-sm">
             {LANGUAGES.map((l) => <option key={l}>{l}</option>)}
           </select>
         </div>
       </div>
 
       <button onClick={handleSave} disabled={saving}
-        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium">
+        className="flex items-center gap-2 bg-[#133221] text-white px-6 py-2.5 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 transition-colors font-medium">
         <Save size={16} /> {saving ? 'Saving...' : config ? 'Update Configuration' : 'Save Configuration'}
       </button>
     </div>
