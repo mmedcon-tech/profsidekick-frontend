@@ -67,8 +67,13 @@ export default function MarketplacePage() {
             {[1, 2, 3].map((i) => <div key={i} className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
           </div>
         ) : error ? (
-          <div className="text-center py-10 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800">
-            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+          <div className="text-center py-10 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+            <p className="text-amber-800 dark:text-amber-300 text-sm font-medium">
+              Publisher avatars are not available yet.
+            </p>
+            <p className="text-amber-700/80 dark:text-amber-400/80 text-xs mt-1 max-w-md mx-auto">
+              Platform avatars above are ready to use. The marketplace catalog will appear once the backend database is fully migrated.
+            </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-14 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">

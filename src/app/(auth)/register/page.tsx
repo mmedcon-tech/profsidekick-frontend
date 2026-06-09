@@ -111,7 +111,8 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.detail || 'Registration failed');
-      router.push('/login?message=Account created! Please sign in.');
+      const message = encodeURIComponent('Account created! Please sign in.');
+      router.push(`/login?message=${message}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -151,7 +152,7 @@ export default function RegisterPage() {
         )}
 
         {/* ── Step 1: account info ── */}
-          {/* Step 1 fields */}
+        {step === 1 && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -234,6 +235,7 @@ export default function RegisterPage() {
               </Link>
             </p>
           </div>
+        )}
 
         {/* ── Step 2: role selection ── */}
         {step === 2 && (

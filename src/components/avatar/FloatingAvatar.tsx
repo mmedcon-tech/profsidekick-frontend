@@ -9,6 +9,7 @@ import StreamingAvatar, {
 } from '@heygen/streaming-avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourses } from '@/hooks/useCourses';
+import { isHeyGenEnabled, isHeyGenAvatarIdsConfigured } from '@/lib/heygenConfig';
 import { Bot, Mic, MicOff, Minus, X, Send } from 'lucide-react';
 
 const PERSONAS = [
@@ -30,8 +31,8 @@ const PERSONAS = [
   },
 ];
 
-const HEYGEN_CONFIGURED =
-  !!(process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE || process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE);
+/** HeyGen dashboard widget — paused until NEXT_PUBLIC_HEYGEN_ENABLED=true */
+const HEYGEN_LIVE = isHeyGenEnabled() && isHeyGenAvatarIdsConfigured();
 
 type PersonaId = 'female' | 'male';
 type ChatMessage = { role: 'user' | 'assistant'; text: string };
@@ -60,7 +61,7 @@ export default function FloatingAvatar() {
   const activePersona = PERSONAS.find((p) => p.id === activePersonaId) ?? PERSONAS[0];
 
   // Online status: HeyGen connected, or always available for text chat
-  const isOnline = HEYGEN_CONFIGURED ? isConnected : true;
+  const isOnline = HEYGEN_LIVE ? isConnected : true;
 
   // ── Scroll chat to bottom on new messages ────────────────────────────
   useEffect(() => {
@@ -173,7 +174,7 @@ export default function FloatingAvatar() {
 
   const handleExpand = useCallback(async () => {
     setIsExpanded(true);
-    if (HEYGEN_CONFIGURED && !isConnected && !isConnecting) {
+    if (HEYGEN_LIVE && !isConnected && !isConnecting) {
       await startAvatar(activePersona);
     }
   }, [isConnected, isConnecting, startAvatar, activePersona]);
@@ -183,7 +184,7 @@ export default function FloatingAvatar() {
   const handleClose = useCallback(async () => {
     setIsExpanded(false);
     hasGreeted.current = false;
-    if (HEYGEN_CONFIGURED) await stopAvatar();
+    if (HEYGEN_LIVE) await stopAvatar();
   }, [stopAvatar]);
 
   const handlePersonaSwitch = useCallback(
@@ -191,7 +192,7 @@ export default function FloatingAvatar() {
       if (personaId === activePersonaId) return;
       setActivePersonaId(personaId);
       hasGreeted.current = false;
-      if (!HEYGEN_CONFIGURED) return; // fallback: just switch image
+      if (!HEYGEN_LIVE) return; // fallback: just switch image
       const next = PERSONAS.find((p) => p.id === personaId)!;
       await stopAvatar();
       await startAvatar(next);
@@ -291,7 +292,7 @@ export default function FloatingAvatar() {
   );
 
   // ── Fallback panel: static image + text chat ─────────────────────────
-  if (!HEYGEN_CONFIGURED) {
+  if (!HEYGEN_LIVE) {
     return (
       <div className="fixed bottom-6 right-6 z-50 w-80 rounded-2xl shadow-2xl overflow-hidden border border-gray-700 bg-gray-900 flex flex-col max-h-[85vh]">
         {panelHeader}

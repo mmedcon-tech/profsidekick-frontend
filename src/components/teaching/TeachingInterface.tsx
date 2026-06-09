@@ -1,29 +1,32 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare } from "lucide-react";
 import StreamingAvatar, {
   AvatarQuality,
   StreamingEvents,
   TaskType,
 } from "@heygen/streaming-avatar";
-import { ClassSession,  } from "@/types";
+import { ClassSession, SessionAvatarConfig } from "@/types";
+import SessionAvatarRenderer from "@/components/avatar/SessionAvatarRenderer";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
 import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
 import { classifyTurn } from "@/lib/turnClassifier";
+import {
+  fetchSessionEphemeral,
+  shouldUseHeyGenVideo,
+} from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
 
-// HeyGen is the visual rendering layer (§5.2 SYSTEM_DESIGN). When not configured,
-// the session falls back to OpenAI Realtime voice-only with a static avatar image.
-const HEYGEN_CONFIGURED = !!(
-  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
-  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE
-);
+const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
+  renderType: "static",
+  avatarName: "Teaching Assistant",
+};
+
 const DEFAULT_HEYGEN_AVATAR_ID =
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE ||
@@ -38,9 +41,16 @@ interface TeachingInterfaceProps {
   onEndSession: (metadata?: any) => void;
   sessionRunId?: string;
   startingSlide?: number;
+  avatarConfig?: SessionAvatarConfig;
 }
 
-export default function TeachingInterface({ classSession, onEndSession, sessionRunId, startingSlide }: TeachingInterfaceProps) {
+export default function TeachingInterface({
+  classSession,
+  onEndSession,
+  sessionRunId,
+  startingSlide,
+  avatarConfig,
+}: TeachingInterfaceProps) {
   // Always start with slide 0 for SSR consistency
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -59,6 +69,13 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     suggestions: ""
   });
   const [showStartPrompt, setShowStartPrompt] = useState(true); // Show from the beginning
+  const [sessionAvatar, setSessionAvatar] = useState<SessionAvatarConfig>(
+    avatarConfig ?? DEFAULT_SESSION_AVATAR,
+  );
+  const sessionAvatarRef = useRef<SessionAvatarConfig>(
+    avatarConfig ?? DEFAULT_SESSION_AVATAR,
+  );
+  const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -71,7 +88,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
 
-  // HeyGen visual layer — only initialised when HEYGEN_CONFIGURED
+  // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
   const heygenVideoRef = useRef<HTMLVideoElement>(null);
   const [heygenConnected, setHeygenConnected] = useState(false);
@@ -157,39 +174,27 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     onTurnComplete: handleTurnComplete,
   });
 
-  const fetchEphemeralKey = useCallback(async () => {
+  const loadSessionEphemeral = useCallback(async () => {
+    if (!sessionRunId) {
+      throw new Error('Session run id is required');
+    }
     try {
-      const url = new URL(config.getApiUrl('/api/session/ephemeral'));
-      url.searchParams.append('session_id', classSession.sessionId);
-      if (sessionRunId) {
-        url.searchParams.append('session_run_id', sessionRunId);
+      const bundle = await fetchSessionEphemeral(
+        classSession.sessionId,
+        sessionRunId,
+        { token, fallbackAvatar: avatarConfig ?? sessionAvatar },
+      );
+      setSessionAvatar(bundle.avatar);
+      sessionAvatarRef.current = bundle.avatar;
+      if (bundle.avatar.heygenAvatarId) {
+        heygenAvatarIdRef.current = bundle.avatar.heygenAvatarId;
       }
-
-      // Send the auth token when available.
-      // Unauthenticated callers (shared-link / guest flow) omit the header;
-      // the backend permits them only when the run belongs to the guest user.
-      const headers: HeadersInit = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(url.toString(), { headers });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      // Backend may include heygen_avatar_id once §6.3 of SYSTEM_DESIGN is implemented
-      if (data.heygen_avatar_id) {
-        heygenAvatarIdRef.current = data.heygen_avatar_id;
-      }
-      return data.client_secret.value;
+      return bundle.openaiToken;
     } catch (error) {
-      console.error('Failed to fetch ephemeral key:', error);
+      console.error('Failed to fetch ephemeral session bundle:', error);
       throw error;
     }
-  }, [classSession.sessionId, sessionRunId, token]);
+  }, [classSession.sessionId, sessionRunId, token, avatarConfig, sessionAvatar]);
 
   const handleUserSpeech = useCallback(
     (recognizedText: string, confidence: number, duration: number) => {
@@ -256,7 +261,13 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   }, []);
 
   const initHeyGen = useCallback(async () => {
-    if (!HEYGEN_CONFIGURED || !heygenAvatarIdRef.current) return;
+    const avatarConfigSnapshot = sessionAvatarRef.current;
+    if (!shouldUseHeyGenVideo(avatarConfigSnapshot)) return;
+    const avatarId =
+      avatarConfigSnapshot.heygenAvatarId ||
+      heygenAvatarIdRef.current ||
+      DEFAULT_HEYGEN_AVATAR_ID;
+    if (!avatarId) return;
     try {
       const res = await fetch('/api/heygen/token', { method: 'POST' });
       if (!res.ok) return;
@@ -280,7 +291,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       });
 
       await avatar.createStartAvatar({
-        avatarName: heygenAvatarIdRef.current,
+        avatarName: avatarId,
         quality: AvatarQuality.Medium,
       });
     } catch (err) {
@@ -328,7 +339,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     // Create a promise to track this connection
     globalConnectionPromise = (async () => {
       try {
-        const EPHEMERAL_KEY = await fetchEphemeralKey();
+        const EPHEMERAL_KEY = await loadSessionEphemeral();
         if (!EPHEMERAL_KEY) {
           setSessionStatus("ERROR");
           setIsConnecting(false);
@@ -344,6 +355,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
         }
         audioElementRef.current.autoplay = true;
         audioElementRef.current.muted = !isAudioEnabled;
+        setOutputAudioElement(audioElementRef.current);
 
         // Generate unique ID for this connection
         const dataChannelId = Math.random().toString(36).substr(2, 9);
@@ -1581,36 +1593,17 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           </p>
         </div>
 
-        {/* Avatar visual — HeyGen stream when configured, static image otherwise */}
+        {/* Avatar visual — HeyGen video or audio-driven static / talkingheads animation */}
         <div className="relative bg-gray-900 flex-shrink-0" style={{ aspectRatio: '9/16' }}>
-          {HEYGEN_CONFIGURED ? (
-            <>
-              <video
-                ref={heygenVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              {!heygenConnected && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 gap-2">
-                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-gray-500 text-[11px]">Connecting avatar…</span>
-                </div>
-              )}
-            </>
-          ) : (
-            <Image
-              src={
-                process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE
-                  ? '/images/avatar-female.png'
-                  : '/images/avatar-male.png'
-              }
-              alt="AI Assistant"
-              fill
-              className="object-cover object-top"
-              priority
-            />
-          )}
+          <SessionAvatarRenderer
+            config={sessionAvatar}
+            audioElement={outputAudioElement}
+            isConnected={sessionStatus === "CONNECTED"}
+            isAISpeaking={isAISpeaking}
+            isUserSpeaking={isUserSpeaking}
+            heygenConnected={heygenConnected}
+            heygenVideoRef={heygenVideoRef}
+          />
 
           {/* Speaking indicator overlay */}
           {isAISpeaking && (
