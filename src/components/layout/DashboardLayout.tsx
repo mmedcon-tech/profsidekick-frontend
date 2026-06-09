@@ -58,6 +58,7 @@ export const subscriberNav: SidebarConfig = [
   { label: 'Dashboard',       href: '/subscriber/dashboard',   icon: <LayoutDashboard size={18} /> },
   { label: 'Marketplace',      href: '/subscriber/marketplace', icon: <Store size={18} /> },
   { label: 'My Courses',       href: '/subscriber/courses',     icon: <BookOpen size={18} /> },
+  { label: 'Avatar Preview',   href: '/subscriber/avatar-preview', icon: <Bot size={18} /> },
   { label: 'Learning History', href: '/subscriber/history',     icon: <History size={18} /> },
   { label: 'Profile',          href: '/subscriber/profile',     icon: <UserCircle size={18} /> },
 ];

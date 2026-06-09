@@ -6,11 +6,13 @@ import type {
   SessionEphemeralBundle,
 } from '@/types/types';
 
+export { parseSessionRunAvatar, resolveAvatarConfig } from '@/lib/avatarConfig';
 export {
-  parseSessionRunAvatar,
-  resolveAvatarConfig,
+  getAvatarModeLabel,
+  getEffectiveRenderType,
+  isHeyGenEnabled,
   shouldUseHeyGenVideo,
-} from '@/lib/avatarConfig';
+} from '@/lib/heygenConfig';
 
 export async function fetchSessionEphemeral(
   sessionId: string,

@@ -47,6 +47,7 @@ export default function TeachingSessionAvatar({
         widgetState={widgetState}
         amplitude={amplitude}
         size={200}
+        variant={config.renderType === 'talkingheads' ? 'talkingheads' : 'static'}
       />
       {talkingHeads.error && (
         <p className="px-4 text-center text-[11px] text-amber-400">

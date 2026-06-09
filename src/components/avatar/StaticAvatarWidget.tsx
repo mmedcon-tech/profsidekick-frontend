@@ -3,12 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import type { AvatarWidgetState } from '@/types/types';
 
+type AvatarVisualVariant = 'static' | 'talkingheads';
+
 interface StaticAvatarWidgetProps {
   imageUrl?: string;
   avatarName: string;
   widgetState: AvatarWidgetState;
   amplitude: number;
   size?: number;
+  variant?: AvatarVisualVariant;
 }
 
 export default function StaticAvatarWidget({
@@ -17,6 +20,7 @@ export default function StaticAvatarWidget({
   widgetState,
   amplitude,
   size = 180,
+  variant = 'static',
 }: StaticAvatarWidgetProps): React.ReactElement {
   const [blink, setBlink] = useState(false);
   const initial = avatarName.trim().charAt(0).toUpperCase() || 'A';
@@ -56,21 +60,29 @@ export default function StaticAvatarWidget({
         ? 1.04
         : 1;
 
+  const ringColor =
+    variant === 'talkingheads' ? 'border-violet-400' : 'border-blue-400';
+  const faceGradient =
+    variant === 'talkingheads'
+      ? 'from-violet-700 to-indigo-900'
+      : 'from-slate-600 to-slate-800';
+
   return (
     <div
       className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
       data-state={widgetState}
+      data-variant={variant}
     >
       <div
-        className={`absolute inset-0 rounded-full border-2 border-blue-400 transition-transform duration-150 ${
+        className={`absolute inset-0 rounded-full border-2 ${ringColor} transition-transform duration-150 ${
           widgetState === 'listening' ? 'animate-pulse' : ''
         } ${widgetState === 'speaking' ? 'animate-ping' : ''}`}
         style={{ opacity: ringOpacity, transform: `scale(${ringScale})` }}
         aria-hidden
       />
       <div
-        className="relative overflow-hidden rounded-full bg-gradient-to-br from-slate-600 to-slate-800 shadow-lg"
+        className={`relative overflow-hidden rounded-full bg-gradient-to-br ${faceGradient} shadow-lg`}
         style={{
           width: size,
           height: size,

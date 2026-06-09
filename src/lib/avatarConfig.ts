@@ -55,13 +55,9 @@ export function parseSessionRunAvatar(
   };
 }
 
-export function shouldUseHeyGenVideo(config: SessionAvatarConfig): boolean {
-  if (config.renderType === 'static' || config.renderType === 'talkingheads') {
-    return false;
-  }
-  return !!(
-    config.heygenAvatarId ||
-    process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
-    process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE
-  );
-}
+export {
+  getAvatarModeLabel,
+  getEffectiveRenderType,
+  isHeyGenEnabled,
+  shouldUseHeyGenVideo,
+} from '@/lib/heygenConfig';

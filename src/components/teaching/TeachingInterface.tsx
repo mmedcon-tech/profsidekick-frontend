@@ -8,7 +8,7 @@ import StreamingAvatar, {
   TaskType,
 } from "@heygen/streaming-avatar";
 import { ClassSession, SessionAvatarConfig } from "@/types";
-import TeachingSessionAvatar from "@/components/avatar/TeachingSessionAvatar";
+import SessionAvatarRenderer from "@/components/avatar/SessionAvatarRenderer";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
 import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
@@ -27,12 +27,6 @@ const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
   avatarName: "Teaching Assistant",
 };
 
-// HeyGen is the visual rendering layer (§5.2 SYSTEM_DESIGN). When not configured,
-// the session falls back to OpenAI Realtime voice-only with a static avatar image.
-const HEYGEN_CONFIGURED = !!(
-  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
-  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE
-);
 const DEFAULT_HEYGEN_AVATAR_ID =
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE ||
@@ -94,7 +88,7 @@ export default function TeachingInterface({
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
 
-  // HeyGen visual layer — only initialised when HEYGEN_CONFIGURED
+  // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
   const heygenVideoRef = useRef<HTMLVideoElement>(null);
   const [heygenConnected, setHeygenConnected] = useState(false);
@@ -1599,32 +1593,17 @@ export default function TeachingInterface({
           </p>
         </div>
 
-        {/* Avatar visual — HeyGen video or audio-driven static animation */}
+        {/* Avatar visual — HeyGen video or audio-driven static / talkingheads animation */}
         <div className="relative bg-gray-900 flex-shrink-0" style={{ aspectRatio: '9/16' }}>
-          {shouldUseHeyGenVideo(sessionAvatar) ? (
-            <>
-              <video
-                ref={heygenVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              {!heygenConnected && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 gap-2">
-                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-gray-500 text-[11px]">Connecting avatar…</span>
-                </div>
-              )}
-            </>
-          ) : (
-            <TeachingSessionAvatar
-              config={sessionAvatar}
-              audioElement={outputAudioElement}
-              isConnected={sessionStatus === "CONNECTED"}
-              isAISpeaking={isAISpeaking}
-              isUserSpeaking={isUserSpeaking}
-            />
-          )}
+          <SessionAvatarRenderer
+            config={sessionAvatar}
+            audioElement={outputAudioElement}
+            isConnected={sessionStatus === "CONNECTED"}
+            isAISpeaking={isAISpeaking}
+            isUserSpeaking={isUserSpeaking}
+            heygenConnected={heygenConnected}
+            heygenVideoRef={heygenVideoRef}
+          />
 
           {/* Speaking indicator overlay */}
           {isAISpeaking && (
