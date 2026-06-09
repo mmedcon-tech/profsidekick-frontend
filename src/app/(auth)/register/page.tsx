@@ -111,7 +111,8 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.detail || 'Registration failed');
-      router.push('/login?message=Account created! Please sign in.');
+      const message = encodeURIComponent('Account created! Please sign in.');
+      router.push(`/login?message=${message}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -121,31 +122,24 @@ export default function RegisterPage() {
 
   if (isLoading || isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133221]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <Image src="/images/logo.png" alt="ProfSidekick"
-              width={40} height={40}
-              className="object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            <span className="text-2xl font-bold text-blue-900 dark:text-blue-400">ProfSidekick</span>
-          </div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Step {step} of 2 — {step === 1 ? 'Account details' : 'Choose your role'}
-          </p>
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-10">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Create account</h2>
+        <p className="text-gray-500">
+          Step {step} of 2 — {step === 1 ? 'Account details' : 'Choose your role'}
+        </p>
           {/* progress bar */}
-          <div className="mt-3 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="mt-4 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-600 rounded-full transition-all duration-300"
+              className="h-full bg-[#133221] rounded-full transition-all duration-300"
               style={{ width: step === 1 ? '50%' : '100%' }}
             />
           </div>
@@ -158,7 +152,7 @@ export default function RegisterPage() {
         )}
 
         {/* ── Step 1: account info ── */}
-          {/* Step 1 fields */}
+        {step === 1 && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -222,7 +216,7 @@ export default function RegisterPage() {
               onClick={handleContinue}
               disabled={isSubmitting}
               aria-busy={isSubmitting}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-[#133221] text-white py-3 rounded-xl font-medium hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -234,13 +228,14 @@ export default function RegisterPage() {
               )}
             </button>
 
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-center text-sm text-gray-500 mt-6">
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+              <Link href="/login" className="text-[#133221] hover:underline font-semibold">
                 Sign in
               </Link>
             </p>
           </div>
+        )}
 
         {/* ── Step 2: role selection ── */}
         {step === 2 && (
@@ -277,13 +272,13 @@ export default function RegisterPage() {
               })}
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-6">
               <button onClick={() => { setError(null); setStep(1); }}
-                className="flex-1 flex items-center justify-center gap-2 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 transition-colors">
+                className="flex-1 flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                 <ArrowLeft size={16} /> Back
               </button>
               <button onClick={handleSubmit} disabled={isSubmitting || !formData.role}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                className="flex-1 bg-[#133221] text-white py-3 rounded-xl font-medium hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
                 {isSubmitting ? (
                   <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
                 ) : 'Create Account'}
@@ -292,6 +287,5 @@ export default function RegisterPage() {
           </div>
         )}
       </div>
-    </div>
   );
 }

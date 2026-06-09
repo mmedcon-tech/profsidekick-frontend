@@ -220,7 +220,7 @@ export default function UnifiedDashboard() {
         {!loading && !error && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mt-8">
                          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-               {isPublisher ? 'Publishing with ProfSidekick' : 'Learning with ProfSidekick'}
+               {isPublisher ? 'Publishing with ProfSidekick' : 'Learning with MyOS'}
              </h2>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                {isPublisher ? (

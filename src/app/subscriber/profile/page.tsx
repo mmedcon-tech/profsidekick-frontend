@@ -46,12 +46,12 @@ export default function SubscriberProfilePage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
             <input value={firstName} onChange={(e) => setFirstName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" />
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
             <input value={lastName} onChange={(e) => setLastName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" />
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm" />
           </div>
         </div>
         <div>
@@ -67,7 +67,7 @@ export default function SubscriberProfilePage() {
         </div>
 
         <button onClick={handleSave} disabled={saving}
-          className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium">
+          className="flex items-center gap-2 bg-[#133221] text-white px-5 py-2.5 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 transition-colors text-sm font-medium">
           <Save size={15} /> {saving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
