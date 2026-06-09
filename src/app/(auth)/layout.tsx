@@ -25,13 +25,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </button>
         </div>
 
-        {/* Center content */}
-        <div className="relative z-10 max-w-lg mt-12">
-          <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 rounded-full text-sm font-medium transition-colors backdrop-blur-sm mt-auto">
-            <Volume2 size={16} />
-            Emirati female voice · EN
-          </button>
-        </div>
 
         {/* Footer */}
         <div className="relative z-10 text-xs text-white/50 font-medium">
