@@ -3,6 +3,7 @@
 import React, {  } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import TeachingInterface from "@/components/teaching/TeachingInterface";
+import { parseSessionRunAvatar } from "@/lib/sessionService";
 import { SessionRunDetails } from "@/types/types";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -116,6 +117,8 @@ export default function TeachingRunWrapper({ sessionRunDetails, courseId, sessio
     status: "RUNNING" as const,
   };
 
+  const avatarConfig = parseSessionRunAvatar(sessionRunDetails);
+
   return (
     <ProtectedRoute requireAuth={!isSharedLink}>
       <TeachingInterface 
@@ -123,6 +126,7 @@ export default function TeachingRunWrapper({ sessionRunDetails, courseId, sessio
         onEndSession={handleEndSession}
         sessionRunId={sessionRunDetails.sessionRunId}
         startingSlide={getStoredSlidePosition()}
+        avatarConfig={avatarConfig}
       />
     </ProtectedRoute>
   );
