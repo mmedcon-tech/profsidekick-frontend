@@ -85,7 +85,7 @@ function LoginForm() {
     <div className="w-full">
       {/* Header */}
       <div className="mb-10">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign in</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Sign in</h2>
         <p className="text-gray-500">Sign in to continue your training</p>
       </div>
 
@@ -98,8 +98,8 @@ function LoginForm() {
           )}
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Employee ID
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Username
             </label>
             <input
               type="text"

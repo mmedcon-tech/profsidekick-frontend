@@ -35,9 +35,9 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-800">
+    <div className="min-h-screen bg-white dark:bg-gray-900 dark:bg-gray-800">
       {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <nav className="bg-white dark:bg-gray-900 dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
@@ -97,7 +97,7 @@ export default function LandingPage() {
       <section className="bg-gradient-to-br from-[#133221]/5 to-[#BA984E]/10 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-6">
               Transform Your <span className="text-[#133221]">Teaching</span>
               <br />
               with AI-Powered Presentations
@@ -128,7 +128,7 @@ export default function LandingPage() {
                    </button>
                    <button
                      onClick={() => router.push('/login')}
-                     className="bg-white dark:bg-gray-800 text-[#133221] px-8 py-4 rounded-lg font-medium border border-[#133221] hover:bg-[#133221]/5 focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 transition-colors"
+                     className="bg-white dark:bg-gray-900 dark:bg-gray-800 text-[#133221] px-8 py-4 rounded-lg font-medium border border-[#133221] hover:bg-[#133221]/5 focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 transition-colors"
                    >
                      Sign In
                    </button>
@@ -147,10 +147,10 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-white dark:bg-gray-800">
+      <section className="py-20 bg-white dark:bg-gray-900 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">
               Everything You Need for Interactive Teaching
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
@@ -159,33 +159,33 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-8 bg-gray-50 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
+            <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-[#133221]/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <BookOpen className="w-8 h-8 text-[#133221]" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Smart Content Analysis</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Smart Content Analysis</h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 Upload PDF or PowerPoint slides and our AI instantly understands your content, 
                 creating contextual assistance and navigation support.
               </p>
             </div>
             
-            <div className="text-center p-8 bg-gray-50 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
+            <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Zap className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">AI Teaching Assistant</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-4">AI Teaching Assistant</h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 Get real-time voice assistance, answer student questions naturally, 
                 and navigate through your presentation with conversational commands.
               </p>
             </div>
             
-            <div className="text-center p-8 bg-gray-50 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
+            <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Users className="w-8 h-8 text-purple-600" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Enhanced Engagement</h3>
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Enhanced Engagement</h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                 Create interactive learning experiences that keep students engaged 
                 with AI-powered voice interactions and intelligent content delivery.
@@ -196,42 +196,42 @@ export default function LandingPage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-900">
+      <section className="py-20 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
                 Why Choose MyOS?
               </h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Easy Setup</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Easy Setup</h3>
                     <p className="text-gray-600 dark:text-gray-400">Upload your presentation and start teaching in minutes. No complex setup or training required.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Natural Voice Interaction</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Natural Voice Interaction</h3>
                     <p className="text-gray-600 dark:text-gray-400">Speak naturally to navigate slides, get explanations, and handle student questions seamlessly.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
                   <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Customizable AI Assistant</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Customizable AI Assistant</h3>
                     <p className="text-gray-600 dark:text-gray-400">Configure voice, personality, and teaching style to match your preferences and subject matter.</p>
                   </div>
                 </div>
               </div>
             </div>
-                         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg">
+                         <div className="bg-white dark:bg-gray-900 dark:bg-gray-800 p-8 rounded-2xl shadow-lg">
                <div className="text-center">
                  {isAuthenticated ? (
                    <>
-                     <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Welcome Back!</h3>
+                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Welcome Back!</h3>
                      <p className="text-gray-600 dark:text-gray-400 mb-6">Ready to create your next amazing teaching session?</p>
                      <button
                        onClick={() => router.push('/dashboard')}
@@ -242,7 +242,7 @@ export default function LandingPage() {
                    </>
                  ) : (
                    <>
-                     <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Ready to Get Started?</h3>
+                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Ready to Get Started?</h3>
                      <p className="text-gray-600 dark:text-gray-400 mb-6">Be among the first educators to experience the future of AI-powered teaching.</p>
                      <button
                        onClick={() => router.push('/register')}
@@ -260,10 +260,10 @@ export default function LandingPage() {
       </section>
 
       {/* Team Section */}
-      <section className="py-20 bg-white dark:bg-gray-800">
+      <section className="py-20 bg-white dark:bg-gray-900 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">
               Meet Our Team
             </h2>
             {/* <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
@@ -273,7 +273,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Professor 2 - Placeholder */}
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
               <div className="w-24 h-24 mx-auto mb-6 relative">
                 <img 
                   src="/images/team/alberto.jpg" 
@@ -290,7 +290,7 @@ export default function LandingPage() {
                   <span className="text-2xl font-bold text-white">AG</span>
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Alberto Gandolfi</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Alberto Gandolfi</h3>
               <p className="text-purple-600 font-medium mb-3">Professor of Practice in Mathematics at NYU Abu Dhabi</p>
               {/* <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                 Professor of Practice in Mathematics with extensive experience in educational technology 
@@ -299,7 +299,7 @@ export default function LandingPage() {
             </div>
 
             {/* Professor 1 - Placeholder */}
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
               <div className="w-24 h-24 mx-auto mb-6 relative">
                 <img 
                   src="/images/team/eliseo.jpg" 
@@ -316,7 +316,7 @@ export default function LandingPage() {
                   <span className="text-2xl font-bold text-white">DR</span>
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Eliseo Ferrante</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Eliseo Ferrante</h3>
               <p className="text-green-600 font-medium mb-3">Visiting Professor at NYU Abu Dhabi</p>
               {/* <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
                 Professor of Computer Science with extensive experience in educational technology 
@@ -324,7 +324,7 @@ export default function LandingPage() {
               </p> */}
             </div>
 
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
               <div className="w-24 h-24 mx-auto mb-6 relative">
                 <img 
                   src="/images/team/hanan.jpg" 
@@ -341,11 +341,11 @@ export default function LandingPage() {
                   <span className="text-2xl font-bold text-white">DR</span>
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Hanan Salam</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Hanan Salam</h3>
               <p className="text-teal-600 font-medium mb-3">Assistant Professor of Computer Science at NYU Abu Dhabi</p>
             </div>
 
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
+            <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
               <div className="w-24 h-24 mx-auto mb-6 relative">
                 <img 
                   src="/images/team/assylbek.jpg" 
@@ -362,7 +362,7 @@ export default function LandingPage() {
                   <span className="text-2xl font-bold text-white">AS</span>
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Assylbek Saduakhassov</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Assylbek Saduakhassov</h3>
               <p className="text-[#133221] font-medium mb-3">Software Engineer</p>
             </div>
           </div>
