@@ -41,10 +41,10 @@ function ContinueCard({
 }) {
   // Using some mock data for UI visual matching since exact fields like tag, location might not be on 'course'
   const tag = course.department || "General";
-  const status = course.enrolled ? "In progress" : "Not started";
+  const status = "In progress";
   const duration = course.description?.includes("weeks") ? "8 weeks" : "4 weeks";
   const location = "Online";
-  const progress = course.enrolled ? 60 : 0;
+  const progress = 60;
   
   return (
     <button

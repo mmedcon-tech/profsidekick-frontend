@@ -24,19 +24,19 @@ function CourseCard({ course, onClick }: CourseCardProps) {
   let statusColor = "bg-gray-100 text-gray-600";
   let statusIcon = <div className="w-2 h-2 rounded-full border border-gray-400 mr-1.5" />;
 
-  if (course.enrolled && course.name?.includes('Leadership')) {
+  if (course.name?.includes('Leadership')) {
     status = "In progress";
     progress = 60;
     actionText = "Resume";
     statusColor = "bg-[#FDF9EB] text-[#A88C4B]";
     statusIcon = <Clock size={10} className="mr-1" />;
-  } else if (course.enrolled && course.name?.includes('Occupational')) {
+  } else if (course.name?.includes('Occupational')) {
     status = "Completed";
     progress = 100;
     actionText = "Review";
     statusColor = "bg-green-50 text-green-700";
     statusIcon = <div className="w-2 h-2 rounded-full bg-green-500 mr-1.5" />;
-  } else if (course.enrolled && course.name?.includes('English')) {
+  } else if (course.name?.includes('English')) {
     status = "In progress";
     progress = 20;
     actionText = "Resume";
