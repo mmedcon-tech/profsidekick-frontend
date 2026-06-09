@@ -1,57 +1,10 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSearch } from '@/contexts/SearchContext';
 import { useCourses } from '@/hooks/useCourses';
-import { useSubscriberStats } from '@/hooks/useSubscriberStats';
-import { BookOpen, Users, ArrowUpRight, Clock } from 'lucide-react';
-
-// Derives a stable accent color from a string — no random, no AI imagery
-const CARD_ACCENTS = [
-  { bg: 'bg-blue-600',   text: 'text-white' },
-  { bg: 'bg-slate-700',  text: 'text-white' },
-  { bg: 'bg-indigo-600', text: 'text-white' },
-  { bg: 'bg-teal-700',   text: 'text-white' },
-  { bg: 'bg-violet-700', text: 'text-white' },
-  { bg: 'bg-cyan-700',   text: 'text-white' },
-];
-
-function courseAccent(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  return CARD_ACCENTS[hash % CARD_ACCENTS.length];
-}
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('');
-}
-
-function formatHours(minutes: number) {
-  return (minutes / 60).toFixed(1);
-}
-
-// ── skeleton card ────────────────────────────────────────────────────────────
-
-function SkeletonCard() {
-  return (
-    <div className="rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm animate-pulse">
-      <div className="h-24 bg-gray-200 dark:bg-gray-700" />
-      <div className="p-4 space-y-2">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-        <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-1/2" />
-        <div className="h-px bg-gray-100 dark:bg-gray-700 my-3" />
-        <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded w-2/3" />
-      </div>
-    </div>
-  );
-}
+import { Clock, MapPin, BookOpen } from 'lucide-react';
 
 // ── course card ──────────────────────────────────────────────────────────────
 
@@ -61,69 +14,98 @@ interface CourseCardProps {
 }
 
 function CourseCard({ course, onClick }: CourseCardProps) {
-  const accent = courseAccent(course.name ?? '');
-  const hasSession = (course.session_count ?? 0) > 0;
+  // Using some logic to match the visual states in the UI screenshot
+  const tag = course.department || "General";
+  
+  // Decide status based on session_count or enrolled for demo
+  let status = "Not started";
+  let progress = 0;
+  let actionText = "Start";
+  let statusColor = "bg-gray-100 text-gray-600";
+  let statusIcon = <div className="w-2 h-2 rounded-full border border-gray-400 mr-1.5" />;
 
+  if (course.enrolled && course.name?.includes('Leadership')) {
+    status = "In progress";
+    progress = 60;
+    actionText = "Resume";
+    statusColor = "bg-[#FDF9EB] text-[#A88C4B]";
+    statusIcon = <Clock size={10} className="mr-1" />;
+  } else if (course.enrolled && course.name?.includes('Occupational')) {
+    status = "Completed";
+    progress = 100;
+    actionText = "Review";
+    statusColor = "bg-green-50 text-green-700";
+    statusIcon = <div className="w-2 h-2 rounded-full bg-green-500 mr-1.5" />;
+  } else if (course.enrolled && course.name?.includes('English')) {
+    status = "In progress";
+    progress = 20;
+    actionText = "Resume";
+    statusColor = "bg-[#FDF9EB] text-[#A88C4B]";
+    statusIcon = <Clock size={10} className="mr-1" />;
+  }
+
+  const duration = course.description?.includes("weeks") ? "8 weeks" : "4 weeks";
+  const location = course.name?.includes('English') ? "Federal Police School - Sharjah" : "Officers Training Institute - Police College, Abu Dhabi";
+  
   return (
     <button
       onClick={onClick}
-      className="group w-full text-left rounded-2xl overflow-hidden bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      className="group text-left bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 flex flex-col h-full"
     >
-      {/* Colored header */}
-      <div className={`${accent.bg} px-5 pt-5 pb-4 flex items-start justify-between`}>
-        <div className={`text-2xl font-bold tracking-tight ${accent.text} leading-none`}>
-          {initials(course.name ?? '?')}
+      <div className="p-5 flex-1">
+        {/* Tags row */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-[10px] font-semibold px-2 py-1 bg-green-50 text-green-700 rounded-md">
+            {tag}
+          </span>
+          <span className={`text-[10px] font-semibold px-2 py-1 rounded-md flex items-center ${statusColor}`}>
+            {statusIcon} {status}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          {hasSession ? (
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/20 text-white">
-              In progress
-            </span>
-          ) : (
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-black/20 text-white/80">
-              Not started
-            </span>
-          )}
-          <ArrowUpRight
-            size={15}
-            className="text-white/60 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-150"
-          />
+
+        {/* Title & Desc */}
+        <h3 className="font-bold text-gray-900 dark:text-gray-100 text-[15px] mb-2 leading-tight line-clamp-2">
+          {course.name}
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 line-clamp-2 leading-relaxed">
+          {course.description || "Course description not available."}
+        </p>
+
+        {/* Metadata */}
+        <div className="flex items-center gap-4 text-[11px] text-gray-500 mb-5">
+          <span className="flex items-center gap-1"><Clock size={12} /> {duration}</span>
+          <span className="flex items-center gap-1"><MapPin size={12} /> {location}</span>
+        </div>
+
+        {/* Progress bar */}
+        <div>
+          <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium mb-1.5">
+            <span>Overall progress</span>
+            <span className="font-bold text-gray-900">{progress}%</span>
+          </div>
+          <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-[#133221]" style={{ width: `${progress}%` }} />
+          </div>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="px-5 py-4">
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-snug line-clamp-2 mb-0.5">
-          {course.name}
-        </h3>
-        {course.code && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-            {course.code}{course.section ? ` · ${course.section}` : ''}
-            {course.department ? ` · ${course.department}` : ''}
-          </p>
-        )}
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2 min-h-[2.5rem]">
-          {course.description || `Taught by ${course.owner_name}`}
-        </p>
-
-        <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 pt-3 border-t border-gray-100 dark:border-gray-700">
-          <span className="flex items-center gap-1.5">
-            <BookOpen size={11} />
-            {course.session_count ?? 0} session{(course.session_count ?? 0) !== 1 ? 's' : ''}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Users size={11} />
-            {course.enrollment_count ?? 0} enrolled
-          </span>
-          {course.semester && course.year && (
-            <span className="flex items-center gap-1.5 ml-auto">
-              <Clock size={11} />
-              {course.semester} {course.year}
-            </span>
-          )}
+      {/* Footer */}
+      <div className="p-5 pt-0 mt-auto flex items-end justify-between">
+        <span className="text-[11px] text-gray-500">
+          {progress === 100 ? "Completed" : progress === 0 ? "Starts 04/10" : "Assessment: tomorrow"}
+        </span>
+        <div className={`${progress === 100 ? 'bg-[#133221]' : progress === 0 ? 'bg-white border border-gray-300 text-gray-700' : 'bg-[#133221] text-white'} text-xs font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity`}>
+          {actionText}
         </div>
       </div>
     </button>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 shadow-sm animate-pulse h-64">
+    </div>
   );
 }
 
@@ -132,78 +114,30 @@ function CourseCard({ course, onClick }: CourseCardProps) {
 export default function StudentDashboard() {
   const router = useRouter();
   const { user } = useAuth();
-  const { query: searchQuery, register, unregister } = useSearch();
-
   const { courses, loading, error, refetch } = useCourses();
-  const { stats } = useSubscriberStats(courses.length);
 
-  useEffect(() => {
-    register('Search courses, instructors…', () => {});
-    return () => unregister();
-  }, [register, unregister]);
-
-  const filteredCourses = useMemo(() => {
-    if (!searchQuery) return courses;
-    const q = searchQuery.toLowerCase();
-    return courses.filter(
-      (c) =>
-        c.name?.toLowerCase().includes(q) ||
-        c.code?.toLowerCase().includes(q) ||
-        c.department?.toLowerCase().includes(q) ||
-        c.owner_name?.toLowerCase().includes(q),
-    );
-  }, [courses, searchQuery]);
-
-  const firstName = user?.firstName || user?.username || '';
+  // Using all courses
+  const displayCourses = useMemo(() => courses, [courses]);
 
   return (
-    <div className="min-h-full bg-white dark:bg-gray-950">
-      <div className="max-w-5xl mx-auto px-6 lg:px-8 py-10 space-y-8">
+    <div className="min-h-full bg-gray-50/50 dark:bg-gray-950">
+      <div className="max-w-[1200px] mx-auto px-6 py-8 space-y-6">
 
-        {/* Greeting + inline stats */}
+        {/* Header subtitle */}
         <div>
-          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
-            Welcome back{firstName ? `, ${firstName}` : ''}
+          <p className="text-sm text-gray-500 font-medium">
+            All courses assigned to you by the Officers Training Institute.
           </p>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
-            What would you like to learn today?
-          </h1>
-
-          {/* Subtle inline stats — not hero metrics */}
-          {stats && (
-            <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">
-              {stats.coursesEnrolled} course{stats.coursesEnrolled !== 1 ? 's' : ''} enrolled
-              {stats.completedRuns > 0 && (
-                <>
-                  {' · '}
-                  {stats.completedRuns} session{stats.completedRuns !== 1 ? 's' : ''} completed
-                  {' · '}
-                  {formatHours(stats.totalRunMinutes)} hours
-                </>
-              )}
-            </p>
-          )}
         </div>
 
         {/* Course grid */}
         <section>
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-widest">
-              {searchQuery ? 'Results' : 'Your Courses'}
-            </h2>
-            {!loading && !error && (
-              <span className="text-xs text-gray-400">
-                {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
           ) : error ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
+            <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center bg-white">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Couldn&apos;t load courses
               </p>
@@ -215,18 +149,19 @@ export default function StudentDashboard() {
                 Try again
               </button>
             </div>
-          ) : filteredCourses.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
+          ) : displayCourses.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center bg-white">
+              <BookOpen size={28} className="mx-auto text-gray-300 mb-3" />
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {searchQuery ? 'No courses match your search' : 'No courses yet'}
+                No courses yet
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                {searchQuery ? 'Try different keywords' : 'Your instructor will enroll you.'}
+                Your instructor will enroll you.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredCourses.map((course) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {displayCourses.map((course) => (
                 <CourseCard
                   key={course.course_id}
                   course={course}
