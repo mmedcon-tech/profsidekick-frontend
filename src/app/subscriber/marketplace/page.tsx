@@ -28,7 +28,7 @@ export default function MarketplacePage() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Marketplace</h1>
@@ -57,7 +57,7 @@ export default function MarketplacePage() {
           <div className="relative max-w-xs w-full">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={query} onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               placeholder="Search avatars…" />
           </div>
         </div>
@@ -67,8 +67,8 @@ export default function MarketplacePage() {
             {[1, 2, 3].map((i) => <div key={i} className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
           </div>
         ) : error ? (
-          <div className="text-center py-10 bg-red-50 rounded-xl border border-red-200">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className="text-center py-10 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-800">
+            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-14 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">

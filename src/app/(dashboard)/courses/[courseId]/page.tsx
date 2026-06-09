@@ -7,20 +7,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCourses, CourseDetails, CourseSessionSummary } from '@/hooks/useCourses';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import {
-  ArrowLeft,
-  BookOpen,
-  Users,
-  Plus,
-  Settings,
-  UserPlus,
-  Globe,
-  Lock,
-  Check,
-  PlayCircle,
-  Clock,
+  ArrowLeft, BookOpen, Users, Plus, Settings,
+  UserPlus, Globe, Lock, Check, PlayCircle, Clock,
 } from 'lucide-react';
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 function sessionStatus(session: CourseSessionSummary, index: number, currentIndex: number) {
   if ((session.run_count || 0) > 0) return 'completed' as const;
@@ -37,10 +28,7 @@ function formatDate(dateString: string) {
 // ── sub-components ────────────────────────────────────────────────────────────
 
 function SessionRow({
-  session,
-  index,
-  status,
-  courseId,
+  session, index, status, courseId,
 }: {
   session: CourseSessionSummary;
   index: number;
@@ -49,64 +37,63 @@ function SessionRow({
 }) {
   const router = useRouter();
 
+  const rowClass =
+    status === 'current'
+      ? 'border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/30 hover:bg-blue-50 dark:hover:bg-blue-950/50'
+      : status === 'completed'
+      ? 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800'
+      : 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/30 hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60';
+
+  const circleClass =
+    status === 'completed'
+      ? 'bg-blue-600 border-blue-600'
+      : status === 'current'
+      ? 'border-blue-600 bg-white dark:bg-gray-900'
+      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900';
+
   return (
     <button
       onClick={() => router.push(`/courses/${courseId}/sessions/${session.sessionId}`)}
-      className={`w-full flex items-center gap-3 p-3.5 rounded-xl border text-left transition-colors ${
-        status === 'current'
-          ? 'border-blue-200 bg-blue-50/60 hover:bg-blue-50'
-          : status === 'completed'
-          ? 'border-gray-100 bg-white hover:bg-gray-50'
-          : 'border-gray-100 bg-white hover:bg-gray-50 opacity-60'
-      }`}
+      className={`w-full flex items-center gap-3 p-3.5 rounded-xl border text-left transition-colors ${rowClass}`}
     >
-      {/* Status icon */}
-      <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-        status === 'completed'
-          ? 'bg-blue-600 border-blue-600'
-          : status === 'current'
-          ? 'border-blue-600 bg-white'
-          : 'border-gray-300 bg-white'
-      }`}>
+      <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${circleClass}`}>
         {status === 'completed' ? (
           <Check size={12} className="text-white" strokeWidth={3} />
         ) : status === 'current' ? (
           <span className="w-2 h-2 rounded-full bg-blue-600" />
         ) : (
-          <span className="text-[10px] text-gray-400 font-semibold">{index + 1}</span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">{index + 1}</span>
         )}
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium truncate ${
-          status === 'upcoming' ? 'text-gray-400' : 'text-gray-900'
+          status === 'upcoming' ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'
         }`}>
           {session.class_name}
         </p>
         {session.session_date && (
-          <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1">
             <Clock size={10} /> {formatDate(session.session_date)}
           </p>
         )}
       </div>
 
-      {/* Action label */}
       <div className="flex-shrink-0">
         {status === 'current' && (
-          <span className="text-xs font-semibold text-blue-600 flex items-center gap-1">
+          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
             <PlayCircle size={13} /> Resume
           </span>
         )}
         {status === 'completed' && (
-          <span className="text-xs text-gray-400">Review</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">Review</span>
         )}
       </div>
     </button>
   );
 }
 
-// ── page ─────────────────────────────────────────────────────────────────────
+// ── page ──────────────────────────────────────────────────────────────────────
 
 export default function CourseDetailPage() {
   const router = useRouter();
@@ -152,12 +139,22 @@ export default function CourseDetailPage() {
     return (
       <ProtectedRoute>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-6"
+          >
             <ArrowLeft size={15} /> Back
           </button>
-          <div className="rounded-2xl border border-dashed border-gray-200 p-12 text-center">
-            <p className="text-sm font-medium text-gray-700 mb-1">{error || 'Course not found'}</p>
-            <button onClick={() => router.back()} className="text-sm text-blue-600 hover:text-blue-700 mt-2">Go back</button>
+          <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-12 text-center">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {error || 'Course not found'}
+            </p>
+            <button
+              onClick={() => router.back()}
+              className="text-sm text-blue-600 hover:text-blue-700 mt-2"
+            >
+              Go back
+            </button>
           </div>
         </div>
       </ProtectedRoute>
@@ -176,42 +173,48 @@ export default function CourseDetailPage() {
         {/* Back */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-5"
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 transition-colors mb-5 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
         >
           <ArrowLeft size={15} /> Back to courses
         </button>
 
         <div className="grid grid-cols-3 gap-6">
-          {/* ── Left column ─────────────────────────────────────────────── */}
+          {/* ── Left column ──────────────────────────────────────────────── */}
           <div className="col-span-2 space-y-6">
             {/* Course header */}
             <div>
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {course.department && (
-                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
                     {course.department}
                   </span>
                 )}
                 {course.code && (
-                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                     {course.code}{course.section ? ` · ${course.section}` : ''}
                   </span>
                 )}
                 <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${
-                  course.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                  course.is_public
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
                 }`}>
                   {course.is_public ? <Globe size={10} /> : <Lock size={10} />}
                   {course.is_public ? 'Public' : 'Private'}
                 </span>
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{course.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                {course.name}
+              </h1>
 
               {course.description && (
-                <p className="mt-1.5 text-sm text-gray-500 leading-relaxed">{course.description}</p>
+                <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {course.description}
+                </p>
               )}
 
-              <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
+              <div className="flex items-center gap-4 mt-3 text-xs text-gray-400 dark:text-gray-500">
                 <span className="flex items-center gap-1.5">
                   <BookOpen size={12} />
                   {sessions.length} session{sessions.length !== 1 ? 's' : ''}
@@ -233,10 +236,14 @@ export default function CourseDetailPage() {
             {!isOwner && sessions.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-medium text-gray-700">Overall progress</span>
-                  <span className="text-sm font-bold text-blue-600">{progressPct}%</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Overall progress
+                  </span>
+                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    {progressPct}%
+                  </span>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-600 rounded-full transition-all duration-500"
                     style={{ width: `${progressPct}%` }}
@@ -248,13 +255,13 @@ export default function CourseDetailPage() {
             {/* Sessions list */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
+                <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
                   Sessions {sessions.length > 0 && `(${completedCount}/${sessions.length})`}
                 </h2>
                 {isOwner && (
                   <button
                     onClick={() => router.push(`/create?courseId=${courseId}`)}
-                    className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
                   >
                     <Plus size={13} /> New session
                   </button>
@@ -262,11 +269,11 @@ export default function CourseDetailPage() {
               </div>
 
               {sessions.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-gray-200 p-10 text-center">
-                  <p className="text-sm font-medium text-gray-600 mb-1">
+                <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-10 text-center">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                     {isOwner ? 'No sessions yet' : 'No sessions available yet'}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
                     {isOwner ? 'Create your first session to get started.' : 'Check back later.'}
                   </p>
                   {isOwner && (
@@ -296,11 +303,11 @@ export default function CourseDetailPage() {
 
           {/* ── Right column ─────────────────────────────────────────────── */}
           <div className="col-span-1 space-y-4">
-            {/* Subscriber: Training Assistant card */}
             {!isOwner ? (
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              /* Subscriber: Training Assistant card */
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="flex items-center gap-3 px-5 pt-5 pb-4">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 ring-2 ring-blue-100">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700 ring-2 ring-blue-100 dark:ring-blue-900">
                     <Image
                       src="/images/avatar-female.png"
                       alt="Training Assistant"
@@ -310,15 +317,15 @@ export default function CourseDetailPage() {
                     />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">Training Assistant</p>
-                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Training Assistant</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
                       Online
                     </p>
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-500 leading-relaxed px-5 pb-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed px-5 pb-4">
                   I can guide you through each session, answer questions about the material, and test your understanding.
                 </p>
 
@@ -326,30 +333,29 @@ export default function CourseDetailPage() {
                   {nextSession ? (
                     <button
                       onClick={() => router.push(`/courses/${courseId}/sessions/${nextSession.sessionId}`)}
-                      className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+                      className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       {completedCount > 0 ? 'Resume learning' : 'Start learning'}
                     </button>
                   ) : sessions.length > 0 ? (
                     <button
                       onClick={() => router.push(`/courses/${courseId}/sessions/${sessions[0].sessionId}`)}
-                      className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+                      className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       Review course
                     </button>
                   ) : null}
-                  <button
-                    onClick={() => {/* FloatingAvatar is already on the page */}}
-                    className="w-full border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
-                  >
+                  <button className="w-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     Ask assistant
                   </button>
                 </div>
               </div>
             ) : (
               /* Owner: Quick actions + stats */
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-2">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Actions</h3>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5 space-y-2">
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
+                  Actions
+                </h3>
                 <button
                   onClick={() => router.push(`/create?courseId=${courseId}`)}
                   className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -358,41 +364,43 @@ export default function CourseDetailPage() {
                 </button>
                 <button
                   onClick={() => router.push(`/courses/${courseId}/students`)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <UserPlus size={14} /> Manage Students
                 </button>
                 <button
                   onClick={() => router.push(`/courses/${courseId}/settings`)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Settings size={14} /> Course Settings
                 </button>
 
-                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-gray-100">
+                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                   {[
                     { value: sessions.length, label: 'Sessions' },
                     { value: course.enrollment_count ?? 0, label: 'Students' },
                     { value: sessions.reduce((t, s) => t + (s.run_count || 0), 0), label: 'Runs' },
                   ].map(({ value, label }) => (
                     <div key={label} className="text-center">
-                      <p className="text-lg font-bold text-gray-900">{value}</p>
-                      <p className="text-[11px] text-gray-400">{label}</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{value}</p>
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500">{label}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Learning objectives / course info */}
+            {/* About this course */}
             {course.description && (
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-5">
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">
                   About this course
                 </h3>
-                <p className="text-xs text-gray-600 leading-relaxed">{course.description}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {course.description}
+                </p>
                 {course.semester && course.year && (
-                  <p className="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 flex items-center gap-1.5">
                     <BookOpen size={11} /> {course.semester} {course.year}
                   </p>
                 )}
