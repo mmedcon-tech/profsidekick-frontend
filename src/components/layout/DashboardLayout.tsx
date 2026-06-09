@@ -11,7 +11,8 @@ import {
   LayoutDashboard, Users, BarChart2, LogOut, Bot,
   UserCircle, Store, Bookmark, History, BookOpen,
   Layers, ShieldCheck, Star, Menu, PanelLeftOpen,
-  PanelLeftClose, Sun, Moon, Search, ChevronDown, Settings
+  PanelLeftClose, Sun, Moon, Search, ChevronDown, Settings,
+  Award, Sparkles, Languages
 } from 'lucide-react';
 
 // ─── nav item types ──────────────────────────────────────────────────────────
@@ -55,12 +56,11 @@ export const publisherNav: SidebarConfig = [
 ];
 
 export const subscriberNav: SidebarConfig = [
-  { label: 'Dashboard',       href: '/subscriber/dashboard',   icon: <LayoutDashboard size={18} /> },
-  { label: 'Marketplace',      href: '/subscriber/marketplace', icon: <Store size={18} /> },
-  { label: 'My Courses',       href: '/subscriber/courses',     icon: <BookOpen size={18} /> },
-  { label: 'Avatar Preview',   href: '/subscriber/avatar-preview', icon: <Bot size={18} /> },
-  { label: 'Learning History', href: '/subscriber/history',     icon: <History size={18} /> },
-  { label: 'Profile',          href: '/subscriber/profile',     icon: <UserCircle size={18} /> },
+  { label: 'Dashboard',      href: '/subscriber/dashboard',   icon: <LayoutDashboard size={18} /> },
+  { label: 'My Courses',     href: '/subscriber/courses',     icon: <BookOpen size={18} /> },
+  { label: 'Certificates',   href: '/subscriber/certificates', icon: <Award size={18} /> },
+  { label: 'Learning History', href: '/subscriber/history',        icon: <History size={18} /> },
+  { label: 'Profile', href: '/subscriber/profile',    icon: <UserCircle size={18} /> },
 ];
 
 export const adminNav: SidebarConfig = [
@@ -99,6 +99,24 @@ function isSection(item: NavItem | NavSection): item is NavSection {
   return 'items' in item;
 }
 
+// ─── Dynamic Title Helper ─────────────────────────────────────────────────────
+
+function getDynamicTitle(pathname: string | null): string {
+  if (!pathname) return 'Dashboard';
+  if (pathname.includes('/courses') && pathname.includes('/sessions')) return 'Session Details';
+  if (pathname.includes('/courses')) return 'Courses';
+  if (pathname.includes('/profile')) return 'My Profile';
+  if (pathname.includes('/history')) return 'History';
+  if (pathname.includes('/certificates')) return 'Certificates';
+  if (pathname.includes('/analytics')) return 'Analytics';
+  if (pathname.includes('/templates')) return 'Templates';
+  if (pathname.includes('/marketplace')) return 'Marketplace';
+  if (pathname.includes('/publishers')) return 'Publishers';
+  if (pathname.includes('/subscribers')) return 'Subscribers';
+  if (pathname.includes('/avatars')) return 'Avatar Studio';
+  return 'Dashboard';
+}
+
 // ─── Theme toggle ─────────────────────────────────────────────────────────────
 
 function SidebarThemeToggle({ collapsed }: { collapsed: boolean }) {
@@ -117,7 +135,7 @@ function SidebarThemeToggle({ collapsed }: { collapsed: boolean }) {
       aria-label={label}
       title={label}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="w-full flex items-center justify-center py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors mb-2"
+      className="w-full flex items-center justify-center py-2 text-green-300/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors mb-2"
     >
       {isDark ? <Sun size={18} /> : <Moon size={18} />}
     </button>
@@ -126,7 +144,7 @@ function SidebarThemeToggle({ collapsed }: { collapsed: boolean }) {
       type="button"
       aria-label={label}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors mb-2"
+      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-green-300/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors mb-2"
     >
       {isDark ? <Sun size={18} /> : <Moon size={18} />}
       <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
@@ -160,8 +178,8 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
 
   const linkClass = (active: boolean) =>
     active
-      ? 'bg-gray-800 text-white font-medium'
-      : 'text-gray-400 hover:bg-gray-800/60 hover:text-gray-200';
+      ? 'bg-[#1D4A31] text-white font-medium border-l-4 border-[#C8A05B]'
+      : 'text-green-100 hover:bg-[#1D4A31]/50 hover:text-white border-l-4 border-transparent';
 
   const initials =
     ((user?.firstName?.[0] ?? '') + (user?.lastName?.[0] ?? user?.username?.[0] ?? '')).toUpperCase() || '?';
@@ -175,7 +193,7 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
 
       <aside
         className={`
-          fixed top-0 left-0 h-full bg-gray-900 text-white flex flex-col z-30
+          fixed top-0 left-0 h-full bg-[#133221] text-white flex flex-col z-30
           transform transition-all duration-200 ease-in-out
           ${open ? 'translate-x-0 w-64' : '-translate-x-full w-64'}
           ${focusMode
@@ -191,15 +209,13 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
         `}>
           {/* Logo — hidden when collapsed on desktop */}
           <div className={`flex items-center gap-2 ${collapsed ? 'lg:hidden' : ''}`}>
-            <Image
-              src="/images/logo.png"
-              alt="MyOS"
-              width={28}
-              height={28}
-              className="rounded-full object-contain flex-shrink-0"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            />
-            <span className="font-bold text-base">MyOS</span>
+            <div className="w-8 h-8 bg-[#A88C4B] rounded-lg flex items-center justify-center font-bold text-white flex-shrink-0">
+              <ShieldCheck size={18} />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-[15px] leading-tight">MyOS</span>
+              <span className="text-[10px] text-green-200/80 uppercase tracking-wide leading-none">AI Training Assistant</span>
+            </div>
           </div>
 
           {/* Desktop collapse toggle */}
@@ -207,7 +223,7 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             onClick={onToggleCollapse}
-            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors flex-shrink-0"
+            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
           >
             {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
           </button>
@@ -216,7 +232,7 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
           <button
             aria-label="Close navigation"
             onClick={onClose}
-            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
           >
             <PanelLeftClose size={18} />
           </button>
@@ -249,14 +265,14 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
             return (
               <div key={i} className={i > 0 ? 'mt-4' : ''}>
                 {/* Section label: full on mobile, hidden when desktop-collapsed */}
-                <p className={`px-3 pb-1 text-[10px] font-semibold text-gray-600 uppercase tracking-widest ${
+                <p className={`px-3 pb-1 text-[10px] font-semibold text-green-200/50 uppercase tracking-widest ${
                   collapsed ? 'lg:hidden' : ''
                 }`}>
                   {entry.label}
                 </p>
                 {/* Divider replaces section label when desktop-collapsed */}
                 {collapsed && i > 0 && (
-                  <div className="hidden lg:block h-px bg-gray-700/50 mx-2 my-2" />
+                  <div className="hidden lg:block h-px bg-white/10 mx-2 my-2" />
                 )}
                 {entry.items.map((item) => {
                   const active = isActive(item.href);
@@ -284,7 +300,7 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
         </nav>
 
         {/* ── User card ────────────────────────────────────────────────────── */}
-        <div className="flex-shrink-0 border-t border-gray-700 p-3">
+        <div className="flex-shrink-0 border-t border-white/10 p-4">
           <SidebarThemeToggle collapsed={collapsed} />
 
           {collapsed ? (
@@ -292,39 +308,41 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
             <div className="flex flex-col items-center gap-2">
               <div
                 title={`${user?.firstName} ${user?.lastName}`}
-                className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-semibold text-sm cursor-default"
+                className="w-10 h-10 rounded-full border-2 border-[#A88C4B] bg-[#11291A] flex items-center justify-center text-white overflow-hidden relative cursor-default"
               >
-                {initials}
+                <span className="text-xs font-bold text-white/50">{initials}</span>
+                {/* Fallback avatar shape if we wanted an image */}
               </div>
               <button
                 onClick={handleLogout}
                 aria-label="Sign out"
                 title="Sign out"
-                className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-green-200/50 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <LogOut size={15} />
               </button>
             </div>
           ) : (
             /* Expanded: full user card */
-            <>
-              <div className="flex items-center gap-3 mb-2 px-1">
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                  {initials}
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full border-2 border-[#A88C4B] bg-[#11291A] flex items-center justify-center font-semibold text-sm flex-shrink-0 relative">
+                  <span className="text-xs text-white/50">{initials}</span>
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#133221] rounded-full"></div>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{user?.firstName} {user?.lastName}</p>
-                  <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+                  <p className="text-sm font-semibold truncate text-white">{user?.firstName} {user?.lastName}</p>
+                  <p className="text-xs text-green-200/50 uppercase tracking-widest">{user?.username}</p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
+                title="Sign out"
+                className="flex items-center justify-center w-8 h-8 text-green-200/50 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
               >
                 <LogOut size={15} />
-                Sign Out
               </button>
-            </>
+            </div>
           )}
         </div>
       </aside>
@@ -476,7 +494,7 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
         ) : (
           <>
             {/* ── Header ──────────────────────────────────────────────────── */}
-            <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 lg:px-5 gap-3 flex-shrink-0">
+            <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-6 gap-4 flex-shrink-0">
               {/* Mobile hamburger */}
               <button
                 className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
@@ -487,10 +505,12 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
               </button>
 
               {/* Page title (when no search) */}
-              {title && !isSearchActive && (
-                <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0">
-                  {title}
-                </h1>
+              {!isSearchActive && (
+                <div className="flex flex-col">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex-shrink-0 leading-tight">
+                    {title || getDynamicTitle(pathname)}
+                  </h1>
+                </div>
               )}
 
               {/* Contextual search */}
@@ -510,7 +530,19 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
               )}
 
               <div className="flex-1" />
-              <ProfileDropdown />
+              
+              <div className="flex items-center gap-3">
+                <button className="hidden sm:flex items-center gap-2 bg-[#BA984E] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#A88C4B] transition-colors">
+                  <Sparkles size={16} />
+                  Ask assistant
+                </button>
+                <button className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <Languages size={16} />
+                  العربية
+                </button>
+                <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
+                <ProfileDropdown />
+              </div>
             </header>
 
             <main className="flex-1 overflow-y-auto bg-white dark:bg-gray-950">

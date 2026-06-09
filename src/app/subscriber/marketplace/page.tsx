@@ -57,7 +57,7 @@ export default function MarketplacePage() {
           <div className="relative max-w-xs w-full">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={query} onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#133221] focus:border-transparent text-sm"
               placeholder="Search avatars…" />
           </div>
         </div>
@@ -86,7 +86,7 @@ export default function MarketplacePage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((a) => (
               <Link key={a.id} href={`/subscriber/marketplace/${a.id}`}
-                className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-blue-300 hover:shadow-md transition-all flex flex-col gap-3">
+                className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-[#133221] hover:shadow-md transition-all flex flex-col gap-3">
                 <div className="flex items-start justify-between">
                   <AvatarIcon imageUrl={a.template_image_url} name={a.name} size={48} rounded="lg" />
                   <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">
@@ -94,7 +94,7 @@ export default function MarketplacePage() {
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#133221] transition-colors">
                     {a.name}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
@@ -106,7 +106,7 @@ export default function MarketplacePage() {
                   <span>{new Date(a.created_at).toLocaleDateString()}</span>
                 </div>
                 <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-                  <span className="text-sm text-blue-600 font-medium group-hover:underline">
+                  <span className="text-sm text-[#133221] font-medium group-hover:underline">
                     View Sessions →
                   </span>
                 </div>

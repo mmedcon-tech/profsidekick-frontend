@@ -39,16 +39,16 @@ function SessionRow({
 
   const rowClass =
     status === 'current'
-      ? 'border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/30 hover:bg-blue-50 dark:hover:bg-blue-950/50'
+      ? 'border-[#133221] bg-gray-50/60 dark:bg-gray-900/30 hover:bg-gray-100 dark:hover:bg-gray-900/50'
       : status === 'completed'
       ? 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800'
       : 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/30 hover:bg-gray-50 dark:hover:bg-gray-800 opacity-60';
 
   const circleClass =
     status === 'completed'
-      ? 'bg-blue-600 border-blue-600'
+      ? 'bg-[#133221] border-[#133221]'
       : status === 'current'
-      ? 'border-blue-600 bg-white dark:bg-gray-900'
+      ? 'border-[#133221] bg-white dark:bg-gray-900'
       : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900';
 
   return (
@@ -60,7 +60,7 @@ function SessionRow({
         {status === 'completed' ? (
           <Check size={12} className="text-white" strokeWidth={3} />
         ) : status === 'current' ? (
-          <span className="w-2 h-2 rounded-full bg-blue-600" />
+          <span className="w-2 h-2 rounded-full bg-[#133221]" />
         ) : (
           <span className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold">{index + 1}</span>
         )}
@@ -81,7 +81,7 @@ function SessionRow({
 
       <div className="flex-shrink-0">
         {status === 'current' && (
-          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+          <span className="text-xs font-semibold text-[#133221] dark:text-green-400 flex items-center gap-1">
             <PlayCircle size={13} /> Resume
           </span>
         )}
@@ -129,7 +129,7 @@ export default function CourseDetailPage() {
     return (
       <ProtectedRoute>
         <div className="flex items-center justify-center py-24">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#133221]" />
         </div>
       </ProtectedRoute>
     );
@@ -151,7 +151,7 @@ export default function CourseDetailPage() {
             </p>
             <button
               onClick={() => router.back()}
-              className="text-sm text-blue-600 hover:text-blue-700 mt-2"
+              className="text-sm text-[#133221] hover:underline mt-2"
             >
               Go back
             </button>
@@ -185,7 +185,7 @@ export default function CourseDetailPage() {
             <div>
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {course.department && (
-                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
                     {course.department}
                   </span>
                 )}
@@ -239,13 +239,13 @@ export default function CourseDetailPage() {
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Overall progress
                   </span>
-                  <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-sm font-bold text-[#133221]">
                     {progressPct}%
                   </span>
                 </div>
                 <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                    className="h-full bg-[#133221] rounded-full transition-all duration-500"
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
@@ -261,7 +261,7 @@ export default function CourseDetailPage() {
                 {isOwner && (
                   <button
                     onClick={() => router.push(`/create?courseId=${courseId}`)}
-                    className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                    className="flex items-center gap-1.5 text-xs text-[#133221] hover:underline font-medium"
                   >
                     <Plus size={13} /> New session
                   </button>
@@ -279,7 +279,7 @@ export default function CourseDetailPage() {
                   {isOwner && (
                     <button
                       onClick={() => router.push(`/create?courseId=${courseId}`)}
-                      className="mt-4 bg-blue-600 text-white text-sm px-5 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      className="mt-4 bg-[#133221] text-white text-sm px-5 py-2 rounded-lg font-medium hover:bg-[#0a1e13] transition-colors"
                     >
                       Create session
                     </button>
@@ -307,14 +307,8 @@ export default function CourseDetailPage() {
               /* Subscriber: Training Assistant card */
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
                 <div className="flex items-center gap-3 px-5 pt-5 pb-4">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700 ring-2 ring-blue-100 dark:ring-blue-900">
-                    <Image
-                      src="/images/avatar-female.png"
-                      alt="Training Assistant"
-                      fill
-                      className="object-cover object-top"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    />
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-700 ring-2 ring-gray-200 dark:ring-gray-600 border-[2px] border-[#BA984E]">
+                    <span className="flex items-center justify-center w-full h-full bg-[#11291A] text-[#BA984E] font-bold text-lg">S</span>
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">Training Assistant</p>
@@ -333,14 +327,14 @@ export default function CourseDetailPage() {
                   {nextSession ? (
                     <button
                       onClick={() => router.push(`/courses/${courseId}/sessions/${nextSession.sessionId}`)}
-                      className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-[#133221] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#0a1e13] transition-colors focus:outline-none focus:ring-2 focus:ring-[#133221]"
                     >
                       {completedCount > 0 ? 'Resume learning' : 'Start learning'}
                     </button>
                   ) : sessions.length > 0 ? (
                     <button
                       onClick={() => router.push(`/courses/${courseId}/sessions/${sessions[0].sessionId}`)}
-                      className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-[#133221] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#0a1e13] transition-colors focus:outline-none focus:ring-2 focus:ring-[#133221]"
                     >
                       Review course
                     </button>
@@ -358,7 +352,7 @@ export default function CourseDetailPage() {
                 </h3>
                 <button
                   onClick={() => router.push(`/create?courseId=${courseId}`)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#133221] text-white text-sm font-medium hover:bg-[#0a1e13] transition-colors"
                 >
                   <Plus size={14} /> Create Session
                 </button>
