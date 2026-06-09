@@ -99,6 +99,24 @@ function isSection(item: NavItem | NavSection): item is NavSection {
   return 'items' in item;
 }
 
+// ─── Dynamic Title Helper ─────────────────────────────────────────────────────
+
+function getDynamicTitle(pathname: string | null): string {
+  if (!pathname) return 'Dashboard';
+  if (pathname.includes('/courses') && pathname.includes('/sessions')) return 'Session Details';
+  if (pathname.includes('/courses')) return 'Courses';
+  if (pathname.includes('/profile')) return 'My Profile';
+  if (pathname.includes('/history')) return 'History';
+  if (pathname.includes('/certificates')) return 'Certificates';
+  if (pathname.includes('/analytics')) return 'Analytics';
+  if (pathname.includes('/templates')) return 'Templates';
+  if (pathname.includes('/marketplace')) return 'Marketplace';
+  if (pathname.includes('/publishers')) return 'Publishers';
+  if (pathname.includes('/subscribers')) return 'Subscribers';
+  if (pathname.includes('/avatars')) return 'Avatar Studio';
+  return 'Dashboard';
+}
+
 // ─── Theme toggle ─────────────────────────────────────────────────────────────
 
 function SidebarThemeToggle({ collapsed }: { collapsed: boolean }) {
@@ -490,9 +508,8 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
               {!isSearchActive && (
                 <div className="flex flex-col">
                   <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex-shrink-0 leading-tight">
-                    {title || 'Dashboard'}
+                    {title || getDynamicTitle(pathname)}
                   </h1>
-                  <span className="text-xs text-gray-500 font-medium">Abu Dhabi Police — Operations</span>
                 </div>
               )}
 
