@@ -16,7 +16,7 @@ function CollapsibleSection({ title, isOpen, onToggle, children }: CollapsibleSe
   return (
     <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
       <legend 
-        className="text-lg font-semibold text-blue-700 px-2 cursor-pointer flex items-center gap-2"
+        className="text-lg font-semibold text-emerald-800 dark:text-emerald-300 px-2 cursor-pointer flex items-center gap-2"
         onClick={onToggle}
       >
         <svg 
@@ -315,7 +315,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Core AI Settings */}
           <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <legend className="text-lg font-semibold text-blue-700 px-2">Core AI Settings</legend>
+            <legend className="text-lg font-semibold text-emerald-800 dark:text-emerald-300 px-2">Core AI Settings</legend>
             
             <div>
               <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">AI Model</label>
@@ -335,7 +335,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   id="voice" 
                   value={settings.voice} 
                   onChange={handleInputChange} 
-                  className="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                 >
                   {["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"].map(v => 
                     <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>
@@ -344,7 +344,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 <button 
                   type="button" 
                   onClick={() => playVoiceSample(settings.voice)} 
-                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500"
                   aria-label={`Preview voice ${settings.voice}`}
                 >
                   {currentlyPlayingVoice === settings.voice ? (
@@ -352,7 +352,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                       <path d="M6 6h12v12H6z" />
                     </svg>
                   ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-blue-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-emerald-700 dark:text-emerald-400">
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   )}
@@ -386,7 +386,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 <button
                   type="button"
                   onClick={() => setShowPromptLibrary(true)}
-                  className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors flex items-center gap-1"
+                  className="px-3 py-1 text-sm bg-emerald-100 dark:bg-emerald-900/40 hover:bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-lg transition-colors flex items-center gap-1"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -400,7 +400,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 value={settings.user_instructions || ""} 
                 onChange={handleInputChange} 
                 rows={4} 
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500" 
                 placeholder="Add custom examination instructions, question strategies, or subject-specific behavior..."
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -422,7 +422,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 <select
                   value={sessionBehavior.hintPolicy}
                   onChange={(e) => setSessionBehavior(prev => ({ ...prev, hintPolicy: e.target.value as "NONE" | "FREE" | "PENALIZED" }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                 >
                   <option value="NONE">None — no hints offered</option>
                   <option value="FREE">Free — hints given freely</option>
@@ -455,7 +455,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     }
                   }}
                   rows={5}
-                  className={`w-full p-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${sessionBehaviorRubricError ? "border-red-400" : "border-gray-300"}`}
+                  className={`w-full p-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 ${sessionBehaviorRubricError ? "border-red-400" : "border-gray-300"}`}
                   placeholder={'[\n  { "criterion": "Understanding", "weight": 40 },\n  { "criterion": "Clarity", "weight": 60 }\n]'}
                 />
                 {sessionBehaviorRubricError && <p className="text-xs text-red-500 mt-1">{sessionBehaviorRubricError}</p>}
@@ -468,7 +468,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   value={sessionBehavior.sessionInstructions}
                   onChange={(e) => setSessionBehavior(prev => ({ ...prev, sessionInstructions: e.target.value }))}
                   rows={4}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   placeholder="e.g. Focus on Chapter 5 material only. Ask follow-up questions if the student is vague."
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Extra behavioral instructions appended to the prompt for this session.</p>
@@ -489,7 +489,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 id="tool_choice" 
                 value={settings.tool_choice} 
                 onChange={handleInputChange} 
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
               >
                 <option value="auto">Auto</option>
                 <option value="none">None</option>
@@ -516,7 +516,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     id="input_audio_format" 
                     value={settings.input_audio_format} 
                     onChange={handleInputChange} 
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   >
                     {["pcm16", "g711_ulaw", "g711_alaw"].map(f => 
                       <option key={f} value={f}>{f}</option>
@@ -530,7 +530,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     id="input_audio_noise_reduction.type"
                     value={settings.input_audio_noise_reduction?.type || "near_field"}
                     onChange={handleInputChange} 
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   >
                     <option value="near_field">Near Field</option>
                     <option value="far_field">Far Field</option>
@@ -546,7 +546,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     id="input_audio_transcription.model" 
                     value={settings.input_audio_transcription?.model || "whisper-1"} 
                     onChange={handleInputChange} 
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   >
                     <option value="whisper-1">Whisper-1</option>
                     <option value="gpt-4o-transcribe">GPT-4o Transcribe</option>
@@ -561,7 +561,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     id="input_audio_transcription.language" 
                     value={settings.input_audio_transcription?.language || "en"} 
                     onChange={handleInputChange} 
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500" 
                     placeholder="e.g., en, es, fr" 
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">ISO 639-1 code (e.g., en for English).</p>
@@ -576,7 +576,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                   id="output_audio_format" 
                   value={settings.output_audio_format} 
                   onChange={handleInputChange} 
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                 >
                   {["pcm16", "g711_ulaw", "g711_alaw"].map(f => 
                     <option key={f} value={f}>{f}</option>
@@ -614,7 +614,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                       }));
                     }
                   }}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                 >
                   <option value="none">None (Manual)</option>
                   <option value="server_vad">Server VAD</option>
@@ -652,7 +652,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                         id="turn_detection.silence_duration_ms" 
                         value={settings.turn_detection.silence_duration_ms} 
                         onChange={handleInputChange} 
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500" 
                         placeholder="e.g., 1000" 
                       />
                     </div>
@@ -665,7 +665,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                       id="turn_detection.prefix_padding_ms" 
                       value={settings.turn_detection.prefix_padding_ms} 
                       onChange={handleInputChange} 
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500" 
                       placeholder="e.g., 300" 
                     />
                   </div>
@@ -680,7 +680,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                     id="turn_detection.eagerness" 
                     value={settings.turn_detection.eagerness} 
                     onChange={handleInputChange} 
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   >
                     <option value="low">Low</option>
                     <option value="auto">Auto</option>
@@ -715,7 +715,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-emerald-600 dark:bg-emerald-700 text-white rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Saving...' : 'Save Settings'}
             </button>

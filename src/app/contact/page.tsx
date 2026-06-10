@@ -45,9 +45,9 @@ export default function ContactPage() {
   // Show loading while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -72,7 +72,7 @@ export default function ContactPage() {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <span className="text-2xl font-bold text-blue-900">ProfSidekick</span>
+              <span className="text-2xl font-bold text-emerald-950 dark:text-emerald-100">ProfSidekick</span>
             </button>
             
             <div className="flex items-center space-x-4">
@@ -86,14 +86,14 @@ export default function ContactPage() {
               {isAuthenticated ? (
                 <button
                   onClick={() => router.push('/dashboard')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
                 >
                   Dashboard
                 </button>
               ) : (
                 <button
                   onClick={() => router.push('/login')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
                 >
                   Sign In
                 </button>
@@ -104,7 +104,7 @@ export default function ContactPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
+      <section className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
             Get in Touch
@@ -144,7 +144,7 @@ export default function ContactPage() {
                         value={formData.name}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors"
                         placeholder="Your full name"
                       />
                     </div>
@@ -159,7 +159,7 @@ export default function ContactPage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors"
                         placeholder="your.email@example.com"
                       />
                     </div>
@@ -175,7 +175,7 @@ export default function ContactPage() {
                       value={formData.subject}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors"
                     >
                       <option value="">Select a subject</option>
                       <option value="general">General Inquiry</option>
@@ -198,7 +198,7 @@ export default function ContactPage() {
                       onChange={handleInputChange}
                       required
                       rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors resize-vertical"
                       placeholder="Tell us how we can help you..."
                     />
                   </div>
@@ -206,7 +206,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-emerald-600 dark:bg-emerald-700 text-white py-4 px-6 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
@@ -236,13 +236,13 @@ export default function ContactPage() {
 
               <div className="space-y-6">
                 <div className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Email Support</h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-2">Get help with technical issues or general questions</p>
-                    <a href="mailto:support@profsidekick.com" className="text-blue-600 hover:text-blue-700 font-medium">
+                    <a href="mailto:support@profsidekick.com" className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:text-emerald-300 font-medium">
                       support@profsidekick.com
                     </a>
                   </div>
@@ -266,7 +266,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Phone Support</h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-2">Speak directly with our support team</p>
-                    <p className="text-blue-600 font-medium">+1 (555) 123-4567</p>
+                    <p className="text-emerald-700 dark:text-emerald-400 font-medium">+1 (555) 123-4567</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Monday - Friday, 9 AM - 6 PM PST</p>
                   </div>
                 </div>

@@ -161,7 +161,7 @@ export default function ApproveUserPage() {
               </div>
               <button
                 onClick={() => router.push('/')}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="w-full px-6 py-3 bg-emerald-600 dark:bg-emerald-700 text-white rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors font-medium"
               >
                 Go to Home
               </button>

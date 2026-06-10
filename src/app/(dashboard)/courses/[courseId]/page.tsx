@@ -173,7 +173,7 @@ export default function CourseDetailPage() {
         {/* Back */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 transition-colors mb-5 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 transition-colors mb-5 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 rounded"
         >
           <ArrowLeft size={15} /> Back to courses
         </button>

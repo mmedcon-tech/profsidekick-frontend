@@ -55,19 +55,19 @@ export default function RedeemPage() {
     <div className="max-w-lg mx-auto mt-12 px-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
         <div className="flex items-center gap-3 mb-6">
-          <CreditCard className="text-blue-600" size={24} />
+          <CreditCard className="text-emerald-700 dark:text-emerald-400" size={24} />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Redeem Access Code</h1>
         </div>
 
         {balance && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700">
+          <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+            <p className="text-sm text-emerald-800 dark:text-emerald-300">
               Current balance:{' '}
               <span className="font-semibold">
                 {parseFloat(balance.balance).toFixed(2)} credits
               </span>
               {balance.source === 'access_code' && balance.issued_by && (
-                <span className="text-blue-500"> (via {balance.issued_by})</span>
+                <span className="text-emerald-600 dark:text-emerald-400"> (via {balance.issued_by})</span>
               )}
             </p>
           </div>
@@ -84,7 +84,7 @@ export default function RedeemPage() {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="XXXX-XXXX-XXXX"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono uppercase tracking-widest"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 font-mono uppercase tracking-widest"
               disabled={isLoading}
               required
             />
@@ -107,7 +107,7 @@ export default function RedeemPage() {
           <button
             type="submit"
             disabled={isLoading || !code.trim()}
-            className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2.5 px-4 bg-emerald-600 dark:bg-emerald-700 text-white rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? 'Redeeming…' : 'Redeem Code'}
           </button>
@@ -116,7 +116,7 @@ export default function RedeemPage() {
         <div className="mt-4 text-center">
           <button
             onClick={() => router.push('/billing/usage')}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-emerald-700 dark:text-emerald-400 hover:underline"
           >
             View usage history
           </button>

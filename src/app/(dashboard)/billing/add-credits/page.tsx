@@ -56,7 +56,7 @@ export default function AddCreditsPage() {
     <div className="max-w-lg mx-auto mt-12 px-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
         <div className="flex items-center gap-3 mb-6">
-          <CreditCard className="text-blue-600" size={24} />
+          <CreditCard className="text-emerald-700 dark:text-emerald-400" size={24} />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Add Credits</h1>
         </div>
 
@@ -69,7 +69,7 @@ export default function AddCreditsPage() {
         </div>
 
         {balance && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
+          <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-sm text-emerald-800 dark:text-emerald-300">
             Current balance:{' '}
             <span className="font-semibold">{parseFloat(balance.balance).toFixed(2)} credits</span>
           </div>
@@ -88,7 +88,7 @@ export default function AddCreditsPage() {
                   onClick={() => setAmount(p)}
                   className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
                     amount === p
-                      ? 'bg-blue-600 text-white border-blue-600'
+                      ? 'bg-emerald-600 dark:bg-emerald-700 text-white border-emerald-600 dark:border-emerald-500'
                       : 'border-gray-300 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900'
                   }`}
                 >
@@ -102,7 +102,7 @@ export default function AddCreditsPage() {
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
               disabled={isLoading}
               required
             />
@@ -130,7 +130,7 @@ export default function AddCreditsPage() {
           <button
             type="submit"
             disabled={isLoading || !amount || parseFloat(amount) <= 0}
-            className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2.5 px-4 bg-emerald-600 dark:bg-emerald-700 text-white rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? 'Processing…' : `Add ${creditsPreview.toFixed(0)} credits`}
           </button>
@@ -139,7 +139,7 @@ export default function AddCreditsPage() {
         <div className="mt-4 text-center space-x-4">
           <button
             onClick={() => router.push('/billing/redeem')}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-emerald-700 dark:text-emerald-400 hover:underline"
           >
             Redeem access code instead
           </button>
