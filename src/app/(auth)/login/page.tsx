@@ -71,7 +71,7 @@ function LoginForm() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133221]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500"></div>
       </div>
     );
   }
@@ -107,7 +107,7 @@ function LoginForm() {
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:border-emerald-600 dark:border-emerald-500 transition-colors"
               placeholder="MOI-48217"
               disabled={isSubmitting}
               required
@@ -125,7 +125,7 @@ function LoginForm() {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
+                className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:border-emerald-600 dark:border-emerald-500 transition-colors"
                 placeholder="••••••••"
                 disabled={isSubmitting}
                 required
@@ -146,7 +146,7 @@ function LoginForm() {
               type="submit"
               disabled={isSubmitting}
               aria-busy={isSubmitting}
-              className="w-full bg-[#133221] text-white py-3 px-4 rounded-xl font-medium hover:bg-[#0a1e13] focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-emerald-600 dark:bg-emerald-700 text-white py-3 px-4 rounded-xl font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -175,7 +175,7 @@ function LoginForm() {
             Do not have an account?{' '}
             <Link
               href="/register"
-              className="text-[#133221] hover:underline font-semibold"
+              className="text-emerald-700 dark:text-emerald-400 hover:underline font-semibold"
             >
               Create one here
             </Link>
@@ -188,7 +188,7 @@ function LoginForm() {
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center py-12">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133221]"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500"></div>
     </div>
   );
 }

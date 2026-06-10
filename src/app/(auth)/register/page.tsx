@@ -123,7 +123,7 @@ export default function RegisterPage() {
   if (isLoading || isAuthenticated) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133221]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500" />
       </div>
     );
   }
@@ -139,7 +139,7 @@ export default function RegisterPage() {
           {/* progress bar */}
           <div className="mt-4 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#133221] rounded-full transition-all duration-300"
+              className="h-full bg-emerald-600 dark:bg-emerald-700 rounded-full transition-all duration-300"
               style={{ width: step === 1 ? '50%' : '100%' }}
             />
           </div>
@@ -216,7 +216,7 @@ export default function RegisterPage() {
               onClick={handleContinue}
               disabled={isSubmitting}
               aria-busy={isSubmitting}
-              className="w-full bg-[#133221] text-white py-3 rounded-xl font-medium hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-emerald-600 dark:bg-emerald-700 text-white py-3 rounded-xl font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -230,7 +230,7 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-gray-500 mt-6">
               Already have an account?{' '}
-              <Link href="/login" className="text-[#133221] hover:underline font-semibold">
+              <Link href="/login" className="text-emerald-700 dark:text-emerald-400 hover:underline font-semibold">
                 Sign in
               </Link>
             </p>
@@ -278,7 +278,7 @@ export default function RegisterPage() {
                 <ArrowLeft size={16} /> Back
               </button>
               <button onClick={handleSubmit} disabled={isSubmitting || !formData.role}
-                className="flex-1 bg-[#133221] text-white py-3 rounded-xl font-medium hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                className="flex-1 bg-emerald-600 dark:bg-emerald-700 text-white py-3 rounded-xl font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
                 {isSubmitting ? (
                   <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
                 ) : 'Create Account'}
@@ -289,3 +289,4 @@ export default function RegisterPage() {
       </div>
   );
 }
+
