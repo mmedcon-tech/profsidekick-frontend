@@ -1495,6 +1495,7 @@ export default function LearningInterface({
         isUserSpeaking={isUserSpeaking}
         isAISpeaking={isAISpeaking}
         avatarConfig={sessionAvatar}
+        audioElement={outputAudioElement}
         videoRef={heygenVideoRef}
       />
 
