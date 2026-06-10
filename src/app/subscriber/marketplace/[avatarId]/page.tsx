@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { marketplaceApi } from '@/lib/avatarApi';
 import { config } from '@/lib/config';
+import { subscriptionApi } from '@/lib/avatarApi';
 import type { AvatarPublicResponse } from '@/types/avatar';
 import { Bot, ArrowLeft, Calendar, Play, Clock, Upload, Info } from 'lucide-react';
 
@@ -30,6 +31,8 @@ export default function SubscriberAvatarDetailPage() {
   const [loading,   setLoading]  = useState(true);
   const [error,     setError]    = useState<string | null>(null);
   const [launching, setLaunching] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -40,11 +43,31 @@ export default function SubscriberAvatarDetailPage() {
         .then((r) => r.ok ? r.json() : { sessions: [] })
         .then((d) => d.sessions ?? [])
         .catch(() => []),
+      token ? subscriptionApi.checkStatus(avatarId).catch(() => ({ subscribed: false })) : Promise.resolve({ subscribed: false }),
     ])
-      .then(([av, sess]) => { setAvatar(av); setSessions(sess); })
+      .then(([av, sess, subStatus]) => { setAvatar(av); setSessions(sess); setIsSubscribed((subStatus as any).subscribed); })
       .catch((e) => setError(e.message ?? 'Failed to load'))
       .finally(() => setLoading(false));
   }, [avatarId, token]);
+
+  
+  const handleSubscribe = async () => {
+    if (!token) { router.push('/login'); return; }
+    setSubscribing(true);
+    try {
+      await subscriptionApi.subscribe(avatarId);
+      setIsSubscribed(true);
+      const newSessions = await fetch(config.getApiUrl(`/api/sessions?avatar_id=${avatarId}&limit=20`), {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.ok ? r.json() : { sessions: [] }).then(d => d.sessions ?? []);
+      setSessions(newSessions);
+      alert("Successfully subscribed and enrolled in associated courses!");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Subscription failed");
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   const handleLaunch = async (sessionId: string) => {
     if (!token) { router.push('/login'); return; }
@@ -102,6 +125,27 @@ export default function SubscriberAvatarDetailPage() {
         <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-400">
           <Calendar size={13} />
           <span>Published {new Date(avatar.created_at).toLocaleDateString()}</span>
+        </div>
+        
+        <div className="mt-6">
+          {isSubscribed ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium border border-emerald-200 dark:border-emerald-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Subscribed
+            </div>
+          ) : (
+            <button
+              onClick={handleSubscribe}
+              disabled={subscribing}
+              className="inline-flex items-center gap-2 bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-2.5 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 transition-colors text-sm font-medium"
+            >
+              {subscribing ? (
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Enrolling...</>
+              ) : (
+                <>1-Click Enroll / Subscribe</>
+              )}
+            </button>
+          )}
         </div>
       </div>
 

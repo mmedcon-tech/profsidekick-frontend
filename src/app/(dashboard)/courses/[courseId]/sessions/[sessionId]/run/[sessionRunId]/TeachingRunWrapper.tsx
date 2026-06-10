@@ -3,6 +3,7 @@
 import React, {  } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import TeachingInterface from "@/components/teaching/TeachingInterface";
+import LearningInterface from "@/components/learning/LearningInterface";
 import { parseSessionRunAvatar } from "@/lib/sessionService";
 import { SessionRunDetails } from "@/types/types";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,7 +20,7 @@ export default function TeachingRunWrapper({ sessionRunDetails, courseId, sessio
   const router = useRouter();
   const searchParams = useSearchParams();
   const isSharedLink = searchParams.get('shared') === 'true';
-  const { token,  } = useAuth();
+  const { token, user } = useAuth();
 
   // Check for previously stored slide position
   const getStoredSlidePosition = () => {
@@ -121,13 +122,25 @@ export default function TeachingRunWrapper({ sessionRunDetails, courseId, sessio
 
   return (
     <ProtectedRoute requireAuth={!isSharedLink}>
-      <TeachingInterface 
-        classSession={classSession}
-        onEndSession={handleEndSession}
-        sessionRunId={sessionRunDetails.sessionRunId}
-        startingSlide={getStoredSlidePosition()}
-        avatarConfig={avatarConfig}
-      />
+      {user?.role === 'subscriber' || isSharedLink ? (
+        <LearningInterface 
+          classSession={classSession}
+          onEndSession={handleEndSession}
+          sessionRunId={sessionRunDetails.sessionRunId}
+          startingSlide={getStoredSlidePosition()}
+          avatarConfig={avatarConfig}
+          isSharedLink={isSharedLink}
+        />
+      ) : (
+        <TeachingInterface 
+          classSession={classSession}
+          onEndSession={handleEndSession}
+          sessionRunId={sessionRunDetails.sessionRunId}
+          startingSlide={getStoredSlidePosition()}
+          avatarConfig={avatarConfig}
+          isSharedLink={isSharedLink}
+        />
+      )}
     </ProtectedRoute>
   );
-} 
+}

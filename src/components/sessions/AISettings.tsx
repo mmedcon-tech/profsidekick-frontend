@@ -42,7 +42,7 @@ interface AISettingsProps {
 export default function AISettings({ sessionId, onClose }: AISettingsProps) {
   const { token } = useAuth();
   const [settings, setSettings] = useState({
-    model: "gpt-4o-realtime-preview",
+    model: "gpt-realtime-2",
     voice: "alloy",
     temperature: 0.8,
     instructions: "",
@@ -373,7 +373,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                 min="0.6" 
                 max="1.2" 
                 step="0.1" 
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" 
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" 
               />
             </div>
 
@@ -641,7 +641,7 @@ export default function AISettings({ sessionId, onClose }: AISettingsProps) {
                         min="0.0" 
                         max="1.0" 
                         step="0.1" 
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" 
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" 
                       />
                     </div>
                     <div>

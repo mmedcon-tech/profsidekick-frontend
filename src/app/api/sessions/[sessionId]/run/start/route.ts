@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       const errorData = await response.text();
       console.error('Backend error:', errorData);
       return NextResponse.json(
-        { error: 'Failed to start session run' }, 
+        { error: errorData }, 
         { status: response.status }
       );
     }

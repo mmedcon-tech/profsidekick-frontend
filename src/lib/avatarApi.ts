@@ -287,6 +287,20 @@ export const marketplaceApi = {
   get: (id: string) => req<AvatarPublicResponse>(`/api/avatars/${id}`),
 };
 
+// ─── Subscriptions — Subscriber ─────────────────────────────────────────────
+
+export const subscriptionApi = {
+  subscribe: (avatarId: string) =>
+    req<any>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'POST'),
+  unsubscribe: (avatarId: string) =>
+    req<void>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'DELETE'),
+  checkStatus: (avatarId: string) =>
+    req<{ subscribed: boolean; subscription: any }>(
+      `/api/subscriber/avatars/${avatarId}/subscription-status`,
+    ),
+  list: () => req<{ subscriptions: any[]; total: number }>('/api/subscriber/avatars'),
+};
+
 // ─── Admin ───────────────────────────────────────────────────────────────────
 
 export const adminAvatarApi = {

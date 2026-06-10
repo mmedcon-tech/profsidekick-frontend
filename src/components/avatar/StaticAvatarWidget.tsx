@@ -61,7 +61,7 @@ export default function StaticAvatarWidget({
         : 1;
 
   const ringColor =
-    variant === 'talkingheads' ? 'border-violet-400' : 'border-blue-400';
+    variant === 'talkingheads' ? 'border-violet-400' : 'border-emerald-400';
   const faceGradient =
     variant === 'talkingheads'
       ? 'from-violet-700 to-indigo-900'

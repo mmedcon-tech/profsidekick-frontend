@@ -58,7 +58,7 @@ export const publisherNav: SidebarConfig = [
 export const subscriberNav: SidebarConfig = [
   { label: 'Dashboard',      href: '/subscriber/dashboard',   icon: <LayoutDashboard size={18} /> },
   { label: 'My Courses',     href: '/subscriber/courses',     icon: <BookOpen size={18} /> },
-  { label: 'Certificates',   href: '/subscriber/certificates', icon: <Award size={18} /> },
+  // { label: 'Certificates',   href: '/subscriber/certificates', icon: <Award size={18} /> },
   { label: 'Learning History', href: '/subscriber/history',        icon: <History size={18} /> },
   { label: 'Profile', href: '/subscriber/profile',    icon: <UserCircle size={18} /> },
 ];
@@ -256,7 +256,7 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
                     ${linkClass(active)}
                   `}
                 >
-                  <span className={`flex-shrink-0 ${active ? 'text-blue-400' : ''}`}>{entry.icon}</span>
+                  <span className={`flex-shrink-0 ${active ? 'text-emerald-400' : ''}`}>{entry.icon}</span>
                   <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>{entry.label}</span>
                 </Link>
               );
@@ -289,7 +289,7 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
                         ${linkClass(active)}
                       `}
                     >
-                      <span className={`flex-shrink-0 ${active ? 'text-blue-400' : ''}`}>{item.icon}</span>
+                      <span className={`flex-shrink-0 ${active ? 'text-emerald-400' : ''}`}>{item.icon}</span>
                       <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
                     </Link>
                   );
