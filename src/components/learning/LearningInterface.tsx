@@ -28,6 +28,11 @@ const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
   avatarName: "Assistant",
 };
 
+export interface TranscriptItem {
+  role: "user" | "assistant";
+  text: string;
+}
+
 const DEFAULT_HEYGEN_AVATAR_ID =
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE ||
@@ -78,6 +83,9 @@ export default function LearningInterface({
   const sessionAvatarRef = useRef<SessionAvatarConfig>(
     avatarConfig ?? DEFAULT_SESSION_AVATAR,
   );
+  const [isAvatarDocked, setIsAvatarDocked] = useState(false);
+  const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
+  const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
   const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -934,28 +942,12 @@ export default function LearningInterface({
             parameters: {
               type: "object",
               properties: {},
-              required: [{
-              type: "function",
-              name: "searchKnowledgeBase",
-              description: "Search the course materials and session slides for answers to the user's questions.",
-              parameters: {
-                type: "object",
-                properties: {
-                  query: {
-                    type: "string",
-                    description: "The search query to look up in the knowledge base."
-                  }
-                },
-                required: ["query"],
-                additionalProperties: false,
-              },
-            },
-          ],
+              required: [],
               additionalProperties: false,
             },
           },
           {
-            type: "function", 
+            type: "function",
             name: "previousSlide",
             description: "Move to the previous slide in the presentation",
             parameters: {
@@ -967,7 +959,7 @@ export default function LearningInterface({
           },
           {
             type: "function",
-            name: "goToSlide", 
+            name: "goToSlide",
             description: "Jump to a specific slide number",
             parameters: {
               type: "object",
@@ -981,13 +973,45 @@ export default function LearningInterface({
               additionalProperties: false,
             },
           },
+          {
+            type: "function",
+            name: "searchKnowledgeBase",
+            description: "Search the course materials and session slides for answers to the user's questions.",
+            parameters: {
+              type: "object",
+              properties: {
+                query: {
+                  type: "string",
+                  description: "The search query to look up in the knowledge base."
+                }
+              },
+              required: ["query"],
+              additionalProperties: false,
+            },
+          },
         ],
       },
     };
 
     console.log("📤 Sending session initialization:", sessionUpdate);
     const success = sendClientEvent(sessionUpdate);
-    console.log("✅ Session initialization sent successfully:", success);
+    console.log("Session initialization sent successfully:", success);
+
+    // Auto-start the session by having the system command the AI to introduce itself
+    sendClientEvent({
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "system",
+        content: [
+          {
+            type: "input_text",
+            text: "Please introduce yourself, welcome the learner to the session, and begin teaching."
+          }
+        ]
+      }
+    });
+    sendClientEvent({ type: "response.create" });
   };
 
   const toggleAudio = () => {
@@ -1291,12 +1315,14 @@ export default function LearningInterface({
       // response.audio_transcript.done fires when a full assistant turn completes
       if (
         serverEvent.type === "response.audio_transcript.done" &&
-        serverEvent.transcript &&
-        heygenAvatarRef.current
+        serverEvent.transcript
       ) {
-        heygenAvatarRef.current
-          .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
-          .catch(() => {});
+        setTranscript((prev) => [...prev, { role: "assistant", text: serverEvent.transcript }]);
+        if (heygenAvatarRef.current) {
+          heygenAvatarRef.current
+            .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
+            .catch(() => {});
+        }
       }
 
       // --- Guard phrases: intercept intentional interruptions ---
@@ -1304,6 +1330,7 @@ export default function LearningInterface({
       if (serverEvent.type === "conversation.item.input_audio_transcription.completed") {
         const recognizedText = serverEvent.transcript || "";
         if (recognizedText) {
+          setTranscript((prev) => [...prev, { role: "user", text: recognizedText }]);
           clearTimeout((window as any)._speechHandleTimer);
           (window as any)._speechHandleTimer = setTimeout(() => {
             // confidence and duration are not available on this event; pass safe defaults
@@ -1489,19 +1516,28 @@ export default function LearningInterface({
 
   return (
     <div className="h-screen bg-gray-100 dark:bg-gray-800 flex relative overflow-hidden">
-      {/* SessionAvatar overlay */}
-      <SessionAvatar
-        isConnected={sessionStatus === "CONNECTED"}
-        isConnecting={sessionStatus === "CONNECTING"}
-        isUserSpeaking={isUserSpeaking}
-        isAISpeaking={isAISpeaking}
-        avatarConfig={sessionAvatar}
-        audioElement={outputAudioElement}
-        videoRef={heygenVideoRef}
-      />
+      {/* SessionAvatar floating mode */}
+      {!isAvatarDocked && (
+        <SessionAvatar
+          isConnected={sessionStatus === "CONNECTED"}
+          isConnecting={sessionStatus === "CONNECTING"}
+          isUserSpeaking={isUserSpeaking}
+          isAISpeaking={isAISpeaking}
+          avatarConfig={sessionAvatar}
+          audioElement={outputAudioElement}
+          videoRef={heygenVideoRef}
+          isDocked={false}
+          onDockToggle={() => setIsAvatarDocked(true)}
+          onAvatarModeChange={(mode) => setSessionAvatar({...sessionAvatar, renderType: mode})}
+          isMicMuted={isMicMuted}
+          toggleMicrophone={toggleMicrophone}
+          isAudioEnabled={isAudioEnabled}
+          toggleAudio={toggleAudio}
+        />
+      )}
 
-      {/* Main Slide Viewer (100%) */}
-      <div className="w-full bg-white dark:bg-gray-800 flex flex-col h-full">
+      {/* Main Slide Viewer */}
+      <div className="flex-1 bg-white dark:bg-gray-800 flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className="bg-emerald-600 dark:bg-emerald-700 text-white p-4 flex justify-between items-center z-10 shadow-md relative">
           <div className="flex items-center gap-4">
@@ -1520,12 +1556,21 @@ export default function LearningInterface({
               </p>
             </div>
           </div>
-          <button
-            onClick={handleEndSessionClick}
-            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-          >
-            End Session
-          </button>
+          <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
+                className={`p-2 rounded-full ${isTranscriptVisible ? 'bg-emerald-700/50 hover:bg-emerald-700 text-emerald-100' : 'bg-gray-700/50 hover:bg-gray-700 text-gray-300'} transition-colors`}
+                title="Toggle Transcript"
+              >
+                <MessageSquare size={20} />
+              </button>
+              <button
+                onClick={handleEndSessionClick}
+                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm ml-2"
+              >
+                End Session
+              </button>
+            </div>
         </div>
 
         {/* Slide Content */}
@@ -1709,6 +1754,56 @@ export default function LearningInterface({
           </div>
         </div>
       )}
+
+      {/* Transcript Sidebar */}
+      {isTranscriptVisible && (
+        <div className="w-80 flex-shrink-0 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 z-10 flex flex-col">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200 flex justify-between items-center">
+            <span>Live Transcript</span>
+            <button onClick={() => setTranscript([])} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">Clear</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {transcript.map((item, index) => (
+              <div key={index} className={`flex flex-col ${item.role === 'user' ? 'items-end' : 'items-start'}`}>
+                <div className={`px-3 py-2 rounded-lg max-w-[85%] text-sm ${
+                  item.role === 'user' 
+                    ? 'bg-emerald-600 text-white rounded-br-none' 
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-none'
+                }`}>
+                  {item.text}
+                </div>
+              </div>
+            ))}
+            {transcript.length === 0 && (
+              <div className="text-sm text-gray-500 dark:text-gray-400 text-center italic mt-10">
+                Conversation will appear here...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* SessionAvatar docked sidebar */}
+      {isAvatarDocked && (
+        <div className="w-80 flex-shrink-0 border-l border-gray-200 dark:border-gray-700 bg-gray-900 z-10">
+          <SessionAvatar
+            isConnected={sessionStatus === "CONNECTED"}
+            isConnecting={sessionStatus === "CONNECTING"}
+            isUserSpeaking={isUserSpeaking}
+            isAISpeaking={isAISpeaking}
+            avatarConfig={sessionAvatar}
+            audioElement={outputAudioElement}
+            videoRef={heygenVideoRef}
+            isDocked={true}
+            onDockToggle={() => setIsAvatarDocked(false)}
+            onAvatarModeChange={(mode) => setSessionAvatar({...sessionAvatar, renderType: mode})}
+            isMicMuted={isMicMuted}
+            toggleMicrophone={toggleMicrophone}
+            isAudioEnabled={isAudioEnabled}
+            toggleAudio={toggleAudio}
+          />
+        </div>
+      )}
     </div>
   );
-} 
+}

@@ -532,14 +532,14 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
               <div className="flex-1" />
               
               <div className="flex items-center gap-3">
-                <button className="hidden sm:flex items-center gap-2 bg-[#BA984E] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#A88C4B] transition-colors">
+                {/* <button className="hidden sm:flex items-center gap-2 bg-[#BA984E] text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-[#A88C4B] transition-colors">
                   <Sparkles size={16} />
                   Ask assistant
                 </button>
                 <button className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                   <Languages size={16} />
                   العربية
-                </button>
+                </button> */}
                 <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
                 <ProfileDropdown />
               </div>
