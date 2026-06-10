@@ -98,7 +98,7 @@ export default function StaticAvatarWidget({
           <img
             src={imageUrl}
             alt={avatarName}
-            className="h-full w-full object-cover object-top"
+            className="h-full w-full object-cover object-center"
             style={{
               transform: blink ? 'scaleY(0.12)' : 'scaleY(1)',
               transformOrigin: 'center 28%',

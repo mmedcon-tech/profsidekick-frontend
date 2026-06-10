@@ -108,7 +108,7 @@ export default function SessionAvatar({
             src={avatarConfig.imageUrl || '/images/avatar-female.png'}
             alt={avatarConfig.avatarName}
             fill
-            className="object-cover object-top"
+            className="object-cover object-center"
           />
         </div>
         <div className="bg-white rounded-full px-2.5 py-0.5 shadow-md flex items-center gap-1.5 text-xs font-semibold text-gray-700 mt-1">

@@ -56,7 +56,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       body: JSON.stringify({
         model: 'gpt-5.4-mini',
         messages,
-        max_tokens: 400,
+        max_completion_tokens: 400,
         temperature: 0.7,
       }),
     });
