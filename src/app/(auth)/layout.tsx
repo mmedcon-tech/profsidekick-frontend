@@ -19,10 +19,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 <span className="text-xs text-green-200/80 uppercase tracking-wide leading-none">AI Training Assistant</span>
              </div>
           </div>
-          <button className="flex items-center gap-2 border border-white/20 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">
+          {/* <button className="flex items-center gap-2 border border-white/20 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors">
             <Languages size={16} />
             العربية
-          </button>
+          </button> */}
         </div>
 
 
