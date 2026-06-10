@@ -40,22 +40,6 @@ export default function SessionAvatarRenderer({
 
   return (
     <div className="relative flex h-full w-full flex-col bg-gray-900">
-      <div className="absolute left-0 right-0 top-0 z-10 bg-gray-900/80 px-3 py-2 text-center backdrop-blur-sm">
-        <p className="text-[11px] font-medium text-gray-200">
-          {getAvatarModeLabel(config.renderType)}
-        </p>
-        {heygenPaused && (
-          <p className="mt-0.5 text-[10px] text-amber-400">
-            HeyGen paused — using static animated avatar until API key is ready
-          </p>
-        )}
-        {effectiveType === 'talkingheads' && (
-          <p className="mt-0.5 text-[10px] text-violet-300">
-            Animated mode — provider integration pending
-          </p>
-        )}
-      </div>
-
       <div className="flex flex-1 items-center justify-center pt-10">
         {useHeyGen && heygenVideoRef ? (
           <>
