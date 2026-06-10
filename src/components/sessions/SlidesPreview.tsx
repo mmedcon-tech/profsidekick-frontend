@@ -540,8 +540,8 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                 onClick={() => handleSlideClick(slide)}
                 className={`relative bg-gray-50 dark:bg-gray-900 rounded-lg border ${
                   draggedSlideId === slide.id
-                    ? 'border-[#BA984E] opacity-50'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-[#BA984E]/50'
+                    ? 'border-blue-500 opacity-50'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
                 } hover:shadow-md transition-all duration-200 cursor-move group aspect-[4/3]`}
               >
                 <div className="absolute inset-0 rounded-lg overflow-hidden">
@@ -577,7 +577,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                       setSelectedSlide(slide);
                       setEditingVisionInstructions(slide.visionInstructions || '');
                     }}
-                    className="p-1 bg-[#133221] text-white rounded hover:bg-[#1a442d] transition-colors"
+                    className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                     title="View & Edit"
                   >
                     <RefreshCw className="w-3 h-3" />
@@ -618,7 +618,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                   onClick={() => handleSlideClick(slide)}
                   className={`flex items-center space-x-4 p-4 rounded-lg cursor-move transition-colors ${
                     draggedSlideId === slide.id
-                      ? 'bg-[#133221]/10 opacity-50'
+                      ? 'bg-blue-100 opacity-50'
                       : 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:bg-gray-800'
                   }`}
                 >
@@ -650,7 +650,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                         e.stopPropagation();
                         handleSlideClick(slide);
                       }}
-                      className="p-2 text-[#BA984E] hover:bg-[#133221]/5 rounded-lg transition-colors"
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="View & Edit"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -699,7 +699,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                       onClick={() => goToPage(page)}
                       className={`px-3 py-1 rounded-lg text-sm transition-colors ${
                         page === currentPage
-                          ? 'bg-[#133221] text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'hover:bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                       }`}
                     >
@@ -812,7 +812,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                 <textarea
                   value={editingVisionInstructions}
                   onChange={(e) => setEditingVisionInstructions(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA984E] focus:border-[#BA984E] resize-none"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                   rows={4}
                   placeholder="Enter vision instructions for analyzing this slide..."
                 />
@@ -823,7 +823,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                   <button
                     onClick={() => handleRegenerateSlide(selectedSlide)}
                     disabled={isRegenerating}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#133221] text-white rounded-lg hover:bg-[#1a442d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isRegenerating ? (
                       <>
@@ -848,7 +848,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                     {!isEditingContent ? (
                       <button
                         onClick={() => setIsEditingContent(true)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-[#133221]/10 hover:bg-[#133221]/20 text-[#d4af37] rounded-lg transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
                       >
                         <Edit3 className="w-4 h-4" />
                         Edit
@@ -894,7 +894,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                         type="text"
                         value={editingTitle}
                         onChange={(e) => setEditingTitle(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA984E] focus:border-[#BA984E]"
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Enter slide title..."
                       />
                     </div>
@@ -905,7 +905,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                       <textarea
                         value={editingContent}
                         onChange={(e) => setEditingContent(e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA984E] focus:border-[#BA984E] resize-none"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                         rows={8}
                         placeholder="Enter slide content..."
                       />

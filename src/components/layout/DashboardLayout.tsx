@@ -379,9 +379,9 @@ function ProfileDropdown() {
     <div ref={ref} className="relative flex-shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[#BA984E]"
+        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <div className="w-7 h-7 rounded-full bg-[#133221] flex items-center justify-center text-white text-xs font-semibold">
+        <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-semibold">
           {initials}
         </div>
         <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-300 max-w-[120px] truncate">
@@ -497,7 +497,7 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
             <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-6 gap-4 flex-shrink-0">
               {/* Mobile hamburger */}
               <button
-                className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-[#BA984E] rounded"
+                className="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open navigation menu"
               >
@@ -524,7 +524,7 @@ export default function DashboardLayout({ nav, children, title }: DashboardLayou
                     value={query}
                     onChange={(e) => handleInput(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#BA984E] focus:border-transparent transition-all"
+                    className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   />
                 </div>
               )}
