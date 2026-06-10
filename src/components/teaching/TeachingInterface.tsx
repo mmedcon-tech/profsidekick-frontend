@@ -1471,7 +1471,7 @@ export default function TeachingInterface({
       {/* Left Side - Slide Viewer (70%) */}
       <div className="w-[80%] bg-white dark:bg-gray-800 flex flex-col">
         {/* Header */}
-        <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
+        <div className="bg-emerald-600 dark:bg-emerald-700 text-white p-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <img 
               src="/images/logo.png" 
@@ -1623,7 +1623,7 @@ export default function TeachingInterface({
         <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-200/50 bg-slate-50 flex-shrink-0">
           {/* AI indicator */}
           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-            isAISpeaking ? 'bg-blue-500 animate-pulse' :
+            isAISpeaking ? 'bg-emerald-50 dark:bg-emerald-900/200 animate-pulse' :
             sessionStatus === 'CONNECTED' ? 'bg-emerald-500' : 'bg-slate-300'
           }`} />
           <span className="text-[11px] text-slate-500 truncate flex-1">
@@ -1654,9 +1654,9 @@ export default function TeachingInterface({
               </div>
             )}
             {currentQuestion && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-blue-600 mb-1 uppercase tracking-wide">Current Question</p>
-                <p className="text-xs text-blue-900 leading-relaxed">{currentQuestion}</p>
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3">
+                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1 uppercase tracking-wide">Current Question</p>
+                <p className="text-xs text-emerald-950 dark:text-emerald-100 leading-relaxed">{currentQuestion}</p>
               </div>
             )}
             {latestResponse && (
@@ -1693,7 +1693,7 @@ export default function TeachingInterface({
             onClick={toggleAudio}
             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
               isAudioEnabled 
-                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-500/30" 
+                ? "bg-emerald-50 dark:bg-emerald-900/200 text-white shadow-lg shadow-blue-500/25 hover:bg-emerald-600 dark:bg-emerald-700 hover:shadow-xl hover:shadow-blue-500/30" 
                 : "bg-slate-200 text-slate-700 hover:bg-slate-300"
             }`}
           >
@@ -1770,7 +1770,7 @@ export default function TeachingInterface({
                 value={feedbackData.feedback}
                 onChange={(e) => handleFeedbackChange('feedback', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                 placeholder="How was your overall experience with the AI teaching assistant?"
               />
             </div>
@@ -1785,7 +1785,7 @@ export default function TeachingInterface({
                 value={feedbackData.issues}
                 onChange={(e) => handleFeedbackChange('issues', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                 placeholder="Did you encounter any technical issues, bugs, or unexpected behavior?"
               />
             </div>
@@ -1800,7 +1800,7 @@ export default function TeachingInterface({
                 value={feedbackData.suggestions}
                 onChange={(e) => handleFeedbackChange('suggestions', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                 placeholder="What features or improvements would make this better?"
               />
             </div>
@@ -1815,7 +1815,7 @@ export default function TeachingInterface({
               </button>
               <button
                 onClick={handleFeedbackSubmit}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
               >
                 Submit & End Session
               </button>

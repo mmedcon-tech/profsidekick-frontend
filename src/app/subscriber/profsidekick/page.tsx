@@ -69,7 +69,7 @@ export default function SubscriberProfSidekickPage() {
           <Bot size={40} className="text-white" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ProfSidekick</h1>
-        <p className="text-blue-700 text-sm font-medium mt-1">Platform Flagship Avatar</p>
+        <p className="text-emerald-800 dark:text-emerald-300 text-sm font-medium mt-1">Platform Flagship Avatar</p>
         <p className="text-gray-500 dark:text-gray-400 mt-3 text-sm max-w-sm mx-auto">
           AI-powered educational assistant. Covers courses, sessions, oral examinations,
           rubrics, grading, and voice-driven learning.
@@ -99,9 +99,9 @@ export default function SubscriberProfSidekickPage() {
           <div className="space-y-3">
             {sessions.map((s) => (
               <div key={s.sessionId}
-                className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-200 hover:bg-blue-50 transition-all">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <Play size={18} className="text-blue-600" />
+                className="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-emerald-200 dark:border-emerald-700 hover:bg-emerald-50 dark:bg-emerald-900/20 transition-all">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                  <Play size={18} className="text-emerald-700 dark:text-emerald-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{s.classDetails.className}</p>
@@ -114,7 +114,7 @@ export default function SubscriberProfSidekickPage() {
                 <button
                   onClick={() => handleLaunch(s.sessionId)}
                   disabled={!!launching}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium flex-shrink-0"
+                  className="flex items-center gap-2 bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 transition-colors text-sm font-medium flex-shrink-0"
                 >
                   {launching === s.sessionId
                     ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Starting…</>
@@ -127,9 +127,9 @@ export default function SubscriberProfSidekickPage() {
       </div>
 
       {/* Mic note */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-        <Mic size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-blue-700">
+      <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-4 flex items-start gap-3">
+        <Mic size={16} className="text-emerald-700 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-emerald-800 dark:text-emerald-300">
           ProfSidekick sessions are voice-driven AI oral examinations.
           A working microphone is required. You can upload one solution file (PDF, DOCX, TXT)
           per session run for AI review against the grading rubric.

@@ -144,7 +144,7 @@ export default function StudentDashboard() {
               <p className="text-xs text-gray-400 mb-4">{error}</p>
               <button
                 onClick={refetch}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:text-emerald-300 font-medium"
               >
                 Try again
               </button>

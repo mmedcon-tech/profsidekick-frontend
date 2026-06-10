@@ -54,7 +54,7 @@ function formatDuration(minutes?: number) {
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { color: string }> = {
     COMPLETED: { color: 'bg-green-100 text-green-800' },
-    ACTIVE:    { color: 'bg-blue-100 text-blue-800' },
+    ACTIVE:    { color: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200' },
     FAILED:    { color: 'bg-red-100 text-red-800' },
   };
   const c = cfg[status] ?? { color: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300' };
@@ -165,7 +165,7 @@ export default function LearningHistoryPage() {
         <div className="text-center py-12">
           <AlertCircle size={36} className="mx-auto text-red-400 mb-3" />
           <p className="text-gray-700 dark:text-gray-300 font-medium">{error}</p>
-          <button onClick={loadSessions} className="mt-3 text-blue-600 text-sm hover:underline">Try again</button>
+          <button onClick={loadSessions} className="mt-3 text-emerald-700 dark:text-emerald-400 text-sm hover:underline">Try again</button>
         </div>
       )}
 

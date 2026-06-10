@@ -78,7 +78,7 @@ export default function PreferencesForm({ preferences, onChange }: PreferencesFo
           <select
             value={preferences[field.key]}
             onChange={(e) => update(field.key, e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
           >
             {field.options.map((opt) => (
               <option key={opt.value} value={opt.value}>

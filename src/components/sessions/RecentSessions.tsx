@@ -59,7 +59,7 @@ export default function RecentSessions() {
           <p className="text-red-600 text-sm mb-3">{error}</p>
           <button
             onClick={() => refetch()}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            className="bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
           >
             Try again
           </button>
@@ -95,18 +95,18 @@ export default function RecentSessions() {
           <div
             key={session.sessionId}
             onClick={() => handleSessionClick(session)}
-            className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all duration-200 group"
+            className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-emerald-300 dark:border-emerald-600 hover:bg-emerald-50 dark:bg-emerald-900/20 cursor-pointer transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg truncate group-hover:text-blue-700">
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg truncate group-hover:text-emerald-800 dark:text-emerald-300">
                   {session.classDetails.className}
                 </h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                   {session.classDetails.courseName} • {session.classDetails.courseCode}
                 </p>
               </div>
-              <Play className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 ml-2" />
+              <Play className="w-5 h-5 text-gray-400 group-hover:text-emerald-700 dark:text-emerald-400 transition-colors flex-shrink-0 ml-2" />
             </div>
             
             <div className="space-y-3">

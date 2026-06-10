@@ -41,7 +41,7 @@ function VoiceDisclaimerModal({
           <div className="flex gap-3 pt-1">
             <button
               onClick={onContinue}
-              className="flex-1 bg-blue-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors"
+              className="flex-1 bg-emerald-600 dark:bg-emerald-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
             >
               Continue
             </button>

@@ -15,7 +15,7 @@ export default function MyAvatarsPage() {
           Browse the marketplace to find avatars and subscribe to them. Subscription management is coming in a future release.
         </p>
         <Link href="/subscriber/marketplace"
-          className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+          className="inline-flex items-center gap-2 bg-emerald-600 dark:bg-emerald-700 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors text-sm font-medium">
           <Store size={16} /> Browse Marketplace
         </Link>
       </div>

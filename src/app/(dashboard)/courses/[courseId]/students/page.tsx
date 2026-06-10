@@ -268,8 +268,8 @@ export default function ManageStudentsPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500"></div>
         </div>
       </ProtectedRoute>
     );
@@ -278,13 +278,13 @@ export default function ManageStudentsPage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center max-w-md">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Error Loading Students</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
             <button
               onClick={() => router.push(`/courses/${courseId}`)}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
             >
               Back to Course
             </button>
@@ -296,7 +296,7 @@ export default function ManageStudentsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800">
         {/* Toast Notifications */}
         <div className="fixed top-4 right-4 z-50 space-y-2">
           {toasts.map((toast) => (
@@ -347,7 +347,7 @@ export default function ManageStudentsPage() {
                 </div>
                 <button
                   onClick={() => setShowEnrollModal(true)}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  className="flex items-center gap-2 bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
                 >
                   <UserPlus className="w-5 h-5" />
                   Enroll Student
@@ -370,7 +370,7 @@ export default function ManageStudentsPage() {
                         placeholder="Search students..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                       />
                     </div>
                     <span className="text-sm text-gray-500 dark:text-gray-400">
@@ -418,9 +418,9 @@ export default function ManageStudentsPage() {
 
                         <div className="flex items-center gap-2">
                           {student.session_participation !== undefined && (
-                            <div className="text-center px-3 py-1 bg-blue-50 rounded-lg">
-                              <div className="text-xs text-blue-600 font-medium">Sessions</div>
-                              <div className="text-sm font-bold text-blue-800">{student.session_participation}</div>
+                            <div className="text-center px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                              <div className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Sessions</div>
+                              <div className="text-sm font-bold text-emerald-900 dark:text-emerald-200">{student.session_participation}</div>
                             </div>
                           )}
                           
@@ -486,7 +486,7 @@ export default function ManageStudentsPage() {
                   value={enrollEmail}
                   onChange={(e) => setEnrollEmail(e.target.value)}
                   placeholder="student@university.edu"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   onKeyPress={(e) => e.key === 'Enter' && !enrollingStudent && handleEnrollStudent()}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -508,7 +508,7 @@ export default function ManageStudentsPage() {
               <button
                 onClick={handleEnrollStudent}
                 disabled={enrollingStudent || !enrollEmail.trim()}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 dark:bg-emerald-700 text-white rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {enrollingStudent ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
