@@ -621,7 +621,7 @@ export default function ClassCreation() {
                           value={role.id}
                           checked={selectedRoleId === role.id}
                           onChange={() => setSelectedRoleId(role.id)}
-                          className="mt-0.5 accent-blue-600"
+                          className="mt-0.5 accent-emerald-600"
                         />
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
@@ -736,7 +736,7 @@ export default function ClassCreation() {
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                   isDragOver
-                    ? "border-blue-400 bg-emerald-50 dark:bg-emerald-900/20"
+                    ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
                     : selectedFile
                     ? "border-green-400 bg-green-50"
                     : "border-gray-300 hover:border-gray-400"
@@ -942,7 +942,7 @@ export default function ClassCreation() {
                   min="0.6"
                   max="1.2"
                   step="0.1"
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                 />
               </div>
 
@@ -1170,7 +1170,7 @@ export default function ClassCreation() {
                             min="0.0"
                             max="1.0"
                             step="0.1"
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                           />
                         </div>
 

@@ -18,6 +18,7 @@ export interface CourseDetails {
   is_active?: boolean;
   is_deleted?: boolean;
   is_public?: boolean;
+  allow_subscriber_sessions?: boolean;
   created_at: string;
   updated_at: string;
   // Computed fields that might be added by backend

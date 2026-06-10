@@ -102,7 +102,7 @@ export default function StarterAvatarCard({ avatar, role, horizontal = false }: 
     'rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all',
     horizontal ? 'flex items-center gap-4 p-4' : 'flex flex-col p-5',
     !disabled && avatar.id === '__profsidekick__'
-      ? `ring-2 ring-blue-200 border-emerald-300 dark:border-emerald-600 ${ac.border} hover:shadow-lg`
+      ? `ring-2 ring-emerald-200 border-emerald-300 dark:border-emerald-600 ${ac.border} hover:shadow-lg`
       : !disabled
       ? `${ac.border} hover:shadow-md`
       : 'opacity-60 cursor-not-allowed',

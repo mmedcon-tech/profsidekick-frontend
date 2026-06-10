@@ -14,6 +14,7 @@ import StreamingAvatar, {
   StreamingEvents,
   TaskType,
 } from '@heygen/streaming-avatar';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourses } from '@/hooks/useCourses';
 import { useSubscriberStats } from '@/hooks/useSubscriberStats';
@@ -71,7 +72,8 @@ interface SpeechRecognitionLike {
   stop: () => void;
 }
 
-export default function FloatingAvatar(): React.ReactElement {
+export default function FloatingAvatar(): React.ReactElement | null {
+  const pathname = usePathname();
   const { user } = useAuth();
   const { courses } = useCourses();
   const { stats } = useSubscriberStats(courses.length);
@@ -117,6 +119,10 @@ export default function FloatingAvatar(): React.ReactElement {
   );
 
   const isOnline = HEYGEN_LIVE ? isConnected : true;
+
+  if (pathname?.includes('/run/')) {
+    return null;
+  }
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });

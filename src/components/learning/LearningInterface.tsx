@@ -8,7 +8,7 @@ import StreamingAvatar, {
   TaskType,
 } from "@heygen/streaming-avatar";
 import { ClassSession, SessionAvatarConfig } from "@/types";
-import SessionAvatarRenderer from "@/components/avatar/SessionAvatarRenderer";
+import SessionAvatar from "./SessionAvatar";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
 import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
@@ -36,7 +36,7 @@ const DEFAULT_HEYGEN_AVATAR_ID =
 let globalConnectionId: string | null = null;
 let globalConnectionPromise: Promise<void> | null = null;
 
-interface TeachingInterfaceProps {
+interface LearningInterfaceProps {
   classSession: ClassSession;
   onEndSession: (metadata?: any) => void;
   sessionRunId?: string;
@@ -45,14 +45,14 @@ interface TeachingInterfaceProps {
   isSharedLink?: boolean;
 }
 
-export default function TeachingInterface({
+export default function LearningInterface({
   classSession,
   onEndSession,
   sessionRunId,
   startingSlide,
   avatarConfig,
   isSharedLink = false,
-}: TeachingInterfaceProps) {
+}: LearningInterfaceProps) {
   // Always start with slide 0 for SSR consistency
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -933,7 +933,23 @@ export default function TeachingInterface({
             parameters: {
               type: "object",
               properties: {},
-              required: [],
+              required: [{
+              type: "function",
+              name: "searchKnowledgeBase",
+              description: "Search the course materials and session slides for answers to the user's questions.",
+              parameters: {
+                type: "object",
+                properties: {
+                  query: {
+                    type: "string",
+                    description: "The search query to look up in the knowledge base."
+                  }
+                },
+                required: ["query"],
+                additionalProperties: false,
+              },
+            },
+          ],
               additionalProperties: false,
             },
           },
@@ -1308,7 +1324,50 @@ export default function TeachingInterface({
             const args = outputItem.arguments ? JSON.parse(outputItem.arguments) : {};
             let functionResult: { success: boolean; message: string; data: object } = { success: false, message: "", data: {} };
 
-            if (outputItem.name === "nextSlide") {
+            if (outputItem.name === "searchKnowledgeBase") {
+                const query = args.query;
+                // Fetch RAG context asynchronously
+                fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ query, course_id: undefined })
+                })
+                .then(res => res.json())
+                .then(data => {
+                  const chunks = data.results || [];
+                  const functionResult = {
+                    success: true,
+                    message: `Found ${chunks.length} chunks of knowledge`,
+                    data: chunks
+                  };
+                  sendClientEvent({
+                    type: "conversation.item.create",
+                    item: {
+                      type: "function_call_output",
+                      call_id: outputItem.call_id,
+                      output: JSON.stringify(functionResult),
+                    },
+                  });
+                  sendClientEvent({ type: "response.create" });
+                })
+                .catch(err => {
+                  sendClientEvent({
+                    type: "conversation.item.create",
+                    item: {
+                      type: "function_call_output",
+                      call_id: outputItem.call_id,
+                      output: JSON.stringify({ success: false, message: "Error searching knowledge base" }),
+                    },
+                  });
+                  sendClientEvent({ type: "response.create" });
+                });
+                return; // Early return because we handle sending output asynchronously
+              }
+
+              if (outputItem.name === "nextSlide") {
               const currentSlideValue = currentSlideRef.current;
               if (currentSlideValue < classSession.slides.length - 1) {
                 const newSlide = currentSlideValue + 1;
@@ -1428,120 +1487,120 @@ export default function TeachingInterface({
   // --------------------------------------------------------------
 
   return (
-    <div className="h-screen bg-gray-100 dark:bg-gray-800 flex relative">
-      {/* Start Conversation Prompt - Floating notification */}
-      {showStartPrompt && (
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-          <div className={`${
-            sessionStatus === "CONNECTED"
-              ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30"
-              : "bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/30"
-          } text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all duration-300`}>
-            <div className="w-10 h-10 bg-white dark:bg-gray-800/20 rounded-full flex items-center justify-center animate-pulse">
-              {sessionStatus === "CONNECTED" ? (
-                <Mic size={20} className="text-white" />
-              ) : (
-                <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
-              )}
-            </div>
-            <div>
-              {sessionStatus === "CONNECTED" ? (
-                <>
-                  <p className="font-semibold text-base">👋 Ready to start!</p>
-                  <p className="text-sm text-emerald-50">Say something to begin the conversation</p>
-                </>
-              ) : (
-                <>
-                  <p className="font-semibold text-base">🔄 Connecting...</p>
-                  <p className="text-sm text-amber-50">Please wait while we establish the connection</p>
-                </>
-              )}
-            </div>
-            {sessionStatus === "CONNECTED" && (
-              <button
-                onClick={() => setShowStartPrompt(false)}
-                className="ml-2 text-white/80 hover:text-white transition-colors"
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+    <div className="h-screen bg-gray-100 dark:bg-gray-800 flex relative overflow-hidden">
+      {/* SessionAvatar overlay */}
+      <SessionAvatar
+        isConnected={sessionStatus === "CONNECTED"}
+        isConnecting={sessionStatus === "CONNECTING"}
+        isUserSpeaking={isUserSpeaking}
+        isAISpeaking={isAISpeaking}
+        avatarConfig={sessionAvatar}
+        videoRef={heygenVideoRef}
+      />
 
-      {/* Left Side - Slide Viewer (70%) */}
-      <div className="w-[80%] bg-white dark:bg-gray-800 flex flex-col">
+      {/* Main Slide Viewer (100%) */}
+      <div className="w-full bg-white dark:bg-gray-800 flex flex-col h-full">
         {/* Header */}
-        <div className="bg-emerald-600 dark:bg-emerald-700 text-white p-4 flex justify-between items-center">
+        <div className="bg-emerald-600 dark:bg-emerald-700 text-white p-4 flex justify-between items-center z-10 shadow-md relative">
           <div className="flex items-center gap-4">
             <img 
               src="/images/logo.png" 
               alt="ProfSidekick Logo" 
-              className="w-11 h-11 object-contain bg-emerald-500 rounded-full"
+              className="w-11 h-11 object-contain bg-white rounded-full p-1 shadow-sm"
               onError={(e) => {
-                // Hide image if logo file doesn't exist
                 e.currentTarget.style.display = 'none';
               }}
             />
             <div>
               <h1 className="text-xl font-semibold">{classSession.classDetails.className}</h1>
               <p className="text-emerald-100 text-sm">
-                {classSession.classDetails.courseName} • {classSession.classDetails.courseCode}
+                {classSession.classDetails.courseName} — {classSession.classDetails.courseCode}
               </p>
             </div>
           </div>
           <button
             onClick={handleEndSessionClick}
-            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-medium transition-colors"
+            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
           >
             End Session
           </button>
         </div>
 
         {/* Slide Content */}
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-full max-w-7xl relative">
-            {currentSlideData?.imagePath ? (
-              <>
-                <img
-                  src={getCorrectImageUrl(currentSlideData.imagePath)}
-                  alt={currentSlideData?.title}
-                  className="w-full h-auto rounded-lg shadow-lg transition-all duration-300"
-                  onError={(e) => {
-                    console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
-                    console.error('Error details:', e);
-                  }}
-                  onLoad={() => {
-                    console.log('Successfully loaded slide image:', getCorrectImageUrl(currentSlideData.imagePath));
-                  }}
-                />
-              </>
-            ) : (
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
-                <p className="text-gray-500 dark:text-gray-400">No slide image available</p>
-                <div className="mt-4 text-xs text-gray-400">
-                  Debug: {JSON.stringify(currentSlideData, null, 2)}
+        <div className="flex-1 flex items-center justify-center p-8 bg-gray-50 dark:bg-gray-900 overflow-hidden relative">
+          {/* Start Conversation Prompt */}
+          {showStartPrompt && (
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in">
+              <div className={`${
+                sessionStatus === "CONNECTED"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30"
+                  : "bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/30"
+              } text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all duration-300`}>
+                <div className="w-10 h-10 bg-white dark:bg-gray-800/20 rounded-full flex items-center justify-center animate-pulse">
+                  {sessionStatus === "CONNECTED" ? (
+                    <Mic size={20} className="text-white" />
+                  ) : (
+                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  )}
                 </div>
+                <div>
+                  {sessionStatus === "CONNECTED" ? (
+                    <>
+                      <p className="font-semibold text-base">Ready to start!</p>
+                      <p className="text-sm text-emerald-50">Say something to begin the conversation</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-base">Connecting...</p>
+                      <p className="text-sm text-amber-50">Please wait while we establish the connection</p>
+                    </>
+                  )}
+                </div>
+                {sessionStatus === "CONNECTED" && (
+                  <button
+                    onClick={() => setShowStartPrompt(false)}
+                    className="ml-2 text-white/80 hover:text-white transition-colors p-2"
+                    aria-label="Close"
+                  >
+                    × 
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="w-full max-w-6xl relative h-full flex flex-col items-center justify-center">
+            {currentSlideData?.imagePath ? (
+              <img
+                src={getCorrectImageUrl(currentSlideData.imagePath)}
+                alt={currentSlideData?.title}
+                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl ring-1 ring-black/5"
+                onError={(e) => {
+                  console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
+                }}
+              />
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+                <p className="text-gray-500 dark:text-gray-400 text-lg">No slide image available</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Slide Navigation */}
-        <div className="bg-gray-50 dark:bg-gray-900 p-4 border-t flex justify-between items-center">
+        <div className="bg-white dark:bg-gray-800 p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <button
             onClick={previousSlide}
             disabled={currentSlide === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
           >
             <ChevronLeft size={20} />
             Previous
           </button>
           
-          <div className="text-center">
-            <p className="text-lg font-medium">{currentSlideData?.title}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-center px-4">
+            <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">{currentSlideData?.title || 'Slide ' + (currentSlide + 1)}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
               Slide {currentSlide + 1} of {classSession.totalSlides}
             </p>
           </div>
@@ -1549,187 +1608,10 @@ export default function TeachingInterface({
           <button
             onClick={nextSlide}
             disabled={currentSlide === classSession.slides.length - 1}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
           >
             Next
             <ChevronRight size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Right Side - Voice Assistant Panel (20%) */}
-      <div className="w-[20%] bg-gradient-to-b from-slate-50 to-white border-l border-slate-200 flex flex-col">
-        {/* Header */}
-        <div className="p-4 border-b border-slate-200/50">
-          <div className="flex items-center gap-3">
-            {/* <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">🤖</span>
-            </div> */}
-            <div>
-              <h3 className="font-semibold text-slate-900 text-sm">ProfSidekick</h3>
-              <div className="flex items-center gap-1.5">
-                <div className={`w-1.5 h-1.5 rounded-full ${
-                  sessionStatus === "CONNECTED" ? "bg-emerald-500" : 
-                  sessionStatus === "CONNECTING" ? "bg-amber-500" : 
-                  sessionStatus === "ERROR" ? "bg-red-500" : "bg-slate-400"
-                }`}></div>
-                <span className="text-xs text-slate-500 capitalize font-medium">
-                  {sessionStatus.toLowerCase()}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Guard Phrase Info */}
-        <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-200">
-          <p className="text-xs text-emerald-900 font-semibold mb-1">
-            Voice Commands
-          </p>
-          <p className="text-xs text-emerald-800 leading-relaxed">
-            To pause/end the session, say:{" "}
-            <span className="font-semibold text-emerald-900">“stop”</span>,{" "}
-            <span className="font-semibold text-emerald-900">“pause”</span>,{" "}
-            <span className="font-semibold text-emerald-900">“wait”</span>, or{" "}
-            <span className="font-semibold text-emerald-900">“end session”</span>.
-          </p>
-        </div>
-
-        {/* Avatar visual — HeyGen video or audio-driven static / talkingheads animation */}
-        <div className="relative bg-gray-900 flex-shrink-0" style={{ aspectRatio: '9/16' }}>
-          <SessionAvatarRenderer
-            config={sessionAvatar}
-            audioElement={outputAudioElement}
-            isConnected={sessionStatus === "CONNECTED"}
-            isAISpeaking={isAISpeaking}
-            isUserSpeaking={isUserSpeaking}
-            heygenConnected={heygenConnected}
-            heygenVideoRef={heygenVideoRef}
-          />
-
-          {/* Speaking indicator overlay */}
-          {isAISpeaking && (
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 items-end h-4">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="w-1 bg-emerald-400 rounded-full animate-pulse"
-                  style={{ height: `${8 + i * 4}px`, animationDelay: `${i * 100}ms` }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Voice status strip */}
-        <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-200/50 bg-slate-50 flex-shrink-0">
-          {/* AI indicator */}
-          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-            isAISpeaking ? 'bg-emerald-50 dark:bg-emerald-900/200 animate-pulse' :
-            sessionStatus === 'CONNECTED' ? 'bg-emerald-500' : 'bg-slate-300'
-          }`} />
-          <span className="text-[11px] text-slate-500 truncate flex-1">
-            {sessionStatus !== 'CONNECTED' ? 'Disconnected' :
-             isAISpeaking ? 'AI speaking…' :
-             isUserSpeaking ? 'You speaking…' : 'Listening'}
-          </span>
-          {/* Mic indicator */}
-          {isMicMuted && (
-            <span className="text-[11px] text-red-500 flex-shrink-0">Muted</span>
-          )}
-        </div>
-
-        {/* Session Notes Panel */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-4 py-2.5 border-b border-slate-200/50">
-            <div className="flex items-center gap-1.5">
-              <MessageSquare size={12} className="text-slate-400" />
-              <span className="text-xs font-medium text-slate-600">Session Notes</span>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {!currentQuestion && !latestResponse && keyConcepts.length === 0 && !rollingNotes && (
-              <div className="text-center py-8">
-                <MessageSquare size={22} className="text-slate-300 mx-auto mb-2" />
-                <p className="text-xs text-slate-400">Session notes will appear here as the conversation progresses.</p>
-              </div>
-            )}
-            {currentQuestion && (
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3">
-                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1 uppercase tracking-wide">Current Question</p>
-                <p className="text-xs text-emerald-950 dark:text-emerald-100 leading-relaxed">{currentQuestion}</p>
-              </div>
-            )}
-            {latestResponse && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Student Response</p>
-                <p className="text-xs text-slate-800 leading-relaxed">{latestResponse}</p>
-              </div>
-            )}
-            {keyConcepts.length > 0 && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide">Key Concepts</p>
-                <div className="flex flex-wrap gap-1">
-                  {keyConcepts.map((c) => (
-                    <span key={c} className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-medium rounded">
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {rollingNotes && (
-              <div className="bg-white dark:bg-gray-800 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Session Notes</p>
-                <pre className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-sans">{rollingNotes}</pre>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="p-4 space-y-3 border-t border-slate-200/50">
-          {/* Audio Control */}
-          <button
-            onClick={toggleAudio}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
-              isAudioEnabled 
-                ? "bg-emerald-50 dark:bg-emerald-900/200 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 dark:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-500/30" 
-                : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-            }`}
-          >
-            {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            {isAudioEnabled ? "Audio On" : "Audio Off"}
-          </button>
-
-          {/* Microphone Control */}
-          <button
-            onClick={toggleMicrophone}
-            disabled={sessionStatus !== "CONNECTED"}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
-              sessionStatus !== "CONNECTED"
-                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : isMicMuted 
-                  ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30" 
-                  : "bg-green-500 text-white shadow-lg shadow-green-500/25 hover:bg-green-600 hover:shadow-xl hover:shadow-green-500/30"
-            }`}
-          >
-            {isMicMuted ? <MicOff size={16} /> : <Mic size={16} />}
-            {isMicMuted ? "Mic Muted" : "Mic On"}
-          </button>
-
-          {/* Connection Control */}
-          <button
-            onClick={sessionStatus === "CONNECTED" ? disconnectFromRealtime : connectToRealtime}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
-              sessionStatus === "CONNECTED" 
-                ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30" 
-                : "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-500/30"
-            }`}
-          >
-            {sessionStatus === "CONNECTED" ? <PhoneOff size={16} /> : <Phone size={16} />}
-            {sessionStatus === "CONNECTED" ? "Disconnect" : "Connect"}
           </button>
         </div>
       </div>

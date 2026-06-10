@@ -256,7 +256,7 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
                     ${linkClass(active)}
                   `}
                 >
-                  <span className={`flex-shrink-0 ${active ? 'text-blue-400' : ''}`}>{entry.icon}</span>
+                  <span className={`flex-shrink-0 ${active ? 'text-emerald-400' : ''}`}>{entry.icon}</span>
                   <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>{entry.label}</span>
                 </Link>
               );
@@ -289,7 +289,7 @@ function Sidebar({ nav, open, onClose, collapsed, onToggleCollapse, focusMode }:
                         ${linkClass(active)}
                       `}
                     >
-                      <span className={`flex-shrink-0 ${active ? 'text-blue-400' : ''}`}>{item.icon}</span>
+                      <span className={`flex-shrink-0 ${active ? 'text-emerald-400' : ''}`}>{item.icon}</span>
                       <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
                     </Link>
                   );

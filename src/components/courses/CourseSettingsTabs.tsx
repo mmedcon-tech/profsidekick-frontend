@@ -250,6 +250,22 @@ export default function CourseSettingsTabs({
           <p className="text-sm text-gray-500 dark:text-gray-400 ml-7">
             Public courses can be discovered and viewed by other users
           </p>
+
+          <div className="flex items-center pt-4">
+            <input
+              type="checkbox"
+              id="allow_subscriber_sessions"
+              checked={course.allow_subscriber_sessions || false}
+              onChange={(e) => onCourseUpdate('allow_subscriber_sessions', e.target.checked)}
+              className="h-4 w-4 text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500 dark:focus:ring-emerald-500 border-gray-300 rounded"
+            />
+            <label htmlFor="allow_subscriber_sessions" className="ml-3 block text-sm text-gray-900 dark:text-gray-100">
+              Allow Subscriber Sessions
+            </label>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 ml-7">
+            Automatically enroll subscribers of your avatar in this course and allow them to run sessions
+          </p>
         </div>
       </div>
     </div>
@@ -286,7 +302,7 @@ export default function CourseSettingsTabs({
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0 ${
                     isActive
-                      ? 'border-emerald-500 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400 dark:text-blue-400'
+                      ? 'border-emerald-500 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400 dark:text-emerald-400'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300'
                   }`}
                 >
