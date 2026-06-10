@@ -281,7 +281,7 @@ export default function FloatingAvatar() {
           disabled={isConnecting}
           className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all disabled:opacity-50 ${
             activePersonaId === p.id
-              ? 'bg-blue-600 text-white'
+              ? 'bg-[#133221] text-white'
               : 'bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-gray-200'
           }`}
         >
@@ -320,7 +320,7 @@ export default function FloatingAvatar() {
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
                 m.role === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-sm'
+                  ? 'bg-[#133221] text-white rounded-br-sm'
                   : 'bg-gray-700 text-gray-200 rounded-bl-sm'
               }`}>
                 {m.text}
@@ -346,12 +346,12 @@ export default function FloatingAvatar() {
             onChange={(e) => setChatInput(e.target.value)}
             onKeyDown={handleChatKeyDown}
             placeholder="Ask me anything…"
-            className="flex-1 bg-gray-700 text-white text-xs rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 bg-gray-700 text-white text-xs rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#BA984E]"
           />
           <button
             onClick={sendMessage}
             disabled={!chatInput.trim() || isSending}
-            className="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            className="w-8 h-8 rounded-lg bg-[#133221] hover:bg-[#1a442d] text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             aria-label="Send"
           >
             <Send size={13} />
@@ -385,7 +385,7 @@ export default function FloatingAvatar() {
               </>
             ) : isConnecting ? (
               <>
-                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-3" />
+                <div className="w-8 h-8 border-2 border-[#BA984E] border-t-transparent rounded-full animate-spin mb-3" />
                 <span className="text-gray-400 text-xs">Connecting to {activePersona.name}…</span>
               </>
             ) : (
@@ -404,7 +404,7 @@ export default function FloatingAvatar() {
           disabled={!isConnected}
           aria-busy={isMicActive}
           className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-            isMicActive ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+            isMicActive ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[#133221] hover:bg-[#1a442d] text-white'
           }`}
         >
           {isMicActive ? <MicOff size={14} /> : <Mic size={14} />}

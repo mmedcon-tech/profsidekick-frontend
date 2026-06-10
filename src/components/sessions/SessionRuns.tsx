@@ -33,7 +33,7 @@ export default function SessionRuns({ sessionId, courseId, onRunClick }: Session
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'COMPLETED': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'ACTIVE':    return <Play className="w-4 h-4 text-blue-600" />;
+      case 'ACTIVE':    return <Play className="w-4 h-4 text-[#BA984E]" />;
       case 'FAILED':    return <XCircle className="w-4 h-4 text-red-600" />;
       default:          return <AlertCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
@@ -42,7 +42,7 @@ export default function SessionRuns({ sessionId, courseId, onRunClick }: Session
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'ACTIVE':    return 'bg-blue-100 text-blue-800';
+      case 'ACTIVE':    return 'bg-[#133221]/10 text-[#133221]';
       case 'FAILED':    return 'bg-red-100 text-red-800';
       default:          return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200';
     }
@@ -86,7 +86,7 @@ export default function SessionRuns({ sessionId, courseId, onRunClick }: Session
         </div>
         <p className="text-gray-800 dark:text-gray-200 font-medium mb-2">Session Runs Unavailable</p>
         <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{error}</p>
-        <button onClick={() => refetch()} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+        <button onClick={() => refetch()} className="text-[#BA984E] hover:text-[#d4af37] text-sm font-medium">
           Try again
         </button>
       </div>
@@ -113,7 +113,7 @@ export default function SessionRuns({ sessionId, courseId, onRunClick }: Session
           onClick={() => handleRunClick(run)}
           className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg transition-all duration-200 ${
             run.status === 'ACTIVE'
-              ? 'hover:border-blue-300 hover:bg-blue-50 cursor-pointer'
+              ? 'hover:border-[#BA984E]/50 hover:bg-[#133221]/5 cursor-pointer'
               : 'hover:bg-gray-50 dark:bg-gray-900'
           }`}
         >
@@ -178,7 +178,7 @@ export default function SessionRuns({ sessionId, courseId, onRunClick }: Session
           </div>
 
           {run.status === 'ACTIVE' && (
-            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2 text-blue-600 text-sm font-medium">
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2 text-[#BA984E] text-sm font-medium">
               <Play className="w-4 h-4" />
               Click to resume session
             </div>

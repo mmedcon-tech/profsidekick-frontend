@@ -50,7 +50,7 @@ function CourseCard({ course, onClick }: CourseCardProps) {
   return (
     <button
       onClick={onClick}
-      className="group text-left bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 flex flex-col h-full"
+      className="group text-left bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BA984E] flex flex-col h-full"
     >
       <div className="p-5 flex-1">
         {/* Tags row */}
@@ -144,7 +144,7 @@ export default function StudentDashboard() {
               <p className="text-xs text-gray-400 mb-4">{error}</p>
               <button
                 onClick={refetch}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-[#BA984E] hover:text-[#d4af37] font-medium"
               >
                 Try again
               </button>

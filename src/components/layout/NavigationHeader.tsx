@@ -57,7 +57,7 @@ export default function NavigationHeader() {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
-            <span className="text-2xl font-bold text-blue-900 dark:text-blue-400">MyOS</span>
+            <span className="text-2xl font-bold text-[#133221] dark:text-blue-400">MyOS</span>
           </button>
 
           {/* Actions */}
@@ -72,10 +72,10 @@ export default function NavigationHeader() {
                 className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  user?.role === 'subscriber' ? 'bg-green-100 dark:bg-green-900' : 'bg-blue-100 dark:bg-blue-900'
+                  user?.role === 'subscriber' ? 'bg-green-100 dark:bg-green-900' : 'bg-[#133221]/10 dark:bg-blue-900'
                 }`}>
                   <User size={16} className={`${
-                    user?.role === 'subscriber' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'
+                    user?.role === 'subscriber' ? 'text-green-600 dark:text-green-400' : 'text-[#BA984E] dark:text-blue-400'
                   }`} />
                 </div>
                 <span className="hidden sm:block font-medium">
@@ -110,7 +110,7 @@ export default function NavigationHeader() {
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                             : user.role === 'admin'
                             ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            : 'bg-[#133221]/10 text-[#133221] dark:bg-blue-900 dark:text-blue-200'
                         }`}>
                           {user.role === 'subscriber' ? 'Subscriber' : user.role === 'admin' ? 'Admin' : 'Publisher'}
                         </p>

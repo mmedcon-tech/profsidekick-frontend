@@ -62,10 +62,10 @@ export default function AvatarIcon({
 
   return (
     <div
-      className={`bg-blue-100 flex items-center justify-center flex-shrink-0 ${roundedClass} ${className}`}
+      className={`bg-[#133221]/10 flex items-center justify-center flex-shrink-0 ${roundedClass} ${className}`}
       style={{ width: size, height: size }}
     >
-      <Bot size={iconSize} className="text-blue-600" />
+      <Bot size={iconSize} className="text-[#BA984E]" />
     </div>
   );
 }

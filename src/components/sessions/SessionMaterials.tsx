@@ -265,7 +265,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#BA984E]"></div>
       </div>
     );
   }
@@ -280,7 +280,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
         </div>
         <button
           onClick={fetchAvailableMaterials}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="flex items-center gap-2 bg-[#133221] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#1a442d] focus:ring-2 focus:ring-[#BA984E] focus:ring-offset-2"
         >
           <Plus className="w-4 h-4" />
           Add Materials
@@ -303,7 +303,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
             <p className="text-gray-500 dark:text-gray-400 mb-4">No materials selected for this session</p>
             <button
               onClick={fetchAvailableMaterials}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-[#BA984E] hover:text-[#d4af37] font-medium"
             >
               Add materials from your course
             </button>
@@ -380,12 +380,12 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                                 onChange={(e) => setInstructionsText(e.target.value)}
                                 placeholder="Add usage instructions for this session..."
                                 rows={3}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#BA984E] focus:border-[#BA984E] text-sm"
                               />
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => updateInstructions(sessionMaterial.id, instructionsText)}
-                                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                                  className="px-3 py-1 bg-[#133221] text-white text-sm rounded hover:bg-[#1a442d]"
                                 >
                                   Save
                                 </button>
@@ -408,7 +408,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                                 </div>
                                 <button
                                   onClick={() => startEditInstructions(sessionMaterial)}
-                                  className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 rounded"
+                                  className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-[#BA984E] rounded"
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
@@ -427,7 +427,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                         href={material.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-[#BA984E] rounded-lg hover:bg-[#133221]/5"
                         title="Open link"
                       >
                         <ExternalLink className="w-4 h-4" />
@@ -489,7 +489,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                       key={material.id}
                       className={`border rounded-lg p-4 cursor-pointer transition-all ${
                         materialModal.selectedMaterials.has(material.id)
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-[#BA984E] bg-[#133221]/5'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                       }`}
                       onClick={() => toggleMaterialSelection(material.id)}
@@ -497,7 +497,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                       <div className="flex items-start gap-3">
                         <div className="mt-1">
                           {materialModal.selectedMaterials.has(material.id) ? (
-                            <CheckCircle className="w-5 h-5 text-blue-600" />
+                            <CheckCircle className="w-5 h-5 text-[#BA984E]" />
                           ) : (
                             <Circle className="w-5 h-5 text-gray-400" />
                           )}
@@ -541,7 +541,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
               <button
                 onClick={addMaterialsToSession}
                 disabled={materialModal.selectedMaterials.size === 0 || saving}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-[#133221] text-white rounded-lg hover:bg-[#1a442d] disabled:opacity-50"
               >
                 {saving ? (
                   <>

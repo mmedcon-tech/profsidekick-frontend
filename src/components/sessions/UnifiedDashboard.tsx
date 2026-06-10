@@ -40,7 +40,7 @@ export default function UnifiedDashboard() {
   const isPublisher = user?.role === 'publisher' || user?.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-[#133221] to-[#1a442d]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Section */}
         <div className="text-center mb-12">
@@ -65,7 +65,7 @@ export default function UnifiedDashboard() {
                 placeholder="Search courses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#BA984E] focus:border-[#BA984E] transition-colors"
               />
             </div>
           </div>
@@ -73,7 +73,7 @@ export default function UnifiedDashboard() {
           {isPublisher && (
             <button
               onClick={handleCreateCourse}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              className="flex items-center gap-2 bg-[#133221] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#1a442d] focus:ring-2 focus:ring-[#BA984E] focus:ring-offset-2 transition-colors"
             >
               <Plus className="w-5 h-5" />
               Create Course
@@ -112,7 +112,7 @@ export default function UnifiedDashboard() {
               <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{error}</p>
               <button
                 onClick={refetch}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="bg-[#133221] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#1a442d] transition-colors"
               >
                 Try Again
               </button>
@@ -141,7 +141,7 @@ export default function UnifiedDashboard() {
               {isPublisher && !searchQuery && (
                 <button
                   onClick={handleCreateCourse}
-                  className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="mt-4 bg-[#133221] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#1a442d] transition-colors"
                 >
                   Create Your First Course
                 </button>
@@ -152,12 +152,12 @@ export default function UnifiedDashboard() {
               {filteredCourses.map((course) => (
                 <div
                   key={course.course_id}
-                  className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all duration-200 group"
+                  className="p-6 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-[#BA984E]/50 hover:bg-[#133221]/5 cursor-pointer transition-all duration-200 group"
                   onClick={() => handleCourseClick(course.course_id)}
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg truncate group-hover:text-blue-700">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg truncate group-hover:text-[#d4af37]">
                         {course.name}
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -174,7 +174,7 @@ export default function UnifiedDashboard() {
                       {course.is_public && (
                         <div className="w-2 h-2 bg-green-500 rounded-full" title="Public course"></div>
                       )}
-                      <GraduationCap className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
+                      <GraduationCap className="w-5 h-5 text-gray-400 group-hover:text-[#BA984E] transition-colors flex-shrink-0" />
                     </div>
                   </div>
                   
@@ -226,8 +226,8 @@ export default function UnifiedDashboard() {
                {isPublisher ? (
                 <>
                   <div className="flex items-start gap-4">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-blue-600">1</span>
+                    <div className="w-8 h-8 bg-[#133221]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-[#BA984E]">1</span>
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Create Your Course</h3>
@@ -236,8 +236,8 @@ export default function UnifiedDashboard() {
                   </div>
                   
                   <div className="flex items-start gap-4">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-blue-600">2</span>
+                    <div className="w-8 h-8 bg-[#133221]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-[#BA984E]">2</span>
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Build Teaching Sessions</h3>
@@ -246,8 +246,8 @@ export default function UnifiedDashboard() {
                   </div>
                   
                   <div className="flex items-start gap-4">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-semibold text-blue-600">3</span>
+                    <div className="w-8 h-8 bg-[#133221]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-[#BA984E]">3</span>
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Teach Interactively</h3>
