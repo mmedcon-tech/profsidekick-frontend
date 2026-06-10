@@ -863,10 +863,10 @@ export default function ClassCreation() {
                   className="w-full input-style"
                 >
                   <option value="gpt-realtime-2">
-                    GPT-4o Realtime (Recommended)
+                    GPT-Realtime-2 (Recommended)
                   </option>
                   <option value="gpt-realtime-mini">
-                    GPT-4o Mini Realtime
+                    GPT-Realtime mini
                   </option>
                   <option value="gpt-realtime">GPT Realtime</option>
                 </select>
