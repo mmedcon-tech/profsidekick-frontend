@@ -52,7 +52,7 @@ export const config = {
   // Get full URL for API calls
   getApiUrl: (endpoint: string) => {
     if (config.isLocal) {
-      return `http://localhost:8000${endpoint}`;
+      return `http://127.0.0.1:8000${endpoint}`;
     }
     const baseUrl = config.backendUrl.endsWith('/') 
       ? config.backendUrl.slice(0, -1) 
