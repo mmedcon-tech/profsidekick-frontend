@@ -18,13 +18,14 @@ import { classifyTurn } from "@/lib/turnClassifier";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
+  isHeyGenEnabled,
 } from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
 
 const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
   renderType: "static",
-  avatarName: "Teaching Assistant",
+  avatarName: "Assistant",
 };
 
 const DEFAULT_HEYGEN_AVATAR_ID =

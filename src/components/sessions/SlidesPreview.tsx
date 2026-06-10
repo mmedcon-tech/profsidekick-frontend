@@ -105,7 +105,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
           },
           body: JSON.stringify({
             visionInstructions: editingVisionInstructions,
-            visionModel: 'gpt-4o', // Default model for now
+            visionModel: 'gpt-5.5', // Default model for now
           }),
         }
       );
@@ -200,7 +200,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
       const formData = new FormData();
       formData.append('slide_image', file);
       formData.append('vision_instructions', 'You are an AI assignment analysis system. Analyze the student solution against the correct solution and generate structured guidance for an oral examiner.\n\nInputs:\n[Correct solution-ground truth]\n[Student assignment solution]\n[Course Material-optional]\n\nCompare the student solution against the correct solution step-by-step.\nIdentify:\n- correct and incorrect steps\n- reasoning breaks or gaps in logic of the whole solution\n- missing justifications between steps\n- possible misunderstandings\n\nFor each major step, state the key rule, theorem, property, or concept involved for the student to state.\nFlag likely error sources and concepts the examiner should focus on during questioning.\nSuggested probing areas (non-binding) based on observed mistakes and reasoning patterns.\n\nRules:\n- Stay strictly grounded in the submitted work\n- Do not tutor, explain, or solve the problem\n- Do not assign final grades or outcomes');
-      formData.append('vision_model', 'gpt-4o');
+      formData.append('vision_model', 'gpt-5.5');
 
       const response = await fetch(
         config.getApiUrl(`/api/sessions/${sessionId}/slides/add`),
@@ -289,7 +289,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
       if (slide?.visionInstructions) {
         formData.append('vision_instructions', slide.visionInstructions);
       }
-      formData.append('vision_model', slide?.visionModel || 'gpt-4o');
+      formData.append('vision_model', slide?.visionModel || 'gpt-5.5');
 
       const response = await fetch(
         config.getApiUrl(`/api/sessions/${sessionId}/slides/${slideId}/replace-image`),
@@ -805,7 +805,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                   <h4 className="font-semibold text-gray-900 dark:text-gray-100">Vision Instructions</h4>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
-                      Model: {selectedSlide.visionModel || 'gpt-4o'}
+                      Model: {selectedSlide.visionModel || 'gpt-5.5'}
                     </span>
                   </div>
                 </div>

@@ -109,7 +109,7 @@ export async function createRealtimeConnection(
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
 
-  const baseUrl = "https://api.openai.com/v1/realtime";
+  const baseUrl = "https://api.openai.com/v1/realtime/calls";
   const realtimeModel = normalizeRealtimeModel(model);
   // Use the normalized GA Realtime model for the SDP exchange.
   console.log(`🤖 Using model: ${model}`);
