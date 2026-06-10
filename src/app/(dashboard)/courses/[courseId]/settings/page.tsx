@@ -142,8 +142,8 @@ export default function CourseSettingsPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500"></div>
         </div>
       </ProtectedRoute>
     );
@@ -152,13 +152,13 @@ export default function CourseSettingsPage() {
   if (error || !course) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center max-w-md">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Error Loading Course</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-4">{error || 'Course not found'}</p>
             <Link
               href={`/courses/${courseId}`}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-block"
+              className="bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors inline-block"
             >
               Back to Course
             </Link>
@@ -170,7 +170,7 @@ export default function CourseSettingsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
           <div className="mb-8">
@@ -185,8 +185,8 @@ export default function CourseSettingsPage() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                    <Settings className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/40 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                    <Settings className="w-6 h-6 text-emerald-700 dark:text-emerald-400 dark:text-blue-400" />
                   </div>
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Course Settings</h1>

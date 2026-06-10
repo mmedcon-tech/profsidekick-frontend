@@ -81,13 +81,13 @@ export default function UsagePage() {
     <div className="max-w-4xl mx-auto mt-8 px-4">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <CreditCard className="text-blue-600" size={24} />
+          <CreditCard className="text-emerald-700 dark:text-emerald-400" size={24} />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Usage History</h1>
         </div>
         {balance && (
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Balance:{' '}
-            <span className="font-semibold text-blue-700">
+            <span className="font-semibold text-emerald-800 dark:text-emerald-300">
               {parseFloat(balance.balance).toFixed(2)} credits
             </span>
           </p>
@@ -97,7 +97,7 @@ export default function UsagePage() {
       <div className="mb-4 flex gap-3">
         <button
           onClick={() => router.push('/billing/redeem')}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 text-sm bg-emerald-600 dark:bg-emerald-700 text-white rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
         >
           Redeem Code
         </button>
@@ -143,7 +143,7 @@ export default function UsagePage() {
                     <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
                       {r.output_tokens.toLocaleString()}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-blue-700">
+                    <td className="px-4 py-3 text-right font-medium text-emerald-800 dark:text-emerald-300">
                       {parseFloat(r.credits_charged).toFixed(4)}
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400 capitalize">

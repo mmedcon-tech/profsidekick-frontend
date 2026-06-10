@@ -89,7 +89,7 @@ export default function ProfessorPersonaPage() {
     return (
       <ProfessorRoute>
         <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500" />
         </div>
       </ProfessorRoute>
     );
@@ -97,7 +97,7 @@ export default function ProfessorPersonaPage() {
 
   return (
     <ProfessorRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Persona</h1>
@@ -112,9 +112,9 @@ export default function ProfessorPersonaPage() {
                 key={label}
                 className={`flex-1 text-center py-2 px-2 rounded-lg text-sm font-medium ${
                   index === step
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-emerald-600 dark:bg-emerald-700 text-white'
                     : index < step
-                    ? 'bg-blue-100 text-blue-800'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200'
                     : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
                 }`}
               >
@@ -189,7 +189,7 @@ export default function ProfessorPersonaPage() {
                     type="button"
                     onClick={() => setStep(1)}
                     disabled={!selectedAvatarId}
-                    className="inline-flex items-center gap-1 px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-5 py-2 rounded-lg bg-emerald-600 dark:bg-emerald-700 text-white font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50"
                   >
                     Next
                     <ChevronRight size={18} />
@@ -209,7 +209,7 @@ export default function ProfessorPersonaPage() {
                       type="button"
                       onClick={() => handleSaveProfile(true)}
                       disabled={saving || !selectedAvatarId}
-                      className="px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+                      className="px-5 py-2 rounded-lg bg-emerald-600 dark:bg-emerald-700 text-white font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50"
                     >
                       {saving ? 'Saving...' : 'Save profile'}
                     </button>

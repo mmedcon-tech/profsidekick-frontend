@@ -870,7 +870,7 @@ function SessionChatInner() {
         {/* Role selection bar — always visible, prominent */}
         {avatar?.template_id && (
           <div className={`flex items-center gap-3 px-4 py-2 border-b flex-shrink-0 transition-colors ${
-            selectedRole ? 'bg-green-50 dark:bg-gray-800 border-blue-100' : 'bg-amber-50 border-amber-100'
+            selectedRole ? 'bg-green-50 dark:bg-gray-800 border-emerald-100 dark:border-emerald-800' : 'bg-amber-50 border-amber-100'
           }`}>
             <Users size={14} className={selectedRole ? 'text-[#133221]' : 'text-amber-500'} />
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400 flex-shrink-0">Role:</span>
