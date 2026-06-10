@@ -42,7 +42,7 @@ interface AISettingsProps {
 export default function AISettings({ sessionId, onClose }: AISettingsProps) {
   const { token } = useAuth();
   const [settings, setSettings] = useState({
-    model: "gpt-4o-realtime-preview",
+    model: "gpt-realtime-2",
     voice: "alloy",
     temperature: 0.8,
     instructions: "",

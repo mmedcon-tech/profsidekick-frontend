@@ -80,7 +80,7 @@ export default function ClassCreation() {
         model: "whisper-1",
       },
       instructions: "",
-      model: "gpt-4o-realtime-preview-2024-12-17",
+      model: "gpt-realtime-2",
       output_audio_format: "pcm16",
       temperature: 0.8,
       tool_choice: "auto",
@@ -862,10 +862,10 @@ export default function ClassCreation() {
                   onChange={handleInputChange}
                   className="w-full input-style"
                 >
-                  <option value="gpt-4o-realtime-preview-2024-12-17">
+                  <option value="gpt-realtime-2">
                     GPT-4o Realtime (Recommended)
                   </option>
-                  <option value="gpt-4o-mini-realtime-preview-2024-12-17">
+                  <option value="gpt-realtime-mini">
                     GPT-4o Mini Realtime
                   </option>
                   <option value="gpt-realtime">GPT Realtime</option>

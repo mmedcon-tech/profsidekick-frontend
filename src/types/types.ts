@@ -43,7 +43,7 @@ export interface AssistantParameters {
     model: "gpt-4o-transcribe" | "gpt-4o-mini-transcribe" | "whisper-1";
   };
   instructions: string;
-  model: "gpt-4o-realtime-preview-2024-12-17" | "gpt-4o-mini-realtime-preview-2024-12-17" | "gpt-realtime";
+  model: "gpt-realtime-2" | "gpt-realtime-mini" | "gpt-realtime";
   output_audio_format: "pcm16" | "g711_ulaw" | "g711_alaw";
   temperature: number;
   tool_choice: "auto" | "none" | "required";
@@ -123,7 +123,7 @@ export interface ClassDetails {
       model: "gpt-4o-transcribe" | "gpt-4o-mini-transcribe" | "whisper-1";
     };
     instructions: string;
-    model: "gpt-4o-realtime-preview-2024-12-17" | "gpt-4o-mini-realtime-preview-2024-12-17" | "gpt-realtime";
+    model: "gpt-realtime-2" | "gpt-realtime-mini" | "gpt-realtime";
     output_audio_format: "pcm16" | "g711_ulaw" | "g711_alaw";
     temperature: number;
     tool_choice: "auto" | "none" | "required";

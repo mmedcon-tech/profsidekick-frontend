@@ -120,10 +120,6 @@ export default function FloatingAvatar(): React.ReactElement | null {
 
   const isOnline = HEYGEN_LIVE ? isConnected : true;
 
-  if (pathname?.includes('/run/')) {
-    return null;
-  }
-
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -405,6 +401,8 @@ export default function FloatingAvatar(): React.ReactElement | null {
       void stopAvatar();
     };
   }, [stopAvatar, stopBrowserVoice]);
+
+  if (pathname?.includes('/run/')) return null;
 
   const progressLabel =
     stats != null
