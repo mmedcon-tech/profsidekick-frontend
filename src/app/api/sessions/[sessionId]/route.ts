@@ -4,16 +4,22 @@ import { config } from '@/lib/config';
 export async function GET(request: NextRequest) {
   try {
     const sessionId = request.nextUrl.pathname.split('/').pop();
+    const authHeader = request.headers.get('authorization');
+
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (authHeader) headers['Authorization'] = authHeader;
 
     const response = await fetch(config.getApiUrl(`/api/sessions/${sessionId}`), {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+      const errorData = await response.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: errorData.detail ?? errorData.message ?? 'Session not found' },
+        { status: response.status },
+      );
     }
 
     const sessionData = await response.json();
@@ -28,12 +34,14 @@ export async function PATCH(request: NextRequest) {
   try {
     const sessionId = request.nextUrl.pathname.split('/').pop();
     const body = await request.json();
+    const authHeader = request.headers.get('authorization');
+
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (authHeader) headers['Authorization'] = authHeader;
 
     const response = await fetch(config.getApiUrl(`/api/sessions/${sessionId}`), {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(body),
     });
 
