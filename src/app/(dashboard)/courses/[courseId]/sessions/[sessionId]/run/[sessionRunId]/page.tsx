@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { TranscriptProvider } from "@/contexts/TranscriptContext";
 import { EventProvider } from "@/contexts/EventContext";
 import { StructuredTranscriptProvider } from "@/contexts/StructuredTranscriptContext";
@@ -29,7 +29,8 @@ export default async function SessionRunPage({ params }: { params: Promise<{ cou
   const sessionRunDetails = await getSessionRunDetails(sessionId, sessionRunId);
 
   if (!sessionRunDetails) {
-    notFound();
+    // If the user doesn't have access or the run doesn't exist, redirect back to the session page
+    redirect(`/courses/${courseId}/sessions/${sessionId}`);
   }
 
   return (

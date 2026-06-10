@@ -25,9 +25,9 @@ export default function LandingPage() {
   // Show spinner while auth check runs OR while redirect is in flight
   if (isLoading || isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#133221]/5 to-[#BA984E]/10 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133221] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -49,18 +49,18 @@ export default function LandingPage() {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <span className="text-2xl font-bold text-[#133221]">MyOS</span>
+              <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">MyOS</span>
             </div>
             
             <div className="flex items-center gap-3">
               {isAuthenticated ? (
                 <>
                   <span className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
-                    {user?.firstName} · <span className="capitalize font-medium text-[#0a1e13]">{user?.role}</span>
+                    {user?.firstName} · <span className="capitalize font-medium text-emerald-900 dark:text-emerald-300">{user?.role}</span>
                   </span>
                   <button
                     onClick={() => router.push('/dashboard')}
-                    className="bg-[#133221] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#0a1e13] transition-colors text-sm"
+                    className="bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors text-sm"
                   >
                     Dashboard
                   </button>
@@ -76,13 +76,13 @@ export default function LandingPage() {
                 <>
                   <button
                     onClick={() => router.push('/login')}
-                    className="text-[#133221] hover:text-[#0a1e13] font-medium transition-colors text-sm px-3 py-2"
+                    className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:text-emerald-300 font-medium transition-colors text-sm px-3 py-2"
                   >
                     Sign In
                   </button>
                   <button
                     onClick={() => router.push('/register')}
-                    className="bg-[#133221] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#0a1e13] transition-colors text-sm"
+                    className="bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors text-sm"
                   >
                     Get Started
                   </button>
@@ -94,11 +94,11 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-[#133221]/5 to-[#BA984E]/10 py-20">
+      <section className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-6">
-              Transform Your <span className="text-[#133221]">Teaching</span>
+              Transform Your <span className="text-emerald-700 dark:text-emerald-400">Teaching</span>
               <br />
               with AI-Powered Presentations
             </h1>
@@ -112,7 +112,7 @@ export default function LandingPage() {
                {isAuthenticated ? (
                  <button
                    onClick={() => router.push('/dashboard')}
-                   className="bg-[#133221] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#0a1e13] focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
+                   className="bg-emerald-600 dark:bg-emerald-700 text-white px-8 py-4 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
                  >
                    Go to Dashboard
                    <ArrowRight className="w-5 h-5" />
@@ -121,14 +121,14 @@ export default function LandingPage() {
                  <>
                    <button
                      onClick={() => router.push('/register')}
-                     className="bg-[#133221] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#0a1e13] focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
+                     className="bg-emerald-600 dark:bg-emerald-700 text-white px-8 py-4 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
                    >
                      Start Teaching for Free
                      <ArrowRight className="w-5 h-5" />
                    </button>
                    <button
                      onClick={() => router.push('/login')}
-                     className="bg-white dark:bg-gray-900 dark:bg-gray-800 text-[#133221] px-8 py-4 rounded-lg font-medium border border-[#133221] hover:bg-[#133221]/5 focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 transition-colors"
+                     className="bg-white dark:bg-gray-900 dark:bg-gray-800 text-emerald-700 dark:text-emerald-400 px-8 py-4 rounded-lg font-medium border border-emerald-600 dark:border-emerald-500 hover:bg-emerald-600 dark:bg-emerald-700/5 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
                    >
                      Sign In
                    </button>
@@ -138,7 +138,7 @@ export default function LandingPage() {
 
                          {/* Coming Soon Badge */}
              <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400">
-               <div className="bg-[#133221]/10 text-[#133221] px-4 py-2 rounded-full text-sm font-medium">
+               <div className="bg-emerald-600 dark:bg-emerald-700/10 text-emerald-700 dark:text-emerald-400 px-4 py-2 rounded-full text-sm font-medium">
                  🚀 Currently in Development
                </div>
              </div>
@@ -160,8 +160,8 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-[#133221]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <BookOpen className="w-8 h-8 text-[#133221]" />
+              <div className="w-16 h-16 bg-emerald-600 dark:bg-emerald-700/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <BookOpen className="w-8 h-8 text-emerald-700 dark:text-emerald-400" />
               </div>
               <h3 className="text-2xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Smart Content Analysis</h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -235,7 +235,7 @@ export default function LandingPage() {
                      <p className="text-gray-600 dark:text-gray-400 mb-6">Ready to create your next amazing teaching session?</p>
                      <button
                        onClick={() => router.push('/dashboard')}
-                       className="w-full bg-[#133221] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#0a1e13] transition-colors"
+                       className="w-full bg-emerald-600 dark:bg-emerald-700 text-white px-8 py-4 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
                      >
                        Go to Dashboard
                      </button>
@@ -246,7 +246,7 @@ export default function LandingPage() {
                      <p className="text-gray-600 dark:text-gray-400 mb-6">Be among the first educators to experience the future of AI-powered teaching.</p>
                      <button
                        onClick={() => router.push('/register')}
-                       className="w-full bg-[#133221] text-white px-8 py-4 rounded-lg font-medium hover:bg-[#0a1e13] transition-colors"
+                       className="w-full bg-emerald-600 dark:bg-emerald-700 text-white px-8 py-4 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
                      >
                        Create Free Account
                      </button>
@@ -286,7 +286,7 @@ export default function LandingPage() {
                     if (fallback) fallback.style.display = 'flex';
                   }}
                 />
-                <div className="w-24 h-24 bg-gradient-to-br from-[#133221]/80 to-[#133221] rounded-full items-center justify-center absolute top-0 left-0 hidden">
+                <div className="w-24 h-24 bg-gradient-to-br from-emerald-700 dark:from-emerald-600 to-emerald-800 dark:to-emerald-700 rounded-full items-center justify-center absolute top-0 left-0 hidden">
                   <span className="text-2xl font-bold text-white">AG</span>
                 </div>
               </div>
@@ -312,7 +312,7 @@ export default function LandingPage() {
                     if (fallback) fallback.style.display = 'flex';
                   }}
                 />
-                <div className="w-24 h-24 bg-gradient-to-br from-[#BA984E]/80 to-[#BA984E] rounded-full items-center justify-center absolute top-0 left-0 hidden">
+                <div className="w-24 h-24 bg-gradient-to-br from-yellow-500 dark:from-yellow-400 to-yellow-600 dark:to-yellow-500 rounded-full items-center justify-center absolute top-0 left-0 hidden">
                   <span className="text-2xl font-bold text-white">DR</span>
                 </div>
               </div>
@@ -337,7 +337,7 @@ export default function LandingPage() {
                     if (fallback) fallback.style.display = 'flex';
                   }}
                 />
-                <div className="w-24 h-24 bg-gradient-to-br from-[#BA984E]/80 to-[#BA984E] rounded-full items-center justify-center absolute top-0 left-0 hidden">
+                <div className="w-24 h-24 bg-gradient-to-br from-yellow-500 dark:from-yellow-400 to-yellow-600 dark:to-yellow-500 rounded-full items-center justify-center absolute top-0 left-0 hidden">
                   <span className="text-2xl font-bold text-white">DR</span>
                 </div>
               </div>
@@ -358,12 +358,12 @@ export default function LandingPage() {
                     if (fallback) fallback.style.display = 'flex';
                   }}
                 />
-                <div className="w-24 h-24 bg-gradient-to-br from-[#133221]/60 to-[#133221]/80 rounded-full items-center justify-center absolute top-0 left-0 hidden">
+                <div className="w-24 h-24 bg-gradient-to-br from-emerald-600 dark:from-emerald-500 to-emerald-800 dark:to-emerald-700/80 rounded-full items-center justify-center absolute top-0 left-0 hidden">
                   <span className="text-2xl font-bold text-white">AS</span>
                 </div>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Assylbek Saduakhassov</h3>
-              <p className="text-[#133221] font-medium mb-3">Software Engineer</p>
+              <p className="text-emerald-700 dark:text-emerald-400 font-medium mb-3">Software Engineer</p>
             </div>
           </div>
         </div>
@@ -421,3 +421,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+

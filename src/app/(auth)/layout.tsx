@@ -5,7 +5,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen flex w-full">
       {/* Left Pane - Dark Green */}
-      <div className="hidden lg:flex w-1/2 bg-[#133221] relative flex-col justify-between p-12 text-white">
+      <div className="hidden lg:flex w-1/2 bg-emerald-600 dark:bg-emerald-700 relative flex-col justify-between p-12 text-white">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0a1e13] opacity-80 pointer-events-none"></div>
         
         {/* Header row */}
@@ -33,7 +33,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Right Pane - White */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-[#FAFAFA] dark:bg-gray-900 p-8 sm:p-12 lg:p-24 overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gradient-to-br from-emerald-50 to-green-100 dark:bg-gray-900 p-8 sm:p-12 lg:p-24 overflow-y-auto">
         <div className="w-full max-w-md">
           {children}
         </div>
@@ -41,3 +41,5 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
+
+

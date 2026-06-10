@@ -126,7 +126,7 @@ export default function PublisherDashboard() {
               <Link
                 key={a.id}
                 href={avatarHref(a)}
-                className="group block p-5 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-blue-400 hover:shadow-md transition-all"
+                className="group block p-5 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-[#133221] hover:shadow-md transition-all"
               >
                 <div className="flex items-start justify-between mb-3">
                   <AvatarIcon imageUrl={a.template_image_url} name={a.name} size={44} rounded="lg" />
