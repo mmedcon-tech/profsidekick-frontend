@@ -34,7 +34,7 @@ export default function SessionAvatar({
   avatarConfig,
   audioElement,
   videoRef,
-  isDocked = false,
+  isDocked = true,
   onDockToggle,
   onAvatarModeChange,
   isMicMuted,

@@ -83,7 +83,7 @@ export default function LearningInterface({
   const sessionAvatarRef = useRef<SessionAvatarConfig>(
     avatarConfig ?? DEFAULT_SESSION_AVATAR,
   );
-  const [isAvatarDocked, setIsAvatarDocked] = useState(false);
+  const [isAvatarDocked, setIsAvatarDocked] = useState(true);
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
   const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
