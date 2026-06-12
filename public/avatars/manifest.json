@@ -1,6 +1,6 @@
 {
   "version": 6,
-  "description": "Portrait heroes use Emirati-style references. 3D rigs are Avaturn (Salama) and AvatarSDK (Sultan) until licensed thobe GLBs are installed.",
+  "description": "Portrait heroes use Emirati-style references. Sultan 3D uses AvatarSDK until you install a licensed thobe GLB via scripts/install-sultan-glb.sh.",
   "avatars": [
     {
       "id": "avatar-1",

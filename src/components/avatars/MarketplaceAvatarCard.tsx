@@ -7,6 +7,8 @@ import AvatarIcon from '@/components/avatars/AvatarIcon';
 import type { AvatarPublicResponse } from '@/types/avatar';
 import {
   buildDeliveryModeChips,
+  formatMarketplaceStat,
+  isPlatformLibraryAvatar,
   marketplaceStats,
   resolveMarketplaceGlbUrl,
 } from '@/lib/marketplaceUtils';
@@ -25,6 +27,9 @@ export default function MarketplaceAvatarCard({
   const enrolled = !!avatar.is_enrolled;
   const glbUrl = resolveMarketplaceGlbUrl(avatar);
   const isGlb = avatar.render_type === 'glb' || !!glbUrl;
+  const detailHref = isPlatformLibraryAvatar(avatar)
+    ? `/subscriber/marketplace/glb/${avatar.glb_library_id ?? avatar.id}`
+    : `/subscriber/marketplace/${avatar.id}`;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:border-[#133221] hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
@@ -58,7 +63,7 @@ export default function MarketplaceAvatarCard({
             </h3>
             <span className="flex items-center gap-1 text-xs font-semibold text-amber-600">
               <Star size={12} className="fill-amber-400 text-amber-400" />
-              {stats.rating.toFixed(1)}
+              {stats.rating != null ? stats.rating.toFixed(1) : '—'}
             </span>
           </div>
 
@@ -69,17 +74,23 @@ export default function MarketplaceAvatarCard({
           <div className="mb-3 grid grid-cols-3 gap-2 text-center text-[10px] text-gray-500">
             <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
               <BookOpen size={12} className="mx-auto mb-0.5 text-[#133221]" />
-              <div className="font-semibold text-gray-800 dark:text-gray-200">{stats.courseCount}</div>
+              <div className="font-semibold text-gray-800 dark:text-gray-200">
+                {formatMarketplaceStat(stats.courseCount)}
+              </div>
               <div>courses</div>
             </div>
             <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
               <Users size={12} className="mx-auto mb-0.5 text-[#133221]" />
-              <div className="font-semibold text-gray-800 dark:text-gray-200">{stats.subscriberCount}</div>
+              <div className="font-semibold text-gray-800 dark:text-gray-200">
+                {formatMarketplaceStat(stats.subscriberCount)}
+              </div>
               <div>learners</div>
             </div>
             <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
               <Coins size={12} className="mx-auto mb-0.5 text-[#133221]" />
-              <div className="font-semibold text-gray-800 dark:text-gray-200">{stats.creditsPerSession}</div>
+              <div className="font-semibold text-gray-800 dark:text-gray-200">
+                {formatMarketplaceStat(stats.creditsPerSession)}
+              </div>
               <div>credits</div>
             </div>
           </div>
@@ -102,14 +113,14 @@ export default function MarketplaceAvatarCard({
 
           <div className="flex gap-2">
             <Link
-              href={`/subscriber/marketplace/${avatar.id}`}
+              href={detailHref}
               className={`flex-1 rounded-xl px-3 py-2.5 text-center text-sm font-semibold transition-colors ${
                 enrolled
                   ? 'bg-[#133221] text-white hover:bg-[#0a1e13]'
                   : 'border border-[#133221] text-[#133221] hover:bg-[#133221]/5'
               }`}
             >
-              {enrolled ? 'View Sessions' : 'Enroll'}
+              {enrolled ? 'Already Enrolled' : 'Enroll'}
             </Link>
             {isGlb && onPreviewGlb && (
               <button

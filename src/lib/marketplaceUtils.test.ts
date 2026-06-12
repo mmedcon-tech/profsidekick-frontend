@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildDeliveryModeChips,
+  formatMarketplaceStat,
   mergeEnrollmentState,
+  marketplaceStats,
   resolveMarketplaceGlbUrl,
 } from './marketplaceUtils';
 import type { AvatarPublicResponse } from '@/types/avatar';
@@ -22,10 +24,24 @@ describe('marketplaceUtils', () => {
     expect(merged[0]?.is_enrolled).toBe(true);
   });
 
-  it('builds language/voice chips with defaults', () => {
-    const chips = buildDeliveryModeChips(baseAvatar);
-    expect(chips).toContain('AR · shimmer');
-    expect(chips).toContain('EN · shimmer');
+  it('builds language/voice chips from library metadata when backend omits them', () => {
+    const chips = buildDeliveryModeChips({
+      ...baseAvatar,
+      glb_library_id: 'avatar-1',
+    });
+    expect(chips).toContain('AR · marin');
+    expect(chips).toContain('EN · marin');
+  });
+
+  it('returns null stats when backend omits values', () => {
+    const stats = marketplaceStats(baseAvatar);
+    expect(stats.rating).toBeNull();
+    expect(stats.courseCount).toBeNull();
+  });
+
+  it('formats missing stats as em dash', () => {
+    expect(formatMarketplaceStat(null)).toBe('—');
+    expect(formatMarketplaceStat(4)).toBe('4');
   });
 
   it('resolves glb preview url from library id', () => {

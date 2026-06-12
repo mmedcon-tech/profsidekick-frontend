@@ -39,12 +39,24 @@ export default function MarketplacePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = avatars.filter((a) =>
-    !query ||
-    a.name.toLowerCase().includes(query.toLowerCase()) ||
-    (a.description || '').toLowerCase().includes(query.toLowerCase()) ||
-    (a.tagline || '').toLowerCase().includes(query.toLowerCase()),
+  const platformLibraryIds = useMemo(
+    () => new Set(libraryEntries.map((entry) => entry.id)),
+    [libraryEntries],
   );
+
+  const filtered = avatars
+    .filter(
+      (avatar) =>
+        !platformLibraryIds.has(avatar.id) &&
+        !platformLibraryIds.has(avatar.glb_library_id ?? ''),
+    )
+    .filter(
+      (avatar) =>
+        !query ||
+        avatar.name.toLowerCase().includes(query.toLowerCase()) ||
+        (avatar.description || '').toLowerCase().includes(query.toLowerCase()) ||
+        (avatar.tagline || '').toLowerCase().includes(query.toLowerCase()),
+    );
 
   const openAvatarPreview = (item: AvatarPublicResponse | AvatarLibraryEntry) => {
     setPreviewAvatar(item);

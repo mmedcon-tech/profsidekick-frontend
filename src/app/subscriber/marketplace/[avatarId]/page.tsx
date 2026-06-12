@@ -6,9 +6,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { marketplaceApi } from '@/lib/avatarApi';
 import { config } from '@/lib/config';
 import { subscriptionApi } from '@/lib/avatarApi';
-import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
+import AvatarShowcase from '@/components/avatar/AvatarShowcase';
 import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
 import { useSpeechPreview } from '@/hooks/useSpeechPreview';
+import {
+  avatarSupportsGlbShowcase,
+  buildShowcaseEntryFromAvatar,
+} from '@/lib/marketplaceShowcase';
+import { isPlatformLibraryAvatarId } from '@/lib/marketplaceUtils';
 import type { AvatarPublicResponse } from '@/types/avatar';
 import { ArrowLeft, Calendar, Play, Clock, Square, Upload, Info, Volume2 } from 'lucide-react';
 
@@ -38,6 +43,11 @@ export default function SubscriberAvatarDetailPage() {
   const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
+    if (isPlatformLibraryAvatarId(avatarId)) {
+      router.replace(`/subscriber/marketplace/glb/${avatarId}`);
+      return;
+    }
+
     Promise.all([
       marketplaceApi.get(avatarId),
       fetch(config.getApiUrl(`/api/sessions?avatar_id=${avatarId}&limit=20`), {
@@ -48,12 +58,11 @@ export default function SubscriberAvatarDetailPage() {
         .catch(() => []),
       token ? subscriptionApi.checkStatus(avatarId).catch(() => ({ subscribed: false })) : Promise.resolve({ subscribed: false }),
     ])
-      .then(([av, sess, subStatus]) => { setAvatar(av); setSessions(sess); setIsSubscribed((subStatus as any).subscribed); })
+      .then(([av, sess, subStatus]) => { setAvatar(av); setSessions(sess); setIsSubscribed((subStatus as { subscribed: boolean }).subscribed); })
       .catch((e) => setError(e.message ?? 'Failed to load'))
       .finally(() => setLoading(false));
-  }, [avatarId, token]);
+  }, [avatarId, token, router]);
 
-  
   const handleSubscribe = async () => {
     if (!token) { router.push('/login'); return; }
     setSubscribing(true);
@@ -91,16 +100,17 @@ export default function SubscriberAvatarDetailPage() {
     }
   };
 
-  const libraryEntry = useMemo(
-    () => (avatar?.glb_library_id ? getAvatarLibraryEntry(avatar.glb_library_id) : undefined),
-    [avatar?.glb_library_id],
+  const showcaseEntry = useMemo(
+    () => (avatar ? buildShowcaseEntryFromAvatar(avatar) : null),
+    [avatar],
   );
   const speechPreview = useSpeechPreview(avatar?.name ?? 'Assistant');
   const portraitUrl =
     avatar?.template_image_url ??
-    libraryEntry?.thumbnailPath ??
+    showcaseEntry?.thumbnailPath ??
     '/images/avatar-female.png';
-  const showPortraitPreview = !!(avatar?.template_image_url || libraryEntry || avatar?.render_type === 'glb');
+  const hasGlbShowcase = !!(avatar && avatarSupportsGlbShowcase(avatar) && showcaseEntry);
+  const hasPortraitOnly = !!(avatar?.template_image_url && !hasGlbShowcase);
   const widgetState = speechPreview.active ? 'speaking' as const : 'idle' as const;
 
   if (loading) {
@@ -124,16 +134,22 @@ export default function SubscriberAvatarDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <Link href="/subscriber/marketplace"
         className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Marketplace
       </Link>
 
-      <div className={`grid gap-6 ${showPortraitPreview ? 'lg:grid-cols-2' : ''}`}>
-        {showPortraitPreview && (
+      <div className={`grid gap-6 ${hasGlbShowcase || hasPortraitOnly ? 'lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]' : ''}`}>
+        {hasGlbShowcase && showcaseEntry && (
+          <div className="overflow-hidden rounded-3xl border border-gray-200 shadow-lg dark:border-gray-700">
+            <AvatarShowcase entry={showcaseEntry} className="min-h-[520px]" />
+          </div>
+        )}
+
+        {hasPortraitOnly && (
           <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-lg dark:border-gray-700">
-            <div className="aspect-[4/5]">
+            <div className="min-h-[520px]">
               <PortraitAvatarStage
                 imageUrl={portraitUrl}
                 avatarName={avatar.name}
@@ -201,7 +217,6 @@ export default function SubscriberAvatarDetailPage() {
         </div>
       </div>
 
-      {/* Available sessions */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Available Sessions</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -245,7 +260,6 @@ export default function SubscriberAvatarDetailPage() {
         )}
       </div>
 
-      {/* Solution upload note */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-3">
         <Upload size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
         <div className="text-sm text-amber-800">
@@ -256,7 +270,6 @@ export default function SubscriberAvatarDetailPage() {
         </div>
       </div>
 
-      {/* Mic note */}
       <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-4 flex items-start gap-3">
         <Info size={16} className="text-emerald-700 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-emerald-800 dark:text-emerald-300">
