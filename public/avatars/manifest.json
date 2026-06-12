@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "description": "MyOS v2 curated GLB library. avatar-1 and avatar-2 are Ready Player Me rigs with ARKit/Oculus viseme morph targets. Swap avatar-2 for a custom Emirati thobe model from CGTrader/Magnific when licensed.",
+  "version": 6,
+  "description": "Portrait heroes use Emirati-style references. 3D rigs are Avaturn (Salama) and AvatarSDK (Sultan) until licensed thobe GLBs are installed.",
   "avatars": [
     {
       "id": "avatar-1",
@@ -9,8 +9,14 @@
       "languages": ["ar", "en"],
       "glbPath": "/avatars/avatar-1.glb",
       "thumbnailPath": "/images/avatar-female.png",
+      "tagline": "Professional Arabic & English tutor",
+      "description": "Warm, articulate teaching persona — abaya & shayla portrait style for UAE learners.",
       "tags": ["leadership", "professional", "glb"],
-      "source": "Ready Player Me sample (TalkingHead/brunette.glb) — ARKit + Oculus visemes",
+      "source": "Avaturn realistic female rig (TalkingHead) · ARKit visemes",
+      "recommendedModelUrl": "https://www.cgtrader.com/search?keywords=arab-woman",
+      "previewFraming": "full",
+      "previewFitMargin": 1.02,
+      "previewModelScale": 1.18,
       "lipSync": {
         "morphTargets": [
           "mouthOpen",
@@ -31,8 +37,14 @@
       "languages": ["ar", "en"],
       "glbPath": "/avatars/avatar-2.glb",
       "thumbnailPath": "/images/avatar-male.png",
+      "tagline": "Emirati male instructor · Arabic & English",
+      "description": "Confident mentor with kandura & ghutra styling — approachable leadership and cross-cultural learning.",
       "tags": ["leadership", "professional", "glb"],
-      "source": "Ready Player Me masculine half-body (readyplayerme/visage public/half-body.glb) — ARKit + Oculus visemes",
+      "source": "AvatarSDK male rig (TalkingHead) · target look: RPM Emirati ghutra reference",
+      "recommendedModelUrl": "https://sketchfab.com/3d-models/arab-man-rigged-0f87f4c0885346ad8f99ba5ccafd153e",
+      "previewFraming": "full",
+      "previewFitMargin": 1.0,
+      "previewModelScale": 1.22,
       "lipSync": {
         "morphTargets": [
           "mouthOpen",
@@ -44,21 +56,6 @@
         ],
         "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
         "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"]
-      }
-    },
-    {
-      "id": "avatar-3",
-      "name": "Expert Bot",
-      "gender": "neutral",
-      "languages": ["en"],
-      "glbPath": "/avatars/avatar-3.glb",
-      "thumbnailPath": "/images/avatar-male.png",
-      "tags": ["demo", "glb"],
-      "source": "RobotExpressive (three.js example) — morph expression demo",
-      "lipSync": {
-        "morphTargets": ["Surprised", "Angry", "Sad"],
-        "blinkTargets": [],
-        "jawBones": []
       }
     }
   ]

@@ -19,7 +19,6 @@ export default function MarketplacePage() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [previewAvatar, setPreviewAvatar] = useState<AvatarPublicResponse | AvatarLibraryEntry | null>(null);
-  const [previewGlbUrl, setPreviewGlbUrl] = useState<string | null>(null);
 
   const libraryEntries = useMemo(() => getAvatarLibrary().avatars, []);
 
@@ -47,9 +46,8 @@ export default function MarketplacePage() {
     (a.tagline || '').toLowerCase().includes(query.toLowerCase()),
   );
 
-  const openGlbPreview = (item: AvatarPublicResponse | AvatarLibraryEntry, url?: string) => {
+  const openAvatarPreview = (item: AvatarPublicResponse | AvatarLibraryEntry) => {
     setPreviewAvatar(item);
-    setPreviewGlbUrl(url ?? ('glbPath' in item ? item.glbPath : null));
   };
 
   return (
@@ -78,9 +76,9 @@ export default function MarketplacePage() {
       <div>
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">3D GLB Avatar Library</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Featured Teaching Avatars</h2>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Local rigged models with lip-sync — linked to backend upload when ready.
+              Salama and Sultan — portrait photos plus 3D models with on-demand speech preview.
             </p>
           </div>
         </div>
@@ -89,7 +87,7 @@ export default function MarketplacePage() {
             <GlbLibraryCard
               key={entry.id}
               entry={entry}
-              onPreview={(e) => openGlbPreview(e, e.glbPath)}
+              onPreview={openAvatarPreview}
             />
           ))}
         </div>
@@ -137,7 +135,7 @@ export default function MarketplacePage() {
               <MarketplaceAvatarCard
                 key={avatar.id}
                 avatar={avatar}
-                onPreviewGlb={(a) => openGlbPreview(a)}
+                onPreviewGlb={openAvatarPreview}
               />
             ))}
           </div>
@@ -146,12 +144,8 @@ export default function MarketplacePage() {
 
       <MarketplaceAvatarPreviewModal
         avatar={previewAvatar}
-        glbUrl={previewGlbUrl}
         open={!!previewAvatar}
-        onClose={() => {
-          setPreviewAvatar(null);
-          setPreviewGlbUrl(null);
-        }}
+        onClose={() => setPreviewAvatar(null)}
       />
     </div>
   );

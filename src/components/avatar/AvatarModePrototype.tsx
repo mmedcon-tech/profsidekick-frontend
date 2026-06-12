@@ -52,7 +52,15 @@ export default function AvatarModePrototype(): React.ReactElement {
 
   const config: SessionAvatarConfig =
     mode === 'glb'
-      ? { ...DEMO_CONFIGS.glb, glbLibraryId, avatarName: glbLibraryId === 'avatar-1' ? 'Salama' : 'Sultan' }
+      ? {
+          ...DEMO_CONFIGS.glb,
+          glbLibraryId,
+          avatarName: glbLibraryId === 'avatar-1' ? 'Salama' : 'Sultan',
+          imageUrl:
+            glbLibraryId === 'avatar-1'
+              ? '/images/avatar-female.png'
+              : '/images/avatar-male.png',
+        }
       : DEMO_CONFIGS[mode];
   const isSpeaking = widgetState === 'speaking';
   const isListening = widgetState === 'listening';
@@ -149,8 +157,7 @@ export default function AvatarModePrototype(): React.ReactElement {
             <code className="text-[10px]">NEXT_PUBLIC_HEYGEN_ENABLED=true</code>.
           </li>
           <li>
-            <strong>GLB</strong> — local 3D library in <code className="text-[10px]">public/avatars/</code>;
-            lip-sync driven by session audio amplitude. Replace placeholders with Emirati GLBs.
+            <strong>GLB</strong> — realistic portrait persona; lip-sync only while the AI is speaking in a live session.
           </li>
         </ul>
       </div>

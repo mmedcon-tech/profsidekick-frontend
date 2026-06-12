@@ -2,20 +2,27 @@ import { describe, expect, it } from 'vitest';
 import {
   getAvatarLibrary,
   getAvatarLibraryEntry,
+  getAvatarLibraryEntryByName,
   resolveGlbUrl,
 } from './avatarLibrary';
 
 describe('avatarLibrary', () => {
-  it('loads manifest with three avatars including lip-sync hints', () => {
+  it('loads manifest with featured avatars including lip-sync hints', () => {
     const library = getAvatarLibrary();
-    expect(library.avatars.length).toBeGreaterThanOrEqual(3);
+    expect(library.avatars.length).toBeGreaterThanOrEqual(2);
     expect(library.avatars[0]?.lipSync.blinkTargets?.length).toBeGreaterThan(0);
+    expect(library.avatars[0]?.thumbnailPath).toContain('/images/');
   });
 
   it('resolves library entry by id', () => {
     const entry = getAvatarLibraryEntry('avatar-1');
     expect(entry?.name).toBe('Salama');
     expect(entry?.glbPath).toBe('/avatars/avatar-1.glb');
+  });
+
+  it('resolves library entry by name', () => {
+    expect(getAvatarLibraryEntryByName('Sultan')?.gender).toBe('male');
+    expect(getAvatarLibraryEntryByName('Salama')?.gender).toBe('female');
   });
 
   it('prefers explicit model URL over library id', () => {

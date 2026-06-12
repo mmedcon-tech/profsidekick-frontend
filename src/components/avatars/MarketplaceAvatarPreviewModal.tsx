@@ -2,54 +2,68 @@
 
 import React from 'react';
 import { X } from 'lucide-react';
-import dynamic from 'next/dynamic';
+import AvatarShowcase from '@/components/avatar/AvatarShowcase';
 import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
-import { resolveMarketplaceGlbUrl } from '@/lib/marketplaceUtils';
 import type { AvatarPublicResponse } from '@/types/avatar';
 import type { AvatarLibraryEntry } from '@/lib/avatarLibrary';
 
-const GlbAvatarPreview = dynamic(
-  () => import('@/components/avatar/GlbAvatarPreview'),
-  { ssr: false },
-);
-
 interface MarketplaceAvatarPreviewModalProps {
   avatar: AvatarPublicResponse | AvatarLibraryEntry | null;
-  glbUrl?: string | null;
   open: boolean;
   onClose: () => void;
 }
 
 export default function MarketplaceAvatarPreviewModal({
   avatar,
-  glbUrl,
   open,
   onClose,
 }: MarketplaceAvatarPreviewModalProps): React.ReactElement | null {
   if (!open || !avatar) return null;
 
   const name = 'name' in avatar ? avatar.name : '';
-  const resolvedUrl =
-    glbUrl ??
-    ('glb_preview_url' in avatar ? resolveMarketplaceGlbUrl(avatar as AvatarPublicResponse) : null) ??
-    ('glbPath' in avatar ? avatar.glbPath : null);
-
   const libraryEntry =
     'glb_library_id' in (avatar as AvatarPublicResponse)
       ? getAvatarLibraryEntry((avatar as AvatarPublicResponse).glb_library_id ?? '')
       : 'lipSync' in avatar
-      ? (avatar as AvatarLibraryEntry)
-      : undefined;
+        ? (avatar as AvatarLibraryEntry)
+        : undefined;
 
-  const lipSyncHints = libraryEntry?.lipSync;
+  const thumbnail =
+    libraryEntry?.thumbnailPath ??
+    ('thumbnailPath' in avatar ? avatar.thumbnailPath : undefined) ??
+    ('template_image_url' in avatar ? (avatar as AvatarPublicResponse).template_image_url : undefined);
+
+  if (!libraryEntry && !thumbnail) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="rounded-2xl bg-white p-8 text-center dark:bg-gray-900">
+          <p className="text-sm text-gray-500">Preview not available yet.</p>
+          <button type="button" onClick={onClose} className="mt-4 text-sm text-[#133221]">
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const showcaseEntry: AvatarLibraryEntry = libraryEntry ?? {
+    id: 'preview',
+    name,
+    gender: 'neutral',
+    languages: [],
+    tags: [],
+    glbPath: '/avatars/avatar-1.glb',
+    thumbnailPath: thumbnail ?? '/images/avatar-female.png',
+    lipSync: { morphTargets: [], blinkTargets: [], jawBones: [] },
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100">{name}</h3>
-            <p className="text-xs text-gray-500">3D preview · idle motion + demo lip-sync</p>
+            <p className="text-xs text-gray-500">Portrait or 3D · speech on demand</p>
           </div>
           <button
             type="button"
@@ -60,19 +74,8 @@ export default function MarketplaceAvatarPreviewModal({
           </button>
         </div>
 
-        <div className="aspect-[4/5] bg-gray-950">
-          {resolvedUrl ? (
-            <GlbAvatarPreview
-              glbUrl={resolvedUrl}
-              lipSyncHints={lipSyncHints}
-              demoSpeech
-              showControls
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-gray-400">
-              No GLB model linked yet.
-            </div>
-          )}
+        <div className="min-h-[520px]">
+          <AvatarShowcase entry={showcaseEntry} className="min-h-[520px]" defaultTab="portrait" />
         </div>
       </div>
     </div>

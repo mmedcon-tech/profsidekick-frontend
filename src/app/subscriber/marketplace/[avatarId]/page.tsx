@@ -2,20 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { marketplaceApi } from '@/lib/avatarApi';
 import { config } from '@/lib/config';
 import { subscriptionApi } from '@/lib/avatarApi';
 import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
-import { resolveMarketplaceGlbUrl } from '@/lib/marketplaceUtils';
+import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
+import { useSpeechPreview } from '@/hooks/useSpeechPreview';
 import type { AvatarPublicResponse } from '@/types/avatar';
-import { ArrowLeft, Calendar, Play, Clock, Upload, Info } from 'lucide-react';
-
-const GlbAvatarPreview = dynamic(
-  () => import('@/components/avatar/GlbAvatarPreview'),
-  { ssr: false },
-);
+import { ArrowLeft, Calendar, Play, Clock, Square, Upload, Info, Volume2 } from 'lucide-react';
 
 interface PublicSession {
   sessionId: string;
@@ -96,12 +91,17 @@ export default function SubscriberAvatarDetailPage() {
     }
   };
 
-  const glbUrl = avatar ? resolveMarketplaceGlbUrl(avatar) : null;
   const libraryEntry = useMemo(
     () => (avatar?.glb_library_id ? getAvatarLibraryEntry(avatar.glb_library_id) : undefined),
     [avatar?.glb_library_id],
   );
-  const showGlbPreview = !!(glbUrl || avatar?.render_type === 'glb');
+  const speechPreview = useSpeechPreview(avatar?.name ?? 'Assistant');
+  const portraitUrl =
+    avatar?.template_image_url ??
+    libraryEntry?.thumbnailPath ??
+    '/images/avatar-female.png';
+  const showPortraitPreview = !!(avatar?.template_image_url || libraryEntry || avatar?.render_type === 'glb');
+  const widgetState = speechPreview.active ? 'speaking' as const : 'idle' as const;
 
   if (loading) {
     return (
@@ -130,16 +130,37 @@ export default function SubscriberAvatarDetailPage() {
         <ArrowLeft size={16} /> Marketplace
       </Link>
 
-      <div className={`grid gap-6 ${showGlbPreview ? 'lg:grid-cols-2' : ''}`}>
-        {showGlbPreview && glbUrl && (
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-950 shadow-lg dark:border-gray-700">
+      <div className={`grid gap-6 ${showPortraitPreview ? 'lg:grid-cols-2' : ''}`}>
+        {showPortraitPreview && (
+          <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-lg dark:border-gray-700">
             <div className="aspect-[4/5]">
-              <GlbAvatarPreview
-                glbUrl={glbUrl}
-                lipSyncHints={libraryEntry?.lipSync}
-                demoSpeech
-                showControls
+              <PortraitAvatarStage
+                imageUrl={portraitUrl}
+                avatarName={avatar.name}
+                widgetState={widgetState}
+                amplitude={speechPreview.amplitude}
               />
+            </div>
+            <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+              <button
+                type="button"
+                onClick={speechPreview.toggle}
+                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-md transition-colors ${
+                  speechPreview.active
+                    ? 'bg-white text-[#133221]'
+                    : 'bg-[#133221] text-white'
+                }`}
+              >
+                {speechPreview.active ? (
+                  <>
+                    <Square size={12} /> Stop preview
+                  </>
+                ) : (
+                  <>
+                    <Volume2 size={12} /> Preview how they talk
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}

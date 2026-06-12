@@ -13,8 +13,14 @@ export interface AvatarLibraryEntry {
   languages: string[];
   glbPath: string;
   thumbnailPath: string;
+  tagline?: string;
+  description?: string;
   tags: string[];
   source?: string;
+  recommendedModelUrl?: string;
+  previewFraming?: 'bust' | 'full';
+  previewFitMargin?: number;
+  previewModelScale?: number;
   lipSync: AvatarLibraryLipSyncHints;
 }
 
@@ -32,6 +38,12 @@ export function getAvatarLibrary(): AvatarLibraryManifest {
 
 export function getAvatarLibraryEntry(id: string): AvatarLibraryEntry | undefined {
   return library.avatars.find((entry) => entry.id === id);
+}
+
+export function getAvatarLibraryEntryByName(name: string): AvatarLibraryEntry | undefined {
+  return library.avatars.find(
+    (entry) => entry.name.toLowerCase() === name.toLowerCase(),
+  );
 }
 
 export function resolveGlbUrl(modelUrl?: string | null, libraryId?: string | null): string {

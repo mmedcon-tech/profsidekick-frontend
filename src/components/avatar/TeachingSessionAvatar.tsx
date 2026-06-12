@@ -1,12 +1,11 @@
 'use client';
 
 import React from 'react';
-import GlbAvatarPreview from '@/components/avatar/GlbAvatarPreview';
+import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
 import StaticAvatarWidget from '@/components/avatar/StaticAvatarWidget';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
-import { useSimulatedAmplitude } from '@/hooks/useSimulatedAmplitude';
 import { useTalkingHeadsAvatar } from '@/hooks/useTalkingHeadsAvatar';
-import { getAvatarLibraryEntry, resolveGlbUrl } from '@/lib/avatarLibrary';
+import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import type { SessionAvatarConfig } from '@/types/types';
 
@@ -32,38 +31,27 @@ export default function TeachingSessionAvatar({
   });
   const isSpeakingActive = widgetState === 'speaking' && isConnected;
   const audioAmplitude = useAudioAmplitude(audioElement, isSpeakingActive);
-  const simulatedAmplitude = useSimulatedAmplitude(
-    config.renderType === 'glb' && isSpeakingActive && audioAmplitude < 0.02,
-  );
-  const amplitude = Math.max(audioAmplitude, simulatedAmplitude);
   const talkingHeads = useTalkingHeadsAvatar(config, isConnected);
+
+  const libraryEntry = config.glbLibraryId
+    ? getAvatarLibraryEntry(config.glbLibraryId)
+    : undefined;
 
   const imageUrl =
     config.imageUrl ??
-    (process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE
-      ? '/images/avatar-female.png'
-      : '/images/avatar-male.png');
+    libraryEntry?.thumbnailPath ??
+    (config.glbLibraryId === 'avatar-2'
+      ? '/images/avatar-male.png'
+      : '/images/avatar-female.png');
 
   if (config.renderType === 'glb') {
-    const libraryEntry = config.glbLibraryId
-      ? getAvatarLibraryEntry(config.glbLibraryId)
-      : undefined;
-    const glbUrl = resolveGlbUrl(
-      config.glbModelUrl,
-      config.glbLibraryId ?? libraryEntry?.id ?? 'avatar-1',
-    );
-
     return (
       <div className="flex h-full w-full flex-col bg-gray-900">
-        <GlbAvatarPreview
-          glbUrl={glbUrl}
-          amplitude={widgetState === 'speaking' ? amplitude : 0}
-          lipSyncHints={{
-            morphTargets: libraryEntry?.lipSync.morphTargets,
-            blinkTargets: libraryEntry?.lipSync.blinkTargets,
-            jawBones: libraryEntry?.lipSync.jawBones,
-          }}
-          showControls={false}
+        <PortraitAvatarStage
+          imageUrl={imageUrl}
+          avatarName={config.avatarName}
+          widgetState={widgetState}
+          amplitude={isSpeakingActive ? audioAmplitude : 0}
         />
       </div>
     );
@@ -75,7 +63,7 @@ export default function TeachingSessionAvatar({
         imageUrl={imageUrl}
         avatarName={config.avatarName}
         widgetState={widgetState}
-        amplitude={amplitude}
+        amplitude={isSpeakingActive ? audioAmplitude : 0}
         size={200}
         variant={config.renderType === 'talkingheads' ? 'talkingheads' : 'static'}
       />
