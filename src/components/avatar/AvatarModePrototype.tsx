@@ -22,6 +22,12 @@ const DEMO_CONFIGS: Record<AvatarRenderType, SessionAvatarConfig> = {
     heygenAvatarId: 'demo_avatar_id',
     imageUrl: '/images/avatar-female.png',
   },
+  glb: {
+    renderType: 'glb',
+    avatarName: 'Salama',
+    glbLibraryId: 'avatar-1',
+    imageUrl: '/images/avatar-female.png',
+  },
 };
 
 /**
@@ -29,18 +35,25 @@ const DEMO_CONFIGS: Record<AvatarRenderType, SessionAvatarConfig> = {
  * Lets the team preview static / talkingheads / heygen before backend wiring.
  */
 export default function AvatarModePrototype(): React.ReactElement {
-  const [mode, setMode] = useState<AvatarRenderType>('static');
+  const [mode, setMode] = useState<AvatarRenderType>('glb');
+  const [glbLibraryId, setGlbLibraryId] = useState<'avatar-1' | 'avatar-2'>('avatar-1');
   const [widgetState, setWidgetState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    audioRef.current = new Audio();
+    const audio = new Audio();
+    audio.loop = true;
+    audioRef.current = audio;
     return () => {
+      audio.pause();
       audioRef.current = null;
     };
   }, []);
 
-  const config = DEMO_CONFIGS[mode];
+  const config: SessionAvatarConfig =
+    mode === 'glb'
+      ? { ...DEMO_CONFIGS.glb, glbLibraryId, avatarName: glbLibraryId === 'avatar-1' ? 'Salama' : 'Sultan' }
+      : DEMO_CONFIGS[mode];
   const isSpeaking = widgetState === 'speaking';
   const isListening = widgetState === 'listening';
 
@@ -57,7 +70,7 @@ export default function AvatarModePrototype(): React.ReactElement {
       </header>
 
       <div className="flex flex-wrap justify-center gap-2">
-        {(['static', 'talkingheads', 'heygen'] as const).map((type) => (
+        {(['static', 'talkingheads', 'heygen', 'glb'] as const).map((type) => (
           <button
             key={type}
             type="button"
@@ -72,6 +85,25 @@ export default function AvatarModePrototype(): React.ReactElement {
           </button>
         ))}
       </div>
+
+      {mode === 'glb' && (
+        <div className="flex flex-wrap justify-center gap-2">
+          {(['avatar-1', 'avatar-2'] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setGlbLibraryId(id)}
+              className={`rounded-lg border px-3 py-1.5 text-xs ${
+                glbLibraryId === id
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                  : 'border-gray-200 text-gray-600'
+              }`}
+            >
+              {id === 'avatar-1' ? 'Salama (avatar-1)' : 'Sultan (avatar-2)'}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap justify-center gap-2">
         {(['idle', 'listening', 'speaking'] as const).map((state) => (
@@ -115,6 +147,10 @@ export default function AvatarModePrototype(): React.ReactElement {
             <strong>HeyGen</strong> — realistic video (~$1/min); paused until{' '}
             <code className="text-[10px]">HEYGEN_API_KEY</code> +{' '}
             <code className="text-[10px]">NEXT_PUBLIC_HEYGEN_ENABLED=true</code>.
+          </li>
+          <li>
+            <strong>GLB</strong> — local 3D library in <code className="text-[10px]">public/avatars/</code>;
+            lip-sync driven by session audio amplitude. Replace placeholders with Emirati GLBs.
           </li>
         </ul>
       </div>

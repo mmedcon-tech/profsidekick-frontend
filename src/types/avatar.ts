@@ -236,6 +236,17 @@ export interface AvatarPublicResponse {
   template_image_url: string | null;
   created_at: string;
   updated_at: string;
+  is_enrolled?: boolean;
+  rating?: number | null;
+  course_count?: number | null;
+  subscriber_count?: number | null;
+  credits_per_session?: number | null;
+  languages?: string[];
+  voice_labels?: string[];
+  tagline?: string | null;
+  render_type?: 'static' | 'talkingheads' | 'heygen' | 'glb';
+  glb_preview_url?: string | null;
+  glb_library_id?: string | null;
 }
 
 export interface AvatarListResponse {

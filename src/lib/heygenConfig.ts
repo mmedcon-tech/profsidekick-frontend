@@ -39,6 +39,8 @@ export function getAvatarModeLabel(renderType: SessionAvatarConfig['renderType']
       return 'Realistic (HeyGen)';
     case 'talkingheads':
       return 'Animated (TalkingHeads)';
+    case 'glb':
+      return '3D Avatar (GLB)';
     default:
       return 'Static photo';
   }

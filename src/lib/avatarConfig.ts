@@ -1,3 +1,4 @@
+import { resolveGlbUrl } from '@/lib/avatarLibrary';
 import type {
   AvatarRenderType,
   EphemeralTokenResponse,
@@ -15,12 +16,21 @@ export function resolveAvatarConfig(
     fallback?.renderType ??
     (response.heygen_avatar_id ? 'heygen' : 'static');
 
+  const glbLibraryId =
+    response.avatar_library_id ?? fallback?.glbLibraryId ?? null;
+  const glbModelUrl = resolveGlbUrl(
+    response.avatar_model_url ?? fallback?.glbModelUrl ?? null,
+    glbLibraryId,
+  );
+
   return {
     renderType,
     avatarId: fallback?.avatarId,
     avatarName:
       response.avatar_name ?? fallback?.avatarName ?? DEFAULT_AVATAR_NAME,
     imageUrl: response.avatar_image_url ?? fallback?.imageUrl,
+    glbModelUrl: renderType === 'glb' ? glbModelUrl : fallback?.glbModelUrl,
+    glbLibraryId: glbLibraryId ?? undefined,
     heygenAvatarId: response.heygen_avatar_id ?? fallback?.heygenAvatarId ?? null,
     heygenQuality: response.heygen_quality ?? fallback?.heygenQuality ?? 'high',
     heygenAccessToken:

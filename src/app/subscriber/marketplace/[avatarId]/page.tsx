@@ -1,13 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { marketplaceApi } from '@/lib/avatarApi';
 import { config } from '@/lib/config';
 import { subscriptionApi } from '@/lib/avatarApi';
+import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
+import { resolveMarketplaceGlbUrl } from '@/lib/marketplaceUtils';
 import type { AvatarPublicResponse } from '@/types/avatar';
-import { Bot, ArrowLeft, Calendar, Play, Clock, Upload, Info } from 'lucide-react';
+import { ArrowLeft, Calendar, Play, Clock, Upload, Info } from 'lucide-react';
+
+const GlbAvatarPreview = dynamic(
+  () => import('@/components/avatar/GlbAvatarPreview'),
+  { ssr: false },
+);
 
 interface PublicSession {
   sessionId: string;
@@ -88,6 +96,13 @@ export default function SubscriberAvatarDetailPage() {
     }
   };
 
+  const glbUrl = avatar ? resolveMarketplaceGlbUrl(avatar) : null;
+  const libraryEntry = useMemo(
+    () => (avatar?.glb_library_id ? getAvatarLibraryEntry(avatar.glb_library_id) : undefined),
+    [avatar?.glb_library_id],
+  );
+  const showGlbPreview = !!(glbUrl || avatar?.render_type === 'glb');
+
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto space-y-4">
@@ -109,43 +124,59 @@ export default function SubscriberAvatarDetailPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <Link href="/subscriber/marketplace"
         className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Marketplace
       </Link>
 
-      {/* Avatar hero */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
-          <Bot size={40} className="text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avatar.name}</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">{avatar.description || 'AI-powered educational avatar.'}</p>
-        <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-400">
-          <Calendar size={13} />
-          <span>Published {new Date(avatar.created_at).toLocaleDateString()}</span>
-        </div>
-        
-        <div className="mt-6">
-          {isSubscribed ? (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium border border-emerald-200 dark:border-emerald-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Subscribed
+      <div className={`grid gap-6 ${showGlbPreview ? 'lg:grid-cols-2' : ''}`}>
+        {showGlbPreview && glbUrl && (
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-950 shadow-lg dark:border-gray-700">
+            <div className="aspect-[4/5]">
+              <GlbAvatarPreview
+                glbUrl={glbUrl}
+                lipSyncHints={libraryEntry?.lipSync}
+                demoSpeech
+                showControls
+              />
             </div>
-          ) : (
-            <button
-              onClick={handleSubscribe}
-              disabled={subscribing}
-              className="inline-flex items-center gap-2 bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-2.5 rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 transition-colors text-sm font-medium"
-            >
-              {subscribing ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Enrolling...</>
-              ) : (
-                <>1-Click Enroll / Subscribe</>
-              )}
-            </button>
-          )}
+          </div>
+        )}
+
+        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avatar.name}</h1>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
+            {avatar.tagline || avatar.description || 'AI-powered educational avatar.'}
+          </p>
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-400">
+            <Calendar size={13} />
+            <span>Published {new Date(avatar.created_at).toLocaleDateString()}</span>
+          </div>
+
+          <div className="mt-6">
+            {isSubscribed ? (
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Already Enrolled
+              </div>
+            ) : (
+              <button
+                onClick={handleSubscribe}
+                disabled={subscribing}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+              >
+                {subscribing ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Enrolling…
+                  </>
+                ) : (
+                  <>Enroll</>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

@@ -1,9 +1,12 @@
 'use client';
 
 import React from 'react';
+import GlbAvatarPreview from '@/components/avatar/GlbAvatarPreview';
 import StaticAvatarWidget from '@/components/avatar/StaticAvatarWidget';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
+import { useSimulatedAmplitude } from '@/hooks/useSimulatedAmplitude';
 import { useTalkingHeadsAvatar } from '@/hooks/useTalkingHeadsAvatar';
+import { getAvatarLibraryEntry, resolveGlbUrl } from '@/lib/avatarLibrary';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import type { SessionAvatarConfig } from '@/types/types';
 
@@ -27,10 +30,12 @@ export default function TeachingSessionAvatar({
     isAISpeaking,
     isUserSpeaking,
   });
-  const amplitude = useAudioAmplitude(
-    audioElement,
-    widgetState === 'speaking' && isConnected,
+  const isSpeakingActive = widgetState === 'speaking' && isConnected;
+  const audioAmplitude = useAudioAmplitude(audioElement, isSpeakingActive);
+  const simulatedAmplitude = useSimulatedAmplitude(
+    config.renderType === 'glb' && isSpeakingActive && audioAmplitude < 0.02,
   );
+  const amplitude = Math.max(audioAmplitude, simulatedAmplitude);
   const talkingHeads = useTalkingHeadsAvatar(config, isConnected);
 
   const imageUrl =
@@ -38,6 +43,31 @@ export default function TeachingSessionAvatar({
     (process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE
       ? '/images/avatar-female.png'
       : '/images/avatar-male.png');
+
+  if (config.renderType === 'glb') {
+    const libraryEntry = config.glbLibraryId
+      ? getAvatarLibraryEntry(config.glbLibraryId)
+      : undefined;
+    const glbUrl = resolveGlbUrl(
+      config.glbModelUrl,
+      config.glbLibraryId ?? libraryEntry?.id ?? 'avatar-1',
+    );
+
+    return (
+      <div className="flex h-full w-full flex-col bg-gray-900">
+        <GlbAvatarPreview
+          glbUrl={glbUrl}
+          amplitude={widgetState === 'speaking' ? amplitude : 0}
+          lipSyncHints={{
+            morphTargets: libraryEntry?.lipSync.morphTargets,
+            blinkTargets: libraryEntry?.lipSync.blinkTargets,
+            jawBones: libraryEntry?.lipSync.jawBones,
+          }}
+          showControls={false}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center bg-gray-900 gap-2">

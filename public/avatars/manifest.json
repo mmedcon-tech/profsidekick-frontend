@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "description": "MyOS v2 curated GLB library. avatar-1 and avatar-2 are Ready Player Me rigs with ARKit/Oculus viseme morph targets. Swap avatar-2 for a custom Emirati thobe model from CGTrader/Magnific when licensed.",
+  "avatars": [
+    {
+      "id": "avatar-1",
+      "name": "Salama",
+      "gender": "female",
+      "languages": ["ar", "en"],
+      "glbPath": "/avatars/avatar-1.glb",
+      "thumbnailPath": "/images/avatar-female.png",
+      "tags": ["leadership", "professional", "glb"],
+      "source": "Ready Player Me sample (TalkingHead/brunette.glb) — ARKit + Oculus visemes",
+      "lipSync": {
+        "morphTargets": [
+          "mouthOpen",
+          "jawOpen",
+          "viseme_aa",
+          "viseme_O",
+          "viseme_E",
+          "mouthSmile"
+        ],
+        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"]
+      }
+    },
+    {
+      "id": "avatar-2",
+      "name": "Sultan",
+      "gender": "male",
+      "languages": ["ar", "en"],
+      "glbPath": "/avatars/avatar-2.glb",
+      "thumbnailPath": "/images/avatar-male.png",
+      "tags": ["leadership", "professional", "glb"],
+      "source": "Ready Player Me masculine half-body (readyplayerme/visage public/half-body.glb) — ARKit + Oculus visemes",
+      "lipSync": {
+        "morphTargets": [
+          "mouthOpen",
+          "jawOpen",
+          "viseme_aa",
+          "viseme_O",
+          "viseme_E",
+          "mouthSmile"
+        ],
+        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"]
+      }
+    },
+    {
+      "id": "avatar-3",
+      "name": "Expert Bot",
+      "gender": "neutral",
+      "languages": ["en"],
+      "glbPath": "/avatars/avatar-3.glb",
+      "thumbnailPath": "/images/avatar-male.png",
+      "tags": ["demo", "glb"],
+      "source": "RobotExpressive (three.js example) — morph expression demo",
+      "lipSync": {
+        "morphTargets": ["Surprised", "Angry", "Sad"],
+        "blinkTargets": [],
+        "jawBones": []
+      }
+    }
+  ]
+}
