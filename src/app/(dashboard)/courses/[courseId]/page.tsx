@@ -71,6 +71,33 @@ export default function CourseDetailPage() {
     router.push(`/courses/${courseId}/sessions/${sessionId}`);
   };
 
+  const handleSubmitPlacementTest = () => {
+    router.push(`/autograder/submit?courseId=${courseId}`);
+  };
+
+  const handleViewPlacementResults = () => {
+    window.open("/autograder/result", "_blank");
+  };
+
+  const handleViewMyFeedback = async () => {
+    const response = await fetch(
+      "http://localhost:8000/api/autograder/submissions/me/latest",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      alert("No placement test feedback found yet.");
+      return;
+    }
+
+    const data = await response.json();
+    window.open(`/autograder/result/${data.id}`, "_blank");
+  };
+
   const handleCreateSession = () => {
     // Navigate to session creation with courseId pre-filled
     router.push(`/create?courseId=${courseId}`);
@@ -158,6 +185,7 @@ export default function CourseDetailPage() {
   }
 
   const isOwner = course.user_id === user?.id;
+  const isMathAutograderCourse = course?.syllabus_details?.feature === "math_autograder";
   // const isProfessor = user?.role === 'professor' || user?.role !== 'student';
 
   return (
@@ -252,6 +280,45 @@ export default function CourseDetailPage() {
               </div>
             </div>
           </div>
+
+          {isMathAutograderCourse && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                Placement Test
+              </h2>
+
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                {isOwner
+                  ? "View submitted placement test solutions and AI-generated grading feedback."
+                  : "Submit your handwritten placement test answers or view your existing feedback."}
+              </p>
+
+              {isOwner ? (
+                <button
+                  onClick={handleViewPlacementResults}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+                >
+                  View Student Results
+                </button>
+              ) : (
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={handleSubmitPlacementTest}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium"
+                  >
+                    Submit Placement Test
+                  </button>
+
+                  <button
+                    onClick={handleViewMyFeedback}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+                  >
+                    View My Feedback
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Sessions List */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">

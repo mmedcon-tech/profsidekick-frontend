@@ -23,6 +23,7 @@ export default function CreateCoursePage() {
     year: new Date().getFullYear().toString(),
     is_public: false,
     allow_subscriber_sessions: false,
+    enable_math_autograder: false,
     max_students: '',
   });
 
@@ -44,6 +45,7 @@ export default function CreateCoursePage() {
     try {
       const courseData = {
         ...formData,
+        syllabus_details: formData.enable_math_autograder ? { feature: "math_autograder" } : {},
         max_students: formData.max_students ? parseInt(formData.max_students) : undefined,
         year: parseInt(formData.year),
         user_id: user.id,
@@ -270,6 +272,27 @@ export default function CreateCoursePage() {
                       </p>
                     </label>
                   </div>
+                </div>
+
+                <div className="flex items-start mt-4">
+                  <input
+                    type="checkbox"
+                    id="enable_math_autograder"
+                    name="enable_math_autograder"
+                    checked={formData.enable_math_autograder}
+                    onChange={handleInputChange}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
+                  />
+
+                  <label htmlFor="enable_math_autograder" className="ml-3">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Enable Math AutoGrader
+                    </span>
+
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Shows placement test submission and grading features for this course.
+                    </p>
+                  </label>
                 </div>
 
                 <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
