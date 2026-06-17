@@ -102,15 +102,15 @@ export default function RoleSelector({ templateId, selected, onSelect, className
                   key={role.id}
                   onClick={() => handleSelect(role)}
                   className={`w-full text-left px-3 py-2.5 flex items-start gap-2.5 hover:bg-gray-50 dark:bg-gray-900 transition-colors ${
-                    isSelected ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''
+                    isSelected ? 'bg-primary/5 dark:bg-primary/20' : ''
                   }`}>
                   <div className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    isSelected ? 'bg-emerald-600 dark:bg-emerald-700 border-emerald-600 dark:border-emerald-500' : 'border-gray-300'
+                    isSelected ? 'bg-primary dark:bg-primary/90 border-primary dark:border-primary/50' : 'border-gray-300'
                   }`}>
                     {isSelected && <Check size={10} className="text-white" />}
                   </div>
                   <div className="min-w-0">
-                    <p className={`text-sm font-medium leading-tight ${isSelected ? 'text-emerald-800 dark:text-emerald-300' : 'text-gray-900 dark:text-gray-100'}`}>
+                    <p className={`text-sm font-medium leading-tight ${isSelected ? 'text-primary/95 dark:text-primary/30' : 'text-gray-900 dark:text-gray-100'}`}>
                       {role.name}
                     </p>
                     {role.description && (

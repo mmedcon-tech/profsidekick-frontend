@@ -57,7 +57,7 @@ export default function ConfigurePage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Configure Avatar</h1>
 
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
-      {success && <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">Configuration saved!</div>}
+      {success && <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-primary/90 text-sm">Configuration saved!</div>}
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800">
         {/* Voice */}
@@ -68,7 +68,7 @@ export default function ConfigurePage() {
             {VOICES.map((v) => (
               <button key={v} onClick={() => setForm((p) => ({ ...p, voice: v }))}
                 className={`px-3 py-2 text-sm rounded-lg border transition-all capitalize ${
-                  form.voice === v ? 'border-[#133221] bg-green-50 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                  form.voice === v ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
                 {v}
               </button>
@@ -84,7 +84,7 @@ export default function ConfigurePage() {
             {DIFFICULTIES.map((d) => (
               <button key={d} onClick={() => setForm((p) => ({ ...p, difficulty_level: d }))}
                 className={`flex-1 py-2.5 text-sm rounded-lg border transition-all capitalize ${
-                  form.difficulty_level === d ? 'border-[#133221] bg-green-50 dark:bg-gray-800 text-[#133221] font-semibold' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                  form.difficulty_level === d ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-semibold' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
                 {d}
               </button>

@@ -183,7 +183,7 @@ export default function AvatarCoursesPage() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    s.runCount > 0 ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                    s.runCount > 0 ? 'bg-primary/10 text-primary/90' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
                   }`}>
                     {s.runCount > 0 ? 'Used' : 'Draft'}
                   </span>
@@ -230,7 +230,7 @@ export default function AvatarCoursesPage() {
               <Link
                 key={c.course_id}
                 href={`/courses/${c.course_id}`}
-                className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-[#133221] hover:bg-green-50 dark:bg-gray-800 transition-colors group"
+                className="block p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-[#133221] hover:bg-primary/5 dark:bg-gray-800 transition-colors group"
               >
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
@@ -251,7 +251,7 @@ export default function AvatarCoursesPage() {
       </div>
 
       {/* How-to guide */}
-      <div className="bg-green-50 dark:bg-gray-800 border border-[#133221]/30 rounded-xl p-5 text-sm text-[#133221] space-y-2">
+      <div className="bg-primary/5 dark:bg-gray-800 border border-[#133221]/30 rounded-xl p-5 text-sm text-[#133221] space-y-2">
         <p className="font-semibold">How to link a session to this avatar</p>
         <ol className="list-decimal list-inside space-y-1 text-[#133221]">
           <li>Open a course above (or create a new one).</li>

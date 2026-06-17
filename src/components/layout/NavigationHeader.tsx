@@ -57,7 +57,7 @@ export default function NavigationHeader() {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
-            <span className="text-2xl font-bold text-emerald-950 dark:text-emerald-100 dark:text-emerald-400">MyOS</span>
+            <span className="text-2xl font-bold text-primary dark:text-primary/10 dark:text-primary/40">MyOS</span>
           </button>
 
           {/* Actions */}
@@ -72,10 +72,10 @@ export default function NavigationHeader() {
                 className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  user?.role === 'subscriber' ? 'bg-green-100 dark:bg-green-900' : 'bg-emerald-100 dark:bg-emerald-900/40 dark:bg-emerald-900'
+                  user?.role === 'subscriber' ? 'bg-primary/10 dark:bg-primary' : 'bg-primary/10 dark:bg-primary/40 dark:bg-primary'
                 }`}>
                   <User size={16} className={`${
-                    user?.role === 'subscriber' ? 'text-green-600 dark:text-green-400' : 'text-emerald-700 dark:text-emerald-400 dark:text-emerald-400'
+                    user?.role === 'subscriber' ? 'text-primary dark:text-primary/40' : 'text-primary/90 dark:text-primary/40 dark:text-primary/40'
                   }`} />
                 </div>
                 <span className="hidden sm:block font-medium">
@@ -107,10 +107,10 @@ export default function NavigationHeader() {
                       {user.role && (
                         <p className={`text-xs font-medium mt-1 px-2 py-1 rounded-full inline-block ${
                           user.role === 'subscriber'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            ? 'bg-primary/10 text-primary/95 dark:bg-primary dark:text-primary/20'
                             : user.role === 'admin'
                             ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                            : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 dark:bg-emerald-900 dark:text-emerald-200'
+                            : 'bg-primary/10 dark:bg-primary/40 text-primary dark:text-primary/20 dark:bg-primary dark:text-primary/20'
                         }`}>
                           {user.role === 'subscriber' ? 'Subscriber' : user.role === 'admin' ? 'Admin' : 'Publisher'}
                         </p>

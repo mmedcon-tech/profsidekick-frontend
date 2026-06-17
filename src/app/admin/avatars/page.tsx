@@ -9,7 +9,7 @@ import { Search, ChevronRight, Layers } from 'lucide-react';
 
 function StatusBadge({ state }: { state: string }) {
   const map: Record<string, string> = {
-    published: 'bg-emerald-100 text-emerald-700',
+    published: 'bg-primary/10 text-primary/90',
     draft:     'bg-amber-100 text-amber-700',
     archived:  'bg-gray-100 dark:bg-gray-800 text-gray-400',
     unpublished: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',

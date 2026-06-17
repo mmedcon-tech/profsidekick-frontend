@@ -1618,14 +1618,14 @@ export default function LearningInterface({
                     <div
                       key={i}
                       className={cn(
-                        "w-1 rounded-full bg-emerald-500/60 transition-all duration-75",
+                        "w-1 rounded-full bg-primary/50/60 transition-all duration-75",
                         isAISpeaking ? "animate-[eq_0.5s_ease-in-out_infinite]" : "h-1"
                       )}
                       style={{ animationDelay: `${i * 0.1}s` }}
                     />
                   ))}
                 </div>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/50/10 text-primary">
                   <Volume2 className="h-3.5 w-3.5" />
                 </div>
               </div>
@@ -1688,7 +1688,7 @@ export default function LearningInterface({
               <div className={cn(
                 "px-6 py-4 rounded-2xl shadow-xl flex items-center gap-4 border backdrop-blur-md transition-all duration-300",
                 sessionStatus === "CONNECTED"
-                  ? "bg-emerald-500/90 text-white border-emerald-400 shadow-emerald-500/20"
+                  ? "bg-primary/50/90 text-white border-primary/40 shadow-primary/50/20"
                   : "bg-amber-500/90 text-white border-amber-400 shadow-amber-500/20"
               )}>
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
@@ -1702,7 +1702,7 @@ export default function LearningInterface({
                   {sessionStatus === "CONNECTED" ? (
                     <>
                       <p className="font-bold text-sm">Ready to start!</p>
-                      <p className="text-xs text-emerald-50 mt-0.5">Say something to begin the conversation</p>
+                      <p className="text-xs text-primary/5 mt-0.5">Say something to begin the conversation</p>
                     </>
                   ) : (
                     <>
@@ -1822,7 +1822,7 @@ export default function LearningInterface({
                     )}>
                       <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full shadow-sm">
                         {msg.role === "assistant" ? (
-                          <div className="flex h-full w-full items-center justify-center bg-emerald-100 text-[10px] font-bold text-emerald-700">
+                          <div className="flex h-full w-full items-center justify-center bg-primary/10 text-[10px] font-bold text-primary/90">
                             AI
                           </div>
                         ) : (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useAppV2 } from "@/lib/v2/context"
+
 import { tr } from "@/lib/v2/i18n"
 import { adminUserApi, ApiError } from "@/lib/avatarApi"
 import type { UserRecord } from "@/types/avatar"
@@ -18,7 +18,7 @@ const roleColor = {
 }
 
 export default function UsersView() {
-  const { lang, dir } = useAppV2()
+  const lang = "en"; const dir = "ltr"
   const [query, setQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [users, setUsers] = useState<UserRecord[]>([])

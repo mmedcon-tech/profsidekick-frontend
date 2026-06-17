@@ -79,7 +79,7 @@ export default function GlbAvatar({
       
       {widgetState === 'speaking' && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-primary/50 animate-pulse" />
           <span className="text-xs text-white font-medium">Speaking</span>
         </div>
       )}

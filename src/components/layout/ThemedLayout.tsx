@@ -1,8 +1,11 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
+import { ProgramContextProvider } from "@/contexts/ProgramContext"
+
+import ProgramThemeProvider from "./ProgramThemeProvider"
 import { AppSidebarV2 } from "./app-sidebar"
 import { AppHeaderV2 } from "./app-header"
 import { FloatingAssistant } from "./floating-assistant"
@@ -23,16 +26,10 @@ function getTitle(pathname: string): string {
   return "MyOS"
 }
 
-export function ThemedLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth()
+function ThemedLayoutInner({ children }: { children: React.ReactNode }) {
+  const { isLoading } = useAuth()
   const pathname = usePathname()
-  
-  // We'll hardcode LTR for now, but in future it can be dynamic
-  const dir = "ltr"
-  
   const title = getTitle(pathname)
-  
-  // Session runtime gets full-height treatment
   const isFullScreen = pathname.includes("/run") || pathname.includes("/chat")
 
   if (isLoading) {
@@ -43,11 +40,8 @@ export function ThemedLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // If no user is logged in, you might want to redirect or show a public shell.
-  // For now, we assume this layout is used inside protected routes.
-
   return (
-    <div dir={dir} className="flex h-screen overflow-hidden bg-background font-sans">
+    <div dir="ltr" className="flex h-screen overflow-hidden bg-background font-sans">
       <AppSidebarV2 />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeaderV2 title={title} />
@@ -63,5 +57,15 @@ export function ThemedLayout({ children }: { children: React.ReactNode }) {
       </div>
       <FloatingAssistant />
     </div>
+  )
+}
+
+export function ThemedLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProgramContextProvider>
+      <ProgramThemeProvider>
+        <ThemedLayoutInner>{children}</ThemedLayoutInner>
+      </ProgramThemeProvider>
+    </ProgramContextProvider>
   )
 }

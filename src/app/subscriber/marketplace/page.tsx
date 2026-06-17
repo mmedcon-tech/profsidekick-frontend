@@ -77,7 +77,7 @@ export default function MarketplacePage() {
       </div>
 
       {subscribeSuccess && (
-        <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400 animate-in fade-in zoom-in duration-300">
+        <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90 dark:border-primary dark:bg-primary dark:text-primary/40 animate-in fade-in zoom-in duration-300">
           <CheckCircle2 className="h-5 w-5 shrink-0" />
           Successfully subscribed to the avatar program!
         </div>
@@ -102,7 +102,7 @@ export default function MarketplacePage() {
                   <div className="relative p-5 pb-0">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
-                         <div className={`relative h-16 w-16 shrink-0 rounded-xl flex items-center justify-center shadow-inner ${avatar.id === '__profsidekick__' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                         <div className={`relative h-16 w-16 shrink-0 rounded-xl flex items-center justify-center shadow-inner ${avatar.id === '__profsidekick__' ? 'bg-primary/10 text-primary dark:bg-primary/30 dark:text-primary/40' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                            <Bot size={32} />
                          </div>
                          <div>

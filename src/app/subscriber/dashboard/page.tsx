@@ -4,7 +4,8 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { tr } from "@/lib/v2/i18n"
-import { courses, sessionRuns, type Course } from "@/lib/v2/data"
+import { useCourses } from "@/hooks/useCourses"
+import { useSubscriberAnalytics } from "@/hooks/useSubscriberAnalytics"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { GraduationCap, Clock3, Award, TrendingUp, ArrowRight, ArrowLeft, Play, ChevronRight } from "lucide-react"
@@ -23,7 +24,7 @@ function StatCard({ icon: Icon, label, value, hint }: { icon: typeof Award; labe
   )
 }
 
-function MiniCourseCard({ course, onOpen }: { course: Course; onOpen: (id: string) => void }) {
+function MiniCourseCard({ course, onOpen }: { course: any; onOpen: (id: string) => void }) {
   const lang = "en"
   const statusColors = {
     "in-progress": "text-primary bg-primary/10",
@@ -70,15 +71,30 @@ export default function SubscriberDashboardPage() {
   const activeProgram = null // Will be handled via context later
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight
 
+  const { data: analytics, loading: loadingAnalytics } = useSubscriberAnalytics()
+  const { courses: apiCourses, loading: loadingCourses } = useCourses()
+
   const onOpenCourse = (id: string) => {
     router.push(`/subscriber/courses/${id}`)
   }
 
-  // Filter courses for active program if one is selected
-  const visibleCourses = activeProgram
-    // @ts-ignore
-    ? courses.filter((c) => activeProgram.courseIds.includes(c.id))
-    : courses
+  // Map API courses to UI expected structure
+  const visibleCourses = apiCourses.map(c => {
+    const progressData = analytics?.course_progress?.find(p => p.course_id === c.course_id);
+    const progress = progressData ? progressData.progress_percentage : 0;
+    let status = "not-started";
+    if (progress > 0 && progress < 100) status = "in-progress";
+    if (progress === 100) status = "completed";
+
+    return {
+      id: c.course_id,
+      name: { en: c.name || "Unknown", ar: c.name || "Unknown" },
+      department: { en: c.department || "General", ar: c.department || "General" },
+      status,
+      progress,
+      sessions: Array(progressData?.total_sessions || 0).fill(1)
+    };
+  });
 
   const inProgress = visibleCourses.filter((c) => c.status === "in-progress")
   const completed = visibleCourses.filter((c) => c.status === "completed")
@@ -86,7 +102,9 @@ export default function SubscriberDashboardPage() {
     ? Math.round(visibleCourses.reduce((s, c) => s + (c.progress ?? 0), 0) / visibleCourses.length)
     : 0
 
-  const recentRuns = sessionRuns.slice(0, 2)
+  const totalSessionsCompleted = analytics?.total_sessions_completed || 0;
+  const hoursSpent = Math.round((analytics?.total_time_spent_sec || 0) / 3600);
+  const recentRuns = analytics?.recent_assessments || [];
 
   const recommendation =
     lang === "ar"
@@ -157,28 +175,19 @@ export default function SubscriberDashboardPage() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             {tr("sessionHistory", lang)}
           </h2>
-          <div className="space-y-3">
-            {recentRuns.map((run) => {
-              const course = courses.find((c) => c.sessions.some((s) => s.id === run.sessionId))
-              const session = course?.sessions.find((s) => s.id === run.sessionId)
-              if (!course || !session) return null
+          <div className="space-y-4">
+            {recentRuns.map((run: any, idx: number) => {
               return (
-                <div key={run.id} className="flex items-start gap-4 rounded-xl border border-border bg-card p-4">
+                <div key={idx} className="flex items-start gap-4 rounded-xl border border-border bg-card p-4">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <Play className="h-4 w-4 text-primary" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">{session.title[lang]}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{course.name[lang]}</p>
-                    {run.aiSummary && (
-                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                        <span className="font-medium text-foreground">{tr("aiSummary", lang)}:</span> {run.aiSummary}
-                      </p>
-                    )}
+                    <p className="text-sm font-medium text-foreground">{run.session_name}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{tr("completed", lang)}</p>
                   </div>
                   <div className="shrink-0 text-end">
-                    <p className="text-xs text-muted-foreground">{run.durationMinutes} {tr("minutesShort", lang)}</p>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">{run.variantName}</p>
+                    <p className="text-xs text-muted-foreground">{run.score}% {tr("score", lang) || "Score"}</p>
                   </div>
                 </div>
               )

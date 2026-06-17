@@ -5,6 +5,7 @@ import { LoginViewV2 } from "./login-view"
 import { AppSidebarV2 } from "./app-sidebar"
 import { AppHeaderV2 } from "./app-header"
 import { FloatingAssistant } from "./floating-assistant"
+import { ThemeConfigProvider } from "./ThemeConfigProvider"
 
 // Subscriber
 import { SubscriberDashboard } from "./subscriber/dashboard"
@@ -117,7 +118,7 @@ function AdminShell() {
 }
 
 export function AppShellV2() {
-  const { user, view, lang, dir } = useAppV2()
+  const { user, view, lang, dir, activeProgram } = useAppV2()
 
   if (!user) return <LoginViewV2 />
 
@@ -127,26 +128,28 @@ export function AppShellV2() {
   const isFullScreen = view === "session"
 
   return (
-    <div dir={dir} className="flex h-screen overflow-hidden bg-background font-sans">
-      <AppSidebarV2 />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeaderV2 title={title} />
-        <main className="flex-1 overflow-y-auto">
-          {isFullScreen ? (
-            // Full-height, no padding for session runtime
-            <>
-              {user.role === "subscriber" && <SubscriberShell />}
-            </>
-          ) : (
-            <div className="p-4 sm:p-6">
-              {user.role === "subscriber" && <SubscriberShell />}
-              {user.role === "publisher" && <PublisherShell />}
-              {user.role === "admin" && <AdminShell />}
-            </div>
-          )}
-        </main>
+    <ThemeConfigProvider themeConfig={activeProgram?.themeConfig}>
+      <div dir={dir} className="flex h-screen overflow-hidden bg-background font-sans">
+        <AppSidebarV2 />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <AppHeaderV2 title={title} />
+          <main className="flex-1 overflow-y-auto">
+            {isFullScreen ? (
+              // Full-height, no padding for session runtime
+              <>
+                {user.role === "subscriber" && <SubscriberShell />}
+              </>
+            ) : (
+              <div className="p-4 sm:p-6">
+                {user.role === "subscriber" && <SubscriberShell />}
+                {user.role === "publisher" && <PublisherShell />}
+                {user.role === "admin" && <AdminShell />}
+              </div>
+            )}
+          </main>
+        </div>
+        <FloatingAssistant />
       </div>
-      <FloatingAssistant />
-    </div>
+    </ThemeConfigProvider>
   )
 }

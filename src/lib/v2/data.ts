@@ -41,7 +41,7 @@ export const DEMO_USERS: Record<string, User & { password: string }> = {
   subscriber: {
     id: "user-sub-1",
     username: "subscriber",
-    email: "capt.rashid@moi.gov.ae",
+    email: "capt.rashid@example.com",
     firstName: "Rashid",
     lastName: "Al Mansoori",
     role: "subscriber",

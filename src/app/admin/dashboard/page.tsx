@@ -1,7 +1,7 @@
 "use client"
 
 import { tr } from "@/lib/v2/i18n"
-import { platformStats, departmentStats, monthlyCompletion } from "@/lib/v2/data"
+import { useAdminAnalytics } from "@/hooks/useAdminAnalytics"
 import { Users, Bot, Layers, TrendingUp, CreditCard, Monitor } from "lucide-react"
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
@@ -23,6 +23,7 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: typeof Bot; label: 
 
 export default function AdminDashboardPage() {
   const lang = "en"
+  const { data: analytics, loading } = useAdminAnalytics()
 
   return (
     <div className="space-y-6">
@@ -39,23 +40,23 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard icon={Users} label={tr("totalPublishers", lang)} value={`${platformStats.totalPublishers}`} />
-        <StatCard icon={Bot} label={tr("totalSubscribers", lang)} value={`${platformStats.totalSubscribers}`} />
-        <StatCard icon={Layers} label={tr("activeAvatars", lang)} value={`${platformStats.totalAvatars}`} />
-        <StatCard icon={TrendingUp} label={tr("totalSessions", lang)} value={`${platformStats.totalSessions.toLocaleString()}`} />
-        <StatCard icon={CreditCard} label={tr("creditsConsumed", lang)} value={`${platformStats.creditsConsumed.toLocaleString()}`} />
-        <StatCard icon={Monitor} label={lang === "ar" ? "متوسط مدة الجلسة" : "Avg Session"} value={`${platformStats.avgSessionDuration}m`} />
+        <StatCard icon={Users} label={tr("totalPublishers", lang)} value={`${analytics?.total_publishers || 0}`} />
+        <StatCard icon={Bot} label={tr("totalSubscribers", lang)} value={`${analytics?.total_subscribers || 0}`} />
+        <StatCard icon={Layers} label={tr("activeAvatars", lang)} value={`${analytics?.total_users || 0}`} />
+        <StatCard icon={TrendingUp} label={tr("totalSessions", lang)} value={`${(analytics?.active_sessions_today || 0).toLocaleString()}`} />
+        <StatCard icon={CreditCard} label={tr("creditsUsed", lang)} value="N/A" />
+        <StatCard icon={Monitor} label={tr("systemHealth", lang)} value={`${analytics?.system_health || 100}%`} sub="All systems operational" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("departmentPerformance", lang)}</h3>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">{lang === "ar" ? "أداء الدورات" : "Course Performance"}</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={departmentStats} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <BarChart data={analytics?.course_performance || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
-                  dataKey={(d) => d.name[lang]}
+                  dataKey={(d) => d.name[lang] || d.name}
                   tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                   tickLine={false}
                   axisLine={false}
@@ -77,7 +78,7 @@ export default function AdminDashboardPage() {
           <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("monthlyCompletions", lang)}</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyCompletion} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <AreaChart data={analytics?.monthly_completions || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                 <defs>
                   <linearGradient id="fillAdmin" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.4} />

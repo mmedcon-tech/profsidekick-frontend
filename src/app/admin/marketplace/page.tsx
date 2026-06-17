@@ -91,7 +91,7 @@ export default function AdminMarketplacePage() {
                     <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#133221] transition-colors">
                       {a.name}
                     </p>
-                    <span className="flex items-center gap-1 text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">
+                    <span className="flex items-center gap-1 text-xs text-primary/90 bg-primary/10 px-2 py-0.5 rounded-full font-medium">
                       <Globe size={10} /> Live
                     </span>
                   </div>

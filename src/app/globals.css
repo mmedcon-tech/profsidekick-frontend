@@ -1,83 +1,112 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 120 1% 98%;      /* mapped from oklch(0.98 0.004 120) roughly */
-    --foreground: 160 2% 22%;
-    --card: 0 0% 100%;
-    --card-foreground: 160 2% 22%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 160 2% 22%;
-    --primary: 162 6% 36%;
-    --primary-foreground: 120 1% 98%;
-    --secondary: 150 1% 95%;
-    --secondary-foreground: 162 4% 30%;
-    --muted: 140 1% 96%;
-    --muted-foreground: 160 2% 50%;
-    --accent: 85 10% 72%;
-    --accent-foreground: 80 4% 25%;
-    --destructive: 27 20% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 150 1% 90%;
-    --input: 150 1% 90%;
-    --ring: 162 6% 36%;
-    --chart-1: 162 6% 36%;
-    --chart-2: 85 10% 72%;
-    --chart-3: 175 7% 55%;
-    --chart-4: 140 5% 65%;
-    --chart-5: 200 4% 45%;
-    --radius: 0.625rem;
-    --sidebar: 162 4% 28%;
-    --sidebar-foreground: 120 1% 92%;
-    --sidebar-primary: 85 10% 72%;
-    --sidebar-primary-foreground: 80 4% 25%;
-    --sidebar-accent: 162 5% 34%;
-    --sidebar-accent-foreground: 120 1% 96%;
-    --sidebar-border: 162 4% 34%;
-    --sidebar-ring: 85 10% 72%;
+    /* ── Content area (light) — MyOS Navy + Gold ─────────── */
+    --background:          0 0% 100%;
+    --foreground:          220 25% 15%;
+    --card:                0 0% 100%;
+    --card-foreground:     220 25% 15%;
+    --popover:             0 0% 100%;
+    --popover-foreground:  220 25% 15%;
+
+    /* Primary: #1A3C6B navy */
+    --primary:             215 61% 26%;
+    --primary-foreground:  0 0% 100%;
+
+    --secondary:           220 13% 95%;
+    --secondary-foreground: 215 61% 26%;
+    --muted:               220 13% 95%;
+    --muted-foreground:    220 13% 46%;
+
+    /* Accent: #D4AF37 gold */
+    --accent:              46 65% 52%;
+    --accent-foreground:   220 25% 15%;
+
+    --destructive:         0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border:              220 13% 91%;
+    --input:               220 13% 91%;
+    --ring:                215 61% 26%;
+    --radius:              0.625rem;
+
+    /* ── Sidebar — always dark navy ──────────────────────── */
+    --sidebar:             222 47% 11%;
+    --sidebar-foreground:  0 0% 98%;
+    --sidebar-primary:     215 65% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      222 40% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border:      222 35% 15%;
+    --sidebar-ring:        215 65% 58%;
+
+    /* ── Charts ──────────────────────────────────────────── */
+    --chart-1: 215 61% 26%;
+    --chart-2: 46 65% 52%;
+    --chart-3: 200 70% 40%;
+    --chart-4: 280 60% 50%;
+    --chart-5: 0 84% 60%;
   }
 
   .dark {
-    --background: 162 2% 18%;
-    --foreground: 120 1% 96%;
-    --card: 162 3% 23%;
-    --card-foreground: 120 1% 96%;
-    --popover: 162 3% 23%;
-    --popover-foreground: 120 1% 96%;
-    --primary: 162 8% 55%;
-    --primary-foreground: 120 1% 98%;
-    --secondary: 162 3% 30%;
-    --secondary-foreground: 120 1% 96%;
-    --muted: 162 3% 30%;
-    --muted-foreground: 140 2% 72%;
-    --accent: 85 10% 72%;
-    --accent-foreground: 80 4% 22%;
-    --destructive: 22 19% 70%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 100% / 0.12;
-    --input: 0 0% 100% / 0.15;
-    --ring: 85 10% 72%;
-    --chart-1: 162 8% 55%;
-    --chart-2: 85 10% 72%;
-    --chart-3: 175 7% 60%;
-    --chart-4: 140 5% 65%;
-    --chart-5: 200 5% 50%;
-    --sidebar: 162 2% 20%;
-    --sidebar-foreground: 120 1% 92%;
-    --sidebar-primary: 85 10% 72%;
-    --sidebar-primary-foreground: 80 4% 22%;
-    --sidebar-accent: 162 4% 28%;
-    --sidebar-accent-foreground: 120 1% 96%;
-    --sidebar-border: 0 0% 100% / 0.12;
-    --sidebar-ring: 85 10% 72%;
-  }
-}
+    /* ── Content area (dark) ──────────────────────────────── */
+    --background:          222 47% 8%;
+    --foreground:          210 40% 95%;
+    --card:                222 40% 12%;
+    --card-foreground:     210 40% 95%;
+    --popover:             222 40% 12%;
+    --popover-foreground:  210 40% 95%;
 
-@layer base {
+    /* Primary lightens in dark mode for contrast */
+    --primary:             213 94% 68%;
+    --primary-foreground:  222 47% 8%;
+
+    --secondary:           220 30% 18%;
+    --secondary-foreground: 210 40% 95%;
+    --muted:               220 30% 18%;
+    --muted-foreground:    220 15% 60%;
+
+    /* Gold accent stays */
+    --accent:              46 65% 52%;
+    --accent-foreground:   222 47% 8%;
+
+    --destructive:         0 72% 50%;
+    --destructive-foreground: 210 40% 95%;
+
+    --border:              222 35% 20%;
+    --input:               222 35% 20%;
+    --ring:                213 94% 68%;
+
+    /* ── Sidebar (dark mode — same dark panel) ───────────── */
+    --sidebar:             222 47% 7%;
+    --sidebar-foreground:  0 0% 98%;
+    --sidebar-primary:     213 94% 68%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:      222 40% 13%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border:      222 35% 12%;
+    --sidebar-ring:        213 94% 68%;
+
+    /* ── Charts ──────────────────────────────────────────── */
+    --chart-1: 213 94% 68%;
+    --chart-2: 46 65% 52%;
+    --chart-3: 200 70% 55%;
+    --chart-4: 280 60% 65%;
+    --chart-5: 0 72% 65%;
+  }
+
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
+  }
+
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;

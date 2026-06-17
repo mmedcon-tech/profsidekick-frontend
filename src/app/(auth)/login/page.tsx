@@ -11,7 +11,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isAuthenticated, isLoading, user, token } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -31,7 +31,7 @@ function LoginForm() {
           router.push(redirectParam);
           return;
         }
-        
+
         if (user.role === 'admin') {
           router.push('/admin/dashboard');
         } else if (user.role === 'subscriber') {
@@ -79,7 +79,7 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.username.trim() || !formData.password.trim()) {
       setError('Please enter both username and password');
       return;
@@ -102,7 +102,7 @@ function LoginForm() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50"></div>
       </div>
     );
   }
@@ -117,109 +117,104 @@ function LoginForm() {
       {/* Header */}
       <div className="mb-10">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Sign in</h2>
-        <p className="text-gray-500">Sign in to continue your training</p>
+        <p className="text-gray-500">Sign in to your MyOS account</p>
       </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
-              <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>
-            </div>
-          )}
+      {/* Login Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+            <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>
+          </div>
+        )}
 
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Username
-            </label>
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Username
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value={formData.username}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:border-primary dark:border-primary/50 transition-colors"
+            placeholder="username"
+            disabled={isSubmitting}
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            Password
+          </label>
+          <div className="relative">
             <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              name="password"
+              value={formData.password}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:border-emerald-600 dark:border-emerald-500 transition-colors"
-              placeholder="MOI-48217"
+              className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:border-primary dark:border-primary/50 transition-colors"
+              placeholder="••••••••"
               disabled={isSubmitting}
               required
             />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:border-emerald-600 dark:border-emerald-500 transition-colors"
-                placeholder="••••••••"
-                disabled={isSubmitting}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                disabled={isSubmitting}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
-
-          <div className="pt-4">
             <button
-              type="submit"
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               disabled={isSubmitting}
-              aria-busy={isSubmitting}
-              className="w-full bg-emerald-600 dark:bg-emerald-700 text-white py-3 px-4 rounded-xl font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-600 dark:focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Signing in...
-                </>
-              ) : (
-                <>
-                  Sign in
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 14 0"/><path d="m13 19 6-7-6-7"/></svg>
-                </>
-              )}
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
-          
-          <div className="text-center mt-6">
-            <p className="text-xs text-gray-500">
-              Demo credentials pre-filled — click to sign in.
-            </p>
-          </div>
-        </form>
-
-        {/* Footer */}
-        <div className="mt-12 text-center">
-          <p className="text-sm text-gray-600">
-            Do not have an account?{' '}
-            <Link
-              href="/register"
-              className="text-emerald-700 dark:text-emerald-400 hover:underline font-semibold"
-            >
-              Create one here
-            </Link>
-          </p>
         </div>
+
+        <div className="pt-4">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+            className="w-full bg-primary dark:bg-primary/90 text-white py-3 px-4 rounded-xl font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Signing in...
+              </>
+            ) : (
+              <>
+                Sign in
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 14 0" /><path d="m13 19 6-7-6-7" /></svg>
+              </>
+            )}
+          </button>
+        </div>
+
+      </form>
+
+      {/* Footer */}
+      <div className="mt-12 text-center">
+        <p className="text-sm text-gray-600">
+          Do not have an account?{' '}
+          <Link
+            href="/register"
+            className="text-primary/90 dark:text-primary/40 hover:underline font-semibold"
+          >
+            Create one here
+          </Link>
+        </p>
       </div>
+    </div>
   );
 }
 
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center py-12">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50"></div>
     </div>
   );
 }

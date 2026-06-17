@@ -124,7 +124,7 @@ export default function RubricsPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Criteria</label>
-              <span className={`text-xs font-medium ${totalWeight === 100 ? 'text-green-600' : 'text-red-500'}`}>
+              <span className={`text-xs font-medium ${totalWeight === 100 ? 'text-primary' : 'text-red-500'}`}>
                 Total: {totalWeight}% {totalWeight !== 100 && '(must be 100%)'}
               </span>
             </div>

@@ -134,7 +134,7 @@ const translations: Record<string, { en: string; ar: string }> = {
   filter: { en: "Filter", ar: "تصفية" },
   all: { en: "All", ar: "الكل" },
   loading: { en: "Loading...", ar: "جارٍ التحميل..." },
-  ministry: { en: "Ministry of Interior — Officers Training Institute", ar: "وزارة الداخلية — معهد تدريب الضباط" },
+  ministry: { en: "MyOS - AI Training Platform", ar: "MyOS - منصة التدريب الذكية" },
   continueLearning: { en: "Continue Learning", ar: "متابعة التعلم" },
   viewAll: { en: "View All", ar: "عرض الكل" },
   myOS: { en: "MyOS", ar: "MyOS" },

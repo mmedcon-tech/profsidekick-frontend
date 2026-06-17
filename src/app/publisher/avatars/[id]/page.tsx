@@ -91,11 +91,11 @@ export default function AvatarDetailPage() {
 
       {/* Publish success banner */}
       {publishSuccess && (
-        <div className="flex items-center gap-3 p-4 bg-green-600/10 border border-green-600/20 rounded-xl">
-          <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-4 bg-primary/10 border border-primary/20 rounded-xl">
+          <CheckCircle size={18} className="text-primary/50 flex-shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-green-600 dark:text-green-400">Avatar published to marketplace</p>
-            <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-0.5">
+            <p className="text-sm font-semibold text-primary dark:text-primary/40">Avatar published to marketplace</p>
+            <p className="text-xs text-primary/80 dark:text-primary/40/80 mt-0.5">
               Subscribers can now discover and use this avatar. You can continue training it at any time.
             </p>
           </div>
@@ -116,7 +116,7 @@ export default function AvatarDetailPage() {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground">{avatar.name}</h1>
             <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${
-              avatar.is_published ? 'bg-green-600/10 text-green-500 border-green-600/20' : 'bg-muted text-muted-foreground border-border'
+              avatar.is_published ? 'bg-primary/10 text-primary/50 border-primary/20' : 'bg-muted text-muted-foreground border-border'
             }`}>
               {avatar.is_published ? 'Published' : 'Draft'}
             </span>
@@ -164,11 +164,7 @@ export default function AvatarDetailPage() {
       </div>
 
       {/* Overview content */}
-              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Reference solutions</p><p className="font-medium">{avatar.configuration.reference_solutions.length}</p></div>
-              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Rubrics</p><p className="font-medium">{avatar.configuration.rubrics.length}</p></div>
-            </>
-          )}
-        </div>
+      <div className="space-y-6">
 
         {/* Setup checklist */}
         <div className="space-y-2">
@@ -181,7 +177,7 @@ export default function AvatarDetailPage() {
           ].map((step) => (
             <div key={step.label} className="flex items-center gap-2 text-sm">
               <span className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                step.done ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'
+                step.done ? 'bg-primary/50 border-primary/50 text-white' : 'border-gray-300'
               }`}>
                 {step.done && <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 5l2 2 4-4"/></svg>}
               </span>
@@ -204,7 +200,7 @@ export default function AvatarDetailPage() {
           )}
           {!avatar.is_published && (
             <button onClick={handlePublish} disabled={publishing}
-              className="flex-1 min-w-[140px] text-center py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
+              className="flex-1 min-w-[140px] text-center py-2.5 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors">
               {publishing ? 'Publishing…' : 'Publish to Marketplace →'}
             </button>
           )}

@@ -12,7 +12,7 @@ import { STARTER_AVATARS } from '@/lib/starterAvatars';
 function PublishedBadge({ state }: { state: string }) {
   if (state === 'published') {
     return (
-      <span className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-medium">
+      <span className="flex items-center gap-1 text-xs text-primary/90 bg-primary/10 px-2 py-0.5 rounded-full font-medium">
         <CheckCircle size={10} /> Published
       </span>
     );

@@ -103,7 +103,7 @@ export function AppSidebarV2() {
             >
               <Icon className="h-4 w-4 shrink-0" />
               {tr(item.labelKey, lang)}
-              {active && <span className="ms-auto h-1.5 w-1.5 rounded-full bg-accent" />}
+              {active && <span className="ms-auto h-1.5 w-1.5 rounded-full bg-sidebar-primary" />}
             </Link>
           )
         })}
@@ -113,7 +113,7 @@ export function AppSidebarV2() {
         {/* User info */}
         <div className="flex items-center gap-3 rounded-md px-3 py-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent">
-            <RoleIcon className="h-4 w-4 text-accent" />
+            <RoleIcon className="h-4 w-4 text-sidebar-foreground/80" />
           </div>
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-sm font-medium">

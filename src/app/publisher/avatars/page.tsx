@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from "next/image"
 import Link from 'next/link';
-import { useAppV2 } from "@/lib/v2/context"
+
 import { tr } from "@/lib/v2/i18n"
 import { avatarApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarSummary } from '@/types/avatar';
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Globe, Lock, Trash2, Edit3, Settings } from "lucide-react"
 
 export default function PublisherAvatarsPage() {
-  const { lang } = useAppV2()
+  const lang = "en"
   const [avatars, setAvatars] = useState<AvatarSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +118,7 @@ export default function PublisherAvatarsPage() {
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="font-semibold text-sidebar-foreground truncate">{avatar.name}</h3>
                       {avatar.is_published ? (
-                        <Badge className="bg-green-600/20 text-green-400 text-[10px]">
+                        <Badge className="bg-primary/20 text-primary/40 text-[10px]">
                           <Globe className="me-1 h-3 w-3" /> {tr("published", lang)}
                         </Badge>
                       ) : (

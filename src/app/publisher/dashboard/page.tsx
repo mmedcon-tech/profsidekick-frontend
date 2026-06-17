@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext"
 import { tr } from "@/lib/v2/i18n"
-import { avatars, courses, departmentStats, monthlyCompletion, atRisk } from "@/lib/v2/data"
+import { usePublisherAnalytics } from "@/hooks/usePublisherAnalytics"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Bot, BookOpen, Users, TrendingUp, AlertTriangle, Sparkles, ArrowRight } from "lucide-react"
@@ -28,19 +28,22 @@ export default function PublisherDashboardPage() {
   const { user } = useAuth()
   const lang = "en"
 
-  const totalSubscribers = avatars.reduce((s, a) => s + a.subscriberCount, 0)
-  const totalCourses = courses.length
-  const totalSessions = courses.flatMap((c) => c.sessions).reduce((s, sess) => s + sess.runCount, 0)
+  const { data: analytics, loading } = usePublisherAnalytics()
+
+  const totalSubscribers = analytics?.total_subscribers || 0
+  const totalCourses = analytics?.total_courses || 0
+  const totalSessions = analytics?.total_sessions || 0
+  const totalAvatars = analytics?.total_avatars || 0
 
   const recs = lang === "ar"
     ? [
-        "3 موظفين في إدارة الدفاع المدني متأخرون عن دورة السلامة المهنية — يُقترح إرسال تذكير آلي.",
-        "أداء إدارة الجنسية والإقامة هو الأعلى (91٪) — يمكن مشاركة أفضل الممارسات.",
+        "3 مشتركين متأخرون عن دورة أساسيات السلامة — يُقترح إرسال تذكير آلي.",
+        "أداء دورة القيادة هو الأعلى (91٪) — فكر في مشاركة أفضل الممارسات.",
         "معدل إكمال دورة حوكمة الذكاء الاصطناعي منخفض — يُنصح بإضافة جلسة مراجعة.",
       ]
     : [
-        "3 Civil Defense staff are behind on OHS — suggest sending an automated reminder.",
-        "Naturalization leads completion (91%) — consider sharing their best practices.",
+        "3 subscribers are behind on OHS Basics — suggest sending an automated reminder.",
+        "Leadership course leads completion (91%) — consider sharing best practices.",
         "AI Governance completion is low — recommend adding an oral revision session.",
       ]
 
@@ -63,7 +66,7 @@ export default function PublisherDashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat icon={Bot} label={tr("myAvatars", lang)} value={`${avatars.length}`} />
+        <Stat icon={Bot} label={tr("myAvatars", lang)} value={`${totalAvatars}`} />
         <Stat icon={Users} label={tr("totalSubscribers", lang)} value={`${totalSubscribers}`} />
         <Stat icon={BookOpen} label={tr("activeCourses", lang)} value={`${totalCourses}`} />
         <Stat icon={TrendingUp} label={tr("totalSessions", lang)} value={`${totalSessions}`} />
@@ -72,13 +75,13 @@ export default function PublisherDashboardPage() {
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("departmentPerformance", lang)}</h3>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">{lang === "ar" ? "أداء الدورات" : "Course Performance"}</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={departmentStats} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <BarChart data={analytics?.course_performance || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
-                  dataKey={(d) => d.name[lang]}
+                  dataKey={(d) => d.name[lang] || d.name}
                   tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                   tickLine={false}
                   axisLine={false}
@@ -106,7 +109,7 @@ export default function PublisherDashboardPage() {
           <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("monthlyCompletions", lang)}</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyCompletion} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <AreaChart data={analytics?.monthly_completions || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                 <defs>
                   <linearGradient id="fill2" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.4} />
@@ -137,14 +140,14 @@ export default function PublisherDashboardPage() {
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
             <AlertTriangle className="h-4 w-4 text-destructive" />
-            {tr("employeesAtRisk", lang)}
+            {lang === "ar" ? "المشتركون المعرضون للخطر" : "Subscribers At Risk"}
           </h3>
           <ul className="space-y-3">
-            {atRisk.map((e, i) => (
+            {(analytics?.at_risk_learners || []).map((e: any, i: number) => (
               <li key={i} className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{e.name[lang]}</p>
-                  <p className="truncate text-xs text-muted-foreground">{e.course[lang]}</p>
+                  <p className="truncate text-sm font-medium text-foreground">{e.name[lang] || e.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{e.course[lang] || e.course}</p>
                 </div>
                 <div className="w-28">
                   <Progress value={e.progress} className="h-1.5" />

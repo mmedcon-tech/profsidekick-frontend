@@ -1,8 +1,7 @@
 "use client"
 
-import { useAppV2 } from "@/lib/v2/context"
+
 import { tr } from "@/lib/v2/i18n"
-import { courses } from "@/lib/v2/data"
 import { Progress } from "@/components/ui/progress"
 import { useSubscriberAnalytics } from "@/hooks/useSubscriberAnalytics"
 import { useSessionRuns } from "@/hooks/useSessionRuns"
@@ -19,20 +18,20 @@ const weeklyActivity = [
 ]
 
 const sessionHistory = [
-  { id: "r1", course: { en: "AI Governance & Transformation", ar: "O-U^UU.Oc O U,OUO O O U,O OOU+O O1US U^O U,OO-U^U," }, session: { en: "Foundations of AI", ar: "OO3O O3USO O O U,OUO O O U,O OOU+O O1US" }, date: "2026-06-09", duration: 32, score: null },
-  { id: "r2", course: { en: "AI Governance & Transformation", ar: "O-U^UU.Oc O U,OUO O O U,O OOU+O O1US U^O U,OO-U^U," }, session: { en: "Data Privacy & PDPL", ar: "OrOU^OUSOc O U,O"USO U+O O U^U,O U+U^U+ O-U.O USOc O U,O"USO U+O O" }, date: "2026-06-07", duration: 41, score: null },
-  { id: "r3", course: { en: "Basic Level Leadership", ar: "O U,U,USO O_Oc O U,OO3O O3USOc" }, session: { en: "Crisis Leadership", ar: "U,USO O_Oc O U,OOU.O O" }, date: "2026-06-04", duration: 28, score: 88 },
-  { id: "r4", course: { en: "Basic Level Leadership", ar: "O U,U,USO O_Oc O U,OO3O O3USOc" }, session: { en: "Decision Making", ar: "OU+O1 O U,U,OO O" }, date: "2026-06-01", duration: 35, score: null },
+  { id: "r1", course: { en: "AI Governance & Transformation", ar: "AI" }, session: { en: "Foundations of AI", ar: "AI" }, date: "2026-06-09", duration: 32, score: null },
+  { id: "r2", course: { en: "AI Governance & Transformation", ar: "AI" }, session: { en: "Data Privacy & PDPL", ar: "PDPL" }, date: "2026-06-07", duration: 41, score: null },
+  { id: "r3", course: { en: "Basic Level Leadership", ar: "Leadership" }, session: { en: "Crisis Leadership", ar: "Leadership" }, date: "2026-06-04", duration: 28, score: 88 },
+  { id: "r4", course: { en: "Basic Level Leadership", ar: "Leadership" }, session: { en: "Decision Making", ar: "Decision" }, date: "2026-06-01", duration: 35, score: null },
 ]
 
 const assessmentScores = [
-  { name: { en: "AI Ethics", ar: "OOrU,O U,USO O O U,OUO O O U,O OOU+O O1US" }, score: 88 },
-  { name: { en: "PDPL Quiz", ar: "O OrOO"O O O-U.O USOc O U,O"USO U+O O" }, score: 74 },
-  { name: { en: "Leadership", ar: "O U,U,USO O_Oc" }, score: 92 },
+  { name: { en: "AI Ethics", ar: "AI Ethics" }, score: 88 },
+  { name: { en: "PDPL Quiz", ar: "PDPL" }, score: 74 },
+  { name: { en: "Leadership", ar: "Leadership" }, score: 92 },
 ]
 
 export default function AnalyticsPage() {
-  const { lang, dir } = useAppV2();
+  const lang = "en"; const dir = "ltr";
   const { data: analyticsData, loading } = useSubscriberAnalytics();
   const { runs } = useSessionRuns(); // We'll keep useSessionRuns for Weekly Activity/History
 
@@ -46,7 +45,7 @@ export default function AnalyticsPage() {
   
   // Real course progress from analytics API
   const courseProgressList = analyticsData?.course_progress ?? [];
-  const enrolledCount = courseProgressList.length;
+  const enrolledCount = analyticsData?.course_progress?.length || 0;
 
   // Real assessment scores from analytics API
   const realAssessments = analyticsData?.recent_assessments ?? [];
@@ -76,16 +75,17 @@ export default function AnalyticsPage() {
         <h1 className="text-2xl font-bold text-foreground">{tr("analytics", lang)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {lang === "ar" ? "OU,O_U.U O U,O'OrOUS U^OO-OO OO O O U,OO1U,U." : "Your personal progress and learning statistics"}
+          {lang === "ar" ? "إحصائيات التقدم والتعلم الخاصة بك" : "Your personal progress and learning statistics"}
         </p>
       </div>
 
       {/* Stat row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { label: { en: "Enrolled Courses", ar: "O U,O_U^OO O O U,U.O3OU,Oc" }, value: enrolledCount },
-          { label: { en: "Sessions Completed", ar: "O U,OU,O3O O O U,U.UOU.U,Oc" }, value: totalSessions },
-          { label: { en: "Minutes This Week", ar: "O_U,O OU, UOO  O U,OO3O"U^O1" }, value: totalMinutes },
-          { label: { en: "Avg. Assessment Score", ar: "U.OU^O3O U+OUSOOc O U,OU,USUSU." }, value: `${avgScore}%` },
+          { label: { en: "Enrolled Courses", ar: "الدورات المسجلة" }, value: enrolledCount },
+          { label: { en: "Sessions Completed", ar: "الجلسات المكتملة" }, value: totalSessions },
+          { label: { en: "Minutes This Week", ar: "دقائق هذا الأسبوع" }, value: totalMinutes },
+          { label: { en: "Avg. Assessment Score", ar: "متوسط درجات التقييم" }, value: `${avgScore}%` },
         ].map((stat, i) => (
           <div key={i} className="rounded-xl border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">{stat.label[lang]}</p>
@@ -97,7 +97,7 @@ export default function AnalyticsPage() {
       {/* Weekly activity */}
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="mb-4 text-sm font-semibold text-foreground">
-          {lang === "ar" ? "O U,U+O'O O O U,OO3O"U^O1US (O_U,O OU,)" : "Weekly Activity (minutes)"}
+          {lang === "ar" ? "النشاط الأسبوعي (بالدقائق)" : "Weekly Activity (minutes)"}
         </h2>
         <ResponsiveContainer width="100%" height={160}>
           <AreaChart data={weeklyActivityData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
