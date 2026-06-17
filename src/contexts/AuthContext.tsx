@@ -104,7 +104,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       },
     });
 
-    const data = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await response.json().catch(() => ({}));
 
     if (!response.ok) {
       throw new Error(data.message || data.detail || 'Token refresh failed');
@@ -202,7 +203,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data: any = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(data.message || data.detail || 'Login failed');

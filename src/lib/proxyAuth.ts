@@ -31,7 +31,15 @@ export async function proxyPublicToBackend(
     }
   }
 
-  const response = await fetch(config.getApiUrl(backendPath), init);
+  let response: Response;
+  try {
+    response = await fetch(config.getApiUrl(backendPath), init);
+  } catch {
+    return NextResponse.json(
+      { detail: 'Backend unavailable. Make sure the API server is running.' },
+      { status: 503 },
+    );
+  }
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
@@ -73,7 +81,15 @@ export async function proxyToBackend(
     }
   }
 
-  const response = await fetch(config.getApiUrl(backendPath), init);
+  let response: Response;
+  try {
+    response = await fetch(config.getApiUrl(backendPath), init);
+  } catch {
+    return NextResponse.json(
+      { detail: 'Backend unavailable. Make sure the API server is running.' },
+      { status: 503 },
+    );
+  }
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
