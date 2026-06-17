@@ -57,18 +57,18 @@ export default function AvatarDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="h-8 w-64 bg-gray-200 rounded animate-pulse" />
-        <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="h-8 w-64 bg-card rounded animate-pulse" />
+        <div className="h-32 bg-card rounded-xl animate-pulse" />
       </div>
     );
   }
 
   if (error || !avatar) {
     return (
-      <div className="text-center py-20">
-        <p className="text-red-600">{error || 'Avatar not found'}</p>
-        <Link href="/publisher/avatars" className="text-[#133221] hover:underline text-sm mt-2 inline-block">
+      <div className="text-center py-20 bg-card rounded-xl border border-border">
+        <p className="text-red-500">{error || 'Avatar not found'}</p>
+        <Link href="/publisher/avatars" className="text-primary hover:underline text-sm mt-2 inline-block">
           ← Back to avatars
         </Link>
       </div>
@@ -81,112 +81,82 @@ export default function AvatarDetailPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Link href="/publisher/avatars"
-        className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 transition-colors w-fit">
-        <ArrowLeft size={16} /> All Avatars
-      </Link>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div className="flex items-start gap-3">
+        <Link href="/publisher/avatars"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit">
+          <ArrowLeft size={16} /> Back to Avatars
+        </Link>
+      </div>
 
       {/* Publish success banner */}
       {publishSuccess && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <CheckCircle size={18} className="text-green-600 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-4 bg-green-600/10 border border-green-600/20 rounded-xl">
+          <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-green-800">Avatar published to marketplace</p>
-            <p className="text-xs text-green-600 mt-0.5">
-              Subscribers can now discover and use this avatar. You can continue training it at any time — publishing does not lock anything.
+            <p className="text-sm font-semibold text-green-600 dark:text-green-400">Avatar published to marketplace</p>
+            <p className="text-xs text-green-600/80 dark:text-green-400/80 mt-0.5">
+              Subscribers can now discover and use this avatar. You can continue training it at any time.
             </p>
           </div>
         </div>
       )}
 
-      {/* Header card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={56} rounded="lg" />
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{avatar.name}</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{avatar.description || 'No description'}</p>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                  avatar.is_published ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {avatar.is_published ? '● Published' : '○ Unpublished draft'}
-                </span>
-                {avatar.configuration && (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-[#BA984E]/20 text-[#133221] font-medium">
-                    Configured
-                  </span>
-                )}
-                <span className="text-xs text-gray-400">
-                  Last updated {fmtDate(avatar.updated_at)}
-                </span>
-              </div>
-            </div>
+      {/* Header card (V2 Design) */}
+      <div className="flex flex-col sm:flex-row sm:items-start gap-5 bg-card rounded-xl border border-border p-6 shadow-sm">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border bg-muted flex items-center justify-center">
+          {avatar.template_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatar.template_image_url} alt={avatar.name} className="object-cover w-full h-full" />
+          ) : (
+            <span className="text-2xl font-bold text-muted-foreground uppercase">{avatar.name.charAt(0)}</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground">{avatar.name}</h1>
+            <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${
+              avatar.is_published ? 'bg-green-600/10 text-green-500 border-green-600/20' : 'bg-muted text-muted-foreground border-border'
+            }`}>
+              {avatar.is_published ? 'Published' : 'Draft'}
+            </span>
           </div>
-
-          {/* Publish / Publish Updates button */}
-          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            <button
-              onClick={handlePublish}
-              disabled={publishing}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-                avatar.is_published
-                  ? 'bg-[#133221] hover:bg-[#0a1e13] text-white'
-                  : 'bg-green-600 hover:bg-green-700 text-white'
-              }`}>
-              {publishing ? (
-                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Publishing…</>
-              ) : avatar.is_published ? (
-                <><RefreshCw size={15} /> Publish Updates</>
-              ) : (
-                <><Globe size={15} /> Publish to Marketplace</>
-              )}
-            </button>
-            {avatar.is_published && (
-              <p className="text-xs text-gray-400 text-right max-w-[180px]">
-                Publishing a new version does not affect existing subscriber sessions.
-              </p>
-            )}
+          <p className="mt-1 text-sm text-muted-foreground">{avatar.description || 'No description'}</p>
+          <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> Template: {avatar.template_name || 'Custom'}</span>
+            <span className="flex items-center gap-1"><Settings className="h-3.5 w-3.5" /> Updated: {fmtDate(avatar.updated_at)}</span>
           </div>
         </div>
 
-        {/* Training workflow explanation (when already published) */}
-        {avatar.is_published && (
-          <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Publisher Training Loop</p>
-            <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500 dark:text-gray-400">
-              {[
-                { icon: <Settings size={11} />, label: 'Configure' },
-                { icon: <Upload size={11} />, label: 'Upload Materials' },
-                { icon: <BookOpen size={11} />, label: 'Run Sessions' },
-                { icon: <Send size={11} />, label: 'Chat & Refine' },
-                { icon: <Globe size={11} />, label: 'Publish Updates' },
-              ].map((step, i) => (
-                <React.Fragment key={step.label}>
-                  <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1">
-                    {step.icon} {step.label}
-                  </div>
-                  {i < 4 && <span className="text-gray-300">→</span>}
-                </React.Fragment>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-2">
-              You can continue training at any time. Click &quot;Publish Updates&quot; when you&apos;re ready to release a new version to subscribers.
-            </p>
-          </div>
-        )}
+        {/* Publish / Publish Updates button */}
+        <div className="flex flex-col sm:items-end gap-2 flex-shrink-0 mt-4 sm:mt-0">
+          <button
+            onClick={handlePublish}
+            disabled={publishing}
+            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+              avatar.is_published
+                ? 'bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20'
+                : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+            }`}>
+            {publishing ? (
+              <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Publishing…</>
+            ) : avatar.is_published ? (
+              <><RefreshCw size={15} /> Publish Updates</>
+            ) : (
+              <><Globe size={15} /> Publish Avatar</>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Tab bar */}
-      <div className="border-b border-gray-200 dark:border-gray-700 flex gap-1 overflow-x-auto">
+      {/* Tab bar (V2 Design) */}
+      <div className="border-b border-border flex gap-2 overflow-x-auto">
         {TABS.map((tab) => (
           <Link key={tab.label} href={tab.href(id)}
-            className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
+            className={`px-4 pb-2.5 pt-1 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
               isTabActive(tab)
-                ? 'border-[#133221] text-[#133221]'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}>
             {tab.label}
           </Link>
@@ -194,17 +164,6 @@ export default function AvatarDetailPage() {
       </div>
 
       {/* Overview content */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Avatar Overview</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-          <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Created</p><p className="font-medium">{fmtDate(avatar.created_at)}</p></div>
-          <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Last updated</p><p className="font-medium">{fmtDate(avatar.updated_at)}</p></div>
-          <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Status</p><p className={`font-medium ${avatar.is_published ? 'text-green-700' : 'text-amber-700'}`}>{avatar.is_published ? 'Published' : 'Draft'}</p></div>
-          {avatar.configuration && (
-            <>
-              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Voice</p><p className="font-medium capitalize">{avatar.configuration.voice || 'Default'}</p></div>
-              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Difficulty</p><p className="font-medium capitalize">{avatar.configuration.difficulty_level || 'Not set'}</p></div>
-              <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Knowledge docs</p><p className="font-medium">{avatar.configuration.knowledge_documents.length}</p></div>
               <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Reference solutions</p><p className="font-medium">{avatar.configuration.reference_solutions.length}</p></div>
               <div><p className="text-gray-500 dark:text-gray-400 text-xs mb-0.5">Rubrics</p><p className="font-medium">{avatar.configuration.rubrics.length}</p></div>
             </>

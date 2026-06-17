@@ -1,221 +1,99 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { templateApi, adminAvatarApi, adminUserApi } from '@/lib/avatarApi';
-import type { AvatarTemplateResponse } from '@/types/avatar';
-import AvatarIcon from '@/components/avatars/AvatarIcon';
+import { tr } from "@/lib/v2/i18n"
+import { platformStats, departmentStats, monthlyCompletion } from "@/lib/v2/data"
+import { Users, Bot, Layers, TrendingUp, CreditCard, Monitor } from "lucide-react"
 import {
-  Layers, Users, ShieldCheck, Plus, ArrowRight, ChevronRight,
-  BarChart2,
-} from 'lucide-react';
+  Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
+  Area, AreaChart, CartesianGrid,
+} from "recharts"
 
-function StatusPill({ state }: { state: string }) {
-  const map: Record<string, string> = {
-    published:   'bg-emerald-100 text-emerald-700',
-    draft:       'bg-amber-100 text-amber-700',
-    unpublished: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
-    archived:    'bg-gray-100 dark:bg-gray-800 text-gray-400',
-  };
+function StatCard({ icon: Icon, label, value, sub }: { icon: typeof Bot; label: string; value: string; sub?: string }) {
   return (
-    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize ${map[state] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-      {state}
-    </span>
-  );
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        <span className="text-xs font-medium">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+    </div>
+  )
 }
 
-export default function AdminDashboard() {
-  const [templateList, setTemplateList] = useState<AvatarTemplateResponse[]>([]);
-  const [avatarCount,   setAvatarCount]   = useState(0);
-  const [publishers,    setPublishers]    = useState(0);
-  const [subscribers,   setSubscribers]   = useState(0);
-  const [loading,       setLoading]       = useState(true);
-
-  useEffect(() => {
-    Promise.allSettled([
-      templateApi.list(),
-      adminAvatarApi.list(),
-      adminUserApi.list('publisher'),
-      adminUserApi.list('subscriber'),
-    ]).then(([t, a, pub, sub]) => {
-      if (t.status   === 'fulfilled') setTemplateList(t.value);
-      if (a.status   === 'fulfilled') setAvatarCount(a.value.total);
-      if (pub.status === 'fulfilled') setPublishers(pub.value.length);
-      if (sub.status === 'fulfilled') setSubscribers(sub.value.length);
-    }).finally(() => setLoading(false));
-  }, []);
-
-  const stats = [
-    {
-      label: 'Templates',
-      value: loading ? '—' : templateList.length,
-      icon: <Layers size={20} className="text-indigo-600" />,
-      bg: 'bg-gray-50',
-      href: '/admin/templates',
-    },
-    {
-      label: 'Avatars',
-      value: loading ? '—' : avatarCount,
-      icon: <AvatarIcon imageUrl={null} name="" size={20} className="text-[#133221]" />,
-      bg: 'bg-green-50 dark:bg-gray-800',
-      href: '/admin/marketplace',
-    },
-    {
-      label: 'Publishers',
-      value: loading ? '—' : publishers,
-      icon: <ShieldCheck size={20} className="text-purple-600" />,
-      bg: 'bg-purple-50',
-      href: '/admin/publishers',
-    },
-    {
-      label: 'Subscribers',
-      value: loading ? '—' : subscribers,
-      icon: <Users size={20} className="text-green-600" />,
-      bg: 'bg-green-50',
-      href: '/admin/subscribers',
-    },
-  ];
-
-  const actions = [
-    { label: 'Create Template',    href: '/admin/templates/new', icon: <Plus size={16} />,       color: 'bg-indigo-600 hover:bg-indigo-700' },
-    { label: 'All Templates',      href: '/admin/templates',     icon: <Layers size={16} />,     color: 'bg-[#133221] hover:bg-[#0a1e13]'    },
-    { label: 'Manage Marketplace', href: '/admin/marketplace',   icon: <ArrowRight size={16} />, color: 'bg-gray-800 hover:bg-gray-900'   },
-  ];
+export default function AdminDashboardPage() {
+  const lang = "en"
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Platform overview and management.</p>
+    <div className="space-y-6">
+      <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-card to-secondary/40 p-5">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">MyOS Platform Admin</p>
+        <h1 className="mt-1 text-xl font-bold text-foreground">
+          {lang === "ar" ? "لوحة تحكم المنصة" : "Platform Dashboard"}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {lang === "ar"
+            ? "نظرة عامة على المنصة بالكامل عبر جميع الناشرين والمشتركين."
+            : "Platform-wide overview across all publishers and subscribers."}
+        </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <Link key={s.label} href={s.href}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-[#133221] hover:shadow-sm transition-all flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
-              {s.icon}
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{s.label}</p>
-            </div>
-          </Link>
-        ))}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+        <StatCard icon={Users} label={tr("totalPublishers", lang)} value={`${platformStats.totalPublishers}`} />
+        <StatCard icon={Bot} label={tr("totalSubscribers", lang)} value={`${platformStats.totalSubscribers}`} />
+        <StatCard icon={Layers} label={tr("activeAvatars", lang)} value={`${platformStats.totalAvatars}`} />
+        <StatCard icon={TrendingUp} label={tr("totalSessions", lang)} value={`${platformStats.totalSessions.toLocaleString()}`} />
+        <StatCard icon={CreditCard} label={tr("creditsConsumed", lang)} value={`${platformStats.creditsConsumed.toLocaleString()}`} />
+        <StatCard icon={Monitor} label={lang === "ar" ? "متوسط مدة الجلسة" : "Avg Session"} value={`${platformStats.avgSessionDuration}m`} />
       </div>
 
-      {/* Avatar Templates — dynamic, links to per-template management dashboard */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Avatar Templates</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Click a template to manage its prompts, roles, publishers, courses, and sessions.
-            </p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("departmentPerformance", lang)}</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={departmentStats} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey={(d) => d.name[lang]}
+                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  cursor={{ fill: "var(--muted)" }}
+                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--popover-foreground)" }}
+                  formatter={(v) => [`${v}%`, tr("completionRate", lang)]}
+                />
+                <Bar dataKey="completion" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          <Link href="/admin/templates"
-            className="text-xs text-indigo-600 hover:underline flex items-center gap-1">
-            View all <ChevronRight size={12} />
-          </Link>
         </div>
 
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-800 rounded-xl animate-pulse">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-40 bg-gray-100 dark:bg-gray-800 rounded" />
-                  <div className="h-3 w-24 bg-gray-100 dark:bg-gray-800 rounded" />
-                </div>
-              </div>
-            ))}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("monthlyCompletions", lang)}</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyCompletion} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="fillAdmin" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12, color: "var(--popover-foreground)" }} />
+                <Area type="monotone" dataKey="value" stroke="var(--chart-2)" strokeWidth={2} fill="url(#fillAdmin)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-        ) : templateList.length === 0 ? (
-          <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-            <Layers size={32} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">No templates yet.</p>
-            <Link href="/admin/templates/new"
-              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors">
-              <Plus size={14} /> Create first template
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {templateList.filter((t) => t.is_active).map((t) => (
-              <Link
-                key={t.id}
-                href={`/admin/avatars/${t.id}`}
-                className="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:border-indigo-200 hover:bg-gray-50/40 transition-all group"
-              >
-                <AvatarIcon imageUrl={t.avatar_image_url} name={t.name} size={48} rounded="lg" />
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{t.name}</span>
-                    <StatusPill state={t.published_state} />
-                    {t.category && (
-                      <span className="text-[10px] text-indigo-600 bg-gray-50 px-2 py-0.5 rounded-full">
-                        {t.category}
-                      </span>
-                    )}
-                  </div>
-                  {t.description && (
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">{t.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Layers size={10} /> {t.version_count} version{t.version_count !== 1 ? 's' : ''}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users size={10} /> {t.roles.length} role{t.roles.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Right: CTA */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-indigo-600 bg-gray-50 border border-indigo-200 px-3 py-1.5 rounded-lg group-hover:bg-indigo-100 transition-colors">
-                    <BarChart2 size={13} /> Manage
-                  </span>
-                  <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 transition-colors" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
-        <div className="flex flex-wrap gap-3">
-          {actions.map((a) => (
-            <Link key={a.label} href={a.href}
-              className={`flex items-center gap-2 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${a.color}`}>
-              {a.icon} {a.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Info cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-gray-50 rounded-xl border border-indigo-200 p-5">
-          <h3 className="font-semibold text-indigo-900 mb-2">Prompt Isolation</h3>
-          <p className="text-sm text-indigo-700">
-            All AI prompts are stored exclusively in Templates. Publishers and subscribers never see
-            prompt content. Only admins can view or edit prompts.
-          </p>
-        </div>
-        <div className="bg-purple-50 rounded-xl border border-purple-200 p-5">
-          <h3 className="font-semibold text-purple-900 mb-2">Admin Seed Script</h3>
-          <p className="text-sm text-purple-700 font-mono text-xs break-all">
-            python scripts/seed_admin.py --username admin --email admin@example.com --password changeme
-          </p>
         </div>
       </div>
     </div>
-  );
+  )
 }

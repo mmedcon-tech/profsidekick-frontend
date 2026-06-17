@@ -1,159 +1,175 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { avatarApi } from '@/lib/avatarApi';
-import type { AvatarSummary } from '@/types/avatar';
-import { Bot, Plus, BarChart2, BookOpen, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
-import AvatarIcon from '@/components/avatars/AvatarIcon';
+import { useAuth } from "@/contexts/AuthContext"
+import { tr } from "@/lib/v2/i18n"
+import { avatars, courses, departmentStats, monthlyCompletion, atRisk } from "@/lib/v2/data"
+import { Progress } from "@/components/ui/progress"
+import { Button } from "@/components/ui/button"
+import { Bot, BookOpen, Users, TrendingUp, AlertTriangle, Sparkles, ArrowRight } from "lucide-react"
+import {
+  Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
+  Area, AreaChart, CartesianGrid,
+} from "recharts"
 
-/** ProfSidekick avatars (created from the ProfSidekick template) route to
- *  the existing course/session dashboard instead of the avatar detail page. */
-function isProfSidekickAvatar(a: AvatarSummary): boolean {
-  return (a.template_name ?? '').toLowerCase() === 'profsidekick';
+function Stat({ icon: Icon, label, value, sub }: { icon: typeof Bot; label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        <span className="text-xs font-medium">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+    </div>
+  )
 }
 
-function avatarHref(a: AvatarSummary): string {
-  return isProfSidekickAvatar(a) ? '/publisher/courses' : `/publisher/avatars/${a.id}`;
-}
+export default function PublisherDashboardPage() {
+  const { user } = useAuth()
+  const lang = "en"
 
-function avatarCta(a: AvatarSummary): string {
-  return isProfSidekickAvatar(a) ? 'Continue Learning →' : 'Courses & Sessions →';
-}
+  const totalSubscribers = avatars.reduce((s, a) => s + a.subscriberCount, 0)
+  const totalCourses = courses.length
+  const totalSessions = courses.flatMap((c) => c.sessions).reduce((s, sess) => s + sess.runCount, 0)
 
-export default function PublisherDashboard() {
-  const { user } = useAuth();
-  const [avatars,       setAvatars]      = useState<AvatarSummary[]>([]);
-  const [avatarError,   setAvatarError]  = useState<string | null>(null);
-  const [avatarLoading, setAvatarLoading] = useState(true);
-
-  const load = () => {
-    setAvatarLoading(true);
-    setAvatarError(null);
-    avatarApi.list()
-      .then((r) => setAvatars(r.avatars))
-      .catch((e) => setAvatarError(e.message ?? 'Failed to load avatars'))
-      .finally(() => setAvatarLoading(false));
-  };
-
-  useEffect(load, []);
-
-  const published = avatars.filter((a) => a.is_published).length;
-  const drafts    = avatars.filter((a) => !a.is_published).length;
+  const recs = lang === "ar"
+    ? [
+        "3 موظفين في إدارة الدفاع المدني متأخرون عن دورة السلامة المهنية — يُقترح إرسال تذكير آلي.",
+        "أداء إدارة الجنسية والإقامة هو الأعلى (91٪) — يمكن مشاركة أفضل الممارسات.",
+        "معدل إكمال دورة حوكمة الذكاء الاصطناعي منخفض — يُنصح بإضافة جلسة مراجعة.",
+      ]
+    : [
+        "3 Civil Defense staff are behind on OHS — suggest sending an automated reminder.",
+        "Naturalization leads completion (91%) — consider sharing their best practices.",
+        "AI Governance completion is low — recommend adding an oral revision session.",
+      ]
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome back, {user?.firstName}!</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-            Select an avatar to manage its courses, sessions, and content.
-          </p>
-        </div>
-        <Link href="/publisher/avatars/new"
-          className="flex items-center gap-2 bg-[#133221] text-white px-4 py-2.5 rounded-lg hover:bg-[#0a1e13] transition-colors text-sm font-medium">
-          <Plus size={16} /> Create Avatar
-        </Link>
+    <div className="space-y-6">
+      {/* Welcome */}
+      <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-card to-secondary/40 p-5">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {tr("welcomeBack", lang)}, {user?.firstName}
+        </p>
+        <h1 className="mt-1 text-xl font-bold text-foreground">
+          {lang === "ar" ? "لوحة تحكم الناشر" : "Publisher Dashboard"}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {lang === "ar"
+            ? "نظرة عامة على مساعديك وبرامجك وأداء المشتركين."
+            : "Overview of your avatars, programs, and subscriber performance."}
+        </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: 'My Avatars', value: avatarLoading ? null : avatars.length, icon: <Bot size={20} className="text-[#133221]" />,    bg: 'bg-green-50 dark:bg-gray-800' },
-          { label: 'Published',  value: avatarLoading ? null : published,      icon: <BarChart2 size={20} className="text-green-600" />, bg: 'bg-green-50' },
-          { label: 'Drafts',     value: avatarLoading ? null : drafts,         icon: <BookOpen size={20} className="text-yellow-600" />, bg: 'bg-yellow-50' },
-        ].map((s) => (
-          <div key={s.label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
-              {s.icon}
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value ?? '—'}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{s.label}</p>
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat icon={Bot} label={tr("myAvatars", lang)} value={`${avatars.length}`} />
+        <Stat icon={Users} label={tr("totalSubscribers", lang)} value={`${totalSubscribers}`} />
+        <Stat icon={BookOpen} label={tr("activeCourses", lang)} value={`${totalCourses}`} />
+        <Stat icon={TrendingUp} label={tr("totalSessions", lang)} value={`${totalSessions}`} />
       </div>
 
-      {/* ── My Avatars ────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">My Avatars</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              All your avatar instances. Click an avatar to manage its courses, sessions, and content.
-            </p>
+      {/* Charts */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("departmentPerformance", lang)}</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={departmentStats} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey={(d) => d.name[lang]}
+                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={0}
+                />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  cursor={{ fill: "var(--muted)" }}
+                  contentStyle={{
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: "var(--popover-foreground)",
+                  }}
+                  formatter={(v) => [`${v}%`, tr("completionRate", lang)]}
+                />
+                <Bar dataKey="completion" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-          <button onClick={load} title="Refresh" className="text-gray-400 hover:text-gray-600 dark:text-gray-400 transition-colors">
-            <RefreshCw size={15} />
-          </button>
         </div>
 
-        {avatarLoading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2].map((i) => <div key={i} className="h-36 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("monthlyCompletions", lang)}</h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyCompletion} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="fill2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: "var(--popover-foreground)",
+                  }}
+                />
+                <Area type="monotone" dataKey="value" stroke="var(--chart-2)" strokeWidth={2} fill="url(#fill2)" />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-
-        ) : avatarError ? (
-          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-red-700 font-medium">Could not load avatars</p>
-              <p className="text-xs text-red-600 mt-0.5">{avatarError}</p>
-              <button onClick={load} className="mt-1 text-xs text-red-700 underline">Retry</button>
-            </div>
-          </div>
-
-        ) : avatars.length === 0 ? (
-          <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-            <Bot size={36} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">No avatars yet</p>
-            <p className="text-gray-400 text-xs mt-1 mb-4">
-              Create an avatar from a template to get started.
-            </p>
-            <Link href="/publisher/avatars/new"
-              className="inline-flex items-center gap-2 bg-[#133221] text-white px-4 py-2 rounded-lg hover:bg-[#0a1e13] transition-colors text-sm">
-              <Plus size={14} /> Create Avatar
-            </Link>
-          </div>
-
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {avatars.map((a) => (
-              <Link
-                key={a.id}
-                href={avatarHref(a)}
-                className="group block p-5 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-[#133221] hover:shadow-md transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <AvatarIcon imageUrl={a.template_image_url} name={a.name} size={44} rounded="lg" />
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    a.is_published ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {a.is_published ? 'Published' : 'Draft'}
-                  </span>
-                </div>
-                <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#133221] transition-colors text-sm line-clamp-1">
-                  {a.name}
-                </p>
-                {a.template_name && (
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    Based on <span className="font-medium text-gray-500 dark:text-gray-400">{a.template_name}</span>
-                  </p>
-                )}
-                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{a.description || ''}</p>
-                <p className="mt-3 text-xs text-[#133221] font-medium group-hover:underline flex items-center gap-1">
-                  {avatarCta(a)} <ArrowRight size={11} />
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
 
+      {/* At risk + AI recs */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            {tr("employeesAtRisk", lang)}
+          </h3>
+          <ul className="space-y-3">
+            {atRisk.map((e, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">{e.name[lang]}</p>
+                  <p className="truncate text-xs text-muted-foreground">{e.course[lang]}</p>
+                </div>
+                <div className="w-28">
+                  <Progress value={e.progress} className="h-1.5" />
+                </div>
+                <span className="w-10 text-end text-xs font-medium text-destructive">{e.progress}%</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-card to-secondary/40 p-5">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Sparkles className="h-4 w-4 text-accent" />
+            {tr("aiRecommendations", lang)}
+          </h3>
+          <ul className="space-y-3">
+            {recs.map((r, i) => (
+              <li key={i} className="flex gap-2.5 rounded-lg bg-background/60 p-3 text-sm leading-relaxed text-foreground">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                {r}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
-  );
+  )
 }

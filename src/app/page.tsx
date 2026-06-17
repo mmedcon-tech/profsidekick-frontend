@@ -7,7 +7,7 @@ import { BookOpen, Users, Zap, ArrowRight, CheckCircle, LogOut } from 'lucide-re
 
 export default function LandingPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, logout, user } = useAuth();
+  const { isAuthenticated, isLoading, logout, user, token } = useAuth();
 
   const handleLogout = async () => {
     await logout();
@@ -16,11 +16,40 @@ export default function LandingPage() {
 
   // Redirect authenticated users to their role dashboard immediately
   useEffect(() => {
-    if (isLoading || !isAuthenticated || !user) return;
-    if (user.role === 'admin')      router.replace('/admin/dashboard');
-    else if (user.role === 'subscriber') router.replace('/subscriber/dashboard');
-    else                            router.replace('/publisher/dashboard');
-  }, [isAuthenticated, isLoading, user, router]);
+    let mounted = true;
+
+    const performRedirect = async () => {
+      if (isLoading || !isAuthenticated || !user) return;
+      if (user.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else if (user.role === 'subscriber') {
+        try {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+          const res = await fetch(`${apiUrl}/api/courses`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const courses = await res.json();
+          if (mounted) {
+            if (Array.isArray(courses) && courses.length === 0) {
+              router.replace('/subscriber/marketplace');
+            } else {
+              router.replace('/subscriber/dashboard');
+            }
+          }
+        } catch (e) {
+          if (mounted) router.replace('/subscriber/dashboard');
+        }
+      } else {
+        router.replace('/publisher/dashboard');
+      }
+    };
+
+    performRedirect();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isAuthenticated, isLoading, user, router, token]);
 
   // Show spinner while auth check runs OR while redirect is in flight
   if (isLoading || isAuthenticated) {

@@ -10,7 +10,7 @@ import { Eye, EyeOff, LogIn } from 'lucide-react';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isAuthenticated, isLoading, user } = useAuth();
+  const { login, isAuthenticated, isLoading, user, token } = useAuth();
   
   const [formData, setFormData] = useState({
     username: '',
@@ -22,17 +22,48 @@ function LoginForm() {
 
   // Redirect if already authenticated — role-based destination
   useEffect(() => {
-    if (isAuthenticated && !isLoading && user) {
-      const redirectParam = searchParams.get('redirect');
-      if (redirectParam) {
-        router.push(redirectParam);
-        return;
+    let mounted = true;
+
+    const performRedirect = async () => {
+      if (isAuthenticated && !isLoading && user) {
+        const redirectParam = searchParams.get('redirect');
+        if (redirectParam) {
+          router.push(redirectParam);
+          return;
+        }
+        
+        if (user.role === 'admin') {
+          router.push('/admin/dashboard');
+        } else if (user.role === 'subscriber') {
+          try {
+            // Check if first-time login (no courses)
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const res = await fetch(`${apiUrl}/api/courses`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const courses = await res.json();
+            if (mounted) {
+              if (Array.isArray(courses) && courses.length === 0) {
+                router.push('/subscriber/marketplace');
+              } else {
+                router.push('/subscriber/dashboard');
+              }
+            }
+          } catch (e) {
+            if (mounted) router.push('/subscriber/dashboard');
+          }
+        } else {
+          router.push('/publisher/dashboard');
+        }
       }
-      if (user.role === 'admin') router.push('/admin/dashboard');
-      else if (user.role === 'subscriber') router.push('/subscriber/dashboard');
-      else router.push('/publisher/dashboard');
-    }
-  }, [isAuthenticated, isLoading, user, router, searchParams]);
+    };
+
+    performRedirect();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isAuthenticated, isLoading, user, router, searchParams, token]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

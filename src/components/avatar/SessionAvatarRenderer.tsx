@@ -2,6 +2,7 @@
 
 import React from 'react';
 import TeachingSessionAvatar from '@/components/avatar/TeachingSessionAvatar';
+import GlbAvatar from '@/components/avatar/GlbAvatar';
 import {
   getAvatarModeLabel,
   getEffectiveRenderType,
@@ -56,6 +57,14 @@ export default function SessionAvatarRenderer({
               </div>
             )}
           </>
+        ) : displayConfig.renderType === '3d' && displayConfig.modelUrl ? (
+          <GlbAvatar
+            modelUrl={displayConfig.modelUrl}
+            audioElement={audioElement}
+            isConnected={isConnected}
+            isAISpeaking={isAISpeaking}
+            isUserSpeaking={isUserSpeaking}
+          />
         ) : (
           <TeachingSessionAvatar
             config={displayConfig}
