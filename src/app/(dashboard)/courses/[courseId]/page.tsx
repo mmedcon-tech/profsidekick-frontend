@@ -79,23 +79,8 @@ export default function CourseDetailPage() {
     window.open("/autograder/result", "_blank");
   };
 
-  const handleViewMyFeedback = async () => {
-    const response = await fetch(
-      "http://localhost:8000/api/autograder/submissions/me/latest",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      alert("No placement test feedback found yet.");
-      return;
-    }
-
-    const data = await response.json();
-    window.open(`/autograder/result/${data.id}`, "_blank");
+  const handleViewMyFeedback = () => {
+    router.push("/autograder/feedbacks");
   };
 
   const handleCreateSession = () => {

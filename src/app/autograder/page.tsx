@@ -21,6 +21,13 @@ export default function AutograderLandingPage() {
           </a>
 
           <a
+            href="/autograder/feedbacks"
+            className="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+          >
+            View Feedbacks
+          </a>
+
+          <a
             href="/autograder/result"
             className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
