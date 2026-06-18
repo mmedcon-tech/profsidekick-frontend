@@ -13,7 +13,7 @@ import { Plus, Globe, Lock, Trash2, Settings } from "lucide-react"
 import { useProgramContext } from "@/contexts/ProgramContext"
 
 export default function PublisherAvatarsPage() {
-  const lang = "en"
+  const lang = "en" as "en" | "ar"
   const { activeProgram, contextReady } = useProgramContext()
   const [avatars, setAvatars] = useState<AvatarSummary[]>([]);
   const [loading, setLoading] = useState(true);

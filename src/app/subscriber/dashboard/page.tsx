@@ -25,7 +25,7 @@ function StatCard({ icon: Icon, label, value, hint }: { icon: typeof Award; labe
 }
 
 function MiniCourseCard({ course, onOpen }: { course: any; onOpen: (id: string) => void }) {
-  const lang = "en"
+  const lang = "en" as "en" | "ar"
   const statusColors = {
     "in-progress": "text-primary bg-primary/10",
     "completed": "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950",
@@ -44,7 +44,7 @@ function MiniCourseCard({ course, onOpen }: { course: any; onOpen: (id: string) 
           <p className="truncate text-sm font-semibold text-foreground">{course.name[lang]}</p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{course.department[lang]}</p>
         </div>
-        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize", statusColors[course.status ?? "not-started"])}>
+        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize", statusColors[(course.status ?? "not-started") as keyof typeof statusColors])}>
           {tr(course.status?.replace("-", "") === "inprogress" ? "inProgress" : (course.status ?? "notStarted"), lang)}
         </span>
       </div>
@@ -66,8 +66,8 @@ function MiniCourseCard({ course, onOpen }: { course: any; onOpen: (id: string) 
 export default function SubscriberDashboardPage() {
   const { user } = useAuth()
   const router = useRouter()
-  const lang = "en"
-  const dir = "ltr"
+  const lang = "en" as "en" | "ar"
+  const dir = "ltr" as "ltr" | "rtl"
   const activeProgram = null // Will be handled via context later
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight
 
@@ -81,7 +81,7 @@ export default function SubscriberDashboardPage() {
   // Map API courses to UI expected structure
   const visibleCourses = apiCourses.map(c => {
     const progressData = analytics?.course_progress?.find(p => p.course_id === c.course_id);
-    const progress = progressData ? progressData.progress_percentage : 0;
+    const progress = progressData ? progressData.completion_pct : 0;
     let status = "not-started";
     if (progress > 0 && progress < 100) status = "in-progress";
     if (progress === 100) status = "completed";
@@ -92,7 +92,7 @@ export default function SubscriberDashboardPage() {
       department: { en: c.department || "General", ar: c.department || "General" },
       status,
       progress,
-      sessions: Array(progressData?.total_sessions || 0).fill(1)
+      sessions: Array(0).fill(1)
     };
   });
 

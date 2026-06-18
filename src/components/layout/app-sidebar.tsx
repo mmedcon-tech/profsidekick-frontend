@@ -61,7 +61,7 @@ const roleIcon = { subscriber: GraduationCap, publisher: Bot, admin: ShieldCheck
 export function AppSidebarV2() {
   const { user, logout } = useAuth()
   const pathname = usePathname()
-  const lang = "en" // Hardcode to English for now, can be extracted to a context later
+  const lang = "en" as "en" | "ar" // Hardcode to English for now, can be extracted to a context later
   const activeProgram = null // We'll get this from a separate context later
 
   if (!user) return null

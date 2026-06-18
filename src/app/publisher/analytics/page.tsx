@@ -51,7 +51,7 @@ export default function PublisherAnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard icon={Bot} label="Total Avatars" value={data.total_avatars} />
         <StatCard icon={BookOpen} label="Total Courses" value={data.total_courses} />
-        <StatCard icon={CreditCard} label="Credits Earned" value={data.total_credits_earned.toLocaleString()} />
+        <StatCard icon={CreditCard} label="Credits Earned" value={(data.total_credits_earned ?? 0).toLocaleString()} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -59,7 +59,7 @@ export default function PublisherAnalyticsPage() {
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">Course Completions (Monthly)</h2>
           <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={data.monthly_completions} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <AreaChart data={data.monthly_completions ?? []} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
@@ -79,7 +79,7 @@ export default function PublisherAnalyticsPage() {
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">Subscriber Course Progress</h2>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={data.course_performance.map((d: any) => ({ name: d.name.en || d.name, completion: d.completion, subscribers: d.subscribers }))} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+            <BarChart data={(data.course_performance ?? []).map((d: any) => ({ name: d.name.en || d.name, completion: d.completion, subscribers: d.subscribers }))} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
               <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#6b7280" />
               <YAxis tick={{ fontSize: 11 }} stroke="#6b7280" unit="%" />

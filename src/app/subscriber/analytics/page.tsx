@@ -9,7 +9,7 @@ import {
 } from "recharts"
 
 export default function AnalyticsPage() {
-  const lang = "en"
+  const lang = "en" as "en" | "ar"
   const { data, loading } = useSubscriberAnalytics()
 
   if (loading) {

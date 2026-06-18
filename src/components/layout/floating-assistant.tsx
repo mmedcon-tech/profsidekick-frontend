@@ -94,7 +94,7 @@ function getReply(input: string, lang: "en" | "ar", userName: string): string {
 export function FloatingAssistant() {
   const { user } = useAuth()
   const router = useRouter()
-  const lang = "en"
+  const lang = "en" as "en" | "ar"
   const dir = "ltr"
   
   const [assistantOpen, setAssistantOpen] = useState(false)

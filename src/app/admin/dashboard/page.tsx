@@ -22,7 +22,7 @@ function StatCard({ icon: Icon, label, value, sub }: { icon: typeof Bot; label: 
 }
 
 export default function AdminDashboardPage() {
-  const lang = "en"
+  const lang = "en" as "en" | "ar"
   const { data: analytics, loading } = useAdminAnalytics()
 
   return (

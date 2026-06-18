@@ -8,8 +8,10 @@ export interface PublisherAnalyticsResponse {
   total_courses: number;
   total_sessions: number;
   total_avatars: number;
-  // We can add departmentStats, monthlyCompletion, etc. if backend supports it later
-  // For now, we mock the chart data but use the real high-level stats
+  total_credits_earned?: number;
+  monthly_completions?: any[];
+  course_performance?: any[];
+  at_risk_learners?: any[];
 }
 
 export function usePublisherAnalytics(programId?: string) {

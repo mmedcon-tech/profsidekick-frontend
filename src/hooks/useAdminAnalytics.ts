@@ -9,8 +9,14 @@ export interface AdminAnalyticsResponse {
   total_subscribers: number;
   total_programs: number;
   total_courses: number;
+  total_avatars: number;
+  total_session_runs: number;
+  total_credits_consumed: number;
   system_health: number;
   active_sessions_today: number;
+  monthly_completions: any[];
+  course_performance: any[];
+  at_risk_learners: any[];
 }
 
 export function useAdminAnalytics() {

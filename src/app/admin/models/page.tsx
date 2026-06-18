@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function AdminModelsPage() {
-  const lang = "en"
+  const lang = "en" as "en" | "ar"
   const { models, loading, error, createModel } = useAdminModels()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -84,11 +84,9 @@ export default function AdminModelsPage() {
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90">
-              <Plus className="h-4 w-4" />
-              {tr("addModel", lang) || "Add Model"}
-            </Button>
+          <DialogTrigger render={<Button className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90" />}>
+            <Plus className="h-4 w-4" />
+            {tr("addModel", lang) || "Add Model"}
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <form onSubmit={handleSubmit}>

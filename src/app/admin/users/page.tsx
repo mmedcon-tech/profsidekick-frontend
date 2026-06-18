@@ -18,7 +18,7 @@ const roleColor = {
 }
 
 export default function UsersView() {
-  const lang = "en"; const dir = "ltr"
+  const lang = "en" as "en" | "ar"; const dir = "ltr"
   const [query, setQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
   const [users, setUsers] = useState<UserRecord[]>([])

@@ -22,6 +22,11 @@ const DEMO_CONFIGS: Record<AvatarRenderType, SessionAvatarConfig> = {
     heygenAvatarId: 'demo_avatar_id',
     imageUrl: '/images/avatar-female.png',
   },
+  '3d': {
+    renderType: '3d',
+    avatarName: 'Avatar 3D',
+    imageUrl: '/images/avatar-female.png',
+  },
 };
 
 /**

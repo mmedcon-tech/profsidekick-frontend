@@ -199,7 +199,7 @@ export default function MarketplacePage() {
                   <div className="relative p-5 pb-0">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
-                        <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={64} rounded="xl" />
+                        <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={64} rounded="lg" />
                         <div>
                            <h3 className="font-bold text-foreground text-lg line-clamp-1">{avatar.name}</h3>
                            <div className="mt-1 flex items-center gap-1">

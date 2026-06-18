@@ -27,7 +27,7 @@ function Stat({ icon: Icon, label, value, sub }: { icon: typeof Bot; label: stri
 
 export default function PublisherDashboardPage() {
   const { user } = useAuth()
-  const lang = "en"
+  const lang = "en" as "en" | "ar"
   const { activeProgram, contextReady } = useProgramContext()
 
   const { data: analytics, loading } = usePublisherAnalytics(
