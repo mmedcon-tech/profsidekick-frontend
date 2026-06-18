@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext"
 import { tr } from "@/lib/v2/i18n"
+import { useProgramContext } from "@/contexts/ProgramContext"
 import { usePublisherAnalytics } from "@/hooks/usePublisherAnalytics"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
@@ -27,8 +28,11 @@ function Stat({ icon: Icon, label, value, sub }: { icon: typeof Bot; label: stri
 export default function PublisherDashboardPage() {
   const { user } = useAuth()
   const lang = "en"
+  const { activeProgram, contextReady } = useProgramContext()
 
-  const { data: analytics, loading } = usePublisherAnalytics()
+  const { data: analytics, loading } = usePublisherAnalytics(
+    contextReady ? activeProgram?.id : undefined
+  )
 
   const totalSubscribers = analytics?.total_subscribers || 0
   const totalCourses = analytics?.total_courses || 0
@@ -63,6 +67,17 @@ export default function PublisherDashboardPage() {
             : "Overview of your avatars, programs, and subscriber performance."}
         </p>
       </div>
+
+      {/* Program scope banner */}
+      {contextReady && activeProgram && (
+        <div className="flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm">
+          <span className="h-2 w-2 rounded-full bg-primary" />
+          <span className="text-foreground">
+            Showing stats for <span className="font-semibold">{activeProgram.name.en}</span>
+          </span>
+          <span className="text-muted-foreground">— switch to MyOS to see all</span>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

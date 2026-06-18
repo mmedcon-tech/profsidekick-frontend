@@ -9,25 +9,29 @@ import { avatarApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarSummary } from '@/types/avatar';
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Globe, Lock, Trash2, Edit3, Settings } from "lucide-react"
+import { Plus, Globe, Lock, Trash2, Settings } from "lucide-react"
+import { useProgramContext } from "@/contexts/ProgramContext"
 
 export default function PublisherAvatarsPage() {
   const lang = "en"
+  const { activeProgram, contextReady } = useProgramContext()
   const [avatars, setAvatars] = useState<AvatarSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
-    avatarApi.list()
+    avatarApi.list(activeProgram?.id)
       .then((r) => { setAvatars(r.avatars); setError(null); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
+    if (!contextReady) return;
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProgram?.id, contextReady]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this avatar? This cannot be undone.')) return;
@@ -58,8 +62,8 @@ export default function PublisherAvatarsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">{tr("myAvatars", lang)}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {lang === "ar"
-              ? "إدارة مساعديك الذكيين وإعداداتهم"
+            {activeProgram
+              ? `Showing avatars in "${activeProgram.name.en}" — switch to "MyOS" to see all.`
               : "Manage your AI avatars and their configurations"}
           </p>
         </div>

@@ -6,16 +6,16 @@ import { apiFetch } from '@/lib/api';
 export interface CourseProgressSummary {
   course_id: string;
   course_name: string;
-  total_sessions: number;
-  completed_sessions: number;
-  progress_percentage: number;
+  completion_pct: number;
+  time_spent_sec: number;
+  last_session_at: string | null;
 }
 
 export interface AssessmentSummary {
-  session_id: string;
-  session_name: string;
-  score: number;
-  completed_at: string;
+  session_run_id: string;
+  score: number | null;
+  question_count: number;
+  generated_at: string;
 }
 
 export interface SubscriberAnalytics {
@@ -24,7 +24,7 @@ export interface SubscriberAnalytics {
   total_time_spent_sec: number;
   course_progress: CourseProgressSummary[];
   recent_assessments: AssessmentSummary[];
-  average_session_rating?: number;
+  average_session_rating?: number | null;
 }
 
 export function useSubscriberAnalytics() {

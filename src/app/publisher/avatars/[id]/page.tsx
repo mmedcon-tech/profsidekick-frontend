@@ -15,6 +15,7 @@ const TABS = [
   { label: 'Knowledge',           href: (id: string) => `/publisher/avatars/${id}/knowledge`,  exact: false },
   { label: 'References',          href: (id: string) => `/publisher/avatars/${id}/references`, exact: false },
   { label: 'Rubrics',             href: (id: string) => `/publisher/avatars/${id}/rubrics`,    exact: false },
+  { label: 'Access Codes',        href: (id: string) => `/publisher/avatars/${id}/codes`,      exact: false },
 ];
 
 function fmtDate(iso: string) {

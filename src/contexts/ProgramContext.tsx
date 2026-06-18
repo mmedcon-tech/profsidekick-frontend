@@ -11,6 +11,8 @@ interface ProgramContextValue {
   activeProgram: Program | null
   setActiveProgram: (p: Program | null) => void
   loading: boolean
+  /** True once localStorage has been read AND programs list has loaded. Safe to fetch with. */
+  contextReady: boolean
 }
 
 const ProgramContext = createContext<ProgramContextValue>({
@@ -18,6 +20,7 @@ const ProgramContext = createContext<ProgramContextValue>({
   activeProgram: null,
   setActiveProgram: () => {},
   loading: false,
+  contextReady: false,
 })
 
 export function useProgramContext() {
@@ -27,10 +30,12 @@ export function useProgramContext() {
 export function ProgramContextProvider({ children }: { children: React.ReactNode }) {
   const { programs, loading } = usePrograms()
   const [activeProgramId, setActiveProgramId] = useState<string | null>(null)
+  const [localStorageRead, setLocalStorageRead] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) setActiveProgramId(stored)
+    setLocalStorageRead(true)
   }, [])
 
   // Validate stored ID is still a valid program once programs load
@@ -56,8 +61,10 @@ export function ProgramContextProvider({ children }: { children: React.ReactNode
     }
   }, [])
 
+  const contextReady = localStorageRead && !loading
+
   return (
-    <ProgramContext.Provider value={{ programs, activeProgram, setActiveProgram, loading }}>
+    <ProgramContext.Provider value={{ programs, activeProgram, setActiveProgram, loading, contextReady }}>
       {children}
     </ProgramContext.Provider>
   )

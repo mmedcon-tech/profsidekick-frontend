@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { publisherTemplateApi, avatarApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarTemplateSummary, TeachingPreferences } from '@/types/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProgramContext } from '@/contexts/ProgramContext';
 import { ArrowLeft, ArrowRight, CheckCircle, Layers, Tag } from 'lucide-react';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 
@@ -106,6 +107,7 @@ const STEPS: Step[] = ['template', 'info', 'preferences'];
 export default function CreateAvatarPage() {
   const router          = useRouter();
   const { user }        = useAuth();
+  const { activeProgram } = useProgramContext();
   const [step,          setStep]       = useState<Step>('template');
   const [templates,     setTemplates]  = useState<AvatarTemplateSummary[]>([]);
   const [loadingT,      setLoadingT]   = useState(true);
@@ -154,6 +156,7 @@ export default function CreateAvatarPage() {
         name:                 name.trim(),
         description:          desc.trim() || undefined,
         teaching_preferences: Object.keys(prefs).length > 0 ? prefs : undefined,
+        program_id:           activeProgram?.id ?? undefined,
       });
       router.push(`/publisher/avatars/${avatar.id}`);
     } catch (e) {

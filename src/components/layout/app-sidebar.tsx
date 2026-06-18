@@ -33,7 +33,7 @@ interface NavItem {
 const subscriberNav: NavItem[] = [
   { href: "/subscriber/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { href: "/subscriber/courses", labelKey: "myCourses", icon: GraduationCap },
-  { href: "/marketplace", labelKey: "marketplace", icon: Store },
+  { href: "/subscriber/marketplace", labelKey: "marketplace", icon: Store },
   { href: "/subscriber/analytics", labelKey: "analytics", icon: BarChart3 },
   { href: "/subscriber/billing", labelKey: "billing", icon: CreditCard },
   { href: "/subscriber/profile", labelKey: "profile", icon: User },

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { marketplaceApi, ApiError } from '@/lib/avatarApi';
+import { marketplaceApi, subscriptionApi, ApiError } from '@/lib/avatarApi';
 import { STARTER_AVATARS } from '@/lib/starterAvatars';
 import type { AvatarPublicResponse } from '@/types/avatar';
 import { Search, BookOpen, Users, Star, CheckCircle2, Bot, Calendar } from 'lucide-react';
@@ -43,12 +43,20 @@ export default function MarketplacePage() {
     setAgreedPrivacy(false);
   }
 
-  function handleSubscribe() {
+  async function handleSubscribe() {
     if (!confirmId) return;
-    setSubscribedIds((prev) => [...prev, confirmId]);
-    setSubscribeSuccess(confirmId);
-    setConfirmId(null);
-    setTimeout(() => setSubscribeSuccess(null), 3000);
+    setLoading(true);
+    try {
+      await subscriptionApi.subscribe(confirmId);
+      setSubscribedIds((prev) => [...prev, confirmId]);
+      setSubscribeSuccess(confirmId);
+      setConfirmId(null);
+      setTimeout(() => setSubscribeSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to subscribe to avatar');
+    } finally {
+      setLoading(false);
+    }
   }
 
   const confirmAvatarApi = avatars.find((a) => a.id === confirmId);

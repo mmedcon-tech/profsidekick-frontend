@@ -33,10 +33,10 @@ const emptyForm = (): CreateCourseForm => ({
   is_public: false,
 });
 
-export default function UnifiedDashboard() {
+export default function UnifiedDashboard({ programId }: { programId?: string } = {}) {
   const router = useRouter();
   const { user } = useAuth();
-  const { courses, loading, error, refetch, createCourse } = useCourses();
+  const { courses, loading, error, refetch, createCourse } = useCourses(programId);
   const [searchQuery, setSearchQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateCourseForm>(emptyForm());
@@ -72,6 +72,7 @@ export default function UnifiedDashboard() {
         semester: form.semester.trim() || undefined,
         year: form.year ? parseInt(form.year, 10) : undefined,
         is_public: form.is_public,
+        program_id: programId,
       });
       setCreateOpen(false);
       setForm(emptyForm());
@@ -94,7 +95,7 @@ export default function UnifiedDashboard() {
   const isPublisher = user?.role === 'publisher' || user?.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-green-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-white dark:bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Section */}
         <div className="text-center mb-12">

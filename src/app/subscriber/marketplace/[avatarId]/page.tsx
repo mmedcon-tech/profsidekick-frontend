@@ -3,9 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { marketplaceApi } from '@/lib/avatarApi';
+import { marketplaceApi, subscriptionApi } from '@/lib/avatarApi';
 import { config } from '@/lib/config';
-import { subscriptionApi } from '@/lib/avatarApi';
 import type { AvatarPublicResponse } from '@/types/avatar';
 import { Bot, ArrowLeft, Calendar, Play, Clock, Upload, Info } from 'lucide-react';
 
@@ -33,6 +32,10 @@ export default function SubscriberAvatarDetailPage() {
   const [launching, setLaunching] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemMessage, setRedeemMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -66,6 +69,29 @@ export default function SubscriberAvatarDetailPage() {
       alert(e instanceof Error ? e.message : "Subscription failed");
     } finally {
       setSubscribing(false);
+    }
+  };
+
+  const handleRedeem = async () => {
+    if (!accessCode.trim()) return;
+    if (!token) { router.push('/login'); return; }
+    setRedeeming(true);
+    setRedeemMessage(null);
+    try {
+      const result = await subscriptionApi.redeemCode(accessCode.trim());
+      setRedeemMessage({ text: result.message, ok: true });
+      setIsSubscribed(true);
+      setAccessCode('');
+      setShowCodeInput(false);
+      // Refresh session list
+      const newSessions = await fetch(config.getApiUrl(`/api/sessions?avatar_id=${avatarId}&limit=20`), {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(r => r.ok ? r.json() : { sessions: [] }).then(d => d.sessions ?? []);
+      setSessions(newSessions);
+    } catch (e) {
+      setRedeemMessage({ text: e instanceof Error ? e.message : 'Redemption failed', ok: false });
+    } finally {
+      setRedeeming(false);
     }
   };
 
@@ -127,24 +153,59 @@ export default function SubscriberAvatarDetailPage() {
           <span>Published {new Date(avatar.created_at).toLocaleDateString()}</span>
         </div>
         
-        <div className="mt-6">
+        <div className="mt-6 space-y-3">
           {isSubscribed ? (
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/5 dark:bg-primary/30 text-primary/90 dark:text-primary/40 rounded-full text-sm font-medium border border-primary/20 dark:border-primary/95">
               <span className="w-2 h-2 rounded-full bg-primary/50"></span>
               Subscribed
             </div>
           ) : (
-            <button
-              onClick={handleSubscribe}
-              disabled={subscribing}
-              className="inline-flex items-center gap-2 bg-primary dark:bg-primary/90 text-white px-6 py-2.5 rounded-full hover:bg-primary/90 dark:hover:bg-primary disabled:opacity-50 transition-colors text-sm font-medium"
-            >
-              {subscribing ? (
-                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Enrolling...</>
-              ) : (
-                <>1-Click Enroll / Subscribe</>
-              )}
-            </button>
+            <>
+              <button
+                onClick={handleSubscribe}
+                disabled={subscribing}
+                className="inline-flex items-center gap-2 bg-primary dark:bg-primary/90 text-white px-6 py-2.5 rounded-full hover:bg-primary/90 dark:hover:bg-primary disabled:opacity-50 transition-colors text-sm font-medium"
+              >
+                {subscribing ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Enrolling...</>
+                ) : (
+                  <>1-Click Enroll / Subscribe</>
+                )}
+              </button>
+
+              {/* Access code redemption */}
+              <div>
+                <button
+                  onClick={() => { setShowCodeInput(v => !v); setRedeemMessage(null); }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                >
+                  {showCodeInput ? 'Cancel' : 'Have an access code?'}
+                </button>
+                {showCodeInput && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                      placeholder="Enter access code…"
+                      value={accessCode}
+                      onChange={e => setAccessCode(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleRedeem()}
+                    />
+                    <button
+                      onClick={handleRedeem}
+                      disabled={redeeming || !accessCode.trim()}
+                      className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                    >
+                      {redeeming ? 'Redeeming…' : 'Redeem'}
+                    </button>
+                  </div>
+                )}
+                {redeemMessage && (
+                  <p className={`mt-2 text-xs ${redeemMessage.ok ? 'text-primary' : 'text-destructive'}`}>
+                    {redeemMessage.text}
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
