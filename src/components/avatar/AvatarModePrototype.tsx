@@ -22,6 +22,11 @@ const DEMO_CONFIGS: Record<AvatarRenderType, SessionAvatarConfig> = {
     heygenAvatarId: 'demo_avatar_id',
     imageUrl: '/images/avatar-female.png',
   },
+  '3d': {
+    renderType: '3d',
+    avatarName: 'Avatar 3D',
+    imageUrl: '/images/avatar-female.png',
+  },
 };
 
 /**
@@ -64,7 +69,7 @@ export default function AvatarModePrototype(): React.ReactElement {
             onClick={() => setMode(type)}
             className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               mode === type
-                ? 'bg-emerald-600 dark:bg-emerald-700 text-white'
+                ? 'bg-primary dark:bg-primary/90 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200'
             }`}
           >
@@ -81,7 +86,7 @@ export default function AvatarModePrototype(): React.ReactElement {
             onClick={() => setWidgetState(state)}
             className={`rounded-lg border px-3 py-1.5 text-xs capitalize ${
               widgetState === state
-                ? 'border-emerald-500 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300'
+                ? 'border-primary/50 dark:border-primary/50 bg-primary/5 dark:bg-primary/20 text-primary/95 dark:text-primary/30'
                 : 'border-gray-200 text-gray-600'
             }`}
           >

@@ -3,8 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import DashboardLayout, { subscriberNav } from '@/components/layout/DashboardLayout';
-import FloatingAvatar from '@/components/avatar/FloatingAvatar';
+import { ThemedLayout } from '@/components/layout/ThemedLayout';
 
 export default function SubscriberLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -21,9 +20,8 @@ export default function SubscriberLayout({ children }: { children: React.ReactNo
   if (isLoading || !isAuthenticated) return null;
 
   return (
-    <>
-      <DashboardLayout nav={subscriberNav}>{children}</DashboardLayout>
-      <FloatingAvatar />
-    </>
+    <ThemedLayout>
+      {children}
+    </ThemedLayout>
   );
 }

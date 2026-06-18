@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { publisherTemplateApi, avatarApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarTemplateSummary, TeachingPreferences } from '@/types/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProgramContext } from '@/contexts/ProgramContext';
 import { ArrowLeft, ArrowRight, CheckCircle, Layers, Tag } from 'lucide-react';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
 
@@ -40,7 +41,7 @@ function PrefGroup({
               onClick={() => onChange(opt.value)}
               className={`text-left p-3 rounded-xl border-2 transition-all ${
                 selected
-                  ? 'border-[#133221] bg-green-50 dark:bg-gray-800'
+                  ? 'border-[#133221] bg-primary/5 dark:bg-gray-800'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
               }`}
             >
@@ -106,6 +107,7 @@ const STEPS: Step[] = ['template', 'info', 'preferences'];
 export default function CreateAvatarPage() {
   const router          = useRouter();
   const { user }        = useAuth();
+  const { activeProgram } = useProgramContext();
   const [step,          setStep]       = useState<Step>('template');
   const [templates,     setTemplates]  = useState<AvatarTemplateSummary[]>([]);
   const [loadingT,      setLoadingT]   = useState(true);
@@ -154,6 +156,7 @@ export default function CreateAvatarPage() {
         name:                 name.trim(),
         description:          desc.trim() || undefined,
         teaching_preferences: Object.keys(prefs).length > 0 ? prefs : undefined,
+        program_id:           activeProgram?.id ?? undefined,
       });
       router.push(`/publisher/avatars/${avatar.id}`);
     } catch (e) {
@@ -182,10 +185,10 @@ export default function CreateAvatarPage() {
           return (
             <React.Fragment key={s}>
               <div className={`flex items-center gap-1.5 text-xs font-medium ${
-                active ? 'text-[#133221]' : done ? 'text-green-600' : 'text-gray-400'
+                active ? 'text-[#133221]' : done ? 'text-primary' : 'text-gray-400'
               }`}>
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
-                  active ? 'bg-[#133221] text-white' : done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500 dark:text-gray-400'
+                  active ? 'bg-[#133221] text-white' : done ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500 dark:text-gray-400'
                 }`}>
                   {done ? <CheckCircle size={12} /> : i + 1}
                 </div>
@@ -219,7 +222,7 @@ export default function CreateAvatarPage() {
                   <button key={t.id} onClick={() => handleSelectTemplate(t)}
                     className={`text-left p-5 rounded-xl border-2 transition-all ${
                       isSelected
-                        ? 'border-[#133221] bg-green-50 dark:bg-gray-800 ring-2 ring-[#133221] ring-offset-1'
+                        ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 ring-2 ring-[#133221] ring-offset-1'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
                     }`}>
                     <div className="flex items-start gap-3">
@@ -259,7 +262,7 @@ export default function CreateAvatarPage() {
       {step === 'info' && selectedT && (
         <div className="space-y-5">
           {/* Selected template badge */}
-          <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-gray-800 border border-[#133221]/30 rounded-xl">
+          <div className="flex items-center gap-3 p-4 bg-primary/5 dark:bg-gray-800 border border-[#133221]/30 rounded-xl">
             <AvatarIcon imageUrl={selectedT.avatar_image_url} name={selectedT.name} size={36} rounded="lg" />
             <div>
               <p className="text-sm font-semibold text-[#133221]">{selectedT.name}</p>
@@ -303,7 +306,7 @@ export default function CreateAvatarPage() {
       {/* ── Step 3: teaching preferences ───────────────────────────────────── */}
       {step === 'preferences' && selectedT && (
         <div className="space-y-6">
-          <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-gray-800 border border-[#133221]/30 rounded-xl">
+          <div className="flex items-center gap-3 p-4 bg-primary/5 dark:bg-gray-800 border border-[#133221]/30 rounded-xl">
             <AvatarIcon imageUrl={selectedT.avatar_image_url} name={selectedT.name} size={36} rounded="lg" />
             <div>
               <p className="text-sm font-semibold text-[#133221]">{name}</p>
@@ -335,7 +338,7 @@ export default function CreateAvatarPage() {
                   <button key={val} type="button" onClick={() => setPostSessionCheck(val)}
                     className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all capitalize ${
                       postSessionCheck === val
-                        ? 'border-[#133221] bg-green-50 dark:bg-gray-800 text-[#133221]'
+                        ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221]'
                         : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300'
                     }`}>
                     {val}

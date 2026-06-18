@@ -39,7 +39,7 @@ export default function SubscriberProfilePage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Profile</h1>
 
       {error   && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
-      {success && <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">Profile updated!</div>}
+      {success && <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-primary/90 text-sm">Profile updated!</div>}
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -61,7 +61,7 @@ export default function SubscriberProfilePage() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
-          <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm capitalize font-medium">
+          <div className="px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg text-primary/90 text-sm capitalize font-medium">
             {user?.role}
           </div>
         </div>

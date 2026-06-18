@@ -331,7 +331,7 @@ export interface EphemeralTokenResponse {
   avatar_name?: string | null;
 }
 
-export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads';
+export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | '3d';
 
 export type AvatarWidgetState = 'idle' | 'listening' | 'speaking';
 
@@ -340,6 +340,7 @@ export interface SessionAvatarConfig {
   avatarId?: string;
   avatarName: string;
   imageUrl?: string;
+  modelUrl?: string;
   heygenAvatarId?: string | null;
   heygenQuality?: 'low' | 'medium' | 'high';
   heygenAccessToken?: string | null;

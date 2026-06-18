@@ -46,7 +46,7 @@ export function GuardrailChip({
     case "PASS":
       IconComponent = CheckCircledIcon;
       label = "Pass";
-      textColorClass = "text-green-600";
+      textColorClass = "text-primary";
       break;
     case "FAIL":
       IconComponent = CrossCircledIcon;

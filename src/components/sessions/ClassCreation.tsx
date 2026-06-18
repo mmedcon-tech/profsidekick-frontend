@@ -481,7 +481,7 @@ export default function ClassCreation() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
         <audio ref={audioPlayerRef} />{" "}
         {/* Hidden audio player controlled by the ref */}
         <div className="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
@@ -493,7 +493,7 @@ export default function ClassCreation() {
               >
                 <ChevronLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />
               </button>
-              <h1 className="text-3xl font-bold text-emerald-950 dark:text-emerald-100">
+              <h1 className="text-3xl font-bold text-primary dark:text-primary/10">
                 Create New Session
               </h1>
             </div>
@@ -505,7 +505,7 @@ export default function ClassCreation() {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Section 1: Basic Class Information */}
             <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <legend className="text-lg font-semibold text-emerald-800 dark:text-emerald-300 px-2">
+              <legend className="text-lg font-semibold text-primary/95 dark:text-primary/30 px-2">
                 Basic Class Information
               </legend>
 
@@ -550,11 +550,11 @@ export default function ClassCreation() {
                     onClick={() => setSessionMode('teaching')}
                     className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors ${
                       sessionMode === 'teaching'
-                        ? 'border-emerald-500 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                        ? 'border-primary/50 dark:border-primary/50 bg-primary/5 dark:bg-primary/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:bg-gray-900'
                     }`}
                   >
-                    <span className={`text-sm font-semibold ${sessionMode === 'teaching' ? 'text-emerald-800 dark:text-emerald-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                    <span className={`text-sm font-semibold ${sessionMode === 'teaching' ? 'text-primary/95 dark:text-primary/30' : 'text-gray-700 dark:text-gray-300'}`}>
                       📚 Teaching Mode
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -614,14 +614,14 @@ export default function ClassCreation() {
                   </label>
                   <div className="space-y-2">
                     {availableRoles.map((role) => (
-                      <label key={role.id} className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedRoleId === role.id ? 'border-emerald-500 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}>
+                      <label key={role.id} className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedRoleId === role.id ? 'border-primary/50 dark:border-primary/50 bg-primary/5 dark:bg-primary/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}>
                         <input
                           type="radio"
                           name="session_role"
                           value={role.id}
                           checked={selectedRoleId === role.id}
                           onChange={() => setSelectedRoleId(role.id)}
-                          className="mt-0.5 accent-emerald-600"
+                          className="mt-0.5 accent-primary"
                         />
                         <div>
                           <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
@@ -730,15 +730,15 @@ export default function ClassCreation() {
             </fieldset>
             {/* Section 2: Presentation File */}
             <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <legend className="text-lg font-semibold text-emerald-800 dark:text-emerald-300 px-2">
+              <legend className="text-lg font-semibold text-primary/95 dark:text-primary/30 px-2">
                 Presentation File
               </legend>
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                   isDragOver
-                    ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20"
+                    ? "border-primary/40 bg-primary/5 dark:bg-primary/20"
                     : selectedFile
-                    ? "border-green-400 bg-green-50"
+                    ? "border-primary bg-primary/5"
                     : "border-gray-300 hover:border-gray-400"
                 }`}
                 onDrop={handleDrop}
@@ -755,7 +755,7 @@ export default function ClassCreation() {
                 />
                 {selectedFile ? (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-green-700">
+                    <p className="text-sm font-medium text-primary">
                       {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
                     </p>
                     <button
@@ -844,7 +844,7 @@ export default function ClassCreation() {
 
             {/* Section 3: Core AI Settings */}
             <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <legend className="text-lg font-semibold text-emerald-800 dark:text-emerald-300 px-2">
+              <legend className="text-lg font-semibold text-primary/95 dark:text-primary/30 px-2">
                 Core AI Settings
               </legend>
 
@@ -898,7 +898,7 @@ export default function ClassCreation() {
                   <button
                     type="button"
                     onClick={() => playVoiceSample(classDetails.assistant_parameters.voice)}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500"
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50"
                     aria-label={`Preview voice ${classDetails.assistant_parameters.voice}`}
                   >
                     {currentlyPlayingVoice === classDetails.assistant_parameters.voice ? (
@@ -917,7 +917,7 @@ export default function ClassCreation() {
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="currentColor"
-                        className="w-5 h-5 text-emerald-700 dark:text-emerald-400"
+                        className="w-5 h-5 text-primary/90 dark:text-primary/40"
                       >
                         <path d="M8 5v14l11-7z" />
                       </svg>
@@ -942,7 +942,7 @@ export default function ClassCreation() {
                   min="0.6"
                   max="1.2"
                   step="0.1"
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
               </div>
 
@@ -1170,7 +1170,7 @@ export default function ClassCreation() {
                             min="0.0"
                             max="1.0"
                             step="0.1"
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
                           />
                         </div>
 
@@ -1249,7 +1249,7 @@ export default function ClassCreation() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-emerald-600 dark:bg-emerald-700 text-white py-3 px-4 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base"
+              className="w-full bg-primary dark:bg-primary/90 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">

@@ -1435,7 +1435,7 @@ export default function TeachingInterface({
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
           <div className={`${
             sessionStatus === "CONNECTED"
-              ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30"
+              ? "bg-gradient-to-r from-primary/50 to-teal-500 shadow-primary/50/30"
               : "bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/30"
           } text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all duration-300`}>
             <div className="w-10 h-10 bg-white dark:bg-gray-800/20 rounded-full flex items-center justify-center animate-pulse">
@@ -1449,7 +1449,7 @@ export default function TeachingInterface({
               {sessionStatus === "CONNECTED" ? (
                 <>
                   <p className="font-semibold text-base">👋 Ready to start!</p>
-                  <p className="text-sm text-emerald-50">Say something to begin the conversation</p>
+                  <p className="text-sm text-primary/5">Say something to begin the conversation</p>
                 </>
               ) : (
                 <>
@@ -1474,12 +1474,12 @@ export default function TeachingInterface({
       {/* Left Side - Slide Viewer (70%) */}
       <div className="w-[80%] bg-white dark:bg-gray-800 flex flex-col">
         {/* Header */}
-        <div className="bg-emerald-600 dark:bg-emerald-700 text-white p-4 flex justify-between items-center">
+        <div className="bg-primary dark:bg-primary/90 text-white p-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <img 
               src="/images/logo.png" 
               alt="ProfSidekick Logo" 
-              className="w-11 h-11 object-contain bg-emerald-500 rounded-full"
+              className="w-11 h-11 object-contain bg-primary/50 rounded-full"
               onError={(e) => {
                 // Hide image if logo file doesn't exist
                 e.currentTarget.style.display = 'none';
@@ -1487,7 +1487,7 @@ export default function TeachingInterface({
             />
             <div>
               <h1 className="text-xl font-semibold">{classSession.classDetails.className}</h1>
-              <p className="text-emerald-100 text-sm">
+              <p className="text-primary/10 text-sm">
                 {classSession.classDetails.courseName} • {classSession.classDetails.courseCode}
               </p>
             </div>
@@ -1563,14 +1563,14 @@ export default function TeachingInterface({
         {/* Header */}
         <div className="p-4 border-b border-slate-200/50">
           <div className="flex items-center gap-3">
-            {/* <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-full flex items-center justify-center">
+            {/* <div className="w-8 h-8 bg-gradient-to-br from-primary/50 to-purple-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">🤖</span>
             </div> */}
             <div>
               <h3 className="font-semibold text-slate-900 text-sm">ProfSidekick</h3>
               <div className="flex items-center gap-1.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${
-                  sessionStatus === "CONNECTED" ? "bg-emerald-500" : 
+                  sessionStatus === "CONNECTED" ? "bg-primary/50" : 
                   sessionStatus === "CONNECTING" ? "bg-amber-500" : 
                   sessionStatus === "ERROR" ? "bg-red-500" : "bg-slate-400"
                 }`}></div>
@@ -1583,16 +1583,16 @@ export default function TeachingInterface({
         </div>
 
         {/* Guard Phrase Info */}
-        <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-200">
-          <p className="text-xs text-emerald-900 font-semibold mb-1">
+        <div className="px-4 py-3 bg-primary/5 border-b border-primary/20">
+          <p className="text-xs text-primary font-semibold mb-1">
             Voice Commands
           </p>
-          <p className="text-xs text-emerald-800 leading-relaxed">
+          <p className="text-xs text-primary/95 leading-relaxed">
             To pause/end the session, say:{" "}
-            <span className="font-semibold text-emerald-900">“stop”</span>,{" "}
-            <span className="font-semibold text-emerald-900">“pause”</span>,{" "}
-            <span className="font-semibold text-emerald-900">“wait”</span>, or{" "}
-            <span className="font-semibold text-emerald-900">“end session”</span>.
+            <span className="font-semibold text-primary">“stop”</span>,{" "}
+            <span className="font-semibold text-primary">“pause”</span>,{" "}
+            <span className="font-semibold text-primary">“wait”</span>, or{" "}
+            <span className="font-semibold text-primary">“end session”</span>.
           </p>
         </div>
 
@@ -1614,7 +1614,7 @@ export default function TeachingInterface({
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="w-1 bg-emerald-400 rounded-full animate-pulse"
+                  className="w-1 bg-primary/40 rounded-full animate-pulse"
                   style={{ height: `${8 + i * 4}px`, animationDelay: `${i * 100}ms` }}
                 />
               ))}
@@ -1626,8 +1626,8 @@ export default function TeachingInterface({
         <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-200/50 bg-slate-50 flex-shrink-0">
           {/* AI indicator */}
           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-            isAISpeaking ? 'bg-emerald-50 dark:bg-emerald-900/200 animate-pulse' :
-            sessionStatus === 'CONNECTED' ? 'bg-emerald-500' : 'bg-slate-300'
+            isAISpeaking ? 'bg-primary/5 dark:bg-primary/200 animate-pulse' :
+            sessionStatus === 'CONNECTED' ? 'bg-primary/50' : 'bg-slate-300'
           }`} />
           <span className="text-[11px] text-slate-500 truncate flex-1">
             {sessionStatus !== 'CONNECTED' ? 'Disconnected' :
@@ -1657,9 +1657,9 @@ export default function TeachingInterface({
               </div>
             )}
             {currentQuestion && (
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3">
-                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1 uppercase tracking-wide">Current Question</p>
-                <p className="text-xs text-emerald-950 dark:text-emerald-100 leading-relaxed">{currentQuestion}</p>
+              <div className="bg-primary/5 dark:bg-primary/20 border border-primary/20 dark:border-primary/90 rounded-lg p-3">
+                <p className="text-xs font-semibold text-primary/90 dark:text-primary/40 mb-1 uppercase tracking-wide">Current Question</p>
+                <p className="text-xs text-primary dark:text-primary/10 leading-relaxed">{currentQuestion}</p>
               </div>
             )}
             {latestResponse && (
@@ -1669,11 +1669,11 @@ export default function TeachingInterface({
               </div>
             )}
             {keyConcepts.length > 0 && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide">Key Concepts</p>
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <p className="text-xs font-semibold text-primary mb-2 uppercase tracking-wide">Key Concepts</p>
                 <div className="flex flex-wrap gap-1">
                   {keyConcepts.map((c) => (
-                    <span key={c} className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-medium rounded">
+                    <span key={c} className="px-1.5 py-0.5 bg-primary/10 text-primary/95 text-xs font-medium rounded">
                       {c}
                     </span>
                   ))}
@@ -1696,7 +1696,7 @@ export default function TeachingInterface({
             onClick={toggleAudio}
             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
               isAudioEnabled 
-                ? "bg-emerald-50 dark:bg-emerald-900/200 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 dark:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-500/30" 
+                ? "bg-primary/5 dark:bg-primary/200 text-white shadow-lg shadow-primary/50/25 hover:bg-primary dark:bg-primary/90 hover:shadow-xl hover:shadow-primary/50/30" 
                 : "bg-slate-200 text-slate-700 hover:bg-slate-300"
             }`}
           >
@@ -1726,7 +1726,7 @@ export default function TeachingInterface({
             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
               sessionStatus === "CONNECTED" 
                 ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30" 
-                : "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-500/30"
+                : "bg-primary/50 text-white shadow-lg shadow-primary/50/25 hover:bg-primary hover:shadow-xl hover:shadow-primary/50/30"
             }`}
           >
             {sessionStatus === "CONNECTED" ? <PhoneOff size={16} /> : <Phone size={16} />}
@@ -1773,7 +1773,7 @@ export default function TeachingInterface({
                 value={feedbackData.feedback}
                 onChange={(e) => handleFeedbackChange('feedback', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="How was your overall experience with the AI teaching assistant?"
               />
             </div>
@@ -1788,7 +1788,7 @@ export default function TeachingInterface({
                 value={feedbackData.issues}
                 onChange={(e) => handleFeedbackChange('issues', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="Did you encounter any technical issues, bugs, or unexpected behavior?"
               />
             </div>
@@ -1803,7 +1803,7 @@ export default function TeachingInterface({
                 value={feedbackData.suggestions}
                 onChange={(e) => handleFeedbackChange('suggestions', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="What features or improvements would make this better?"
               />
             </div>
@@ -1818,7 +1818,7 @@ export default function TeachingInterface({
               </button>
               <button
                 onClick={handleFeedbackSubmit}
-                className="bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
+                className="bg-primary dark:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:ring-offset-2 transition-colors"
               >
                 Submit & End Session
               </button>

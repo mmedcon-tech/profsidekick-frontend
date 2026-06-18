@@ -2,6 +2,7 @@
 
 import React from 'react';
 import TeachingSessionAvatar from '@/components/avatar/TeachingSessionAvatar';
+import GlbAvatar from '@/components/avatar/GlbAvatar';
 import {
   getAvatarModeLabel,
   getEffectiveRenderType,
@@ -51,11 +52,19 @@ export default function SessionAvatarRenderer({
             />
             {!heygenConnected && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-900">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 dark:border-emerald-500 border-t-transparent" />
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/50 dark:border-primary/50 border-t-transparent" />
                 <span className="text-[11px] text-gray-500">Connecting HeyGen…</span>
               </div>
             )}
           </>
+        ) : displayConfig.renderType === '3d' && displayConfig.modelUrl ? (
+          <GlbAvatar
+            modelUrl={displayConfig.modelUrl}
+            audioElement={audioElement}
+            isConnected={isConnected}
+            isAISpeaking={isAISpeaking}
+            isUserSpeaking={isUserSpeaking}
+          />
         ) : (
           <TeachingSessionAvatar
             config={displayConfig}

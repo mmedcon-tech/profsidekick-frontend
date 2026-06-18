@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import DashboardLayout, { publisherNav } from '@/components/layout/DashboardLayout';
+import { ThemedLayout } from '@/components/layout/ThemedLayout';
 
 export default function PublisherLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -19,5 +19,5 @@ export default function PublisherLayout({ children }: { children: React.ReactNod
 
   if (isLoading || !isAuthenticated) return null;
 
-  return <DashboardLayout nav={publisherNav}>{children}</DashboardLayout>;
+  return <ThemedLayout>{children}</ThemedLayout>;
 }

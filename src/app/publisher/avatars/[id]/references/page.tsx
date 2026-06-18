@@ -109,7 +109,7 @@ export default function ReferencesPage() {
           </div>
         ) : refs.map((r) => (
           <div key={r.id} className="flex items-center gap-3 p-4">
-            <FileCheck size={18} className="text-green-500 flex-shrink-0" />
+            <FileCheck size={18} className="text-primary/50 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{r.title}</p>
               <p className="text-xs text-gray-400">
