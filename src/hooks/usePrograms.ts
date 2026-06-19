@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import config from '@/lib/config';
 import type { Program, ThemeConfig } from '@/lib/v2/data';
 
 export function usePrograms() {
@@ -15,9 +14,8 @@ export function usePrograms() {
     try {
       setLoading(true);
       const endpoint = user.role === 'subscriber' ? '/api/programs/my' : '/api/programs';
-      const url = config.getApiUrl(endpoint);
-      
-      const data = await apiFetch<any>(url, { token });
+
+      const data = await apiFetch<any>(endpoint, { token });
       
       const mappedPrograms: Program[] = (data.programs || []).map((p: any) => ({
         id: p.id,
@@ -54,8 +52,7 @@ export function usePrograms() {
 
   const createProgram = async (payload: Partial<Program>) => {
     if (!token) throw new Error("Not authenticated");
-    const url = config.getApiUrl('/api/programs');
-    const res = await apiFetch<any>(url, {
+    const res = await apiFetch<any>('/api/programs', {
       method: 'POST',
       token,
       body: JSON.stringify({
@@ -72,8 +69,7 @@ export function usePrograms() {
 
   const updateProgram = async (programId: string, payload: Partial<Program>) => {
     if (!token) throw new Error("Not authenticated");
-    const url = config.getApiUrl(`/api/programs/${programId}`);
-    const res = await apiFetch<any>(url, {
+    const res = await apiFetch<any>(`/api/programs/${programId}`, {
       method: 'PATCH',
       token,
       body: JSON.stringify({
