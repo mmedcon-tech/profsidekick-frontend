@@ -33,10 +33,10 @@ type LogEntry = {
 };
 
 const INITIAL_NODES: ProviderNode[] = [
-  { label: "Gemini Pro",   providerKey: "/pro",    status: { kind: "standby" } },
-  { label: "Gemini Free",  providerKey: "/free",   status: { kind: "standby" } },
-  { label: "Gemini Flash", providerKey: "/flash",  status: { kind: "standby" } },
   { label: "OpenAI",       providerKey: "openai/", status: { kind: "standby" } },
+  { label: "Gemini Pro",   providerKey: "/pro",    status: { kind: "standby" } },
+  { label: "Gemini Flash", providerKey: "/flash",  status: { kind: "standby" } },
+  { label: "Gemini Free",  providerKey: "/free",   status: { kind: "standby" } },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
