@@ -44,7 +44,7 @@ export default function SessionDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(config.getApiUrl('/api/sessions?limit=200'), {
+      const res = await fetch(config.getApiUrl('/api/sessions?limit=100'), {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
