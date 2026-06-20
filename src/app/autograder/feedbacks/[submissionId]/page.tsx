@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 const API = "http://localhost:8000";
@@ -56,10 +56,12 @@ type SubmissionDetail = {
 export default function FeedbackDetailPage() {
   const params = useParams();
   const submissionId = params.submissionId as string;
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   function getToken() {
     return localStorage.getItem("auth_token") ?? "";
@@ -92,6 +94,33 @@ export default function FeedbackDetailPage() {
     fetchSubmission();
   }, [submissionId]);
 
+  async function handleDownloadPDF() {
+    if (!reportRef.current || !submission) return;
+    setExporting(true);
+    try {
+      // Dynamic import avoids SSR issues with html2pdf.js (browser-only)
+      const html2pdf = (await import("html2pdf.js")).default;
+      const filename = `student_${submission.student_net_id}_submission_${submission.id}.pdf`;
+      await html2pdf()
+        .set({
+          margin: [12, 12, 12, 12],
+          filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            ignoreElements: (el: Element) => el.classList.contains("pdf-exclude"),
+          },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(reportRef.current)
+        .save();
+    } finally {
+      setExporting(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-50 px-6 py-10">
@@ -115,28 +144,40 @@ export default function FeedbackDetailPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-8">
+        {/* Action bar — excluded from PDF capture */}
+        <div className="mb-6 flex items-center justify-between">
           <a href="/autograder/feedbacks" className="text-sm text-slate-500 hover:underline">
             ← Back to All Feedbacks
           </a>
-
-          <p className="mt-4 text-sm font-medium text-blue-600">Autograder Feedback</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">{submission.student_name}</h1>
-          <p className="mt-1 text-slate-600">NetID / Code: {submission.student_net_id}</p>
-          <p className="mt-1 text-sm text-slate-500">
-            Submitted:{" "}
-            {submission.created_at
-              ? new Date(submission.created_at).toLocaleString()
-              : "N/A"}
-          </p>
-          {result.details && (
-            <p className="mt-1 text-xs text-slate-400">
-              Model: {result.details.model} &middot; Provider: {result.details.source}
-            </p>
-          )}
+          <button
+            onClick={handleDownloadPDF}
+            disabled={exporting}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {exporting ? "Generating PDF…" : "Download PDF ↓"}
+          </button>
         </div>
 
-        <div className="space-y-6">
+        {/* Report container — this is what gets captured as PDF */}
+        <div ref={reportRef} className="space-y-6">
+          {/* Student header */}
+          <div className="mb-2">
+            <p className="text-sm font-medium text-blue-600">Autograder Feedback</p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-900">{submission.student_name}</h1>
+            <p className="mt-1 text-slate-600">NetID / Code: {submission.student_net_id}</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Submitted:{" "}
+              {submission.created_at
+                ? new Date(submission.created_at).toLocaleString()
+                : "N/A"}
+            </p>
+            {result.details && (
+              <p className="pdf-exclude mt-1 text-xs text-slate-400">
+                Model: {result.details.model} &middot; Provider: {result.details.source}
+              </p>
+            )}
+          </div>
+
           {/* Grading Summary */}
           <div className="rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Grading Summary</h2>
