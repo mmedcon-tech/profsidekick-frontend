@@ -32,9 +32,12 @@ type LogEntry = {
   level: "info" | "warn" | "error" | "success";
 };
 
+// Order must match the backend fallback chain in fallback_provider.py:
+// 1. Vertex AI ×1 → 2. Gemini Pro ×2 → 3. OpenAI ×1 → 4. Gemini Flash ×1 → 5. Gemini Free ×1
 const INITIAL_NODES: ProviderNode[] = [
-  { label: "OpenAI",       providerKey: "openai/", status: { kind: "standby" } },
+  { label: "Vertex AI",    providerKey: "vertex/", status: { kind: "standby" } },
   { label: "Gemini Pro",   providerKey: "/pro",    status: { kind: "standby" } },
+  { label: "OpenAI",       providerKey: "openai/", status: { kind: "standby" } },
   { label: "Gemini Flash", providerKey: "/flash",  status: { kind: "standby" } },
   { label: "Gemini Free",  providerKey: "/free",   status: { kind: "standby" } },
 ];
@@ -43,8 +46,8 @@ const INITIAL_NODES: ProviderNode[] = [
 
 function matchNode(providerName: string | null | undefined, key: string): boolean {
   if (!providerName) return false;
-  if (key === "openai/") return providerName.startsWith("openai/");
-  return providerName.endsWith(key);
+  if (key.endsWith("/")) return providerName.startsWith(key);  // prefix match: "vertex/", "openai/"
+  return providerName.endsWith(key);                           // suffix match: "/pro", "/flash", "/free"
 }
 
 function nodeIndex(providerName: string | null | undefined, nodes: ProviderNode[]): number {
@@ -215,9 +218,9 @@ export default function AutograderSubmitPage() {
         updateNode(provider!, () => ({
           kind: "running",
           attempt: ev.attempt as number,
-          maxAttempts: 2,
+          maxAttempts: (ev.max_attempts as number) ?? 1,
         }));
-        addLog(`${provider}: starting (attempt ${ev.attempt})…`, "info");
+        addLog(`${provider}: starting (attempt ${ev.attempt}/${(ev.max_attempts as number) ?? 1})…`, "info");
         break;
 
       case "provider_retry":
