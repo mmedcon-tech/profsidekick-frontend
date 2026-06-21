@@ -121,7 +121,7 @@ export default function MyAvatarsPage() {
                 className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex items-center gap-5">
                 {/* Avatar icon */}
                 {avatar ? (
-                  <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={56} rounded="xl" />
+                  <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={56} rounded="lg" />
                 ) : (
                   <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                     <Bot size={24} className="text-gray-400" />
