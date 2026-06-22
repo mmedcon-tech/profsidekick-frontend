@@ -19,7 +19,11 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 function authHeaders(): HeadersInit {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return {
+    // Tells nginx which backend to route this request to
+    "X-Frontend-Instance": process.env.NEXT_PUBLIC_FRONTEND_INSTANCE ?? "main",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {

@@ -5,6 +5,10 @@ import { ChevronLeft, ChevronRight, Maximize2, Image as ImageIcon, RefreshCw, Ed
 import { useAuth } from '@/contexts/AuthContext';
 import { config } from '@/lib/config';
 
+// Routing header — tells nginx which backend to forward this request to.
+// Set NEXT_PUBLIC_FRONTEND_INSTANCE=autograder in the autograder Vercel env vars.
+const INSTANCE_HEADER = { 'X-Frontend-Instance': process.env.NEXT_PUBLIC_FRONTEND_INSTANCE ?? 'main' } as const;
+
 interface SlideData {
   id: number;
   slideNumber: number;
@@ -100,6 +104,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
         {
           method: 'POST',
           headers: {
+            ...INSTANCE_HEADER,
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
@@ -149,6 +154,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
         {
           method: 'PUT',
           headers: {
+            ...INSTANCE_HEADER,
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
@@ -207,6 +213,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
         {
           method: 'POST',
           headers: {
+            ...INSTANCE_HEADER,
             'Authorization': `Bearer ${token}`,
           },
           body: formData,
@@ -248,6 +255,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
         {
           method: 'DELETE',
           headers: {
+            ...INSTANCE_HEADER,
             'Authorization': `Bearer ${token}`,
           },
         }
@@ -296,6 +304,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
         {
           method: 'PUT',
           headers: {
+            ...INSTANCE_HEADER,
             'Authorization': `Bearer ${token}`,
           },
           body: formData,
@@ -344,6 +353,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
         {
           method: 'PUT',
           headers: {
+            ...INSTANCE_HEADER,
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },

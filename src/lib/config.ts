@@ -14,6 +14,17 @@ export const config = {
   // Environment flags
   isDevelopment: process.env.NODE_ENV === 'development',
   isProduction: process.env.NODE_ENV === 'production',
+
+  // Which frontend instance this is — used by nginx to route to the correct backend.
+  // Set NEXT_PUBLIC_FRONTEND_INSTANCE=autograder in the autograder Vercel project env vars.
+  // Leave unset (defaults to 'main') for the production frontend.
+  frontendInstance: process.env.NEXT_PUBLIC_FRONTEND_INSTANCE ?? 'main',
+
+  // Default headers to include on every backend request.
+  // Spread these into any fetch() headers object: { ...config.defaultHeaders(), ... }
+  defaultHeaders: (): HeadersInit => ({
+    'X-Frontend-Instance': process.env.NEXT_PUBLIC_FRONTEND_INSTANCE ?? 'main',
+  }),
    
   // API endpoints
   api: {

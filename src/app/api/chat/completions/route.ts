@@ -11,7 +11,12 @@ export async function POST(req: Request) {
 
     const response = await fetch(`${backendUrl}/api/ai/answer`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // Tells nginx which backend to route to — critical for server-side requests
+        // that don't carry an Origin header.
+        "X-Frontend-Instance": process.env.NEXT_PUBLIC_FRONTEND_INSTANCE ?? "main",
+      },
       body: JSON.stringify(body),
     });
 
