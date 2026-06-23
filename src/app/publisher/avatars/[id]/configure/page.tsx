@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { configApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarConfigurationResponse } from '@/types/avatar';
 import { ArrowLeft, Save } from 'lucide-react';
+import { useAdminModels } from '@/hooks/useAdminModels';
 
 const VOICES = ['alloy','ash','ballad','coral','echo','sage','shimmer','verse'];
 const DIFFICULTIES = ['beginner','intermediate','advanced'];
@@ -19,16 +20,40 @@ export default function ConfigurePage() {
   const [success, setSuccess]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    voice: string;
+    language: string;
+    difficulty_level: string;
+    additional_settings: Record<string, any>;
+  }>({
     voice: '',
     language: 'English',
     difficulty_level: 'intermediate',
+    additional_settings: {},
   });
+
+  const { models: adminModels, loading: modelsLoading } = useAdminModels();
 
   useEffect(() => {
     configApi.get(id)
-      .then((c) => { setConfig(c); setForm({ voice: c.voice || 'alloy', language: c.language || 'English', difficulty_level: c.difficulty_level || 'intermediate' }); })
-      .catch(() => { /* 404 = not configured yet */ setForm({ voice: 'alloy', language: 'English', difficulty_level: 'intermediate' }); })
+      .then((c) => { 
+        setConfig(c); 
+        setForm({ 
+          voice: c.voice || 'alloy', 
+          language: c.language || 'English', 
+          difficulty_level: c.difficulty_level || 'intermediate',
+          additional_settings: c.additional_settings || {}
+        }); 
+      })
+      .catch(() => { 
+        /* 404 = not configured yet */ 
+        setForm({ 
+          voice: 'alloy', 
+          language: 'English', 
+          difficulty_level: 'intermediate',
+          additional_settings: {}
+        }); 
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -46,7 +71,8 @@ export default function ConfigurePage() {
     }
   };
 
-  if (loading) return <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse max-w-2xl" />;
+  if (loading || modelsLoading) return <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse max-w-2xl" />;
+
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -99,6 +125,63 @@ export default function ConfigurePage() {
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] text-sm">
             {LANGUAGES.map((l) => <option key={l}>{l}</option>)}
           </select>
+        </div>
+
+        {/* Visual Avatar Model */}
+        <div className="p-6 space-y-3">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Visual Avatar Model</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Select the 3D visual appearance for your avatar.</p>
+          {adminModels.length === 0 ? (
+            <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">No 3D models are currently available. Please contact your administrator.</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {adminModels.filter(m => m.model_type === 'three_js').map((model) => {
+                // Determine if this model is selected
+                const isSelected = 
+                  form.additional_settings?.renderType === 'glb' &&
+                  (form.additional_settings?.glbLibraryId === model.id || 
+                   form.additional_settings?.glbLibraryId === model.model_url);
+                   
+                return (
+                  <button
+                    key={model.id}
+                    onClick={() => setForm((p) => ({
+                      ...p,
+                      additional_settings: {
+                        ...p.additional_settings,
+                        renderType: 'glb',
+                        glbLibraryId: model.model_url // Saving model_url as glbLibraryId so frontend can resolve it directly
+                      }
+                    }))}
+                    className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all ${
+                      isSelected 
+                        ? 'border-[#133221] bg-primary/5 dark:bg-gray-800' 
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-900'
+                    }`}
+                  >
+                    <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-3 relative">
+                      {model.thumbnail_url ? (
+                        <img src={model.thumbnail_url} alt={model.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex items-center justify-center w-full h-full text-xs text-gray-400">No Preview</div>
+                      )}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-[#133221] rounded-full flex items-center justify-center text-white">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                      )}
+                    </div>
+                    <span className={`text-sm font-medium ${isSelected ? 'text-[#133221] dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                      {model.name}
+                    </span>
+                    {model.gender && (
+                      <span className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">{model.gender}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

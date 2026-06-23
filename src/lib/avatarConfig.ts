@@ -25,6 +25,7 @@ export function resolveAvatarConfig(
     heygenQuality: response.heygen_quality ?? fallback?.heygenQuality ?? 'high',
     heygenAccessToken:
       response.heygen_access_token ?? fallback?.heygenAccessToken ?? null,
+    glbLibraryId: response.glb_library_id ?? fallback?.glbLibraryId,
     sessionLanguage:
       response.session_language ?? fallback?.sessionLanguage ?? 'en',
     sessionMode:
@@ -39,6 +40,7 @@ export function parseSessionRunAvatar(
     avatarImageUrl: string;
     avatarRenderType: AvatarRenderType;
     heygenAvatarId: string | null;
+    glbLibraryId?: string;
     sessionLanguage: string;
     sessionMode: 'teaching' | 'examination';
   }>,
@@ -50,6 +52,7 @@ export function parseSessionRunAvatar(
     imageUrl: run.avatarImageUrl,
     heygenAvatarId: run.heygenAvatarId ?? null,
     heygenQuality: 'high',
+    glbLibraryId: run.glbLibraryId,
     sessionLanguage: run.sessionLanguage ?? 'en',
     sessionMode: run.sessionMode ?? 'teaching',
   };
