@@ -26,6 +26,7 @@ export function resolveAvatarConfig(
     heygenAccessToken:
       response.heygen_access_token ?? fallback?.heygenAccessToken ?? null,
     glbLibraryId: response.glb_library_id ?? fallback?.glbLibraryId,
+    modelUrl: response.glb_library_id ?? fallback?.modelUrl,
     sessionLanguage:
       response.session_language ?? fallback?.sessionLanguage ?? 'en',
     sessionMode:
@@ -53,6 +54,7 @@ export function parseSessionRunAvatar(
     heygenAvatarId: run.heygenAvatarId ?? null,
     heygenQuality: 'high',
     glbLibraryId: run.glbLibraryId,
+    modelUrl: run.glbLibraryId,
     sessionLanguage: run.sessionLanguage ?? 'en',
     sessionMode: run.sessionMode ?? 'teaching',
   };
