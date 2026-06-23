@@ -45,11 +45,11 @@ export default function TeachingSessionAvatar({
   const imageUrl =
     config.imageUrl ??
     libraryEntry?.thumbnailPath ??
-    (config.glbLibraryId === 'avatar-2' || (isDirectGlbUrl && config.glbLibraryId.includes('male'))
+    (config.glbLibraryId === 'avatar-2' || (isDirectGlbUrl && config.glbLibraryId?.includes('male'))
       ? '/images/avatar-male.png'
       : '/images/avatar-female.png');
 
-  if (config.renderType === 'glb' && glbUrl) {
+  if (config.renderType === '3d' && glbUrl) {
     return (
       <div className="flex h-full w-full flex-col bg-gray-900">
         <GlbAvatarPreview
@@ -62,7 +62,7 @@ export default function TeachingSessionAvatar({
     );
   }
 
-  if (config.renderType === 'glb') {
+  if (config.renderType === '3d') {
     return (
       <div className="flex h-full w-full flex-col bg-gray-900">
         <PortraitAvatarStage
