@@ -1,6 +1,6 @@
 import { RefObject } from "react";
 
-export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2";
+export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2025-08-28";
 
 export function normalizeRealtimeModel(model?: string | null): string {
   if (!model) {
@@ -15,6 +15,8 @@ export function normalizeRealtimeModel(model?: string | null): string {
     "gpt-realtime-mini",
     "gpt-realtime-mini-2025-10-06",
     "gpt-realtime-mini-2025-12-15",
+    "gpt-realtime-translate",
+    "gpt-realtime-whisper",
   ]);
 
   if (supportedModels.has(model)) {
@@ -25,6 +27,7 @@ export function normalizeRealtimeModel(model?: string | null): string {
     return "gpt-realtime-mini";
   }
 
+  // Remap any legacy gpt-4o-realtime-* to the current GA default
   return DEFAULT_REALTIME_MODEL;
 }
 
