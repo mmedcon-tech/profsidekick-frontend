@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PdfViewer } from "@/components/autograder/PdfViewer";
 
 const API = "http://localhost:8000";
 
@@ -181,6 +182,7 @@ export default function AutograderSubmitPage() {
   const [submitError, setSubmitError] = useState("");
   const [nodes, setNodes] = useState<ProviderNode[]>(INITIAL_NODES);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [sseSubmissionId, setSseSubmissionId] = useState<string | null>(null);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -214,6 +216,13 @@ export default function AutograderSubmitPage() {
     const provider = ev.provider as string | undefined;
 
     switch (eventType) {
+      case "files_ready": {
+        const sid = ev.submission_id as string;
+        setSseSubmissionId(sid);
+        addLog("Files received — PDF preview ready.", "success");
+        break;
+      }
+
       case "provider_started":
         updateNode(provider!, () => ({
           kind: "running",
@@ -465,6 +474,7 @@ export default function AutograderSubmitPage() {
     setSubmitError("");
     setNodes(INITIAL_NODES.map((n) => ({ ...n, status: { kind: "standby" } })));
     setLog([]);
+    setSseSubmissionId(null);
   }
 
   const isGrading = gradingPhase === "connecting" || gradingPhase === "grading";
@@ -697,6 +707,29 @@ export default function AutograderSubmitPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── PDF Preview ── */}
+        {sseSubmissionId && (
+          <div className="mt-4 rounded-xl border bg-white p-6 shadow-sm">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Submitted Files
+            </h2>
+            <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+              <PdfViewer
+                submissionId={sseSubmissionId}
+                fileType="handwritten"
+                label="Handwritten Solution"
+                height={520}
+              />
+              <PdfViewer
+                submissionId={sseSubmissionId}
+                fileType="webassign"
+                label="WebAssign Questions"
+                height={520}
+              />
+            </div>
           </div>
         )}
 

@@ -1,18 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   createStudentBatch,
-  getStudentDetail,
   listStudents,
   submitOnBehalf,
 } from "@/lib/sae-api";
-import type {
-  SAEStudentDetail,
-  SAEStudentRow,
-  SAESubmissionResult,
-  SAEGradingQuestion,
-} from "@/types/sae";
+import type { SAEStudentRow } from "@/types/sae";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +29,8 @@ function StatusBadge({ on, labelOn, labelOff }: { on: boolean; labelOn: string; 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function PublisherSAEPage() {
+  const router = useRouter();
+
   const [students, setStudents] = useState<SAEStudentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -48,11 +45,6 @@ export default function PublisherSAEPage() {
 
   // New-batch result banner
   const [newBatch, setNewBatch] = useState<SAEStudentRow[] | null>(null);
-
-  // Detail modal
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<SAEStudentDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
 
   // Submit-on-behalf modal
   const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -90,27 +82,6 @@ export default function PublisherSAEPage() {
     const t = setTimeout(() => loadStudents(search || undefined), 350);
     return () => clearTimeout(t);
   }, [search]);
-
-  // Open detail modal
-  async function openDetail(id: string) {
-    setSelectedId(id);
-    setDetail(null);
-    setDetailLoading(true);
-    try {
-      const d = await getStudentDetail(id);
-      setDetail(d);
-    } catch (err: unknown) {
-      toast(err instanceof Error ? err.message : "Failed to load detail.", "error");
-      setSelectedId(null);
-    } finally {
-      setDetailLoading(false);
-    }
-  }
-
-  function closeDetail() {
-    setSelectedId(null);
-    setDetail(null);
-  }
 
   // Generate batch
   async function handleGenerate(e: React.FormEvent) {
@@ -281,51 +252,25 @@ export default function PublisherSAEPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-slate-50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    #
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Code
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Invitation
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Submission
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">#</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Student</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Code</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Invitation</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Submission</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {students.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">
-                      {s.student_number}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-slate-800">
-                      {s.display_name}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-600">
-                      {s.student_code}
+                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">{s.student_number}</td>
+                    <td className="px-4 py-3 font-medium text-slate-800">{s.display_name}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-600">{s.student_code}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge on={s.is_activated} labelOn="Activated" labelOff="Not activated" />
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge
-                        on={s.is_activated}
-                        labelOn="Activated"
-                        labelOff="Not activated"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        on={s.has_submitted}
-                        labelOn="Submitted"
-                        labelOff="Pending"
-                      />
+                      <StatusBadge on={s.has_submitted} labelOn="Submitted" labelOff="Pending" />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
@@ -340,11 +285,11 @@ export default function PublisherSAEPage() {
                         )}
                         {s.has_submitted && (
                           <button
-                            onClick={() => openDetail(s.id)}
+                            onClick={() => router.push(`/publisher/sae/students/${s.id}`)}
                             className="rounded border border-blue-200 bg-blue-50 px-2.5 py-1
                                        text-xs text-blue-700 hover:bg-blue-100"
                           >
-                            View
+                            Review
                           </button>
                         )}
                         {!s.has_submitted && (
@@ -429,25 +374,6 @@ export default function PublisherSAEPage() {
         </Modal>
       )}
 
-      {/* ── Detail modal ───────────────────────────────────────────────────── */}
-      {selectedId && (
-        <Modal
-          title={detail ? `${detail.display_name} — ${detail.student_code}` : "Loading…"}
-          onClose={closeDetail}
-          wide
-        >
-          {detailLoading && (
-            <p className="text-sm text-slate-400 text-center py-8">Loading…</p>
-          )}
-          {detail && !detailLoading && (
-            <DetailPanel
-              detail={detail}
-              onCopyLink={() => copyToClipboard(detail.invitation_url, detail.student_code)}
-            />
-          )}
-        </Modal>
-      )}
-
       {/* ── Submit-on-behalf modal ─────────────────────────────────────────── */}
       {showSubmitModal && soStudent && (
         <Modal
@@ -522,22 +448,17 @@ function Modal({
   title,
   onClose,
   children,
-  wide = false,
 }: {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
-  wide?: boolean;
 }) {
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div
-        className={`relative rounded-xl bg-white shadow-xl w-full
-          ${wide ? "max-w-2xl" : "max-w-md"}`}
-      >
+      <div className="relative rounded-xl bg-white shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-base font-semibold text-slate-900">{title}</h2>
           <button
@@ -549,140 +470,6 @@ function Modal({
         </div>
         <div className="px-6 py-5">{children}</div>
       </div>
-    </div>
-  );
-}
-
-// ── Student detail panel (inside modal) ───────────────────────────────────────
-
-function DetailPanel({
-  detail,
-  onCopyLink,
-}: {
-  detail: SAEStudentDetail;
-  onCopyLink: () => void;
-}) {
-  const sub = detail.submission;
-
-  return (
-    <div className="space-y-5">
-      {/* Metadata */}
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <p className="text-xs text-slate-400 mb-0.5">Code</p>
-          <p className="font-mono font-semibold text-slate-800">{detail.student_code}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-400 mb-0.5">Invitation</p>
-          {detail.is_activated ? (
-            <span className="text-green-700 font-medium">Activated</span>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-slate-500">Not activated</span>
-              <button
-                onClick={onCopyLink}
-                className="text-xs text-blue-600 underline"
-              >
-                Copy link
-              </button>
-            </div>
-          )}
-        </div>
-        {detail.activated_at && (
-          <div>
-            <p className="text-xs text-slate-400 mb-0.5">Activated at</p>
-            <p className="text-slate-700">
-              {new Date(detail.activated_at).toLocaleString("en-US", {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Submission */}
-      {!sub ? (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500 text-center">
-          No submission yet.
-        </div>
-      ) : (
-        <SubmissionPanel sub={sub} />
-      )}
-    </div>
-  );
-}
-
-// ── Submission detail ─────────────────────────────────────────────────────────
-
-function SubmissionPanel({ sub }: { sub: SAESubmissionResult }) {
-  const rj = sub.result_json as Record<string, unknown> | null;
-  const questions = (rj?.questions ?? []) as SAEGradingQuestion[];
-  const rawScore = rj?.raw_score as number | undefined;
-  const rawMax = rj?.raw_max_score as number | undefined;
-  const overallFeedback = rj?.overall_feedback as string | undefined;
-
-  return (
-    <div className="space-y-4">
-      {/* Score */}
-      <div className="rounded-lg border bg-slate-50 p-4 flex items-center gap-4">
-        <div className="text-center">
-          <p className="text-4xl font-bold text-slate-900">
-            {sub.score !== null ? `${sub.score}%` : "—"}
-          </p>
-          {rawScore !== undefined && rawMax !== undefined && (
-            <p className="text-xs text-slate-500">{rawScore} / {rawMax} pts</p>
-          )}
-        </div>
-        <div className="flex-1">
-          {sub.review_required && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-2">
-              Flagged for review
-            </p>
-          )}
-          {sub.submitted_by_publisher && (
-            <p className="text-xs text-slate-500 mb-2">Submitted by you on behalf of student</p>
-          )}
-          {overallFeedback && (
-            <p className="text-sm text-slate-700 leading-relaxed">{overallFeedback}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Per-question */}
-      {questions.length > 0 && (
-        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-          {questions.map((q) => (
-            <div
-              key={q.num}
-              className={`rounded-lg p-3 text-xs border ${
-                q.status === "correct"
-                  ? "border-green-200 bg-green-50"
-                  : q.status === "partial"
-                  ? "border-yellow-200 bg-yellow-50"
-                  : "border-red-200 bg-red-50"
-              }`}
-            >
-              <p className={`font-semibold uppercase mb-0.5 ${
-                q.status === "correct" ? "text-green-700"
-                : q.status === "partial" ? "text-yellow-700"
-                : "text-red-700"
-              }`}>
-                Q{q.num} — {q.status}
-              </p>
-              <p className="text-slate-700 leading-relaxed">{q.feedback}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <p className="text-xs text-slate-400">
-        Submitted{" "}
-        {new Date(sub.created_at).toLocaleString("en-US", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })}
-      </p>
     </div>
   );
 }

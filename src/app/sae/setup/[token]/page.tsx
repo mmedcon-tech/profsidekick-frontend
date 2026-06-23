@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { validateInviteToken, setupAccount } from "@/lib/sae-api";
+import { clearAuthSession, AUTH_USER_KEY } from "@/lib/authSession";
 import type { SAETokenValidationResponse } from "@/types/sae";
 
 type PageState =
@@ -22,9 +23,20 @@ export default function SAESetupPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [fieldError, setFieldError] = useState("");
+  const [existingSession, setExistingSession] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
+    // Detect if someone is already logged in so we can warn them
+    const stored = localStorage.getItem(AUTH_USER_KEY);
+    if (stored) {
+      try {
+        const u = JSON.parse(stored) as { username?: string };
+        setExistingSession(u.username ?? "another account");
+      } catch {
+        setExistingSession("another account");
+      }
+    }
     validateInviteToken(token)
       .then((info) => setPageState({ kind: "form", tokenInfo: info }))
       .catch((err: Error) => setPageState({ kind: "invalid", reason: err.message }));
@@ -51,7 +63,9 @@ export default function SAESetupPage() {
 
     try {
       const res = await setupAccount(token, username.trim(), password);
-      // Store JWT exactly like the rest of the app
+      // Clear any existing session (publisher/admin testing the link in the same browser)
+      // before storing the student's JWT so there is no stale auth_user mismatch.
+      clearAuthSession();
       localStorage.setItem("auth_token", res.access_token);
       // Redirect to the exam
       router.replace("/sae/exam");
@@ -120,6 +134,16 @@ export default function SAESetupPage() {
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
+
+        {/* Existing-session warning */}
+        {existingSession && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <span className="font-semibold">Heads up:</span> You are currently signed in as{" "}
+            <span className="font-semibold">{existingSession}</span>. Completing this setup
+            will sign you out of that account. Open this link in a private/incognito window
+            if you want to keep both sessions separate.
+          </div>
+        )}
 
         {/* Header */}
         <div className="mb-6 text-center">

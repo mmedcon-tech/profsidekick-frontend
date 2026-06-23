@@ -32,6 +32,7 @@ export interface SAESetupResponse {
   display_name: string;
 }
 
+/** Student-facing submission result. result_json is always the effective (possibly edited) grading. */
 export interface SAESubmissionResult {
   id: string;
   score: number | null;
@@ -40,10 +41,18 @@ export interface SAESubmissionResult {
   result_json: Record<string, unknown> | null;
   submitted_by_publisher: boolean;
   created_at: string;
+  handwritten_filename: string | null;
+  webassign_filename: string | null;
+}
+
+/** Publisher-facing submission result — includes edit metadata. */
+export interface SAESubmissionResultPublisher extends SAESubmissionResult {
+  is_edited: boolean;
+  last_edited_at: string | null;
 }
 
 export interface SAEStudentDetail extends SAEStudentRow {
-  submission: SAESubmissionResult | null;
+  submission: SAESubmissionResultPublisher | null;
 }
 
 export interface SAEStudentMe {
@@ -55,9 +64,39 @@ export interface SAEStudentMe {
   has_submitted: boolean;
 }
 
-// Grading question shape inside result_json
+// ── Grading question shape inside result_json ─────────────────────────────────
+
+export interface SAEGradingBasis {
+  understanding_level: string;
+  error_severity: string;
+  work_completeness: string;
+  recommended_credit_percent: number;
+}
+
 export interface SAEGradingQuestion {
-  num: number;
-  status: "correct" | "incorrect" | "partial" | string;
+  id: string;
+  max_score: number;
+  score: number | null;
+  confidence: string;
+  readability: string;
+  grading_basis?: SAEGradingBasis;
+  official_answer_summary: string;
+  student_answer_summary: string;
   feedback: string;
+  grey_areas: string[];
+  human_review_required: boolean;
+  human_review_reason: string | null;
+}
+
+// ── Instructor-edit request shapes ────────────────────────────────────────────
+
+export interface SAEQuestionEdit {
+  id: string;
+  score?: number | null;
+  feedback?: string;
+}
+
+export interface SAESubmissionEditRequest {
+  overall_feedback?: string;
+  questions?: SAEQuestionEdit[];
 }

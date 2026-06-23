@@ -10,7 +10,9 @@ import type {
   SAEStudentDetail,
   SAEStudentMe,
   SAEStudentRow,
+  SAESubmissionEditRequest,
   SAESubmissionResult,
+  SAESubmissionResultPublisher,
   SAETokenValidationResponse,
 } from "@/types/sae";
 
@@ -95,7 +97,7 @@ export async function submitOnBehalf(
   studentId: string,
   handwrittenFile: File,
   webassignFile: File
-): Promise<SAESubmissionResult> {
+): Promise<SAESubmissionResultPublisher> {
   const form = new FormData();
   form.append("student_answer", handwrittenFile);
   form.append("webassign_pdf", webassignFile);
@@ -103,7 +105,41 @@ export async function submitOnBehalf(
     `${API}/api/sae/publisher/students/${studentId}/submit`,
     { method: "POST", headers: authHeaders(), body: form }
   );
-  return handleResponse<SAESubmissionResult>(res);
+  return handleResponse<SAESubmissionResultPublisher>(res);
+}
+
+export async function updateSubmission(
+  studentId: string,
+  edits: SAESubmissionEditRequest
+): Promise<SAESubmissionResultPublisher> {
+  const res = await fetch(
+    `${API}/api/sae/publisher/students/${studentId}/submission`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(edits),
+    }
+  );
+  return handleResponse<SAESubmissionResultPublisher>(res);
+}
+
+export async function fetchPublisherStudentFile(
+  studentId: string,
+  fileType: "handwritten" | "webassign"
+): Promise<ArrayBuffer> {
+  const res = await fetch(
+    `${API}/api/sae/publisher/students/${studentId}/files/${fileType}`,
+    { headers: authHeaders() }
+  );
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      detail = body.detail ?? body.message ?? detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+  return res.arrayBuffer();
 }
 
 // ── Student ───────────────────────────────────────────────────────────────────
@@ -135,4 +171,21 @@ export async function submitExam(
     body: form,
   });
   return handleResponse<SAESubmissionResult>(res);
+}
+
+export async function fetchMyFile(
+  fileType: "handwritten" | "webassign"
+): Promise<ArrayBuffer> {
+  const res = await fetch(`${API}/api/sae/student/files/${fileType}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      detail = body.detail ?? body.message ?? detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+  return res.arrayBuffer();
 }

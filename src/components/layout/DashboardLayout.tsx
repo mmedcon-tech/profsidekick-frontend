@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Users, BarChart2, LogOut, Bot,
   UserCircle, Store, Bookmark, History, BookOpen,
   Layers, ShieldCheck, Star, Menu, X, PanelLeftOpen,
-  Sun, Moon, CreditCard, Wallet
+  Sun, Moon, CreditCard, Wallet, ClipboardList
 } from 'lucide-react';
 
 // ─── nav item types ──────────────────────────────────────────────────────────
@@ -45,6 +45,12 @@ export const publisherNav: SidebarConfig = [
     ],
   },
   {
+    label: 'Assessments',
+    items: [
+      { label: 'Self Assessment Exam', href: '/publisher/sae', icon: <ClipboardList size={18} /> },
+    ],
+  },
+  {
     label: 'Analytics',
     items: [
       { label: 'Session History', href: '/publisher/history', icon: <History size={18} /> },
@@ -60,6 +66,12 @@ export const subscriberNav: SidebarConfig = [
   { label: 'Learning History', href: '/subscriber/history',     icon: <History size={18} /> },
   { label: 'Wallet',           href: '/billing',                icon: <Wallet size={18} /> },
   { label: 'Profile',          href: '/subscriber/profile',     icon: <UserCircle size={18} /> },
+  {
+    label: 'Assessments',
+    items: [
+      { label: 'Self Assessment Exam', href: '/sae/exam', icon: <ClipboardList size={18} /> },
+    ],
+  },
 ];
 
 export const adminNav: SidebarConfig = [
