@@ -6,14 +6,18 @@ import { useAuth } from "@/contexts/AuthContext"
 export interface Avatar3DModel {
   id: string
   name: string
-  model_type: "heygen" | "ready_player_me" | "three_js" | "custom"
-  model_url: string
+  description?: string
+  // file_path / preview_image_path are the DB column names;
+  // model_url / thumbnail_url are the aliased names the API also returns
+  file_path?: string
+  preview_image_path?: string
+  model_url?: string
   thumbnail_url?: string
-  preview_video_url?: string
-  supported_languages: string[]
+  model_type?: "heygen" | "ready_player_me" | "three_js" | "custom"
   gender?: "male" | "female" | "neutral"
-  is_active: boolean
+  supported_languages?: string[]
   sort_order: number
+  is_active: boolean
   created_at: string
 }
 
@@ -55,5 +59,16 @@ export function useAdminModels() {
     return res
   }
 
-  return { models, loading, error, refresh: fetchModels, createModel }
+  const updateModel = async (id: string, payload: Partial<Avatar3DModel>) => {
+    if (!token) throw new Error("Not authenticated")
+    const res = await apiFetch(config.getApiUrl(`/api/admin/3d-models/${id}`), {
+      method: "PATCH",
+      token,
+      body: JSON.stringify(payload)
+    })
+    await fetchModels()
+    return res
+  }
+
+  return { models, loading, error, refresh: fetchModels, createModel, updateModel }
 }
