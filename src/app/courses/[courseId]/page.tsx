@@ -9,6 +9,7 @@ import CourseSettingsTabs from '@/components/courses/CourseSettingsTabs';
 import {
   ArrowLeft, BookOpen, Users, Calendar, Clock, Play,
   GraduationCap, Plus, Loader2, AlertCircle, Globe, EyeOff,
+  CreditCard, Lock,
 } from 'lucide-react';
 import { config } from '@/lib/config';
 
@@ -44,6 +45,8 @@ export default function CourseDetailPage() {
   const [togglingSession, setTogglingSession] = useState<string | null>(null);
   // Bulk publishing
   const [publishingAll, setPublishingAll] = useState(false);
+  // Subscriber eligibility warnings (balance / subscription)
+  const [subscriberWarnings, setSubscriberWarnings] = useState<{ code: string; message: string }[]>([]);
 
   const fetchCourse = useCallback(async () => {
     if (!token || !courseId) return;
@@ -67,6 +70,28 @@ export default function CourseDetailPage() {
       ]);
       setSessions(sess);
       setStudents(studs);
+
+      // For subscribers: check eligibility on the first published session to surface
+      // credit/subscription blockers before they attempt to join.
+      if (!isPublisher && sess.length > 0) {
+        const firstPublished = sess.find(s => s.is_published) ?? sess[0];
+        try {
+          const eligRes = await fetch(config.getApiUrl(`/api/sessions/${firstPublished.sessionId}/eligibility`), {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (eligRes.ok) {
+            const eligData = await eligRes.json();
+            if (!eligData.eligible) {
+              const blocking = (eligData.issues as { code: string; message: string }[]).filter(
+                i => i.code === 'no_credits' || i.code === 'no_subscription',
+              );
+              setSubscriberWarnings(blocking);
+            }
+          }
+        } catch {
+          // Non-fatal: don't block the page if the check fails
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load course');
     } finally {
@@ -265,6 +290,33 @@ export default function CourseDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Subscriber eligibility warnings */}
+      {!isPublisher && subscriberWarnings.length > 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950 p-4 space-y-2">
+          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+            Action required before joining a session:
+          </p>
+          {subscriberWarnings.map((w) => (
+            <div key={w.code} className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
+              {w.code === 'no_credits' ? (
+                <CreditCard className="h-4 w-4 mt-0.5 shrink-0" />
+              ) : (
+                <Lock className="h-4 w-4 mt-0.5 shrink-0" />
+              )}
+              <span className="text-sm">{w.message}</span>
+              {w.code === 'no_credits' && (
+                <a
+                  href="/subscriber/billing"
+                  className="ml-auto text-xs font-medium underline shrink-0 hover:text-amber-900 dark:hover:text-amber-200"
+                >
+                  Redeem code →
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Sessions */}
       <div className="space-y-3">
