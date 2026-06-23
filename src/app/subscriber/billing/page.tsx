@@ -3,14 +3,23 @@
 import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { config } from "@/lib/config"
-import { CreditCard, Zap, Clock, ChevronLeft, ChevronRight } from "lucide-react"
+import { CreditCard, Zap, Clock, ChevronLeft, ChevronRight, Key, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 interface BalanceInfo {
   source: "access_code" | "purchased" | "none"
   balance: string
   access_code: string | null
   issued_by: string | null
+}
+
+interface RedeemResult {
+  success: boolean
+  credits_available: string
+  code: string
+  issued_by: string | null
+  message: string
 }
 
 interface UsageRecord {
@@ -58,6 +67,12 @@ export default function SubscriberBillingPage() {
   const [balanceLoading, setBalanceLoading] = useState(true)
   const [balanceError, setBalanceError] = useState<string | null>(null)
 
+  // Redeem code
+  const [code, setCode] = useState("")
+  const [redeeming, setRedeeming] = useState(false)
+  const [redeemResult, setRedeemResult] = useState<RedeemResult | null>(null)
+  const [redeemError, setRedeemError] = useState<string | null>(null)
+
   const [records, setRecords] = useState<UsageRecord[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -103,19 +118,44 @@ export default function SubscriberBillingPage() {
     }
   }, [token])
 
+  const handleRedeem = async () => {
+    const trimmed = code.trim().toUpperCase()
+    if (!trimmed) return
+    setRedeeming(true)
+    setRedeemError(null)
+    setRedeemResult(null)
+    try {
+      const res = await fetch(config.getApiUrl("/api/billing/redeem"), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ code: trimmed }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || data.message || `Error ${res.status}`)
+      setRedeemResult(data)
+      setCode("")
+      // Refresh balance so the new credits show immediately
+      fetchBalance()
+    } catch (err) {
+      setRedeemError(err instanceof Error ? err.message : "Failed to redeem code")
+    } finally {
+      setRedeeming(false)
+    }
+  }
+
   useEffect(() => { fetchBalance() }, [fetchBalance])
   useEffect(() => { fetchUsage(page) }, [fetchUsage, page])
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Hero — balance */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Billing &amp; Credits</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Track your credit balance and session usage history.
+          Redeem access codes and track your credit balance.
         </p>
       </div>
 
+      {/* Balance card */}
       <div className="rounded-2xl border border-border bg-card p-6 flex items-center gap-6">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10">
           <CreditCard className="h-7 w-7 text-primary" />
@@ -147,6 +187,55 @@ export default function SubscriberBillingPage() {
         <Button variant="outline" size="sm" onClick={fetchBalance} disabled={balanceLoading}>
           Refresh
         </Button>
+      </div>
+
+      {/* Redeem code */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <Key className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-base font-semibold text-foreground">Redeem Access Code</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Enter a code from your instructor to unlock a course avatar and receive any included credits.
+          Credit-only codes work here too.
+        </p>
+
+        <div className="flex gap-2">
+          <Input
+            value={code}
+            onChange={(e) => {
+              setCode(e.target.value.toUpperCase())
+              setRedeemError(null)
+              setRedeemResult(null)
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handleRedeem()}
+            placeholder="e.g. ABCD-EFGH-1234"
+            className="font-mono tracking-widest uppercase"
+            disabled={redeeming}
+          />
+          <Button onClick={handleRedeem} disabled={redeeming || !code.trim()}>
+            {redeeming ? "Redeeming…" : "Redeem"}
+          </Button>
+        </div>
+
+        {redeemResult && (
+          <div className="flex items-start gap-3 rounded-xl border border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950 p-4 text-green-800 dark:text-green-300">
+            <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
+            <div className="text-sm space-y-0.5">
+              <p className="font-semibold">{redeemResult.message}</p>
+              <p className="text-green-700 dark:text-green-400">
+                New balance: <strong>{formatCredits(redeemResult.credits_available)}</strong> credits
+              </p>
+            </div>
+          </div>
+        )}
+
+        {redeemError && (
+          <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-destructive">
+            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+            <p className="text-sm">{redeemError}</p>
+          </div>
+        )}
       </div>
 
       {/* Usage history */}
@@ -212,7 +301,6 @@ export default function SubscriberBillingPage() {
               </table>
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-4 flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">

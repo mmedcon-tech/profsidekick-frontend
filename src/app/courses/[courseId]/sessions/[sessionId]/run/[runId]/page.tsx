@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { EventProvider } from '@/contexts/EventContext';
+import { TranscriptProvider } from '@/contexts/TranscriptContext';
 import { StructuredTranscriptProvider } from '@/contexts/StructuredTranscriptContext';
 import LearningInterface from '@/components/learning/LearningInterface';
 import type { ClassSession } from '@/types/types';
@@ -110,6 +111,7 @@ function RunPageInner() {
 export default function SessionRunPage() {
   return (
     <EventProvider>
+      <TranscriptProvider>
       <StructuredTranscriptProvider>
         <Suspense
           fallback={
@@ -121,6 +123,7 @@ export default function SessionRunPage() {
           <RunPageInner />
         </Suspense>
       </StructuredTranscriptProvider>
+      </TranscriptProvider>
     </EventProvider>
   );
 }
