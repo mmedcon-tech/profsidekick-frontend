@@ -224,7 +224,7 @@ export default function ConfigurePage() {
               </div>
 
               {/* Inline GLB preview panel */}
-              {previewModel && (model.model_url ?? previewModel.file_path) && (
+              {previewModel && (previewModel.model_url ?? previewModel.file_path) && (
                 <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700" style={{ height: 380 }}>
                   <GlbAvatarPreview
                     glbUrl={(previewModel.model_url ?? previewModel.file_path)!}
