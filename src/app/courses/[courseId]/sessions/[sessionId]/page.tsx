@@ -7,7 +7,7 @@ import SessionRuns from '@/components/sessions/SessionRuns';
 import { config } from '@/lib/config';
 import {
   ArrowLeft, BookOpen, Clock, Calendar, Play,
-  Loader2, AlertCircle, Bot,
+  Loader2, AlertCircle, Bot, Globe, EyeOff,
 } from 'lucide-react';
 
 interface SessionInfo {
@@ -25,6 +25,7 @@ interface SessionInfo {
   runCount: number;
   status?: string;
   createdAt?: string;
+  isPublished?: boolean;
 }
 
 export default function SessionDetailPage() {
@@ -38,6 +39,7 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
   const fetchSession = useCallback(async () => {
     if (!token || !sessionId) return;
@@ -82,6 +84,27 @@ export default function SessionDetailPage() {
 
   const handleOpenChat = () => {
     router.push(`/publisher/sessions/${sessionId}/chat`);
+  };
+
+  const handleTogglePublish = async () => {
+    if (!token || !session) return;
+    setPublishing(true);
+    try {
+      const res = await fetch(config.getApiUrl(`/api/sessions/${sessionId}/publish`), {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_published: !session.isPublished }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || data.message || 'Failed to update');
+      }
+      setSession((prev) => prev ? { ...prev, isPublished: !prev.isPublished } : prev);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update publish status');
+    } finally {
+      setPublishing(false);
+    }
   };
 
   if (loading) {
@@ -156,12 +179,32 @@ export default function SessionDetailPage() {
         </div>
 
         {isPublisher ? (
-          <button
-            onClick={handleOpenChat}
-            className="shrink-0 flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Play className="h-4 w-4" /> Open Chat
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleTogglePublish}
+              disabled={publishing}
+              title={session.isPublished ? 'Unpublish — students can no longer start sessions' : 'Publish — make available to enrolled students'}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-50 ${
+                session.isPublished
+                  ? 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-700 dark:bg-green-950 dark:text-green-400'
+                  : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400'
+              }`}
+            >
+              {publishing ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : session.isPublished ? (
+                <><Globe className="h-3.5 w-3.5" /> Published</>
+              ) : (
+                <><EyeOff className="h-3.5 w-3.5" /> Draft</>
+              )}
+            </button>
+            <button
+              onClick={handleOpenChat}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Play className="h-4 w-4" /> Open Chat
+            </button>
+          </div>
         ) : (
           <button
             onClick={handleStartRun}
