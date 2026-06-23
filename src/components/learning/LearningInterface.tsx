@@ -202,7 +202,7 @@ export default function LearningInterface({
       if (bundle.avatar.heygenAvatarId) {
         heygenAvatarIdRef.current = bundle.avatar.heygenAvatarId;
       }
-      return bundle.openaiToken;
+      return { openaiToken: bundle.openaiToken, realtimeModel: bundle.realtimeModel };
     } catch (error) {
       console.error('Failed to fetch ephemeral session bundle:', error);
       throw error;
@@ -352,8 +352,8 @@ export default function LearningInterface({
     // Create a promise to track this connection
     globalConnectionPromise = (async () => {
       try {
-        const EPHEMERAL_KEY = await loadSessionEphemeral();
-        if (!EPHEMERAL_KEY) {
+        const ephemeral = await loadSessionEphemeral();
+        if (!ephemeral?.openaiToken) {
           setSessionStatus("ERROR");
           setIsConnecting(false);
           hasConnectedRef.current = false;
@@ -362,6 +362,7 @@ export default function LearningInterface({
           globalConnectionPromise = null;
           return;
         }
+        const { openaiToken: EPHEMERAL_KEY, realtimeModel } = ephemeral;
 
         if (!audioElementRef.current) {
           audioElementRef.current = document.createElement("audio");
@@ -374,16 +375,13 @@ export default function LearningInterface({
         const dataChannelId = Math.random().toString(36).substr(2, 9);
 
         console.log(`🌐 Creating WebRTC connection... [${connectionId}] -> [${dataChannelId}]`);
-        // Get the model from sessionStorage (stored when session run was created)
-        const storedModel = sessionRunId ? sessionStorage.getItem(`session_run_model_${sessionRunId}`) : null;
-        const modelToUse = storedModel || "gpt-realtime";
-        console.log(`🎯 Using model for session ${sessionRunId}: ${modelToUse}`);
-        
+        console.log(`🎯 Using model for session ${sessionRunId}: ${realtimeModel}`);
+
         const { pc, dc, mediaStream } = await createRealtimeConnection(
           EPHEMERAL_KEY,
           audioElementRef,
           "opus",
-          modelToUse
+          realtimeModel
         );
         
         console.log(`🔗 Created new peer connection and data channel [${connectionId}] -> [${dataChannelId}] - Lock: ${connectionLockRef.current}`);

@@ -321,6 +321,7 @@ export interface EphemeralTokenResponse {
     expires_at: string;
   };
   openai_token?: string;
+  realtime_model?: string | null;
   heygen_avatar_id?: string | null;
   heygen_quality?: 'low' | 'medium' | 'high';
   heygen_access_token?: string | null;
@@ -352,6 +353,7 @@ export interface SessionAvatarConfig {
 
 export interface SessionEphemeralBundle {
   openaiToken: string;
+  realtimeModel: string;
   avatar: SessionAvatarConfig;
 }
 
