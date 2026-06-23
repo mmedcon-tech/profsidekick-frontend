@@ -151,7 +151,7 @@ export default function SubscriberAvatarDetailPage() {
         {/* Avatar hero */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8">
           <div className="flex flex-col items-center text-center mb-6">
-            <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={80} rounded="2xl" />
+            <AvatarIcon imageUrl={avatar.template_image_url} name={avatar.name} size={80} rounded="lg" />
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-4">{avatar.name}</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-2 max-w-sm">
               {avatar.description || 'AI-powered educational avatar.'}

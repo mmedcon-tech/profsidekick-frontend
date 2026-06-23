@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+
 import "@/lib/envSetup";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ConditionalHeader from "@/components/layout/ConditionalHeader";

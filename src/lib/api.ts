@@ -68,6 +68,9 @@ async function requestWithAuth(
   if (!headers.has('Content-Type') && init.method !== 'GET') {
     headers.set('Content-Type', 'application/json');
   }
+  // Tells nginx which backend to route this request to.
+  // Set NEXT_PUBLIC_FRONTEND_INSTANCE=autograder in the autograder Vercel env vars.
+  headers.set('X-Frontend-Instance', process.env.NEXT_PUBLIC_FRONTEND_INSTANCE ?? 'autograder');
   return fetch(url, { ...init, headers });
 }
 
