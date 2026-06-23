@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, Environment, OrbitControls } from '@react-three/drei';
+import { useGLTF, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
@@ -68,9 +68,10 @@ export default function GlbAvatar({
   return (
     <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-gray-900 rounded-xl overflow-hidden relative">
       <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <Environment preset="city" />
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[10, 10, 5]} intensity={1.2} />
+        <directionalLight position={[-5, 5, -5]} intensity={0.4} />
+        <pointLight position={[0, 5, 3]} intensity={0.6} />
         <React.Suspense fallback={null}>
           <Model url={modelUrl} amplitude={amplitude} isSpeaking={widgetState === 'speaking'} />
         </React.Suspense>
