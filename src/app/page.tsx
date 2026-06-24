@@ -252,7 +252,7 @@ export default function LandingPage() {
                   <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Customizable AI Assistant</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Configure voice, personality, and teaching style to match your preferences and subject matter.</p>
+                    <p className="text-gray-600 dark:text-gray-400">Configure voice, personality, and style to match your preferences and subject matter.</p>
                   </div>
                 </div>
               </div>
