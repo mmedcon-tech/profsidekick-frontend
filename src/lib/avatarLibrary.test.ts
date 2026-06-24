@@ -34,4 +34,11 @@ describe('avatarLibrary', () => {
   it('falls back to library path when model URL missing', () => {
     expect(resolveGlbUrl(null, 'avatar-2')).toBe('/avatars/avatar-2.glb');
   });
+
+  it('includes kids avatars as separate library entries', () => {
+    expect(getAvatarLibraryEntry('kids-female')?.glbPath).toBe('/avatars/kids-female.glb');
+    expect(getAvatarLibraryEntry('kids-male')?.glbPath).toBe('/avatars/kids-male.glb');
+    expect(getAvatarLibraryEntryByName('Layla')?.tags).toContain('kids');
+    expect(getAvatarLibraryEntryByName('Omar')?.tags).toContain('kids');
+  });
 });

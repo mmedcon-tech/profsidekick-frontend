@@ -7,6 +7,7 @@ import {
   Center,
   ContactShadows,
   Environment,
+  Html,
   OrbitControls,
   useGLTF,
 } from '@react-three/drei';
@@ -109,7 +110,17 @@ export default function GlbAvatarPreview({
         <directionalLight position={[-4, 2, -2]} intensity={0.3} color="#a8c4ff" />
         <spotLight position={[0, 4, 2]} angle={0.35} penumbra={0.8} intensity={0.65} />
 
-        <Suspense fallback={null}>
+        <Suspense
+          fallback={
+            <mesh>
+              <Html center>
+                <div className="rounded-lg bg-black/60 px-4 py-2 text-sm text-white">
+                  Loading 3D model…
+                </div>
+              </Html>
+            </mesh>
+          }
+        >
           <Environment preset="city" />
           <GlbModel
             url={glbUrl}

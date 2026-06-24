@@ -22,6 +22,16 @@ export default function MarketplacePage() {
 
   const libraryEntries = useMemo(() => getAvatarLibrary().avatars, []);
 
+  const professionalLibrary = useMemo(
+    () => libraryEntries.filter((entry) => entry.tags.includes('professional')),
+    [libraryEntries],
+  );
+
+  const kidsLibrary = useMemo(
+    () => libraryEntries.filter((entry) => entry.tags.includes('kids')),
+    [libraryEntries],
+  );
+
   useEffect(() => {
     Promise.all([
       marketplaceApi.list().catch(() => ({ avatars: [], total: 0 })),
@@ -95,7 +105,7 @@ export default function MarketplacePage() {
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {libraryEntries.map((entry) => (
+          {professionalLibrary.map((entry) => (
             <GlbLibraryCard
               key={entry.id}
               entry={entry}
@@ -104,6 +114,29 @@ export default function MarketplacePage() {
           ))}
         </div>
       </div>
+
+      {kidsLibrary.length > 0 && (
+        <div>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">Kids Avatars</h2>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                Playful Roblox-style 3D tutors for younger learners — Layla and Omar.
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {kidsLibrary.map((entry) => (
+              <GlbLibraryCard
+                key={entry.id}
+                entry={entry}
+                onPreview={openAvatarPreview}
+                variant="kids"
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -9,18 +9,21 @@ import type { AvatarLibraryEntry } from '@/lib/avatarLibrary';
 interface GlbLibraryCardProps {
   entry: AvatarLibraryEntry;
   onPreview: (entry: AvatarLibraryEntry) => void;
+  variant?: 'default' | 'kids';
 }
 
 export default function GlbLibraryCard({
   entry,
   onPreview,
+  variant = 'default',
 }: GlbLibraryCardProps): React.ReactElement {
+  const isKids = variant === 'kids' || entry.tags.includes('kids');
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:border-[#133221]/40 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800">
-      <div className="relative bg-gradient-to-br from-[#133221] via-[#0f281c] to-[#0a1e13] px-5 pb-14 pt-5">
+      <div className={`relative px-5 pb-14 pt-5 ${isKids ? 'bg-gradient-to-br from-[#1d3557] via-[#14213d] to-[#0b1320]' : 'bg-gradient-to-br from-[#133221] via-[#0f281c] to-[#0a1e13]'}`}>
         <div className="flex items-start justify-between gap-3">
           <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-100">
-            <Sparkles size={10} /> Portrait + 3D
+            <Sparkles size={10} /> {isKids ? 'Kids · 3D' : 'Portrait + 3D'}
           </span>
           <span className="flex items-center gap-1 text-[11px] font-medium text-amber-200">
             <Star size={11} className="fill-amber-300 text-amber-300" /> 4.9

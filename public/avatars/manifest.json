@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "description": "Portrait heroes use Emirati-style references. Sultan 3D uses AvatarSDK until you install a licensed thobe GLB via scripts/install-sultan-glb.sh.",
+  "version": 7,
+  "description": "Salama and Sultan are professional teaching avatars. Layla and Omar are Roblox-style kids avatars (kids-female.glb / kids-male.glb).",
   "avatars": [
     {
       "id": "avatar-1",
@@ -56,6 +56,60 @@
         ],
         "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
         "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"]
+      }
+    },
+    {
+      "id": "kids-female",
+      "name": "Layla",
+      "gender": "female",
+      "languages": ["ar", "en"],
+      "glbPath": "/avatars/kids-female.glb",
+      "thumbnailPath": "/images/kids-female.png",
+      "tagline": "Friendly kids tutor · Arabic & English",
+      "description": "Playful Roblox-style avatar for younger learners — approachable and fun for kids sessions.",
+      "tags": ["kids", "glb"],
+      "source": "Roblox-style kids rig (women-roblox.glb)",
+      "previewFraming": "full",
+      "previewFitMargin": 1.05,
+      "previewModelScale": 1.0,
+      "lipSync": {
+        "morphTargets": [
+          "mouthOpen",
+          "jawOpen",
+          "viseme_aa",
+          "viseme_O",
+          "viseme_E",
+          "mouthSmile"
+        ],
+        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw", "Head", "head"]
+      }
+    },
+    {
+      "id": "kids-male",
+      "name": "Omar",
+      "gender": "male",
+      "languages": ["ar", "en"],
+      "glbPath": "/avatars/kids-male.glb",
+      "thumbnailPath": "/images/kids-male.png",
+      "tagline": "Friendly kids tutor · Arabic & English",
+      "description": "Playful Roblox-style avatar for younger learners — approachable and fun for kids sessions.",
+      "tags": ["kids", "glb"],
+      "source": "Roblox-style kids rig (men-roblox.glb)",
+      "previewFraming": "full",
+      "previewFitMargin": 1.05,
+      "previewModelScale": 1.0,
+      "lipSync": {
+        "morphTargets": [
+          "mouthOpen",
+          "jawOpen",
+          "viseme_aa",
+          "viseme_O",
+          "viseme_E",
+          "mouthSmile"
+        ],
+        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw", "Head", "head"]
       }
     }
   ]
