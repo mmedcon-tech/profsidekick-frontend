@@ -102,7 +102,7 @@ export interface SessionRunDetails {
   avatarRenderType?: AvatarRenderType;
   heygenAvatarId?: string | null;
   sessionLanguage?: string;
-  sessionMode?: 'teaching' | 'examination';
+  sessionMode?: 'teaching' | 'examination' | 'consultation';
 }
 
 // Legacy types for backward compatibility (will be removed)
@@ -348,7 +348,7 @@ export interface SessionAvatarConfig {
   heygenQuality?: 'low' | 'medium' | 'high';
   heygenAccessToken?: string | null;
   sessionLanguage?: string;
-  sessionMode?: 'teaching' | 'examination';
+  sessionMode?: 'teaching' | 'examination' | 'consultation';
 }
 
 export interface SessionEphemeralBundle {

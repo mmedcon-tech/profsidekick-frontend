@@ -447,7 +447,7 @@ export interface Session {
   title: { en: string; ar: string }
   description: { en: string; ar: string }
   duration: number // minutes
-  sessionMode: "teaching" | "examination"
+  sessionMode: "teaching" | "examination" | "consultation"
   isActive: boolean
   isPublished: boolean
   slideCount: number
