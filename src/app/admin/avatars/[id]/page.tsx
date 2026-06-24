@@ -48,9 +48,9 @@ function StatCard({ label, value, icon, color = 'blue' }: {
   label: string; value: number | string; icon: React.ReactNode; color?: string;
 }) {
   const colors: Record<string, string> = {
-    blue:    'bg-green-50 dark:bg-gray-800 text-[#133221]',
+    blue:    'bg-primary/5 dark:bg-gray-800 text-[#133221]',
     indigo:  'bg-gray-50 text-indigo-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
+    emerald: 'bg-primary/5 text-primary',
     amber:   'bg-amber-50 text-amber-600',
   };
   return (
@@ -68,11 +68,11 @@ function StatCard({ label, value, icon, color = 'blue' }: {
 
 function StatusPill({ state }: { state: string }) {
   const map: Record<string, string> = {
-    published:   'bg-emerald-100 text-emerald-700',
+    published:   'bg-primary/10 text-primary/90',
     draft:       'bg-amber-100 text-amber-700',
     archived:    'bg-gray-100 dark:bg-gray-800 text-gray-400',
     unpublished: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
-    active:      'bg-emerald-100 text-emerald-700',
+    active:      'bg-primary/10 text-primary/90',
     completed:   'bg-[#BA984E]/20 text-[#133221]',
     failed:      'bg-red-100 text-red-600',
   };
@@ -361,7 +361,7 @@ function PromptsTab({ template, onReload }: {
       </div>
 
       {error   && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
-      {success && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm">{success}</div>}
+      {success && <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-primary/90 text-sm">{success}</div>}
 
       {/* Examination Prompt */}
       <PromptBlock

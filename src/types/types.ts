@@ -333,7 +333,7 @@ export interface EphemeralTokenResponse {
   avatar_library_id?: string | null;
 }
 
-export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | 'glb';
+export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | 'glb' | '3d';
 
 export type AvatarWidgetState = 'idle' | 'listening' | 'speaking';
 
@@ -344,6 +344,7 @@ export interface SessionAvatarConfig {
   imageUrl?: string;
   glbModelUrl?: string;
   glbLibraryId?: string;
+  modelUrl?: string;
   heygenAvatarId?: string | null;
   heygenQuality?: 'low' | 'medium' | 'high';
   heygenAccessToken?: string | null;

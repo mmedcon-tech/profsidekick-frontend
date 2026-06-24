@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import DashboardLayout, { adminNav } from '@/components/layout/DashboardLayout';
+import { ThemedLayout } from '@/components/layout/ThemedLayout';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -17,5 +17,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (isLoading || !isAuthenticated || user?.role !== 'admin') return null;
 
-  return <DashboardLayout nav={adminNav}>{children}</DashboardLayout>;
+  return <ThemedLayout>{children}</ThemedLayout>;
 }

@@ -218,10 +218,43 @@ export const publisherTemplateApi = {
 
 // ─── Avatars — Publisher ─────────────────────────────────────────────────────
 
+export interface AccessCodeRecord {
+  id: string
+  code: string
+  max_users: number
+  users_count: number
+  credits_per_user: string
+  expires_at: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface AccessCodeCreate {
+  max_users: number
+  credits_per_user?: string
+  expires_at?: string | null
+}
+
+export interface AccessCodeUpdate {
+  max_users?: number
+  is_active?: boolean
+}
+
+export interface LinkedCourseLink {
+  id: string
+  avatar_id: string
+  course_id: string
+  sort_order: number
+  added_at: string
+}
+
 export const avatarApi = {
-  list: () => req<AvatarListResponse>('/api/publisher/avatars'),
+  list: (programId?: string) =>
+    req<AvatarListResponse>(
+      programId ? `/api/publisher/avatars?program_id=${programId}` : '/api/publisher/avatars'
+    ),
   get: (id: string) => req<AvatarResponse>(`/api/publisher/avatars/${id}`),
-  create: (data: AvatarCreate) =>
+  create: (data: AvatarCreate & { program_id?: string }) =>
     req<AvatarResponse>('/api/publisher/avatars', 'POST', data),
   update: (id: string, data: AvatarUpdate) =>
     req<AvatarResponse>(`/api/publisher/avatars/${id}`, 'PUT', data),
@@ -229,6 +262,28 @@ export const avatarApi = {
     req<AvatarResponse>(`/api/publisher/avatars/${id}/publish`, 'PATCH'),
   delete: (id: string) =>
     req<void>(`/api/publisher/avatars/${id}`, 'DELETE'),
+
+  // Access codes
+  listCodes: (avatarId: string) =>
+    req<{ codes: AccessCodeRecord[]; total: number }>(
+      `/api/publisher/avatars/${avatarId}/access-codes`
+    ),
+  createCode: (avatarId: string, data: AccessCodeCreate) =>
+    req<AccessCodeRecord>(`/api/publisher/avatars/${avatarId}/access-codes`, 'POST', data),
+  updateCode: (avatarId: string, codeId: string, data: AccessCodeUpdate) =>
+    req<AccessCodeRecord>(`/api/publisher/avatars/${avatarId}/access-codes/${codeId}`, 'PATCH', data),
+  deactivateCode: (avatarId: string, codeId: string) =>
+    req<void>(`/api/publisher/avatars/${avatarId}/access-codes/${codeId}`, 'DELETE'),
+
+  // Avatar–course links (avatar_courses join table)
+  listLinkedCourses: (avatarId: string) =>
+    req<{ courses: LinkedCourseLink[]; total: number }>(
+      `/api/publisher/avatars/${avatarId}/courses`
+    ),
+  linkCourse: (avatarId: string, courseUuid: string) =>
+    req<LinkedCourseLink>(`/api/publisher/avatars/${avatarId}/courses`, 'POST', { course_id: courseUuid }),
+  unlinkCourse: (avatarId: string, courseUuid: string) =>
+    req<void>(`/api/publisher/avatars/${avatarId}/courses/${courseUuid}`, 'DELETE'),
 };
 
 // ─── Avatar Configuration — Publisher ───────────────────────────────────────
@@ -321,6 +376,16 @@ export const marketplaceApi = {
 
 // ─── Subscriptions — Subscriber ─────────────────────────────────────────────
 
+export interface CodeRedeemResult {
+  success: boolean
+  message: string
+  avatar_id: string
+  subscription_created: boolean
+  credits_granted: number
+  courses_enrolled: string[]
+  programs_enrolled: string[]
+}
+
 export const subscriptionApi = {
   subscribe: (avatarId: string) =>
     req<any>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'POST'),
@@ -331,6 +396,8 @@ export const subscriptionApi = {
       `/api/subscriber/avatars/${avatarId}/subscription-status`,
     ),
   list: () => req<{ subscriptions: any[]; total: number }>('/api/subscriber/avatars'),
+  redeemCode: (code: string) =>
+    req<CodeRedeemResult>('/api/avatar-access-codes/redeem', 'POST', { code }),
 };
 
 // ─── Admin ───────────────────────────────────────────────────────────────────

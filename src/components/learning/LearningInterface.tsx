@@ -8,7 +8,8 @@ import StreamingAvatar, {
   TaskType,
 } from "@heygen/streaming-avatar";
 import { ClassSession, SessionAvatarConfig } from "@/types";
-import SessionAvatar from "./SessionAvatar";
+import SessionAvatarRenderer from "@/components/avatar/SessionAvatarRenderer";
+import { cn } from "@/lib/utils";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
 import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
@@ -98,6 +99,7 @@ export default function LearningInterface({
   const isIntentionallyDisconnectedRef = useRef(false);
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
 
   // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
@@ -1515,295 +1517,424 @@ export default function LearningInterface({
   // --------------------------------------------------------------
 
   return (
-    <div className="h-screen bg-gray-100 dark:bg-gray-800 flex relative overflow-hidden">
-      {/* SessionAvatar floating mode */}
-      {!isAvatarDocked && (
-        <SessionAvatar
-          isConnected={sessionStatus === "CONNECTED"}
-          isConnecting={sessionStatus === "CONNECTING"}
-          isUserSpeaking={isUserSpeaking}
-          isAISpeaking={isAISpeaking}
-          avatarConfig={sessionAvatar}
-          audioElement={outputAudioElement}
-          videoRef={heygenVideoRef}
-          isDocked={false}
-          onDockToggle={() => setIsAvatarDocked(true)}
-          onAvatarModeChange={(mode) => setSessionAvatar({...sessionAvatar, renderType: mode})}
-          isMicMuted={isMicMuted}
-          toggleMicrophone={toggleMicrophone}
-          isAudioEnabled={isAudioEnabled}
-          toggleAudio={toggleAudio}
-        />
-      )}
+    <div className="flex h-screen w-full flex-col bg-background font-sans text-foreground">
+      {/* ── Header ── */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-10 shadow-sm relative">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <MessageSquare className="h-4 w-4" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-foreground leading-none">
+              {classSession.classDetails.className}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-1">
+              {classSession.classDetails.courseName} — {classSession.classDetails.courseCode}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            AI Tutor Session
+          </span>
+          <button
+            onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
+            className={cn(
+              "p-2 rounded-full transition-colors ml-2",
+              isTranscriptVisible ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
+            )}
+            title="Toggle Transcript"
+          >
+            <MessageSquare size={18} />
+          </button>
+        </div>
+      </header>
 
-      {/* Main Slide Viewer */}
-      <div className="flex-1 bg-white dark:bg-gray-800 flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <div className="bg-emerald-600 dark:bg-emerald-700 text-white p-4 flex justify-between items-center z-10 shadow-md relative">
-          <div className="flex items-center gap-4">
-            <img 
-              src="/images/logo.png" 
-              alt="ProfSidekick Logo" 
-              className="w-11 h-11 object-contain bg-white rounded-full p-1 shadow-sm"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-            <div>
-              <h1 className="text-xl font-semibold">{classSession.classDetails.className}</h1>
-              <p className="text-emerald-100 text-sm">
-                {classSession.classDetails.courseName} — {classSession.classDetails.courseCode}
-              </p>
+      {/* ── Main Layout ── */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* ── Left Sidebar: Avatar & Controls ── */}
+        <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-sidebar md:w-[320px]">
+          {/* Avatar Video Area */}
+          <div className="relative flex-1 bg-black/5 p-4 flex flex-col justify-center items-center">
+            <div className="relative h-64 w-64 overflow-hidden rounded-2xl shadow-xl border-4 border-sidebar bg-gray-900 pointer-events-none">
+              <SessionAvatarRenderer
+                config={sessionAvatar}
+                audioElement={outputAudioElement}
+                isConnected={sessionStatus === "CONNECTED"}
+                isAISpeaking={isAISpeaking}
+                isUserSpeaking={isUserSpeaking}
+                heygenConnected={sessionStatus === "CONNECTED" && !isConnecting}
+                heygenVideoRef={heygenVideoRef}
+              />
+              {sessionStatus === "CONNECTING" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm z-20">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <span className="text-xs font-medium text-white">Connecting...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Status indicator */}
+            <div className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-sidebar-accent/50">
+              <span className={cn(
+                "h-2 w-2 rounded-full",
+                sessionStatus === "CONNECTED" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : 
+                sessionStatus === "CONNECTING" ? "bg-amber-500 animate-pulse" : "bg-gray-400"
+              )} />
+              <span className="text-xs font-medium text-sidebar-foreground">
+                {sessionStatus === "CONNECTED" ? (isAISpeaking ? 'AI Speaking...' : isUserSpeaking ? 'Listening...' : 'Connected') : 
+                 sessionStatus === "CONNECTING" ? 'Establishing link...' : 'Ready to start'}
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Controls */}
+          <div className="flex shrink-0 flex-col gap-3 p-4 bg-sidebar border-t border-border/50">
+            {/* Voice Activity equalizers (visual only for now) */}
+            <div className="flex items-center justify-between rounded-xl border border-border bg-background p-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Mic className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex items-end gap-0.5 h-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "w-1 rounded-full bg-primary/60 transition-all duration-75",
+                        isUserSpeaking ? "animate-[eq_0.5s_ease-in-out_infinite]" : "h-1"
+                      )}
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="h-4 w-px bg-border" />
+              <div className="flex items-center gap-2">
+                <div className="flex items-end gap-0.5 h-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "w-1 rounded-full bg-primary/50/60 transition-all duration-75",
+                        isAISpeaking ? "animate-[eq_0.5s_ease-in-out_infinite]" : "h-1"
+                      )}
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    />
+                  ))}
+                </div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/50/10 text-primary">
+                  <Volume2 className="h-3.5 w-3.5" />
+                </div>
+              </div>
+            </div>
+
+            {/* Mic & Sound toggles */}
+            <div className="flex gap-2">
               <button
-                onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
-                className={`p-2 rounded-full ${isTranscriptVisible ? 'bg-emerald-700/50 hover:bg-emerald-700 text-emerald-100' : 'bg-gray-700/50 hover:bg-gray-700 text-gray-300'} transition-colors`}
-                title="Toggle Transcript"
+                onClick={toggleMicrophone}
+                className={cn(
+                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
+                  !isMicMuted ? "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80" : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                )}
               >
-                <MessageSquare size={20} />
+                {!isMicMuted ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                {!isMicMuted ? "Mic On" : "Mic Off"}
               </button>
               <button
-                onClick={handleEndSessionClick}
-                className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm ml-2"
+                onClick={toggleAudio}
+                className={cn(
+                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
+                  isAudioEnabled ? "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80" : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                )}
               >
-                End Session
+                {isAudioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                {isAudioEnabled ? "Sound On" : "Sound Off"}
               </button>
             </div>
+
+            {/* Session Action Button */}
+            {sessionStatus === "CONNECTED" ? (
+              <button
+                onClick={handleEndSessionClick}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-destructive/10 py-3.5 text-sm font-semibold text-destructive hover:bg-destructive/20 transition-colors mt-2"
+              >
+                <PhoneOff className="h-4 w-4" />
+                End Session
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (sessionStatus === "DISCONNECTED") connectToRealtime();
+                }}
+                disabled={sessionStatus === "CONNECTING"}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors mt-2 disabled:opacity-50"
+              >
+                <Phone className="h-4 w-4" />
+                {sessionStatus === "CONNECTING" ? "Connecting..." : "Start Session"}
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Slide Content */}
-        <div className="flex-1 flex items-center justify-center p-8 bg-gray-50 dark:bg-gray-900 overflow-hidden relative">
-          {/* Start Conversation Prompt */}
+        {/* ── Center: Slides ── */}
+        <div className="flex flex-1 flex-col overflow-hidden bg-muted/10 relative">
+          
+          {/* Start Conversation Prompt overlay */}
           {showStartPrompt && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in">
-              <div className={`${
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className={cn(
+                "px-6 py-4 rounded-2xl shadow-xl flex items-center gap-4 border backdrop-blur-md transition-all duration-300",
                 sessionStatus === "CONNECTED"
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30"
-                  : "bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/30"
-              } text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all duration-300`}>
-                <div className="w-10 h-10 bg-white dark:bg-gray-800/20 rounded-full flex items-center justify-center animate-pulse">
+                  ? "bg-primary/50/90 text-white border-primary/40 shadow-primary/50/20"
+                  : "bg-amber-500/90 text-white border-amber-400 shadow-amber-500/20"
+              )}>
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
                   {sessionStatus === "CONNECTED" ? (
-                    <Mic size={20} className="text-white" />
+                    <Mic size={20} className="text-white animate-pulse" />
                   ) : (
-                    <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   )}
                 </div>
                 <div>
                   {sessionStatus === "CONNECTED" ? (
                     <>
-                      <p className="font-semibold text-base">Ready to start!</p>
-                      <p className="text-sm text-emerald-50">Say something to begin the conversation</p>
+                      <p className="font-bold text-sm">Ready to start!</p>
+                      <p className="text-xs text-primary/5 mt-0.5">Say something to begin the conversation</p>
                     </>
                   ) : (
                     <>
-                      <p className="font-semibold text-base">Connecting...</p>
-                      <p className="text-sm text-amber-50">Please wait while we establish the connection</p>
+                      <p className="font-bold text-sm">Connecting...</p>
+                      <p className="text-xs text-amber-50 mt-0.5">Please wait while we establish the link</p>
                     </>
                   )}
                 </div>
                 {sessionStatus === "CONNECTED" && (
                   <button
                     onClick={() => setShowStartPrompt(false)}
-                    className="ml-2 text-white/80 hover:text-white transition-colors p-2"
-                    aria-label="Close"
+                    className="ml-2 text-white/70 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
                   >
-                    × 
+                    ×
                   </button>
                 )}
               </div>
             </div>
           )}
 
-          <div className="w-full max-w-6xl relative h-full flex flex-col items-center justify-center">
-            {currentSlideData?.imagePath ? (
-              <img
-                src={getCorrectImageUrl(currentSlideData.imagePath)}
-                alt={currentSlideData?.title}
-                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl ring-1 ring-black/5"
-                onError={(e) => {
-                  console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
-                }}
-              />
-            ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center shadow-sm border border-gray-100">
-                <p className="text-gray-500 dark:text-gray-400 text-lg">No slide image available</p>
+          {/* Slide content area */}
+          <div className="flex flex-1 items-center justify-center overflow-auto p-4 md:p-8">
+            <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
+              {currentSlideData?.imagePath ? (
+                <img
+                  src={getCorrectImageUrl(currentSlideData.imagePath)}
+                  alt={currentSlideData?.title}
+                  className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-lg ring-1 ring-border/50 bg-card"
+                  onError={(e) => {
+                    console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
+                  }}
+                />
+              ) : (
+                <div className="w-full max-w-2xl bg-card rounded-2xl p-16 text-center shadow-sm border border-border flex flex-col items-center justify-center min-h-[400px]">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <MessageSquare className="h-6 w-6 text-muted-foreground opacity-50" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No slide image available</h3>
+                  <p className="text-sm text-muted-foreground">This slide does not contain visual media.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Slide Navigation Bar */}
+          <div className="flex shrink-0 items-center justify-between border-t border-border bg-card/80 backdrop-blur-md px-4 py-3 md:px-6">
+            <button
+              onClick={previousSlide}
+              disabled={currentSlide === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Previous</span>
+            </button>
+            
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                {Array.from({ length: classSession.totalSlides }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                       setCurrentSlide(i);
+                       currentSlideRef.current = i;
+                    }}
+                    className={cn(
+                      "rounded-full transition-all duration-300",
+                      i === currentSlide ? "h-1.5 w-5 bg-primary" : "h-1.5 w-1.5 bg-border hover:bg-muted-foreground"
+                    )}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
               </div>
-            )}
+            </div>
+
+            <button
+              onClick={nextSlide}
+              disabled={currentSlide === classSession.totalSlides - 1}
+              className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
-        {/* Slide Navigation */}
-        <div className="bg-white dark:bg-gray-800 p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-          <button
-            onClick={previousSlide}
-            disabled={currentSlide === 0}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
-          >
-            <ChevronLeft size={20} />
-            Previous
-          </button>
-          
-          <div className="text-center px-4">
-            <p className="text-lg font-semibold text-gray-800 dark:text-gray-100">{currentSlideData?.title || 'Slide ' + (currentSlide + 1)}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
-              Slide {currentSlide + 1} of {classSession.totalSlides}
-            </p>
+        {/* ── Right Sidebar: Transcript ── */}
+        {isTranscriptVisible && (
+          <div className="flex w-72 shrink-0 flex-col border-l border-border bg-card md:w-80 transition-all duration-300 ease-in-out">
+            <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <MessageSquare className="h-3.5 w-3.5" />
+                Transcript
+              </h3>
+              <button 
+                onClick={() => setTranscript([])} 
+                className="text-[10px] uppercase font-bold tracking-wider text-primary hover:text-primary/80 transition-colors px-2 py-1 bg-primary/10 rounded"
+              >
+                Clear
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4">
+              {transcript.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-3 opacity-60">
+                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground max-w-[200px]">
+                    Transcript will appear here once the session starts.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transcript.map((msg, idx) => (
+                    <div key={idx} className={cn(
+                      "flex gap-3", 
+                      msg.role === "user" && "flex-row-reverse"
+                    )}>
+                      <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full shadow-sm">
+                        {msg.role === "assistant" ? (
+                          <div className="flex h-full w-full items-center justify-center bg-primary/10 text-[10px] font-bold text-primary/90">
+                            AI
+                          </div>
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-primary text-[10px] font-bold text-primary-foreground">
+                            ME
+                          </div>
+                        )}
+                      </div>
+                      <div className="max-w-[80%] flex flex-col gap-1">
+                        <div className={cn(
+                          "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm",
+                          msg.role === "assistant"
+                            ? "rounded-tl-sm bg-secondary text-secondary-foreground"
+                            : "rounded-tr-sm bg-primary text-primary-foreground"
+                        )}>
+                          {msg.text}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={transcriptEndRef} />
+                </div>
+              )}
+            </div>
           </div>
-          
-          <button
-            onClick={nextSlide}
-            disabled={currentSlide === classSession.slides.length - 1}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl disabled:opacity-50 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
-          >
-            Next
-            <ChevronRight size={20} />
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Feedback Modal */}
+      {/* ── Feedback Modal ── */}
       {showFeedbackModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Session Feedback</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">Help us improve by sharing your experience with this teaching session.</p>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-8 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Session Complete</h2>
+            <p className="text-sm text-muted-foreground mb-8">Help us improve by sharing your experience.</p>
             
             {/* Rating */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Overall Rating</label>
-              <div className="flex gap-2">
+              <label className="block text-sm font-semibold text-foreground mb-3">Overall Rating</label>
+              <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
                     onClick={() => handleFeedbackChange('rating', star)}
-                    className={`text-3xl transition-colors ${
-                      star <= feedbackData.rating ? 'text-yellow-400' : 'text-gray-300'
-                    } hover:text-yellow-400`}
+                    className={cn(
+                      "text-3xl transition-transform hover:scale-110",
+                      star <= feedbackData.rating ? "text-amber-400 drop-shadow-sm" : "text-muted"
+                    )}
                   >
                     ★
                   </button>
                 ))}
-                <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">
-                  {feedbackData.rating}/5 stars
-                </span>
               </div>
             </div>
 
             {/* General Feedback */}
-            <div className="mb-6">
-              <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                General Feedback
-              </label>
-              <textarea
-                id="feedback"
-                value={feedbackData.feedback}
-                onChange={(e) => handleFeedbackChange('feedback', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
-                placeholder="How was your overall experience with the AI teaching assistant?"
-              />
-            </div>
+            <div className="space-y-5">
+              <div>
+                <label htmlFor="feedback" className="block text-sm font-semibold text-foreground mb-1.5">
+                  General Feedback
+                </label>
+                <textarea
+                  id="feedback"
+                  value={feedbackData.feedback}
+                  onChange={(e) => handleFeedbackChange('feedback', e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-sm resize-none"
+                  placeholder="How was your overall experience?"
+                />
+              </div>
 
-            {/* Issues Encountered */}
-            <div className="mb-6">
-              <label htmlFor="issues" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Issues Encountered (For Debugging)
-              </label>
-              <textarea
-                id="issues"
-                value={feedbackData.issues}
-                onChange={(e) => handleFeedbackChange('issues', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
-                placeholder="Did you encounter any technical issues, bugs, or unexpected behavior?"
-              />
-            </div>
-
-            {/* Suggestions */}
-            <div className="mb-8">
-              <label htmlFor="suggestions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Suggestions for Improvement
-              </label>
-              <textarea
-                id="suggestions"
-                value={feedbackData.suggestions}
-                onChange={(e) => handleFeedbackChange('suggestions', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
-                placeholder="What features or improvements would make this better?"
-              />
+              <div>
+                <label htmlFor="issues" className="block text-sm font-semibold text-foreground mb-1.5">
+                  Issues Encountered
+                </label>
+                <textarea
+                  id="issues"
+                  value={feedbackData.issues}
+                  onChange={(e) => handleFeedbackChange('issues', e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-sm resize-none"
+                  placeholder="Did you encounter any technical issues?"
+                />
+              </div>
             </div>
 
             {/* Buttons */}
-            <div className="flex gap-4 justify-end">
+            <div className="flex gap-3 justify-end mt-8">
               <button
                 onClick={handleSkipFeedback}
-                className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors"
+                className="px-5 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
               >
-                Skip Feedback
+                Skip
               </button>
               <button
                 onClick={handleFeedbackSubmit}
-                className="bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
+                className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl text-sm font-medium shadow-sm hover:bg-primary/90 transition-all active:scale-95"
               >
-                Submit & End Session
+                Submit Feedback
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Transcript Sidebar */}
-      {isTranscriptVisible && (
-        <div className="w-80 flex-shrink-0 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 z-10 flex flex-col">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 font-semibold text-gray-800 dark:text-gray-200 flex justify-between items-center">
-            <span>Live Transcript</span>
-            <button onClick={() => setTranscript([])} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">Clear</button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {transcript.map((item, index) => (
-              <div key={index} className={`flex flex-col ${item.role === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`px-3 py-2 rounded-lg max-w-[85%] text-sm ${
-                  item.role === 'user' 
-                    ? 'bg-emerald-600 text-white rounded-br-none' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-none'
-                }`}>
-                  {item.text}
-                </div>
-              </div>
-            ))}
-            {transcript.length === 0 && (
-              <div className="text-sm text-gray-500 dark:text-gray-400 text-center italic mt-10">
-                Conversation will appear here...
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* SessionAvatar docked sidebar */}
-      {isAvatarDocked && (
-        <div className="w-80 flex-shrink-0 border-l border-gray-200 dark:border-gray-700 bg-gray-900 z-10">
-          <SessionAvatar
-            isConnected={sessionStatus === "CONNECTED"}
-            isConnecting={sessionStatus === "CONNECTING"}
-            isUserSpeaking={isUserSpeaking}
-            isAISpeaking={isAISpeaking}
-            avatarConfig={sessionAvatar}
-            audioElement={outputAudioElement}
-            videoRef={heygenVideoRef}
-            isDocked={true}
-            onDockToggle={() => setIsAvatarDocked(false)}
-            onAvatarModeChange={(mode) => setSessionAvatar({...sessionAvatar, renderType: mode})}
-            isMicMuted={isMicMuted}
-            toggleMicrophone={toggleMicrophone}
-            isAudioEnabled={isAudioEnabled}
-            toggleAudio={toggleAudio}
-          />
-        </div>
-      )}
+      {/* Global styles for equalizer animation */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes eq {
+          0%, 100% { transform: scaleY(0.4); }
+          50% { transform: scaleY(1.2); }
+        }
+      `}} />
     </div>
   );
 }
