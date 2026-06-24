@@ -7,7 +7,8 @@ import { ArrowLeft, Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react'
 
 export default function ContactPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -85,7 +86,7 @@ export default function ContactPage() {
               </button>
               {isAuthenticated ? (
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push(dashboardUrl)}
                   className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
                 >
                   Dashboard
@@ -371,7 +372,7 @@ export default function ContactPage() {
                <h3 className="font-semibold mb-4">Account</h3>
                <ul className="space-y-2 text-gray-400">
                  {isAuthenticated ? (
-                   <li><button onClick={() => router.push('/dashboard')} className="hover:text-white transition-colors">Dashboard</button></li>
+                   <li><button onClick={() => router.push(dashboardUrl)} className="hover:text-white transition-colors">Dashboard</button></li>
                  ) : (
                    <>
                      <li><button onClick={() => router.push('/login')} className="hover:text-white transition-colors">Sign In</button></li>

@@ -488,7 +488,11 @@ export default function ClassCreation() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-4 mb-4">
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => {
+                  const courseIdParam = searchParams.get("courseId");
+                  if (courseIdParam) router.push(`/courses/${courseIdParam}`);
+                  else router.back();
+                }}
                 className="p-2 hover:bg-white dark:bg-gray-800/50 rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />

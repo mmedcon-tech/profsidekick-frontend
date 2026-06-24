@@ -7,7 +7,8 @@ import { ArrowLeft, Users, Lightbulb, Award } from 'lucide-react';
 
 export default function AboutPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
 
   // Show loading while checking auth
   if (isLoading) {
@@ -52,7 +53,7 @@ export default function AboutPage() {
               </button>
               {isAuthenticated ? (
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push(dashboardUrl)}
                   className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
                 >
                   Dashboard
@@ -226,7 +227,7 @@ export default function AboutPage() {
                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
              {isAuthenticated ? (
                <button
-                 onClick={() => router.push('/dashboard')}
+                 onClick={() => router.push(dashboardUrl)}
                  className="bg-white dark:bg-gray-800 text-primary/90 dark:text-primary/40 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                >
                  Go to Dashboard
@@ -282,7 +283,7 @@ export default function AboutPage() {
                <h3 className="font-semibold mb-4">Account</h3>
                <ul className="space-y-2 text-gray-400">
                  {isAuthenticated ? (
-                   <li><button onClick={() => router.push('/dashboard')} className="hover:text-white transition-colors">Dashboard</button></li>
+                   <li><button onClick={() => router.push(dashboardUrl)} className="hover:text-white transition-colors">Dashboard</button></li>
                  ) : (
                    <>
                      <li><button onClick={() => router.push('/login')} className="hover:text-white transition-colors">Sign In</button></li>

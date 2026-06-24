@@ -121,7 +121,7 @@ export default function CourseDetailPage() {
   };
 
   const handleCreateSession = () => {
-    router.push(`/courses/${courseId}/sessions/new`);
+    router.push(`/courses/${courseId}/sessions/new?courseId=${courseId}`);
   };
 
   const handleRunSession = (sessionId: string) => {

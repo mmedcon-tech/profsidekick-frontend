@@ -112,7 +112,7 @@ export default function LearningInterface({
   const MIN_CONFIDENCE = 0.85;  // Minimum confidence from speech recognition
 
   const { token } = useAuth();
-  const { logClientEvent,  } = useEvent();
+  const { logClientEvent, } = useEvent();
   const { currentQuestion, latestResponse, keyConcepts, rollingNotes, addStructuredTurn } = useStructuredTranscript();
 
   const getRubricTerms = useCallback((): string[] => {
@@ -122,7 +122,7 @@ export default function LearningInterface({
       if (Array.isArray(parsed?.sessionBehavior?.rubric)) {
         return parsed.sessionBehavior.rubric.map((r: { criterion: string }) => r.criterion).filter(Boolean);
       }
-    } catch {}
+    } catch { }
     return [];
   }, [classSession]);
 
@@ -138,23 +138,23 @@ export default function LearningInterface({
     } else {
       const channelState = dcRef.current?.readyState || "null";
       console.warn(`⚠️ Data channel not available (state: ${channelState}). Event:`, eventObj.type);
-      
+
       logClientEvent(
-        { 
+        {
           attemptedEvent: eventObj.type,
           channelState: channelState,
-          connectionStatus: sessionStatus 
+          connectionStatus: sessionStatus
         },
         "error.data_channel_not_open"
       );
-      
+
       // Try to reconnect if the connection is lost (but not if intentionally disconnected)
       if (sessionStatus === "CONNECTED" && (!dcRef.current || dcRef.current.readyState === "closed") && !isIntentionallyDisconnectedRef.current) {
         console.log("🔄 Data channel lost, attempting reconnection...");
         setSessionStatus("DISCONNECTED");
         hasConnectedRef.current = false;
         setIsConnecting(false);
-        
+
         // Attempt reconnection after a short delay - BUT ONLY IF NOT ALREADY CONNECTING
         setTimeout(() => {
           // Check if we're not already trying to connect using the ref and still not intentionally disconnected
@@ -165,7 +165,7 @@ export default function LearningInterface({
             connectionLock: connectionLockRef.current,
             sessionStatus: sessionStatus
           });
-          
+
           if (!hasConnectedRef.current && !isConnecting && !isIntentionallyDisconnectedRef.current && !connectionLockRef.current) {
             console.log('🔄 Auto-reconnecting due to lost connection...');
             connectToRealtime();
@@ -182,8 +182,8 @@ export default function LearningInterface({
     selectedAgentName: "teachingAssistant",
     selectedAgentConfigSet: teachingAssistant,
     sendClientEvent,
-    setSelectedAgentName: () => {},
-    setIsOutputAudioBufferActive: () => {},
+    setSelectedAgentName: () => { },
+    setIsOutputAudioBufferActive: () => { },
     onTurnComplete: handleTurnComplete,
   });
 
@@ -225,7 +225,7 @@ export default function LearningInterface({
 
       // Normalize text first
       const normalizedText = recognizedText.toLowerCase().trim();
-      
+
       // Check for empty/short text early
       if (!normalizedText || normalizedText.length < 2) {
         console.log("Ignoring empty/short text chunk");
@@ -266,7 +266,7 @@ export default function LearningInterface({
 
   const stopHeyGen = useCallback(async () => {
     if (heygenAvatarRef.current) {
-      try { await heygenAvatarRef.current.stopAvatar(); } catch (_) {}
+      try { await heygenAvatarRef.current.stopAvatar(); } catch (_) { }
       heygenAvatarRef.current = null;
     }
     if (heygenVideoRef.current) heygenVideoRef.current.srcObject = null;
@@ -293,7 +293,7 @@ export default function LearningInterface({
         const stream = avatar.mediaStream;
         if (heygenVideoRef.current && stream) {
           heygenVideoRef.current.srcObject = stream;
-          heygenVideoRef.current.play().catch(() => {});
+          heygenVideoRef.current.play().catch(() => { });
         }
         setHeygenConnected(true);
       });
@@ -318,7 +318,7 @@ export default function LearningInterface({
   const connectToRealtime = async () => {
     // Generate unique connection ID for this attempt
     const connectionId = Math.random().toString(36).substr(2, 9);
-    
+
     // Prevent duplicate connections
     if (sessionStatus === "CONNECTED" || sessionStatus === "CONNECTING" || isConnecting || hasConnectedRef.current || connectionLockRef.current) {
       console.log('🚫 Connection blocked - already in progress or established:', {
@@ -339,12 +339,12 @@ export default function LearningInterface({
     console.log(`🔐 Acquiring connection lock... [${connectionId}]`);
     connectionLockRef.current = true; // Lock immediately to prevent race conditions
     globalConnectionId = connectionId;
-    
+
     console.log(`Starting realtime connection... [${connectionId}]`);
-    
+
     // Clear the intentional disconnect flag when manually connecting
     isIntentionallyDisconnectedRef.current = false;
-    
+
     setIsConnecting(true);
     setSessionStatus("CONNECTING");
     hasConnectedRef.current = true;
@@ -383,17 +383,16 @@ export default function LearningInterface({
           "opus",
           realtimeModel
         );
-        
+
         console.log(`🔗 Created new peer connection and data channel [${connectionId}] -> [${dataChannelId}] - Lock: ${connectionLockRef.current}`);
         console.log(`🔗 Data channel ready state: ${dc.readyState}`);
-        
+
         pcRef.current = pc;
         dcRef.current = dc;
         mediaStreamRef.current = mediaStream;
 
         dc.addEventListener("open", () => {
           logClientEvent({}, "data_channel.open");
-          console.log(`✅ Data channel opened successfully - releasing connection lock [${connectionId}]`);
           setSessionStatus("CONNECTED");
           setIsConnecting(false);
           hasConnectedRef.current = true; // Mark as successfully connected
@@ -432,7 +431,7 @@ export default function LearningInterface({
             globalConnectionPromise = null;
           }
         });
-        
+
         // Store the message handler for proper cleanup
         const dataChannelMessageHandler = (e: MessageEvent) => {
           // FIRST CHECK: Global disconnect state (highest priority)
@@ -440,26 +439,22 @@ export default function LearningInterface({
             console.log(`🛑 BLOCKED: Message ignored due to intentional disconnect [${dataChannelId}]`);
             return; // Exit immediately
           }
-          
-          console.log(`📨 Data channel message received [${dataChannelId}]:`, e.data);
-          // Only process messages if we're still connected and have a handler
+
           if (messageHandlerRef.current && hasConnectedRef.current) {
             messageHandlerRef.current(e);
-          } else {
-            console.log(`🚫 Ignoring message - disconnected or no handler [${dataChannelId}]`);
           }
         };
-        
+
         // Handle server events with custom tool call logic
         dc.addEventListener("message", dataChannelMessageHandler);
-        
+
         setDataChannel(dc);
-        
+
         // Store the handler reference for cleanup (after setDataChannel)
         (dc as any)._messageHandler = dataChannelMessageHandler;
       } catch (err) {
         console.error("Error connecting to realtime:", err);
-        
+
         // Provide specific error message for getUserMedia issues
         let errorMessage = "Error connecting to realtime";
         if (err instanceof Error) {
@@ -471,14 +466,14 @@ export default function LearningInterface({
             errorMessage = err.message;
           }
         }
-        
+
         // Set error status with message
         setSessionStatus("ERROR");
         setIsConnecting(false);
-        
+
         // Show error to user
         alert(errorMessage);
-        
+
         // Clean up any partial connections
         if (mediaStreamRef.current) {
           mediaStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -492,7 +487,7 @@ export default function LearningInterface({
           dcRef.current.close();
           dcRef.current = null;
         }
-        
+
         setSessionStatus("ERROR");
         setIsConnecting(false);
         hasConnectedRef.current = false;
@@ -513,18 +508,18 @@ export default function LearningInterface({
 
     // Mark as intentionally disconnected to prevent auto-reconnection
     isIntentionallyDisconnectedRef.current = true;
-    
+
     // Release connection lock immediately to prevent issues
     connectionLockRef.current = false;
-    
+
     // Clear global connection state for real disconnects
     console.log('🧹 Clearing global connection state (real disconnect)');
     globalConnectionId = null;
     globalConnectionPromise = null;
-    
+
     // Immediately clear the message handler to stop processing any new messages
     messageHandlerRef.current = null;
-    
+
     // Reset states immediately to prevent any UI updates from queued messages
     setIsUserSpeaking(false);
     setIsAISpeaking(false);
@@ -532,89 +527,66 @@ export default function LearningInterface({
     setSessionStatus("DISCONNECTED");
     setIsConnecting(false);
     hasConnectedRef.current = false;
-    
+
     // FIRST: Immediately disable microphone tracks to stop any new audio capture
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => {
-        console.log('🛑 Disabling and stopping media track:', track.kind, 'ID:', track.id, 'State:', track.readyState);
         // Immediately disable the track to stop capture
         track.enabled = false;
         // Then stop it completely
         track.stop();
-        console.log('🛑 Track stopped, new state:', track.readyState);
       });
       mediaStreamRef.current = null;
-    } else {
-      console.log('⚠️ No mediaStreamRef.current to stop!');
     }
-    
+
     // AGGRESSIVE CLEANUP: Force stop ALL active media tracks globally
-    console.log('🔧 Performing aggressive media track cleanup...');
     if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
-      console.log('✅ Media track cleanup completed - relying on proper WebRTC stream management');
     }
-    
+
     if (pcRef.current) {
       // STEP 1: Remove all tracks from the peer connection to stop transmission
-      console.log('🛑 Removing all tracks from peer connection');
       pcRef.current.getSenders().forEach((sender) => {
         if (sender.track) {
-          console.log('🛑 Disabling, stopping, and removing sender track:', sender.track.kind, 'ID:', sender.track.id, 'State:', sender.track.readyState);
           sender.track.enabled = false;
           sender.track.stop();
-          console.log('🛑 Sender track stopped, new state:', sender.track.readyState);
           // Remove the track from the peer connection
           pcRef.current!.removeTrack(sender);
-        } else {
-          console.log('🛑 Sender had no track to stop');
         }
       });
-      
+
       // STEP 2: Stop all transceivers to halt media negotiation
-      console.log('🛑 Stopping all transceivers');
       pcRef.current.getTransceivers().forEach((transceiver) => {
         if (transceiver.direction !== 'inactive') {
-          console.log('🛑 Stopping transceiver:', transceiver.direction);
           transceiver.stop();
         }
       });
-      
+
       // STEP 3: Stop all receiver tracks
       pcRef.current.getReceivers().forEach((receiver) => {
         if (receiver.track) {
-          console.log('🛑 Stopping receiver track:', receiver.track.kind);
           receiver.track.stop();
         }
       });
-      
+
       // STEP 4: Properly handle data channel closure with state monitoring
       if (dcRef.current) {
-        console.log('🛑 Preparing data channel for closure');
-        
         const originalDc = dcRef.current;
-        console.log('🛑 Data channel state before close:', originalDc.readyState);
-        
+
         // Remove the specific message handler we stored
         if ((originalDc as any)._messageHandler) {
           originalDc.removeEventListener("message", (originalDc as any)._messageHandler);
-          console.log('🛑 Removed specific message handler');
         }
-        
-        // Try to remove any other potential message handlers by cloning and replacing
-        // This is a more aggressive approach to ensure no listeners remain
+
         try {
           const events = ['message', 'open', 'close', 'error'];
           events.forEach(eventType => {
-            // Create a dummy handler and remove it to clear any lingering listeners
-            const dummyHandler = () => {};
+            const dummyHandler = () => { };
             originalDc.addEventListener(eventType, dummyHandler);
             originalDc.removeEventListener(eventType, dummyHandler);
           });
-          console.log('🛑 Attempted to clear any lingering event listeners');
         } catch (e) {
-          console.log('⚠️ Could not clear all event listeners:', e);
         }
-        
+
         // Add a one-time listener for the close event
         const closeHandler = () => {
           console.log('✅ Data channel actually closed - state:', originalDc.readyState);
@@ -622,95 +594,62 @@ export default function LearningInterface({
           originalDc.removeEventListener('close', closeHandler);
         };
         originalDc.addEventListener('close', closeHandler);
-        
+
         // Nullify our reference immediately to prevent new usage
         dcRef.current = null;
-        
+
         // Close the data channel
-        console.log('🛑 Closing data channel...');
         originalDc.close();
-        console.log('🛑 Data channel state after close command:', originalDc.readyState);
-        
+
         // Force stop any remaining message processing by overriding ALL message handlers
         originalDc.onmessage = null;
         originalDc.onopen = null;
         originalDc.onclose = null;
         originalDc.onerror = null;
-        
-        console.log('🛑 Completely disabled data channel message processing');
       }
-      
+
       // STEP 5: Monitor connection state during close
-      console.log('🛑 Peer connection state before close:', pcRef.current.connectionState);
-      console.log('🛑 ICE connection state before close:', pcRef.current.iceConnectionState);
-      
+
       // Add a listener to verify the connection actually closes
       const connectionCloseHandler = () => {
-        console.log('✅ Peer connection state changed to closed');
       };
       pcRef.current.addEventListener('connectionstatechange', connectionCloseHandler);
-      
+
       // STEP 6: Finally close the peer connection
-      console.log('🛑 Closing peer connection');
       pcRef.current.close();
-      
+
       // Check state immediately after close
-      console.log('🛑 Peer connection state after close:', pcRef.current.connectionState);
-      console.log('🛑 ICE connection state after close:', pcRef.current.iceConnectionState);
-      
+
       pcRef.current = null;
     } else if (dcRef.current) {
       // Handle case where data channel exists but peer connection doesn't
       dcRef.current.close();
       dcRef.current = null;
     }
-    
+
     // Stop the audio element
     if (audioElementRef.current) {
       audioElementRef.current.pause();
       audioElementRef.current.srcObject = null;
     }
-    
+
     // Reset data channel state
     setDataChannel(null);
-    
+
     // FINAL SAFEGUARD: Force close any remaining WebRTC connections
-    console.log('🔧 Performing final cleanup of any remaining connections');
-    
-    // Get all RTCPeerConnection objects globally (if any are still active)
+
     if (typeof window !== 'undefined') {
-      // This is a brute force approach to ensure no connections remain
-      setTimeout(() => {
-        console.log('🔍 Checking for any remaining active connections after disconnect...');
-        if (hasConnectedRef.current === false && isIntentionallyDisconnectedRef.current === true) {
-          console.log('✅ Disconnect confirmed - no reconnection detected');
-        } else {
-          console.warn('⚠️ Unexpected connection state after disconnect');
-        }
-      }, 2000);
     }
-    
-    // FINAL NUCLEAR OPTION: Try to stop ALL possible media streams
-    console.log('☢️ NUCLEAR CLEANUP: Attempting to stop all possible media streams...');
+
     if (typeof window !== 'undefined') {
-      // Try to access the global media stream registry (if available)
       setTimeout(() => {
-        // Force garbage collection of any lingering streams
         if (window.gc) {
           window.gc();
-          console.log('🗑️ Forced garbage collection');
         }
-        
-        // Check browser media indicator after cleanup
-        console.log('🔍 Media cleanup complete. Browser should no longer show microphone indicator.');
-        console.log('📊 Final state check:');
-        console.log('   - hasConnectedRef:', hasConnectedRef.current);
-        console.log('   - isIntentionallyDisconnectedRef:', isIntentionallyDisconnectedRef.current);
-        console.log('   - sessionStatus:', sessionStatus);
+
       }, 500);
     }
-    
-    console.log('✅ Successfully disconnected from realtime - all audio capture and processing stopped');
+
   };
 
   // Update ref so handleUserSpeech can access disconnectFromRealtime
@@ -726,23 +665,21 @@ export default function LearningInterface({
 
     // Mark as intentionally disconnected to prevent auto-reconnection
     isIntentionallyDisconnectedRef.current = true;
-    
+
     // Release connection lock immediately to prevent issues
     connectionLockRef.current = false;
-    
+
     // DO NOT clear global connection state during React cleanup
-    console.log('🚫 Preserving global connection state (React Strict Mode cleanup)');
-    
     // Immediately clear the message handler to stop processing any new messages
     messageHandlerRef.current = null;
-    
+
     // Reset states immediately to prevent any UI updates from queued messages
     setIsUserSpeaking(false);
     setIsAISpeaking(false);
     setSessionStatus("DISCONNECTED");
     setIsConnecting(false);
     hasConnectedRef.current = false;
-    
+
     // FIRST: Immediately disable microphone tracks to stop any new audio capture
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => {
@@ -757,74 +694,58 @@ export default function LearningInterface({
     } else {
       console.log('⚠️ No mediaStreamRef.current to stop!');
     }
-    
+
     // AGGRESSIVE CLEANUP: Force stop ALL active media tracks globally
-    console.log('🔧 Performing aggressive media track cleanup...');
     if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
-      console.log('✅ Media track cleanup completed - relying on proper WebRTC stream management');
     }
-    
+
     if (pcRef.current) {
       // STEP 1: Remove all tracks from the peer connection to stop transmission
-      console.log('🛑 Removing all tracks from peer connection');
       pcRef.current.getSenders().forEach((sender) => {
         if (sender.track) {
-          console.log('🛑 Disabling, stopping, and removing sender track:', sender.track.kind, 'ID:', sender.track.id, 'State:', sender.track.readyState);
           sender.track.enabled = false;
           sender.track.stop();
-          console.log('🛑 Sender track stopped, new state:', sender.track.readyState);
-          // Remove the track from the peer connection
           pcRef.current!.removeTrack(sender);
-        } else {
-          console.log('🛑 Sender had no track to stop');
         }
       });
-      
+
       // STEP 2: Stop all transceivers to halt media negotiation
-      console.log('🛑 Stopping all transceivers');
       pcRef.current.getTransceivers().forEach((transceiver) => {
         if (transceiver.direction !== 'inactive') {
           console.log('🛑 Stopping transceiver:', transceiver.direction);
           transceiver.stop();
         }
       });
-      
+
       // STEP 3: Stop all receiver tracks
       pcRef.current.getReceivers().forEach((receiver) => {
         if (receiver.track) {
-          console.log('🛑 Stopping receiver track:', receiver.track.kind);
           receiver.track.stop();
         }
       });
-      
+
       // STEP 4: Properly handle data channel closure with state monitoring
       if (dcRef.current) {
-        console.log('🛑 Preparing data channel for closure');
-        
         const originalDc = dcRef.current;
-        console.log('🛑 Data channel state before close:', originalDc.readyState);
-        
+
         // Remove the specific message handler we stored
         if ((originalDc as any)._messageHandler) {
           originalDc.removeEventListener("message", (originalDc as any)._messageHandler);
-          console.log('🛑 Removed specific message handler');
         }
-        
+
         // Try to remove any other potential message handlers by cloning and replacing
         // This is a more aggressive approach to ensure no listeners remain
         try {
           const events = ['message', 'open', 'close', 'error'];
           events.forEach(eventType => {
             // Create a dummy handler and remove it to clear any lingering listeners
-            const dummyHandler = () => {};
+            const dummyHandler = () => { };
             originalDc.addEventListener(eventType, dummyHandler);
             originalDc.removeEventListener(eventType, dummyHandler);
           });
-          console.log('🛑 Attempted to clear any lingering event listeners');
         } catch (e) {
-          console.log('⚠️ Could not clear all event listeners:', e);
         }
-        
+
         // Add a one-time listener for the close event
         const closeHandler = () => {
           console.log('✅ Data channel actually closed - state:', originalDc.readyState);
@@ -832,61 +753,51 @@ export default function LearningInterface({
           originalDc.removeEventListener('close', closeHandler);
         };
         originalDc.addEventListener('close', closeHandler);
-        
+
         // Nullify our reference immediately to prevent new usage
         dcRef.current = null;
-        
+
         // Close the data channel
-        console.log('🛑 Closing data channel...');
         originalDc.close();
-        console.log('🛑 Data channel state after close command:', originalDc.readyState);
-        
+
         // Force stop any remaining message processing by overriding ALL message handlers
         originalDc.onmessage = null;
         originalDc.onopen = null;
         originalDc.onclose = null;
         originalDc.onerror = null;
-        
-        console.log('🛑 Completely disabled data channel message processing');
+
       }
-      
+
       // STEP 5: Monitor connection state during close
-      console.log('🛑 Peer connection state before close:', pcRef.current.connectionState);
-      console.log('🛑 ICE connection state before close:', pcRef.current.iceConnectionState);
-      
+
       // Add a listener to verify the connection actually closes
       const connectionCloseHandler = () => {
-        console.log('✅ Peer connection state changed to closed');
       };
       pcRef.current.addEventListener('connectionstatechange', connectionCloseHandler);
-      
+
       // STEP 6: Finally close the peer connection
-      console.log('🛑 Closing peer connection');
       pcRef.current.close();
-      
-      // Check state immediately after close
-      console.log('🛑 Peer connection state after close:', pcRef.current.connectionState);
-      console.log('🛑 ICE connection state after close:', pcRef.current.iceConnectionState);
-      
+
+
       pcRef.current = null;
     } else if (dcRef.current) {
       // Handle case where data channel exists but peer connection doesn't
       dcRef.current.close();
       dcRef.current = null;
     }
-    
+
     // Stop the audio element
     if (audioElementRef.current) {
       audioElementRef.current.pause();
       audioElementRef.current.srcObject = null;
     }
-    
+
     // Reset data channel state
     setDataChannel(null);
-    
+
     // FINAL SAFEGUARD: Force close any remaining WebRTC connections
     console.log('🔧 Performing final cleanup of any remaining connections');
-    
+
     // Get all RTCPeerConnection objects globally (if any are still active)
     if (typeof window !== 'undefined') {
       // This is a brute force approach to ensure no connections remain
@@ -899,7 +810,7 @@ export default function LearningInterface({
         }
       }, 2000);
     }
-    
+
     // FINAL NUCLEAR OPTION: Try to stop ALL possible media streams
     console.log('☢️ NUCLEAR CLEANUP: Attempting to stop all possible media streams...');
     if (typeof window !== 'undefined') {
@@ -910,7 +821,7 @@ export default function LearningInterface({
           window.gc();
           console.log('🗑️ Forced garbage collection');
         }
-        
+
         // Check browser media indicator after cleanup
         console.log('🔍 Media cleanup complete. Browser should no longer show microphone indicator.');
         console.log('📊 Final state check:');
@@ -919,7 +830,7 @@ export default function LearningInterface({
         console.log('   - sessionStatus:', sessionStatus);
       }, 500);
     }
-    
+
     console.log('✅ Successfully disconnected from realtime - all audio capture and processing stopped');
   };
 
@@ -1023,11 +934,11 @@ export default function LearningInterface({
 
   const toggleMicrophone = () => {
     console.log('🎤 Toggling microphone:', isMicMuted ? 'unmuting' : 'muting');
-    
+
     // Update the state
     const newMutedState = !isMicMuted;
     setIsMicMuted(newMutedState);
-    
+
     // If we have an active media stream, enable/disable the audio tracks
     if (mediaStreamRef.current) {
       const audioTracks = mediaStreamRef.current.getAudioTracks();
@@ -1035,7 +946,7 @@ export default function LearningInterface({
         console.log(`🎤 ${newMutedState ? 'Muting' : 'Unmuting'} audio track:`, track.id);
         track.enabled = !newMutedState; // enabled = true when not muted
       });
-      
+
       console.log(`✅ Microphone ${newMutedState ? 'muted' : 'unmuted'} - ${audioTracks.length} tracks affected`);
     } else {
       console.log('⚠️ No media stream available to mute/unmute');
@@ -1046,10 +957,10 @@ export default function LearningInterface({
     setCurrentSlide((prevSlide) => {
       if (prevSlide < classSession.slides.length - 1) {
         const newSlide = prevSlide + 1;
-        
+
         // Use the helper function to notify AI as user input
         notifyAIOfSlideChange(newSlide, prevSlide, "manual_navigation");
-        
+
         return newSlide;
       }
       return prevSlide;
@@ -1060,10 +971,10 @@ export default function LearningInterface({
     setCurrentSlide((prevSlide) => {
       if (prevSlide > 0) {
         const newSlide = prevSlide - 1;
-        
+
         // Use the helper function to notify AI as user input
         notifyAIOfSlideChange(newSlide, prevSlide, "manual_navigation");
-        
+
         return newSlide;
       }
       return prevSlide;
@@ -1090,12 +1001,12 @@ export default function LearningInterface({
       };
 
       console.log('Submitting feedback:', sessionRunMetadata);
-      
+
       // Call the original onEndSession with metadata
       if (typeof onEndSession === 'function') {
         await onEndSession(sessionRunMetadata);
       }
-      
+
       setShowFeedbackModal(false);
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -1124,22 +1035,22 @@ export default function LearningInterface({
   // Helper function to notify AI about programmatic slide changes
   const notifyAIOfSlideChange = (newSlide: number, previousSlide: number, source: string = "programmatic") => {
     console.log(`📤 Notifying AI of ${source} slide change to slide ${newSlide + 1} - interrupting if speaking`);
-    
+
     // Step 1: If AI is speaking, force interrupt the current response
     if (isAISpeaking) {
       console.log('🛑 AI is speaking, forcing interruption for slide change');
-      
+
       // First, cancel the current response
       sendClientEvent({
         type: "response.cancel"
       }, `slide.${source}.cancel_response`);
-      
+
       // Then clear the output audio buffer to stop playback immediately
       // This is the key step that actually stops the audio from continuing
       sendClientEvent({
         type: "output_audio_buffer.clear"
       }, `slide.${source}.clear_audio_buffer`);
-      
+
       // Small delay to ensure interruption is processed
       setTimeout(() => {
         sendSlideChangeNotification(newSlide, previousSlide, source);
@@ -1166,9 +1077,9 @@ export default function LearningInterface({
         ]
       }
     };
-    
+
     sendClientEvent(slideChangeMessage, `slide.${source}`);
-    
+
     // Trigger immediate response to the slide change
     const triggerResponse = {
       type: "response.create",
@@ -1176,7 +1087,7 @@ export default function LearningInterface({
         modalities: ["text", "audio"]
       }
     };
-    
+
     // Small delay to ensure the message is processed before triggering response
     setTimeout(() => {
       sendClientEvent(triggerResponse, `slide.${source}.trigger_response`);
@@ -1203,13 +1114,13 @@ export default function LearningInterface({
       globalConnectionId,
       globalConnectionPromise: !!globalConnectionPromise
     });
-    
+
     // Only connect if we haven't already connected
     if (!hasConnectedRef.current && sessionStatus === "DISCONNECTED") {
       console.log(`🎯 useEffect [${effectId}] - Calling connectToRealtime`);
       connectToRealtime();
     }
-    
+
     return () => {
       console.log(`🎯 useEffect [${effectId}] - Cleanup called (React Strict Mode or unmount)`);
       disconnectFromRealtimeReactCleanup();
@@ -1219,13 +1130,13 @@ export default function LearningInterface({
   // Handle hydration and set correct starting slide
   useEffect(() => {
     setIsHydrated(true);
-    
+
     const getCorrectStartingSlide = () => {
       // Priority: explicit startingSlide prop > sessionStorage > session data > current (0)
       if (startingSlide !== undefined && startingSlide >= 0 && startingSlide < classSession.slides.length) {
         return startingSlide;
       }
-      
+
       // Check sessionStorage for stored position
       if (sessionRunId && typeof window !== 'undefined') {
         const stored = sessionStorage.getItem(`session_${sessionRunId}_currentSlide`);
@@ -1237,7 +1148,7 @@ export default function LearningInterface({
           }
         }
       }
-      
+
       // Check if session has a stored current slide
       if ((classSession as any).currentSlide !== undefined) {
         const storedSlide = parseInt((classSession as any).currentSlide);
@@ -1245,18 +1156,18 @@ export default function LearningInterface({
           return storedSlide;
         }
       }
-      
+
       // Keep current slide (0)
       return currentSlide;
     };
-    
+
     const correctSlide = getCorrectStartingSlide();
     if (correctSlide !== currentSlide) {
       console.log(`🔄 Updating slide from ${currentSlide + 1} to ${correctSlide + 1} after hydration`);
       const previousSlide = currentSlide;
       setCurrentSlide(correctSlide);
       currentSlideRef.current = correctSlide; // Update ref immediately
-      
+
       // Notify AI if we're starting on a different slide (delayed to ensure connection is ready)
       if (correctSlide !== 0) {
         setTimeout(() => {
@@ -1279,7 +1190,7 @@ export default function LearningInterface({
       const timer = setTimeout(() => {
         setShowStartPrompt(false);
       }, 8000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [sessionStatus]);
@@ -1294,7 +1205,7 @@ export default function LearningInterface({
   // Function to set up the message handler with current closure
   const setMessageHandler = () => {
     console.log('🔧 Setting up message handler...');
-    
+
     messageHandlerRef.current = (e: MessageEvent) => {
       const serverEvent = JSON.parse(e.data);
       console.log("🔄 Processing server event:", serverEvent.type, serverEvent);
@@ -1321,7 +1232,7 @@ export default function LearningInterface({
         if (heygenAvatarRef.current) {
           heygenAvatarRef.current
             .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
-            .catch(() => {});
+            .catch(() => { });
         }
       }
 
@@ -1353,16 +1264,16 @@ export default function LearningInterface({
             let functionResult: { success: boolean; message: string; data: object } = { success: false, message: "", data: {} };
 
             if (outputItem.name === "searchKnowledgeBase") {
-                const query = args.query;
-                // Fetch RAG context asynchronously
-                fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({ query, course_id: undefined })
-                })
+              const query = args.query;
+              // Fetch RAG context asynchronously
+              fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ query, course_id: undefined })
+              })
                 .then(res => res.json())
                 .then(data => {
                   const chunks = data.results || [];
@@ -1392,10 +1303,10 @@ export default function LearningInterface({
                   });
                   sendClientEvent({ type: "response.create" });
                 });
-                return; // Early return because we handle sending output asynchronously
-              }
+              return; // Early return because we handle sending output asynchronously
+            }
 
-              if (outputItem.name === "nextSlide") {
+            if (outputItem.name === "nextSlide") {
               const currentSlideValue = currentSlideRef.current;
               if (currentSlideValue < classSession.slides.length - 1) {
                 const newSlide = currentSlideValue + 1;
@@ -1474,7 +1385,7 @@ export default function LearningInterface({
   useEffect(() => {
     if (isHydrated && currentSlide !== 0) {
       console.log(`📄 Slide changed to ${currentSlide + 1}: "${classSession.slides[currentSlide]?.title || 'Unknown'}"`);
-      
+
       // Store in sessionStorage for persistence across page reloads
       if (sessionRunId) {
         sessionStorage.setItem(`session_${sessionRunId}_currentSlide`, currentSlide.toString());
@@ -1487,27 +1398,27 @@ export default function LearningInterface({
   // Fix image URL to ensure it points to backend server
   const getCorrectImageUrl = (imageUrl: string | undefined) => {
     if (!imageUrl) return '';
-    
+
     // If it's already a full URL (S3 or other cloud storage), use it as is
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    
+
     // If it's already a full URL with localhost:8000, use it as is
     if (imageUrl.startsWith(config.getApiUrl('/'))) {
       return imageUrl;
     }
-    
+
     // If it's a relative URL or starts with localhost:3000, fix it
     if (imageUrl.startsWith('/uploads/') || imageUrl.startsWith('uploads/')) {
       return `${config.getApiUrl('/')}${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`;
     }
-    
+
     // If it includes localhost:3000, replace with localhost:8000
     if (imageUrl.includes('localhost:3000')) {
       return imageUrl.replace('localhost:3000', config.getApiUrl('/'));
     }
-    
+
     // Default: prepend backend URL
     return `${config.getApiUrl('/')}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
   };
@@ -1574,17 +1485,17 @@ export default function LearningInterface({
                 </div>
               )}
             </div>
-            
+
             {/* Status indicator */}
             <div className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-sidebar-accent/50">
               <span className={cn(
                 "h-2 w-2 rounded-full",
-                sessionStatus === "CONNECTED" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" : 
-                sessionStatus === "CONNECTING" ? "bg-amber-500 animate-pulse" : "bg-gray-400"
+                sessionStatus === "CONNECTED" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" :
+                  sessionStatus === "CONNECTING" ? "bg-amber-500 animate-pulse" : "bg-gray-400"
               )} />
               <span className="text-xs font-medium text-sidebar-foreground">
-                {sessionStatus === "CONNECTED" ? (isAISpeaking ? 'AI Speaking...' : isUserSpeaking ? 'Listening...' : 'Connected') : 
-                 sessionStatus === "CONNECTING" ? 'Establishing link...' : 'Ready to start'}
+                {sessionStatus === "CONNECTED" ? (isAISpeaking ? 'AI Speaking...' : isUserSpeaking ? 'Listening...' : 'Connected') :
+                  sessionStatus === "CONNECTING" ? 'Establishing link...' : 'Ready to start'}
               </span>
             </div>
           </div>
@@ -1680,7 +1591,7 @@ export default function LearningInterface({
 
         {/* ── Center: Slides ── */}
         <div className="flex flex-1 flex-col overflow-hidden bg-muted/10 relative">
-          
+
           {/* Start Conversation Prompt overlay */}
           {showStartPrompt && (
             <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-500">
@@ -1756,7 +1667,7 @@ export default function LearningInterface({
               <ChevronLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Previous</span>
             </button>
-            
+
             <div className="flex flex-col items-center">
               <span className="text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
               <div className="flex items-center gap-1.5 mt-1">
@@ -1764,8 +1675,8 @@ export default function LearningInterface({
                   <button
                     key={i}
                     onClick={() => {
-                       setCurrentSlide(i);
-                       currentSlideRef.current = i;
+                      setCurrentSlide(i);
+                      currentSlideRef.current = i;
                     }}
                     className={cn(
                       "rounded-full transition-all duration-300",
@@ -1796,14 +1707,14 @@ export default function LearningInterface({
                 <MessageSquare className="h-3.5 w-3.5" />
                 Transcript
               </h3>
-              <button 
-                onClick={() => setTranscript([])} 
+              <button
+                onClick={() => setTranscript([])}
                 className="text-[10px] uppercase font-bold tracking-wider text-primary hover:text-primary/80 transition-colors px-2 py-1 bg-primary/10 rounded"
               >
                 Clear
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4">
               {transcript.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-3 opacity-60">
@@ -1816,7 +1727,7 @@ export default function LearningInterface({
                 <div className="space-y-4">
                   {transcript.map((msg, idx) => (
                     <div key={idx} className={cn(
-                      "flex gap-3", 
+                      "flex gap-3",
                       msg.role === "user" && "flex-row-reverse"
                     )}>
                       <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full shadow-sm">
@@ -1856,7 +1767,7 @@ export default function LearningInterface({
           <div className="bg-card border border-border rounded-2xl p-6 md:p-8 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200">
             <h2 className="text-2xl font-bold text-foreground mb-2">Session Complete</h2>
             <p className="text-sm text-muted-foreground mb-8">Help us improve by sharing your experience.</p>
-            
+
             {/* Rating */}
             <div className="mb-6">
               <label className="block text-sm font-semibold text-foreground mb-3">Overall Rating</label>
@@ -1927,7 +1838,8 @@ export default function LearningInterface({
       )}
 
       {/* Global styles for equalizer animation */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes eq {
           0%, 100% { transform: scaleY(0.4); }
           50% { transform: scaleY(1.2); }
