@@ -3,14 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import { adminUserApi, ApiError } from '@/lib/avatarApi';
 import type { UserRecord } from '@/types/avatar';
-import { ShieldCheck, Search, Trash2, UserCircle } from 'lucide-react';
+import { ShieldCheck, Search, Trash2, UserCircle, ArrowDownCircle } from 'lucide-react';
 
 export default function AdminPublishersPage() {
-  const [users, setUsers]     = useState<UserRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-  const [query, setQuery]     = useState('');
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [users, setUsers]           = useState<UserRecord[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState<string | null>(null);
+  const [query, setQuery]           = useState('');
+  const [deleting, setDeleting]     = useState<string | null>(null);
+  const [demoting, setDemoting]     = useState<string | null>(null);
 
   useEffect(() => {
     adminUserApi.list('publisher')
@@ -29,6 +30,19 @@ export default function AdminPublishersPage() {
       alert(e instanceof ApiError ? e.message : 'Delete failed');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleDemote = async (u: UserRecord) => {
+    if (!confirm(`Demote "${u.username}" back to subscriber?`)) return;
+    setDemoting(u.id);
+    try {
+      await adminUserApi.setRole(u.id, 'subscriber');
+      setUsers((p) => p.filter((x) => x.id !== u.id));
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : 'Demote failed');
+    } finally {
+      setDemoting(null);
     }
   };
 
@@ -92,10 +106,28 @@ export default function AdminPublishersPage() {
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
                 <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => handleDelete(u)} disabled={deleting === u.id}
-                    className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-40">
-                    <Trash2 size={15} />
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => handleDemote(u)}
+                      disabled={demoting === u.id || deleting === u.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium
+                                 bg-amber-50 text-amber-700 border border-amber-200
+                                 hover:bg-amber-100 disabled:opacity-40 transition-colors"
+                    >
+                      <ArrowDownCircle size={14} />
+                      Demote
+                    </button>
+                    <button
+                      onClick={() => handleDelete(u)}
+                      disabled={deleting === u.id || demoting === u.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium
+                                 bg-red-50 text-red-600 border border-red-200
+                                 hover:bg-red-100 disabled:opacity-40 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

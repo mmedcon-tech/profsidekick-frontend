@@ -6,12 +6,66 @@ import { validateInviteToken, setupAccount } from "@/lib/sae-api";
 import { clearAuthSession, AUTH_USER_KEY } from "@/lib/authSession";
 import type { SAETokenValidationResponse } from "@/types/sae";
 
+// ── Static option lists ───────────────────────────────────────────────────────
+
+const CURRICULUM_OPTIONS = [
+  "IB (International Baccalaureate)",
+  "A Levels (UK)",
+  "American High School Diploma",
+  "CBSE (India)",
+  "Ethiopian National Curriculum",
+  "French Baccalauréat",
+  "German Abitur",
+  "Canadian High School Diploma",
+  "Other",
+] as const;
+
+const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda",
+  "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain",
+  "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+  "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria",
+  "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada",
+  "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros",
+  "Congo (Brazzaville)", "Congo (Kinshasa)", "Costa Rica", "Croatia", "Cuba",
+  "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica",
+  "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea",
+  "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France",
+  "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada",
+  "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras",
+  "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland",
+  "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya",
+  "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho",
+  "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar",
+  "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands",
+  "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco",
+  "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia",
+  "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger",
+  "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan",
+  "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru",
+  "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda",
+  "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines",
+  "Samoa", "San Marino", "São Tomé and Príncipe", "Saudi Arabia", "Senegal",
+  "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+  "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan",
+  "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria",
+  "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo",
+  "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu",
+  "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States",
+  "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam",
+  "Yemen", "Zambia", "Zimbabwe",
+] as const;
+
+// ── Page state ─────────────────────────────────────────────────────────────────
+
 type PageState =
   | { kind: "loading" }
   | { kind: "invalid"; reason: string }
   | { kind: "form"; tokenInfo: SAETokenValidationResponse }
   | { kind: "submitting" }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string; tokenInfo: SAETokenValidationResponse };
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export default function SAESetupPage() {
   const params = useParams();
@@ -22,12 +76,17 @@ export default function SAESetupPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [country, setCountry] = useState("");
+  const [curriculum, setCurriculum] = useState("");
+  const [curriculumOther, setCurriculumOther] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [existingSession, setExistingSession] = useState<string | null>(null);
 
+  const isOtherCurriculum = curriculum === "Other";
+  const effectiveCurriculum = isOtherCurriculum ? curriculumOther.trim() : curriculum;
+
   useEffect(() => {
     if (!token) return;
-    // Detect if someone is already logged in so we can warn them
     const stored = localStorage.getItem(AUTH_USER_KEY);
     if (stored) {
       try {
@@ -58,24 +117,43 @@ export default function SAESetupPage() {
       setFieldError("Passwords do not match.");
       return;
     }
+    if (!country) {
+      setFieldError("Please select your country of origin.");
+      return;
+    }
+    if (!curriculum) {
+      setFieldError("Please select your high school curriculum.");
+      return;
+    }
+    if (isOtherCurriculum && curriculumOther.trim().length < 1) {
+      setFieldError("Please describe your curriculum.");
+      return;
+    }
+
+    const tokenInfo =
+      pageState.kind === "form" ? pageState.tokenInfo : null;
+    if (!tokenInfo) return;
 
     setPageState({ kind: "submitting" });
 
     try {
-      const res = await setupAccount(token, username.trim(), password);
-      // Clear any existing session (publisher/admin testing the link in the same browser)
-      // before storing the student's JWT so there is no stale auth_user mismatch.
+      const res = await setupAccount(
+        token,
+        username.trim(),
+        password,
+        country,
+        effectiveCurriculum
+      );
       clearAuthSession();
       localStorage.setItem("auth_token", res.access_token);
-      // Redirect to the exam
       router.replace("/sae/exam");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Setup failed.";
-      setPageState({ kind: "error", message });
+      setPageState({ kind: "error", message, tokenInfo });
     }
   }
 
-  // ── Loading ──────────────────────────────────────────────────────────────────
+  // ── Render: loading ───────────────────────────────────────────────────────────
   if (pageState.kind === "loading") {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -84,7 +162,7 @@ export default function SAESetupPage() {
     );
   }
 
-  // ── Invalid / expired ────────────────────────────────────────────────────────
+  // ── Render: invalid / expired ─────────────────────────────────────────────────
   if (pageState.kind === "invalid") {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
@@ -104,17 +182,17 @@ export default function SAESetupPage() {
     );
   }
 
-  // ── Post-error recovery ──────────────────────────────────────────────────────
+  // ── Render: post-error recovery ───────────────────────────────────────────────
   if (pageState.kind === "error") {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full rounded-xl border border-red-200 bg-white p-8 shadow-sm text-center">
-          <h1 className="text-lg font-semibold text-slate-900 mb-2">
-            Setup Failed
-          </h1>
+          <h1 className="text-lg font-semibold text-slate-900 mb-2">Setup Failed</h1>
           <p className="text-sm text-red-600 mb-4">{pageState.message}</p>
           <button
-            onClick={() => setPageState({ kind: "form", tokenInfo: (pageState as unknown as { tokenInfo: SAETokenValidationResponse }).tokenInfo ?? { valid: true, student_code: "", display_name: "" } })}
+            onClick={() =>
+              setPageState({ kind: "form", tokenInfo: pageState.tokenInfo })
+            }
             className="text-sm text-blue-600 underline"
           >
             Try again
@@ -124,15 +202,19 @@ export default function SAESetupPage() {
     );
   }
 
-  const tokenInfo = pageState.kind === "form"
-    ? pageState.tokenInfo
-    : null;
-
+  const tokenInfo = pageState.kind === "form" ? pageState.tokenInfo : null;
   const isSubmitting = pageState.kind === "submitting";
 
-  // ── Setup form ───────────────────────────────────────────────────────────────
+  const inputCls =
+    "w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm " +
+    "focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 " +
+    "disabled:opacity-50 bg-white";
+
+  const labelCls = "block text-sm font-medium text-slate-700 mb-1";
+
+  // ── Render: setup form ────────────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-10">
       <div className="max-w-md w-full">
 
         {/* Existing-session warning */}
@@ -141,7 +223,7 @@ export default function SAESetupPage() {
             <span className="font-semibold">Heads up:</span> You are currently signed in as{" "}
             <span className="font-semibold">{existingSession}</span>. Completing this setup
             will sign you out of that account. Open this link in a private/incognito window
-            if you want to keep both sessions separate.
+            to keep both sessions separate.
           </div>
         )}
 
@@ -154,15 +236,13 @@ export default function SAESetupPage() {
           {tokenInfo && (
             <p className="mt-2 text-sm text-slate-600">
               Welcome,{" "}
-              <span className="font-semibold text-slate-800">
-                {tokenInfo.display_name}
-              </span>{" "}
+              <span className="font-semibold text-slate-800">{tokenInfo.display_name}</span>{" "}
               <span className="text-slate-400">({tokenInfo.student_code})</span>
             </p>
           )}
           <p className="mt-1 text-xs text-slate-500">
-            Choose a username and password. You will use these to log in
-            for all future sessions.
+            Choose a username and password — you will use these to log in for all future
+            sessions. No real name is required.
           </p>
         </div>
 
@@ -170,10 +250,9 @@ export default function SAESetupPage() {
         <div className="rounded-xl border bg-white p-8 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
 
+            {/* ── Account credentials ── */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Username
-              </label>
+              <label className={labelCls}>Username</label>
               <input
                 type="text"
                 autoComplete="username"
@@ -181,16 +260,12 @@ export default function SAESetupPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="e.g. johndoe"
-                className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm
-                           focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500
-                           disabled:opacity-50"
+                className={inputCls}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Password
-              </label>
+              <label className={labelCls}>Password</label>
               <input
                 type="password"
                 autoComplete="new-password"
@@ -198,16 +273,12 @@ export default function SAESetupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="At least 8 characters"
-                className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm
-                           focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500
-                           disabled:opacity-50"
+                className={inputCls}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Confirm Password
-              </label>
+              <label className={labelCls}>Confirm Password</label>
               <input
                 type="password"
                 autoComplete="new-password"
@@ -215,19 +286,101 @@ export default function SAESetupPage() {
                 onChange={(e) => setConfirm(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="Repeat password"
-                className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm
-                           focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500
-                           disabled:opacity-50"
+                className={inputCls}
               />
             </div>
 
+            {/* ── Divider ── */}
+            <div className="relative my-1">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-white px-2 text-slate-400 uppercase tracking-wider">
+                  Educational Background
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 -mt-2">
+              This information is used to personalise your exam experience. It is
+              not linked to your real name.
+            </p>
+
+            {/* ── Country of origin ── */}
+            <div>
+              <label className={labelCls}>
+                Country of Origin <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                disabled={isSubmitting}
+                className={inputCls}
+              >
+                <option value="" disabled>Select your country…</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* ── High school curriculum ── */}
+            <div>
+              <label className={labelCls}>
+                High School Curriculum <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={curriculum}
+                onChange={(e) => {
+                  setCurriculum(e.target.value);
+                  if (e.target.value !== "Other") setCurriculumOther("");
+                }}
+                disabled={isSubmitting}
+                className={inputCls}
+              >
+                <option value="" disabled>Select your curriculum…</option>
+                {CURRICULUM_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* ── "Other" free-text reveal ── */}
+            {isOtherCurriculum && (
+              <div>
+                <label className={labelCls}>
+                  Please describe your curriculum <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={curriculumOther}
+                  onChange={(e) => setCurriculumOther(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder="e.g. Nigerian WAEC, Turkish YKS…"
+                  className={inputCls}
+                  autoFocus
+                />
+              </div>
+            )}
+
+            {/* ── Validation error ── */}
             {fieldError && (
               <p className="text-sm text-red-600">{fieldError}</p>
             )}
 
+            {/* ── Submit ── */}
             <button
               type="submit"
-              disabled={isSubmitting || !username || !password || !confirm}
+              disabled={
+                isSubmitting ||
+                !username ||
+                !password ||
+                !confirm ||
+                !country ||
+                !curriculum ||
+                (isOtherCurriculum && !curriculumOther.trim())
+              }
               className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white
                          hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60
                          transition-colors"

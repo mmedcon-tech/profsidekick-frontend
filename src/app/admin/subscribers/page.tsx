@@ -3,14 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import { adminUserApi, ApiError } from '@/lib/avatarApi';
 import type { UserRecord } from '@/types/avatar';
-import { Users, Search, Trash2, UserCircle } from 'lucide-react';
+import { Users, Search, Trash2, UserCircle, ArrowUpCircle } from 'lucide-react';
 
 export default function AdminSubscribersPage() {
-  const [users, setUsers]     = useState<UserRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-  const [query, setQuery]     = useState('');
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [users, setUsers]         = useState<UserRecord[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
+  const [query, setQuery]         = useState('');
+  const [deleting, setDeleting]   = useState<string | null>(null);
+  const [promoting, setPromoting] = useState<string | null>(null);
 
   useEffect(() => {
     adminUserApi.list('subscriber')
@@ -29,6 +30,19 @@ export default function AdminSubscribersPage() {
       alert(e instanceof ApiError ? e.message : 'Delete failed');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handlePromote = async (u: UserRecord) => {
+    if (!confirm(`Promote "${u.username}" to publisher?`)) return;
+    setPromoting(u.id);
+    try {
+      await adminUserApi.setRole(u.id, 'publisher');
+      setUsers((p) => p.filter((x) => x.id !== u.id));
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : 'Promote failed');
+    } finally {
+      setPromoting(null);
     }
   };
 
@@ -92,10 +106,28 @@ export default function AdminSubscribersPage() {
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{u.email}</td>
                 <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => handleDelete(u)} disabled={deleting === u.id}
-                    className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-40">
-                    <Trash2 size={15} />
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => handlePromote(u)}
+                      disabled={promoting === u.id || deleting === u.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium
+                                 bg-blue-50 text-blue-700 border border-blue-200
+                                 hover:bg-blue-100 disabled:opacity-40 transition-colors"
+                    >
+                      <ArrowUpCircle size={14} />
+                      Promote
+                    </button>
+                    <button
+                      onClick={() => handleDelete(u)}
+                      disabled={deleting === u.id || promoting === u.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium
+                                 bg-red-50 text-red-600 border border-red-200
+                                 hover:bg-red-100 disabled:opacity-40 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

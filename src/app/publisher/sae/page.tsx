@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   createStudentBatch,
   listStudents,
+  regenerateStudentAccess,
   submitOnBehalf,
 } from "@/lib/sae-api";
 import type { SAEStudentRow } from "@/types/sae";
@@ -53,6 +54,12 @@ export default function PublisherSAEPage() {
   const [waFile, setWaFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  // Regenerate-access modal
+  const [showRegenModal, setShowRegenModal] = useState(false);
+  const [regenStudent, setRegenStudent] = useState<SAEStudentRow | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenUrl, setRegenUrl] = useState<string | null>(null);
 
   function toast(text: string, kind: "success" | "error" = "success") {
     const id = ++toastCounter.current;
@@ -129,6 +136,27 @@ export default function PublisherSAEPage() {
       setSubmitError(err instanceof Error ? err.message : "Submission failed.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function openRegenModal(student: SAEStudentRow) {
+    setRegenStudent(student);
+    setRegenUrl(null);
+    setShowRegenModal(true);
+  }
+
+  async function handleRegenerate() {
+    if (!regenStudent) return;
+    setRegenerating(true);
+    try {
+      const res = await regenerateStudentAccess(regenStudent.id);
+      setRegenUrl(res.invitation_url);
+      loadStudents(search || undefined);
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Regeneration failed.", "error");
+      setShowRegenModal(false);
+    } finally {
+      setRegenerating(false);
     }
   }
 
@@ -274,13 +302,22 @@ export default function PublisherSAEPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        {!s.is_activated && (
+                        {!s.is_activated && s.invitation_url && (
                           <button
                             onClick={() => copyToClipboard(s.invitation_url, s.student_code)}
                             className="rounded border border-slate-200 px-2.5 py-1 text-xs
                                        text-slate-600 hover:bg-slate-100"
                           >
                             Copy link
+                          </button>
+                        )}
+                        {s.is_activated && (
+                          <button
+                            onClick={() => openRegenModal(s)}
+                            className="rounded border border-amber-200 bg-amber-50 px-2.5 py-1
+                                       text-xs text-amber-700 hover:bg-amber-100"
+                          >
+                            Regenerate link
                           </button>
                         )}
                         {s.has_submitted && (
@@ -371,6 +408,80 @@ export default function PublisherSAEPage() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* ── Regenerate access modal ───────────────────────────────────────── */}
+      {showRegenModal && regenStudent && (
+        <Modal
+          title="Regenerate Access Link"
+          onClose={() => { setShowRegenModal(false); setRegenUrl(null); }}
+        >
+          {regenUrl ? (
+            /* Step 2 — show the new link */
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                A new link has been generated for{" "}
+                <span className="font-semibold">{regenStudent.display_name}</span>.
+                The student&apos;s previous login is now invalid.
+              </p>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 break-all
+                              text-xs font-mono text-slate-700">
+                {regenUrl}
+              </div>
+              <button
+                onClick={() => {
+                  copyToClipboard(regenUrl, regenStudent.student_code);
+                }}
+                className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white
+                           hover:bg-blue-700"
+              >
+                Copy link
+              </button>
+              <button
+                onClick={() => { setShowRegenModal(false); setRegenUrl(null); }}
+                className="w-full rounded-md border border-slate-300 py-2.5 text-sm text-slate-600
+                           hover:bg-slate-50"
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            /* Step 1 — confirmation */
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                This will reset{" "}
+                <span className="font-semibold">{regenStudent.display_name}</span>&apos;s
+                login credentials. They will not be able to sign in until they
+                use the new link to choose a new username and password.
+              </p>
+              {regenStudent.has_submitted && (
+                <p className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2
+                               text-xs text-amber-800">
+                  This student has already submitted. Their submission and grades
+                  will be fully preserved.
+                </p>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={handleRegenerate}
+                  disabled={regenerating}
+                  className="flex-1 rounded-md bg-amber-600 py-2.5 text-sm font-semibold text-white
+                             hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {regenerating ? "Regenerating…" : "Confirm & regenerate"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRegenModal(false)}
+                  className="flex-1 rounded-md border border-slate-300 py-2.5 text-sm text-slate-600
+                             hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
 

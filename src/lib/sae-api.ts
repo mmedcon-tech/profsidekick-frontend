@@ -6,6 +6,7 @@
 
 import type {
   SAEBatchCreateResponse,
+  SAERegenerateResponse,
   SAESetupResponse,
   SAEStudentDetail,
   SAEStudentMe,
@@ -54,12 +55,14 @@ export async function validateInviteToken(
 export async function setupAccount(
   token: string,
   username: string,
-  password: string
+  password: string,
+  country_of_origin: string,
+  curriculum: string
 ): Promise<SAESetupResponse> {
   const res = await fetch(`${API}/api/sae/invite/${token}/setup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, country_of_origin, curriculum }),
   });
   return handleResponse<SAESetupResponse>(res);
 }
@@ -110,6 +113,16 @@ export async function submitOnBehalf(
     { method: "POST", headers: authHeaders(), body: form }
   );
   return handleResponse<SAESubmissionResultPublisher>(res);
+}
+
+export async function regenerateStudentAccess(
+  studentId: string
+): Promise<SAERegenerateResponse> {
+  const res = await fetch(
+    `${API}/api/sae/publisher/students/${studentId}/regenerate`,
+    { method: "POST", headers: authHeaders() }
+  );
+  return handleResponse<SAERegenerateResponse>(res);
 }
 
 export async function updateSubmission(

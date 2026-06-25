@@ -330,4 +330,6 @@ export const adminUserApi = {
     req<UserRecord[]>(`/api/users/admin/users${role ? `?role=${role}` : ''}`),
   delete: (userId: string) =>
     req<void>(`/api/users/admin/users/${userId}`, 'DELETE'),
+  setRole: (userId: string, role: string) =>
+    req<void>(`/api/users/admin/users/${userId}/role`, 'PUT', { role }),
 };

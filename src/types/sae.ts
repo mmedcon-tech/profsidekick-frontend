@@ -12,6 +12,8 @@ export interface SAEStudentRow {
   activated_at: string | null;
   has_submitted: boolean;
   submitted_at: string | null;
+  country_of_origin: string | null;
+  curriculum: string | null;
 }
 
 export interface SAEBatchCreateResponse {
@@ -62,6 +64,13 @@ export interface SAEStudentMe {
   display_name: string;
   is_activated: boolean;
   has_submitted: boolean;
+  country_of_origin: string | null;
+  curriculum: string | null;
+}
+
+export interface SAERegenerateResponse {
+  invitation_url: string;
+  invitation_token: string;
 }
 
 // ── Grading question shape inside result_json ─────────────────────────────────
