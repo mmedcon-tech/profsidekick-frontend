@@ -17,7 +17,13 @@ export default function SubscriberLayout({ children }: { children: React.ReactNo
     }
   }, [isAuthenticated, isLoading, user, router]);
 
-  if (isLoading || !isAuthenticated) return null;
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-gray-500">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <ThemedLayout>
