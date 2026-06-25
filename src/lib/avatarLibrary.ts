@@ -54,3 +54,14 @@ export function resolveGlbUrl(modelUrl?: string | null, libraryId?: string | nul
   }
   return library.avatars[0]?.glbPath ?? '/avatars/avatar-1.glb';
 }
+
+/** Shared Emirati male avatar for the floating chatbot (issue #64). */
+export const DEFAULT_CHATBOT_AVATAR_ID = 'avatar-2';
+
+export function getDefaultChatbotAvatar(): AvatarLibraryEntry {
+  return (
+    getAvatarLibraryEntry(DEFAULT_CHATBOT_AVATAR_ID) ??
+    library.avatars.find((entry) => entry.gender === 'male') ??
+    library.avatars[0]
+  );
+}
