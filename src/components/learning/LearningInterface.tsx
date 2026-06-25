@@ -23,6 +23,14 @@ import {
 } from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
+import {
+  navigateNextSlide,
+  navigatePreviousSlide,
+  navigateToIndex,
+  navigateToSlideNumber,
+  toSlideToolPayload,
+  type SlideNavigationSource,
+} from "@/lib/slideNavigation";
 
 const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
   renderType: "static",
@@ -88,6 +96,9 @@ export default function LearningInterface({
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
   const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [aiLeadEnabled] = useState(true);
+
+  const slideCount = classSession.slides.length;
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -917,7 +928,7 @@ export default function LearningInterface({
         content: [
           {
             type: "input_text",
-            text: "Please introduce yourself, welcome the learner to the session, and begin teaching."
+            text: "You are leading this teaching session. Proactively teach through the slides and use nextSlide, previousSlide, and goToSlide to control slide navigation as you explain the material. Welcome the learner, introduce the topic, and begin on the current slide."
           }
         ]
       }
@@ -954,31 +965,21 @@ export default function LearningInterface({
   };
 
   const nextSlide = () => {
-    setCurrentSlide((prevSlide) => {
-      if (prevSlide < classSession.slides.length - 1) {
-        const newSlide = prevSlide + 1;
+    const result = navigateNextSlide(currentSlideRef.current, slideCount);
+    if (!result.success) return;
 
-        // Use the helper function to notify AI as user input
-        notifyAIOfSlideChange(newSlide, prevSlide, "manual_navigation");
-
-        return newSlide;
-      }
-      return prevSlide;
-    });
+    currentSlideRef.current = result.currentIndex;
+    setCurrentSlide(result.currentIndex);
+    notifyAIOfSlideChange(result.currentIndex, result.previousIndex, "manual_navigation");
   };
 
   const previousSlide = () => {
-    setCurrentSlide((prevSlide) => {
-      if (prevSlide > 0) {
-        const newSlide = prevSlide - 1;
+    const result = navigatePreviousSlide(currentSlideRef.current, slideCount);
+    if (!result.success) return;
 
-        // Use the helper function to notify AI as user input
-        notifyAIOfSlideChange(newSlide, prevSlide, "manual_navigation");
-
-        return newSlide;
-      }
-      return prevSlide;
-    });
+    currentSlideRef.current = result.currentIndex;
+    setCurrentSlide(result.currentIndex);
+    notifyAIOfSlideChange(result.currentIndex, result.previousIndex, "manual_navigation");
   };
 
   const handleEndSessionClick = () => {
@@ -1092,6 +1093,31 @@ export default function LearningInterface({
     setTimeout(() => {
       sendClientEvent(triggerResponse, `slide.${source}.trigger_response`);
     }, 100);
+  };
+
+  const applySlideNavigation = useCallback((
+    targetIndex: number,
+    source: SlideNavigationSource,
+  ) => {
+    const previousIndex = currentSlideRef.current;
+    const result = navigateToIndex(previousIndex, targetIndex, slideCount);
+
+    if (!result.success) {
+      return result;
+    }
+
+    currentSlideRef.current = result.currentIndex;
+    setCurrentSlide(result.currentIndex);
+
+    if (source !== "ai_tool") {
+      notifyAIOfSlideChange(result.currentIndex, result.previousIndex, source);
+    }
+
+    return result;
+  }, [slideCount]);
+
+  const goToSlideByIndex = (targetIndex: number) => {
+    applySlideNavigation(targetIndex, "dot_navigation");
   };
 
   // Check WebRTC support on mount
@@ -1307,43 +1333,66 @@ export default function LearningInterface({
             }
 
             if (outputItem.name === "nextSlide") {
-              const currentSlideValue = currentSlideRef.current;
-              if (currentSlideValue < classSession.slides.length - 1) {
-                const newSlide = currentSlideValue + 1;
-                setCurrentSlide(newSlide);
+              if (!aiLeadEnabled) {
                 functionResult = {
-                  success: true,
-                  message: `Moved to slide ${newSlide + 1}`,
-                  data: { previousSlide: currentSlideValue + 1, currentSlide: newSlide + 1 }
+                  success: false,
+                  message: "Learner has slide control",
+                  data: {},
                 };
               } else {
-                functionResult = { success: false, message: "Already at last slide", data: {} };
+                const result = navigateNextSlide(currentSlideRef.current, slideCount);
+                if (result.success) {
+                  currentSlideRef.current = result.currentIndex;
+                  setCurrentSlide(result.currentIndex);
+                }
+                functionResult = {
+                  success: result.success,
+                  message: result.message,
+                  data: toSlideToolPayload(result),
+                };
               }
             } else if (outputItem.name === "previousSlide") {
-              const currentSlideValue = currentSlideRef.current;
-              if (currentSlideValue > 0) {
-                const newSlide = currentSlideValue - 1;
-                setCurrentSlide(newSlide);
+              if (!aiLeadEnabled) {
                 functionResult = {
-                  success: true,
-                  message: `Moved to slide ${newSlide + 1}`,
-                  data: { previousSlide: currentSlideValue + 1, currentSlide: newSlide + 1 }
+                  success: false,
+                  message: "Learner has slide control",
+                  data: {},
                 };
               } else {
-                functionResult = { success: false, message: "Already at first slide", data: {} };
+                const result = navigatePreviousSlide(currentSlideRef.current, slideCount);
+                if (result.success) {
+                  currentSlideRef.current = result.currentIndex;
+                  setCurrentSlide(result.currentIndex);
+                }
+                functionResult = {
+                  success: result.success,
+                  message: result.message,
+                  data: toSlideToolPayload(result),
+                };
               }
-            } else if (outputItem.name === "goToSlide" && args.slideNumber) {
-              const currentSlideValue = currentSlideRef.current;
-              const targetSlide = parseInt(args.slideNumber) - 1;
-              if (targetSlide >= 0 && targetSlide < classSession.slides.length) {
-                setCurrentSlide(targetSlide);
+            } else if (outputItem.name === "goToSlide" && args.slideNumber !== undefined) {
+              if (!aiLeadEnabled) {
                 functionResult = {
-                  success: true,
-                  message: `Jumped to slide ${targetSlide + 1}`,
-                  data: { previousSlide: currentSlideValue + 1, currentSlide: targetSlide + 1 }
+                  success: false,
+                  message: "Learner has slide control",
+                  data: {},
                 };
               } else {
-                functionResult = { success: false, message: "Invalid slide number", data: {} };
+                const slideNumber = Number(args.slideNumber);
+                const result = navigateToSlideNumber(
+                  currentSlideRef.current,
+                  slideNumber,
+                  slideCount,
+                );
+                if (result.success) {
+                  currentSlideRef.current = result.currentIndex;
+                  setCurrentSlide(result.currentIndex);
+                }
+                functionResult = {
+                  success: result.success,
+                  message: result.message,
+                  data: toSlideToolPayload(result),
+                };
               }
             }
 
@@ -1670,14 +1719,16 @@ export default function LearningInterface({
 
             <div className="flex flex-col items-center">
               <span className="text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
+              {aiLeadEnabled && (
+                <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                  AI leading session
+                </span>
+              )}
               <div className="flex items-center gap-1.5 mt-1">
-                {Array.from({ length: classSession.totalSlides }).map((_, i) => (
+                {Array.from({ length: slideCount }).map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => {
-                      setCurrentSlide(i);
-                      currentSlideRef.current = i;
-                    }}
+                    onClick={() => goToSlideByIndex(i)}
                     className={cn(
                       "rounded-full transition-all duration-300",
                       i === currentSlide ? "h-1.5 w-5 bg-primary" : "h-1.5 w-1.5 bg-border hover:bg-muted-foreground"
@@ -1690,7 +1741,7 @@ export default function LearningInterface({
 
             <button
               onClick={nextSlide}
-              disabled={currentSlide === classSession.totalSlides - 1}
+              disabled={currentSlide === slideCount - 1}
               className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <span className="hidden sm:inline">Next</span>
