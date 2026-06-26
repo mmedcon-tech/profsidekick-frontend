@@ -12,6 +12,7 @@ import {
   Layers, ShieldCheck, Star, Menu, X, PanelLeftOpen,
   Sun, Moon, CreditCard, Wallet, ClipboardList
 } from 'lucide-react';
+import { HIDDEN_NAV_HREFS } from '@/lib/featureFlags';
 
 // ─── nav item types ──────────────────────────────────────────────────────────
 
@@ -103,6 +104,25 @@ export const adminNav: SidebarConfig = [
     ],
   },
 ];
+
+// ─── Feature-flag filter ─────────────────────────────────────────────────────
+// Removes any flat nav item whose href is flagged, and drops sections that
+// become empty as a result. adminNav is intentionally never filtered.
+
+function applyFeatureFlags(nav: SidebarConfig): SidebarConfig {
+  return nav
+    .map((entry) => {
+      if (!isSection(entry)) {
+        return HIDDEN_NAV_HREFS.has(entry.href) ? null : entry;
+      }
+      const visibleItems = entry.items.filter((item) => !HIDDEN_NAV_HREFS.has(item.href));
+      return visibleItems.length > 0 ? { ...entry, items: visibleItems } : null;
+    })
+    .filter((entry): entry is NavItem | NavSection => entry !== null);
+}
+
+export const filteredSubscriberNav = applyFeatureFlags(subscriberNav);
+export const filteredPublisherNav  = applyFeatureFlags(publisherNav);
 
 // ─── Routes that should hide the sidebar and chrome for maximum workspace ────
 // Any path matching these patterns will enter "focus mode":
