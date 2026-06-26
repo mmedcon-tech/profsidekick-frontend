@@ -129,13 +129,14 @@ export default function SessionDetailsPage() {
     }
   };
 
-  const handleStartTeaching = () => {
-    // Route to the AI Chat workspace scoped to this session.
-    // The old Realtime flow is preserved below for future reactivation
-    // — just swap the router.push line back when Realtime is re-enabled.
-    router.push(`/publisher/sessions/${sessionId}/chat`);
+  const handleStartTeaching = async () => {
+    // Publishers/admins use the text-chat workspace to preview/test the avatar's behaviour.
+    // Subscribers (and shared-link guests) get the real realtime voice/avatar session.
+    if (user?.role === 'publisher' || user?.role === 'admin') {
+      router.push(`/publisher/sessions/${sessionId}/chat`);
+      return;
+    }
 
-    /* ── REALTIME FLOW (disabled — uncomment to reactivate) ──────────
     if (startingTeaching) return;
     try {
       setStartingTeaching(true);
@@ -164,7 +165,6 @@ export default function SessionDetailsPage() {
     } finally {
       setStartingTeaching(false);
     }
-    ─────────────────────────────────────────────────────────────── */
   };
 
   const handleBackToCourse = () => {

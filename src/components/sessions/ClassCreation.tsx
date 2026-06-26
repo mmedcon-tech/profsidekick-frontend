@@ -46,7 +46,7 @@ function CollapsibleSection({ title, isOpen, onToggle, children }: CollapsibleSe
 export default function ClassCreation() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   // const [, setDefaultPrompt] = useState("");
 
@@ -105,15 +105,18 @@ export default function ClassCreation() {
   const [availableRoles, setAvailableRoles] = useState<{ id: string; name: string; description: string | null; prompt_context: string | null }[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<string>('');
 
+  // Publishers see only their own avatars; subscribers browse the published catalog.
+  const avatarsEndpoint = user?.role === 'subscriber' ? '/api/avatars' : '/api/publisher/avatars';
+
   useEffect(() => {
     if (!token) return;
-    fetch(config.getApiUrl('/api/publisher/avatars'), {
+    fetch(config.getApiUrl(avatarsEndpoint), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((data) => setAvailableAvatars(data.avatars || []))
       .catch(() => {});
-  }, [token]);
+  }, [token, avatarsEndpoint]);
 
   useEffect(() => {
     if (!selectedAvatarTemplateId || !token) { setAvailableRoles([]); setSelectedRoleId(''); return; }

@@ -22,6 +22,7 @@ import {
   buildAssistantSystemPrompt,
 } from '@/lib/assistantContext';
 import { isHeyGenEnabled, isHeyGenAvatarIdsConfigured } from '@/lib/heygenConfig';
+import AiMessage from '@/components/shared/AiMessage';
 import {
   Bot,
   Mic,
@@ -554,7 +555,7 @@ export default function FloatingAvatar(): React.ReactElement {
         {progressBanner}
         {avatarPortrait}
         <div className="border-b border-gray-800 bg-gray-900 px-4 py-3">
-          <p className="text-sm leading-relaxed text-gray-200">{greetingText}</p>
+          <AiMessage content={greetingText} className="text-sm leading-relaxed text-gray-200" />
         </div>
         <div className="flex items-center justify-center gap-4 bg-gray-900 py-5">
           <button
@@ -617,7 +618,7 @@ export default function FloatingAvatar(): React.ReactElement {
         {avatarPortrait}
         <div className="px-4 py-3 text-center bg-gray-900">
           <p className="text-xs text-gray-400 mb-2">Tap the mic and ask your question</p>
-          <p className="text-sm text-gray-200 leading-relaxed">{greetingText}</p>
+          <AiMessage content={greetingText} className="text-sm text-gray-200 leading-relaxed" />
         </div>
         <div className="flex items-center justify-center py-4 bg-gray-800 border-t border-gray-700">
           <button
@@ -643,7 +644,7 @@ export default function FloatingAvatar(): React.ReactElement {
       {avatarPortrait}
 
       <div className="border-b border-gray-800 bg-gray-900 px-4 py-3">
-        <p className="text-sm leading-relaxed text-gray-200">{greetingText}</p>
+        <AiMessage content={greetingText} className="text-sm leading-relaxed text-gray-200" />
       </div>
 
       <div className="min-h-[80px] flex-1 space-y-2 overflow-y-auto bg-gray-900 px-3 py-3">
@@ -656,7 +657,7 @@ export default function FloatingAvatar(): React.ReactElement {
                   : 'rounded-bl-sm bg-gray-800 text-gray-200'
               }`}
             >
-              {m.text}
+              {m.role === 'user' ? m.text : <AiMessage content={m.text} />}
             </div>
           </div>
         ))}

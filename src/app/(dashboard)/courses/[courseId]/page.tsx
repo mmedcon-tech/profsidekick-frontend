@@ -162,6 +162,8 @@ export default function CourseDetailPage() {
   }
 
   const isOwner = course.user_id === user?.id;
+  // Subscribers may also create their own sessions (temporary — no restraint).
+  const canCreateSession = isOwner || user?.role === 'subscriber';
   const completedCount = sessions.filter((s) => (s.run_count || 0) > 0).length;
   const progressPct = sessions.length > 0 ? Math.round((completedCount / sessions.length) * 100) : 0;
   const currentIndex = sessions.findIndex((s) => (s.run_count || 0) === 0);
@@ -258,7 +260,7 @@ export default function CourseDetailPage() {
                 <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
                   Sessions {sessions.length > 0 && `(${completedCount}/${sessions.length})`}
                 </h2>
-                {isOwner && (
+                {canCreateSession && (
                   <button
                     onClick={() => router.push(`/create?courseId=${courseId}`)}
                     className="flex items-center gap-1.5 text-xs text-[#133221] hover:underline font-medium"
@@ -271,12 +273,12 @@ export default function CourseDetailPage() {
               {sessions.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-10 text-center">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    {isOwner ? 'No sessions yet' : 'No sessions available yet'}
+                    {canCreateSession ? 'No sessions yet' : 'No sessions available yet'}
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                    {isOwner ? 'Create your first session to get started.' : 'Check back later.'}
+                    {canCreateSession ? 'Create your first session to get started.' : 'Check back later.'}
                   </p>
-                  {isOwner && (
+                  {canCreateSession && (
                     <button
                       onClick={() => router.push(`/create?courseId=${courseId}`)}
                       className="mt-4 bg-[#133221] text-white text-sm px-5 py-2 rounded-lg font-medium hover:bg-[#0a1e13] transition-colors"

@@ -1,8 +1,8 @@
 "use-client";
 
 import React, { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
 import Image from "next/image";
+import AiMessage from "@/components/shared/AiMessage";
 import { useTranscript } from "@/contexts/TranscriptContext";
 import { TranscriptItem } from "@/types/types";
 import { DownloadIcon, ClipboardCopyIcon } from "@radix-ui/react-icons";
@@ -147,8 +147,8 @@ function Transcript({
                       >
                         {timestamp}
                       </div>
-                      <div className={`whitespace-pre-wrap ${messageStyle}`}>
-                        <ReactMarkdown>{displayTitle}</ReactMarkdown>
+                      <div className={messageStyle}>
+                        <AiMessage content={displayTitle} />
                       </div>
                     </div>
                     {guardrailResult && (

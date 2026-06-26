@@ -22,6 +22,7 @@ import { useSearchParams } from 'next/navigation';
 import { config } from '@/lib/config';
 import { avatarApi } from '@/lib/avatarApi';
 import type { AvatarResponse } from '@/types/avatar';
+import AiMessage from '@/components/shared/AiMessage';
 import {
   Plus, Send, Bot, FileText, ClipboardList, BookOpen,
   MessageSquare, Loader2, CheckCircle, RefreshCw, Sparkles,
@@ -273,7 +274,10 @@ function OptionCards({
             </span>
             {selecting && <Loader2 size={12} className="animate-spin text-gray-400" />}
           </div>
-          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{opt.content}</p>
+          <AiMessage
+            content={opt.content}
+            className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed"
+          />
         </button>
       ))}
     </div>
@@ -552,12 +556,12 @@ function WorkspaceInner() {
             const cm = m as Message;
             return (
               <div key={cm.id} className={`flex ${cm.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[72%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                <div className={`max-w-[72%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                   cm.role === 'user'
-                    ? 'bg-[#133221] text-white rounded-br-sm'
+                    ? 'bg-[#133221] text-white rounded-br-sm whitespace-pre-wrap'
                     : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-sm shadow-sm'
                 }`}>
-                  {cm.content}
+                  {cm.role === 'user' ? cm.content : <AiMessage content={cm.content} />}
                 </div>
               </div>
             );

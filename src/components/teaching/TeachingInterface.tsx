@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send, MessageCircle } from "lucide-react";
 import StreamingAvatar, {
   AvatarQuality,
   StreamingEvents,
   TaskType,
 } from "@heygen/streaming-avatar";
-import { ClassSession, SessionAvatarConfig } from "@/types";
+import { ClassSession, SessionAvatarConfig, TranscriptItem } from "@/types";
 import SessionAvatarRenderer from "@/components/avatar/SessionAvatarRenderer";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
+import { useTranscript } from "@/contexts/TranscriptContext";
 import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
@@ -21,6 +22,7 @@ import {
 } from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
+import AiMessage from "@/components/shared/AiMessage";
 
 const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
   renderType: "static",
@@ -54,7 +56,7 @@ export default function TeachingInterface({
   // Always start with slide 0 for SSR consistency
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [sessionStatus, setSessionStatus] = useState<"DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR">("DISCONNECTED");
+  const [sessionStatus, setSessionStatus] = useState<"DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR" | "TRANSITIONED">("DISCONNECTED");
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [, setDataChannel] = useState<RTCDataChannel | null>(null);
@@ -76,6 +78,15 @@ export default function TeachingInterface({
     avatarConfig ?? DEFAULT_SESSION_AVATAR,
   );
   const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
+
+  // "Continue in Chat" — realtime -> text transition
+  const [interactionMode, setInteractionMode] = useState<"realtime" | "chat">("realtime");
+  const [isTransitioningToChat, setIsTransitioningToChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ id: string; role: "user" | "assistant"; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -101,6 +112,7 @@ export default function TeachingInterface({
   const { token } = useAuth();
   const { logClientEvent,  } = useEvent();
   const { currentQuestion, latestResponse, keyConcepts, rollingNotes, addStructuredTurn } = useStructuredTranscript();
+  const { transcriptItems, updateTranscriptItem } = useTranscript();
 
   const getRubricTerms = useCallback((): string[] => {
     try {
@@ -706,6 +718,156 @@ export default function TeachingInterface({
   useEffect(() => {
     disconnectFromRealtimeRef.current = disconnectFromRealtime;
   }, [disconnectFromRealtime]);
+
+  // Keep the chat panel scrolled to the latest message (handles the
+  // transferred realtime history landing all at once, and each new reply).
+  useEffect(() => {
+    if (interactionMode === "chat") {
+      chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight });
+    }
+  }, [interactionMode, chatMessages, chatSending]);
+
+  // Focus the chat input as soon as we land in chat mode so the user can
+  // continue typing immediately, no reset/re-click required.
+  useEffect(() => {
+    if (interactionMode === "chat") {
+      chatInputRef.current?.focus();
+    }
+  }, [interactionMode]);
+
+  // ----------------------------------------------------------------
+  // "Continue in Chat" — realtime -> text transition
+  // ----------------------------------------------------------------
+
+  /**
+   * Sort -> filter -> map. Breadcrumbs, hidden items, and anything not yet
+   * finalized (status !== "DONE") are dropped — they aren't conversation content.
+   */
+  const convertTranscriptToChat = (items: TranscriptItem[]) =>
+    items
+      .slice()
+      .sort((a, b) => a.createdAtMs - b.createdAtMs)
+      .filter((item) => item.type === "MESSAGE" && item.status === "DONE" && item.isHidden !== true)
+      .map((item) => ({
+        id: item.itemId,
+        role: item.role as "user" | "assistant",
+        content: item.title ?? "",
+      }));
+
+  /**
+   * The AI may be mid-utterance when the user transitions to chat. interrupt()
+   * forcibly cuts it off, so the in-progress transcript item will never reach
+   * "DONE" on its own — finalize it here with whatever text streamed in so far.
+   */
+  const finalizeCurrentAssistantMessage = () => {
+    const inProgress = transcriptItems.find(
+      (item) => item.type === "MESSAGE" && item.role === "assistant" && item.status === "IN_PROGRESS"
+    );
+    if (inProgress) {
+      updateTranscriptItem(inProgress.itemId, { status: "DONE" });
+    }
+  };
+
+  const handleContinueInChat = async () => {
+    if (isTransitioningToChat || sessionStatus !== "CONNECTED") return;
+
+    setIsTransitioningToChat(true);
+
+    let convertedMessages: { id: string; role: "user" | "assistant"; content: string }[] = [];
+    try {
+      // Hard interrupt — stop the AI speaking immediately, then finalize
+      // whatever partial text it had streamed before the cut.
+      sendClientEvent({ type: "response.cancel" });
+      finalizeCurrentAssistantMessage();
+
+      convertedMessages = convertTranscriptToChat(transcriptItems);
+
+      disconnectFromRealtime();
+      // disconnectFromRealtime() sets sessionStatus to "DISCONNECTED" — overridden below.
+    } catch (err) {
+      console.error("Continue-in-chat transition step failed, continuing with best-effort data:", err);
+      try {
+        convertedMessages = convertTranscriptToChat(transcriptItems);
+      } catch {
+        convertedMessages = [];
+      }
+    } finally {
+      setSessionStatus("TRANSITIONED");
+      setInteractionMode("chat");
+      setChatMessages([
+        { id: "seed", role: "assistant", content: "Let's continue the conversation here." },
+        ...convertedMessages,
+      ]);
+      setIsTransitioningToChat(false);
+
+      if (sessionRunId) {
+        fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/run/${sessionRunId}/transition`), {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ runtime_mode_used: "chat" }),
+        }).catch(() => {
+          // Metadata-only — backend bookkeeping failure must never block the chat UI.
+        });
+      }
+    }
+  };
+
+  const sendChatMessage = async () => {
+    const text = chatInput.trim();
+    if (!text || chatSending || !sessionRunId) return;
+
+    setChatInput("");
+    setChatSending(true);
+    const userMessage = { id: `u-${Date.now()}`, role: "user" as const, content: text };
+    setChatMessages((prev) => [...prev, userMessage]);
+
+    try {
+      // The converted realtime transcript (pre-existing chatMessages, minus the
+      // static "seed" placeholder). The backend only applies this once, on this
+      // session run's first chat message — safe to send every time.
+      const seedHistory = chatMessages
+        .filter((m) => m.id !== "seed")
+        .map((m) => ({ id: m.id, role: m.role, content: m.content }));
+
+      // Session-aware endpoint — builds the system prompt server-side via
+      // context_builder.build_chat_system_prompt (persona, grounding policy,
+      // rubric, session summary, memories, MATH_FORMATTING_INSTRUCTION), the
+      // same pipeline the realtime session used. Never pass a frontend-held
+      // instructions string here — the fully composed prompt never round-trips
+      // to the client.
+      const response = await fetch(
+        config.getApiUrl(`/api/sessions/${classSession.sessionId}/run/${sessionRunId}/chat/message`),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            message: text,
+            seed_history: seedHistory,
+          }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`Chat request failed: ${response.status}`);
+      }
+      const data = await response.json();
+      const reply = data?.reply ?? "Sorry, I couldn't generate a response.";
+      setChatMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: "assistant", content: reply }]);
+    } catch (err) {
+      console.error("Chat send failed:", err);
+      setChatMessages((prev) => [
+        ...prev,
+        { id: `err-${Date.now()}`, role: "assistant", content: "Sorry, something went wrong sending that message." },
+      ]);
+    } finally {
+      setChatSending(false);
+    }
+  };
 
   // Separate function for React Strict Mode cleanup
   const disconnectFromRealtimeReactCleanup = () => {
@@ -1567,9 +1729,10 @@ export default function TeachingInterface({
               <h3 className="font-semibold text-slate-900 text-sm">ProfSidekick</h3>
               <div className="flex items-center gap-1.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${
-                  sessionStatus === "CONNECTED" ? "bg-emerald-500" : 
-                  sessionStatus === "CONNECTING" ? "bg-amber-500" : 
-                  sessionStatus === "ERROR" ? "bg-red-500" : "bg-slate-400"
+                  sessionStatus === "CONNECTED" ? "bg-emerald-500" :
+                  sessionStatus === "CONNECTING" ? "bg-amber-500" :
+                  sessionStatus === "ERROR" ? "bg-red-500" :
+                  sessionStatus === "TRANSITIONED" ? "bg-sky-500" : "bg-slate-400"
                 }`}></div>
                 <span className="text-xs text-slate-500 capitalize font-medium">
                   {sessionStatus.toLowerCase()}
@@ -1627,7 +1790,8 @@ export default function TeachingInterface({
             sessionStatus === 'CONNECTED' ? 'bg-emerald-500' : 'bg-slate-300'
           }`} />
           <span className="text-[11px] text-slate-500 truncate flex-1">
-            {sessionStatus !== 'CONNECTED' ? 'Disconnected' :
+            {sessionStatus === 'TRANSITIONED' ? 'Continued in chat' :
+             sessionStatus !== 'CONNECTED' ? 'Disconnected' :
              isAISpeaking ? 'AI speaking…' :
              isUserSpeaking ? 'You speaking…' : 'Listening'}
           </span>
@@ -1637,99 +1801,176 @@ export default function TeachingInterface({
           )}
         </div>
 
-        {/* Session Notes Panel */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-4 py-2.5 border-b border-slate-200/50">
-            <div className="flex items-center gap-1.5">
-              <MessageSquare size={12} className="text-slate-400" />
-              <span className="text-xs font-medium text-slate-600">Session Notes</span>
+        {interactionMode === "chat" ? (
+          /* Chat Panel — replaces Session Notes after "Continue in Chat" */
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="px-4 py-2.5 border-b border-slate-200/50">
+              <div className="flex items-center gap-1.5">
+                <MessageCircle size={12} className="text-slate-400" />
+                <span className="text-xs font-medium text-slate-600">Chat</span>
+              </div>
+            </div>
+
+            <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-3 space-y-2">
+              {chatMessages.map((m) => (
+                <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[88%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
+                      m.role === "user"
+                        ? "bg-emerald-600 text-white whitespace-pre-wrap"
+                        : "bg-slate-50 border border-slate-200 text-slate-800"
+                    }`}
+                  >
+                    {m.role === "user" ? m.content : <AiMessage content={m.content} className="text-xs" />}
+                  </div>
+                </div>
+              ))}
+              {chatSending && (
+                <div className="flex justify-start">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-400">
+                    Thinking…
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-3 border-t border-slate-200/50 flex items-end gap-2">
+              <textarea
+                ref={chatInputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChatMessage();
+                  }
+                }}
+                placeholder="Type a message…"
+                rows={2}
+                disabled={chatSending}
+                className="flex-1 text-xs border border-slate-300 rounded-lg px-2.5 py-2 resize-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-60"
+              />
+              <button
+                onClick={sendChatMessage}
+                disabled={!chatInput.trim() || chatSending}
+                className="flex-shrink-0 bg-emerald-600 text-white p-2.5 rounded-lg hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+                aria-label="Send"
+              >
+                <Send size={14} />
+              </button>
             </div>
           </div>
-
-          <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {!currentQuestion && !latestResponse && keyConcepts.length === 0 && !rollingNotes && (
-              <div className="text-center py-8">
-                <MessageSquare size={22} className="text-slate-300 mx-auto mb-2" />
-                <p className="text-xs text-slate-400">Session notes will appear here as the conversation progresses.</p>
-              </div>
-            )}
-            {currentQuestion && (
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3">
-                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1 uppercase tracking-wide">Current Question</p>
-                <p className="text-xs text-emerald-950 dark:text-emerald-100 leading-relaxed">{currentQuestion}</p>
-              </div>
-            )}
-            {latestResponse && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Student Response</p>
-                <p className="text-xs text-slate-800 leading-relaxed">{latestResponse}</p>
-              </div>
-            )}
-            {keyConcepts.length > 0 && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide">Key Concepts</p>
-                <div className="flex flex-wrap gap-1">
-                  {keyConcepts.map((c) => (
-                    <span key={c} className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-medium rounded">
-                      {c}
-                    </span>
-                  ))}
+        ) : (
+          <>
+            {/* Session Notes Panel */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="px-4 py-2.5 border-b border-slate-200/50">
+                <div className="flex items-center gap-1.5">
+                  <MessageSquare size={12} className="text-slate-400" />
+                  <span className="text-xs font-medium text-slate-600">Session Notes</span>
                 </div>
               </div>
-            )}
-            {rollingNotes && (
-              <div className="bg-white dark:bg-gray-800 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Session Notes</p>
-                <pre className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-sans">{rollingNotes}</pre>
+
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {!currentQuestion && !latestResponse && keyConcepts.length === 0 && !rollingNotes && (
+                  <div className="text-center py-8">
+                    <MessageSquare size={22} className="text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs text-slate-400">Session notes will appear here as the conversation progresses.</p>
+                  </div>
+                )}
+                {currentQuestion && (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1 uppercase tracking-wide">Current Question</p>
+                    <p className="text-xs text-emerald-950 dark:text-emerald-100 leading-relaxed">{currentQuestion}</p>
+                  </div>
+                )}
+                {latestResponse && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Student Response</p>
+                    <p className="text-xs text-slate-800 leading-relaxed">{latestResponse}</p>
+                  </div>
+                )}
+                {keyConcepts.length > 0 && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide">Key Concepts</p>
+                    <div className="flex flex-wrap gap-1">
+                      {keyConcepts.map((c) => (
+                        <span key={c} className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-medium rounded">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {rollingNotes && (
+                  <div className="bg-white dark:bg-gray-800 border border-slate-200 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Session Notes</p>
+                    <AiMessage content={rollingNotes} className="text-xs text-slate-700 leading-relaxed font-sans" />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Controls */}
-        <div className="p-4 space-y-3 border-t border-slate-200/50">
-          {/* Audio Control */}
-          <button
-            onClick={toggleAudio}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
-              isAudioEnabled 
-                ? "bg-emerald-50 dark:bg-emerald-900/200 text-white shadow-lg shadow-blue-500/25 hover:bg-emerald-600 dark:bg-emerald-700 hover:shadow-xl hover:shadow-blue-500/30" 
-                : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-            }`}
-          >
-            {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            {isAudioEnabled ? "Audio On" : "Audio Off"}
-          </button>
+            {/* Controls */}
+            <div className="p-4 space-y-3 border-t border-slate-200/50">
+              {/* Audio Control */}
+              <button
+                onClick={toggleAudio}
+                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
+                  isAudioEnabled
+                    ? "bg-emerald-50 dark:bg-emerald-900/200 text-white shadow-lg shadow-blue-500/25 hover:bg-emerald-600 dark:bg-emerald-700 hover:shadow-xl hover:shadow-blue-500/30"
+                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                }`}
+              >
+                {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                {isAudioEnabled ? "Audio On" : "Audio Off"}
+              </button>
 
-          {/* Microphone Control */}
-          <button
-            onClick={toggleMicrophone}
-            disabled={sessionStatus !== "CONNECTED"}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
-              sessionStatus !== "CONNECTED"
-                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : isMicMuted 
-                  ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30" 
-                  : "bg-green-500 text-white shadow-lg shadow-green-500/25 hover:bg-green-600 hover:shadow-xl hover:shadow-green-500/30"
-            }`}
-          >
-            {isMicMuted ? <MicOff size={16} /> : <Mic size={16} />}
-            {isMicMuted ? "Mic Muted" : "Mic On"}
-          </button>
+              {/* Microphone Control */}
+              <button
+                onClick={toggleMicrophone}
+                disabled={sessionStatus !== "CONNECTED"}
+                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
+                  sessionStatus !== "CONNECTED"
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    : isMicMuted
+                      ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30"
+                      : "bg-green-500 text-white shadow-lg shadow-green-500/25 hover:bg-green-600 hover:shadow-xl hover:shadow-green-500/30"
+                }`}
+              >
+                {isMicMuted ? <MicOff size={16} /> : <Mic size={16} />}
+                {isMicMuted ? "Mic Muted" : "Mic On"}
+              </button>
 
-          {/* Connection Control */}
-          <button
-            onClick={sessionStatus === "CONNECTED" ? disconnectFromRealtime : connectToRealtime}
-            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
-              sessionStatus === "CONNECTED" 
-                ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30" 
-                : "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-500/30"
-            }`}
-          >
-            {sessionStatus === "CONNECTED" ? <PhoneOff size={16} /> : <Phone size={16} />}
-            {sessionStatus === "CONNECTED" ? "Disconnect" : "Connect"}
-          </button>
-        </div>
+              {/* Continue in Chat */}
+              <button
+                onClick={handleContinueInChat}
+                disabled={sessionStatus !== "CONNECTED" || isTransitioningToChat}
+                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
+                  sessionStatus !== "CONNECTED" || isTransitioningToChat
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    : "bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:bg-indigo-600 hover:shadow-xl hover:shadow-indigo-500/30"
+                }`}
+              >
+                <MessageCircle size={16} />
+                {isTransitioningToChat ? "Switching to Chat…" : "Continue in Chat"}
+              </button>
+
+              {/* Connection Control */}
+              <button
+                onClick={sessionStatus === "CONNECTED" ? disconnectFromRealtime : connectToRealtime}
+                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
+                  sessionStatus === "CONNECTED"
+                    ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30"
+                    : "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-500/30"
+                }`}
+              >
+                {sessionStatus === "CONNECTED" ? <PhoneOff size={16} /> : <Phone size={16} />}
+                {sessionStatus === "CONNECTED" ? "Disconnect" : "Connect"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Feedback Modal */}
