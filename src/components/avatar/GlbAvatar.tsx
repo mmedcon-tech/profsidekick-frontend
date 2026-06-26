@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
 import { applyNaturalArmPose } from '@/lib/glbArmPose';
+import { normalizeAvatarMeshes } from '@/lib/glbMaterialFix';
 
 interface GlbModelProps {
   url: string;
@@ -22,12 +23,7 @@ function Model({ url, amplitude, isSpeaking }: GlbModelProps) {
   const model = React.useMemo(() => {
     const clone = cloneSkeleton(scene);
     applyNaturalArmPose(clone);
-    clone.traverse((child) => {
-      const mesh = child as THREE.Mesh;
-      if ((mesh as { isMesh?: boolean }).isMesh) {
-        mesh.frustumCulled = false;
-      }
-    });
+    normalizeAvatarMeshes(clone);
     return clone;
   }, [scene]);
   
