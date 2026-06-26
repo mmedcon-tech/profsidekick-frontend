@@ -1,6 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import { Bone, Group } from 'three';
+import { Bone, Group, Vector3 } from 'three';
 import { applyNaturalArmPose, boneMatchesSide } from './glbArmPose';
+
+/** Build a horizontal (T-pose) arm chain: upper-arm → forearm → hand pointing outward along X. */
+function buildArm(
+  root: Group,
+  side: 'left' | 'right',
+): { upper: Bone; forearm: Bone; hand: Bone } {
+  const outward = side === 'left' ? -1 : 1;
+  const upper = new Bone();
+  upper.name = side === 'left' ? 'LeftArm' : 'RightArm';
+  upper.position.set(outward * 0.2, 1.4, 0);
+
+  const forearm = new Bone();
+  forearm.name = side === 'left' ? 'LeftForeArm' : 'RightForeArm';
+  forearm.position.set(outward * 0.3, 0, 0);
+
+  const hand = new Bone();
+  hand.name = side === 'left' ? 'LeftHand' : 'RightHand';
+  hand.position.set(outward * 0.25, 0, 0);
+
+  forearm.add(hand);
+  upper.add(forearm);
+  root.add(upper);
+  return { upper, forearm, hand };
+}
+
+function worldDir(from: Bone, to: Bone): Vector3 {
+  const a = new Vector3();
+  const b = new Vector3();
+  from.getWorldPosition(a);
+  to.getWorldPosition(b);
+  return b.sub(a).normalize();
+}
 
 describe('boneMatchesSide', () => {
   it('recognises Mixamo upper-arm bones', () => {
@@ -20,33 +52,30 @@ describe('boneMatchesSide', () => {
 });
 
 describe('applyNaturalArmPose', () => {
-  it('rotates upper-arm bones away from T-pose', () => {
+  it('aims horizontal T-pose arms downward on both sides', () => {
     const root = new Group();
-    const leftArm = new Bone();
-    leftArm.name = 'mixamorig:LeftArm';
-    const rightArm = new Bone();
-    rightArm.name = 'mixamorig:RightArm';
-    root.add(leftArm, rightArm);
-
-    const leftBefore = leftArm.quaternion.clone();
-    const rightBefore = rightArm.quaternion.clone();
+    const left = buildArm(root, 'left');
+    const right = buildArm(root, 'right');
 
     applyNaturalArmPose(root);
+    root.updateWorldMatrix(true, true);
 
-    expect(leftArm.quaternion.equals(leftBefore)).toBe(false);
-    expect(rightArm.quaternion.equals(rightBefore)).toBe(false);
+    // Upper arms should now point predominantly downward (-Y).
+    expect(worldDir(left.upper, left.forearm).y).toBeLessThan(-0.8);
+    expect(worldDir(right.upper, right.forearm).y).toBeLessThan(-0.8);
+    // Forearms hang nearly straight down too.
+    expect(worldDir(left.forearm, left.hand).y).toBeLessThan(-0.8);
+    expect(worldDir(right.forearm, right.hand).y).toBeLessThan(-0.8);
   });
 
   it('only applies once per model root', () => {
     const root = new Group();
-    const leftArm = new Bone();
-    leftArm.name = 'LeftArm';
-    root.add(leftArm);
+    const { upper } = buildArm(root, 'left');
 
     applyNaturalArmPose(root);
-    const afterFirst = leftArm.quaternion.clone();
+    const afterFirst = upper.quaternion.clone();
     applyNaturalArmPose(root);
 
-    expect(leftArm.quaternion.equals(afterFirst)).toBe(true);
+    expect(upper.quaternion.equals(afterFirst)).toBe(true);
   });
 });

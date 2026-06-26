@@ -37,18 +37,6 @@ const RIGHT_FOREARM_NAMES = [
 
 const POSE_APPLIED = Symbol('naturalArmPoseApplied');
 
-/**
- * How far to drop the upper arms from the horizontal T-pose, in radians.
- * ~80° leaves a small natural gap between arm and torso instead of clamping
- * the arm dead-straight against the body.
- */
-const UPPER_ARM_DROP = 1.4;
-/** Slight forearm follow so the lower arm hangs straight rather than kinking out. */
-const FOREARM_DROP = 0.12;
-
-/** World "depth" axis — rotating an outstretched arm about it swings the arm down in the frontal plane. */
-const WORLD_Z = new Vector3(0, 0, 1);
-
 function normalizeBoneName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -62,27 +50,50 @@ function isBone(node: Object3D): node is Bone {
   return (node as Bone).isBone === true;
 }
 
+function firstChildBone(bone: Bone): Bone | null {
+  for (const child of bone.children) {
+    if (isBone(child)) return child as Bone;
+  }
+  return null;
+}
+
 /**
- * Rotate a bone by `angle` around a world-space `axis`, preserving its position.
- * Converting the world rotation into the bone's parent space makes the pose
- * independent of each rig's local bone orientation.
+ * Rotate `bone` in world space so the direction toward `child` aligns with
+ * `targetDir`. Because it works from the actual current bone-to-child vector,
+ * it produces the same natural result whether the rig rests in a T-pose
+ * (adult rigs) or an A-pose (the Roblox-style kids rigs).
  */
-function rotateBoneAroundWorldAxis(bone: Bone, axis: Vector3, angle: number): void {
+function aimBoneAlong(bone: Bone, child: Bone, targetDir: Vector3): void {
+  bone.updateWorldMatrix(true, false);
+
+  const boneWorld = new Vector3();
+  const childWorld = new Vector3();
+  bone.getWorldPosition(boneWorld);
+  child.getWorldPosition(childWorld);
+
+  const currentDir = childWorld.sub(boneWorld);
+  if (currentDir.lengthSq() < 1e-8) return;
+  currentDir.normalize();
+
+  const worldDelta = new Quaternion().setFromUnitVectors(
+    currentDir,
+    targetDir.clone().normalize(),
+  );
+
+  const oldWorldQuat = new Quaternion();
+  bone.getWorldQuaternion(oldWorldQuat);
+  const newWorldQuat = worldDelta.multiply(oldWorldQuat);
+
   const parentWorldQuat = new Quaternion();
   if (bone.parent) {
     bone.parent.getWorldQuaternion(parentWorldQuat);
   }
-  const parentWorldQuatInverse = parentWorldQuat.clone().invert();
-  const worldDelta = new Quaternion().setFromAxisAngle(axis, angle);
-
-  // q_new = P⁻¹ · R · P · q
-  bone.quaternion.premultiply(
-    parentWorldQuatInverse.multiply(worldDelta).multiply(parentWorldQuat),
-  );
+  bone.quaternion.copy(parentWorldQuat.invert().multiply(newWorldQuat));
+  bone.updateWorldMatrix(false, true);
 }
 
 /**
- * Lower stretched T-pose arms so they rest naturally at the avatar's sides.
+ * Lower stretched arms so they rest naturally at the avatar's sides.
  * Safe to call once per cloned model; repeated calls are ignored.
  */
 export function applyNaturalArmPose(root: Object3D): void {
@@ -91,31 +102,48 @@ export function applyNaturalArmPose(root: Object3D): void {
 
   root.updateWorldMatrix(true, true);
 
-  // Reference X so we can tell which side each arm is on regardless of model centring.
   const rootCenter = new Vector3();
   root.getWorldPosition(rootCenter);
 
-  const worldPos = new Vector3();
+  const upperArms: Bone[] = [];
+  const forearms: Bone[] = [];
   root.traverse((node) => {
     if (!isBone(node)) return;
-
-    const isLeftUpper = matchesBoneName(node.name, LEFT_UPPER_ARM_NAMES);
-    const isRightUpper = matchesBoneName(node.name, RIGHT_UPPER_ARM_NAMES);
-    const isLeftForearm = matchesBoneName(node.name, LEFT_FOREARM_NAMES);
-    const isRightForearm = matchesBoneName(node.name, RIGHT_FOREARM_NAMES);
-
-    if (!isLeftUpper && !isRightUpper && !isLeftForearm && !isRightForearm) return;
-
-    node.getWorldPosition(worldPos);
-    // Arms on the +X side swing down with a negative Z rotation; -X side with positive.
-    const sideSign = worldPos.x >= rootCenter.x ? -1 : 1;
-
-    if (isLeftUpper || isRightUpper) {
-      rotateBoneAroundWorldAxis(node, WORLD_Z, sideSign * UPPER_ARM_DROP);
-    } else {
-      rotateBoneAroundWorldAxis(node, WORLD_Z, sideSign * FOREARM_DROP);
+    if (
+      matchesBoneName(node.name, LEFT_UPPER_ARM_NAMES) ||
+      matchesBoneName(node.name, RIGHT_UPPER_ARM_NAMES)
+    ) {
+      upperArms.push(node);
+    } else if (
+      matchesBoneName(node.name, LEFT_FOREARM_NAMES) ||
+      matchesBoneName(node.name, RIGHT_FOREARM_NAMES)
+    ) {
+      forearms.push(node);
     }
   });
+
+  const worldPos = new Vector3();
+
+  // Upper arms: aim down, leaning slightly outward + forward so they clear the torso.
+  for (const bone of upperArms) {
+    const child = firstChildBone(bone);
+    if (!child) continue;
+    bone.getWorldPosition(worldPos);
+    const outwardSign = worldPos.x >= rootCenter.x ? 1 : -1;
+    aimBoneAlong(bone, child, new Vector3(outwardSign * 0.18, -1, 0.08));
+  }
+
+  // Re-aiming the upper arms moved the forearms; refresh world matrices first.
+  root.updateWorldMatrix(true, true);
+
+  // Forearms: hang nearly straight down so hands rest beside the thighs.
+  for (const bone of forearms) {
+    const child = firstChildBone(bone);
+    if (!child) continue;
+    bone.getWorldPosition(worldPos);
+    const outwardSign = worldPos.x >= rootCenter.x ? 1 : -1;
+    aimBoneAlong(bone, child, new Vector3(outwardSign * 0.06, -1, 0.05));
+  }
 
   tagged[POSE_APPLIED] = true;
 }

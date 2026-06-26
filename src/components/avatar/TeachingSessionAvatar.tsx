@@ -54,6 +54,7 @@ export default function TeachingSessionAvatar({
       <div className="flex h-full w-full flex-col bg-gray-900">
         <GlbAvatarPreview
           glbUrl={glbUrl}
+          lipSyncHints={libraryEntry?.lipSync}
           amplitude={amplitude}
           showControls={false}
           framing="bust"

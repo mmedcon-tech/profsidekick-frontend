@@ -72,17 +72,11 @@
       "previewFraming": "full",
       "previewFitMargin": 1.05,
       "previewModelScale": 1.0,
+      "voiceProfile": "kids",
       "lipSync": {
-        "morphTargets": [
-          "mouthOpen",
-          "jawOpen",
-          "viseme_aa",
-          "viseme_O",
-          "viseme_E",
-          "mouthSmile"
-        ],
-        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
-        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw", "Head", "head"]
+        "morphTargets": ["jawOpen", "mouthPucker", "mouthFunnel", "mouthSmileLeft"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"],
+        "mouthOpenGain": 1.6
       }
     },
     {
@@ -99,17 +93,11 @@
       "previewFraming": "full",
       "previewFitMargin": 1.05,
       "previewModelScale": 1.0,
+      "voiceProfile": "kids",
       "lipSync": {
-        "morphTargets": [
-          "mouthOpen",
-          "jawOpen",
-          "viseme_aa",
-          "viseme_O",
-          "viseme_E",
-          "mouthSmile"
-        ],
-        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
-        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw", "Head", "head"]
+        "morphTargets": ["jawOpen", "mouthPucker", "mouthFunnel", "mouthSmileLeft"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"],
+        "mouthOpenGain": 1.6
       }
     }
   ]

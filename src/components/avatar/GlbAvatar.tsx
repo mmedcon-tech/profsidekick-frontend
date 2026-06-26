@@ -9,6 +9,9 @@ import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
 import { applyNaturalArmPose } from '@/lib/glbArmPose';
 import { normalizeAvatarMeshes } from '@/lib/glbMaterialFix';
+import { normalizeAvatarHeight } from '@/lib/glbNormalize';
+import { applyBlink, applyLipSyncAmplitude, type LipSyncHints } from '@/lib/glbLipSync';
+import { getAvatarLibrary } from '@/lib/avatarLibrary';
 
 interface GlbModelProps {
   url: string;
@@ -16,30 +19,38 @@ interface GlbModelProps {
   isSpeaking: boolean;
 }
 
+function resolveLipSyncHints(url: string): LipSyncHints | undefined {
+  const entry = getAvatarLibrary().avatars.find((avatar) => url.endsWith(avatar.glbPath));
+  return entry?.lipSync;
+}
+
 function Model({ url, amplitude, isSpeaking }: GlbModelProps) {
   const { scene } = useGLTF(url);
   const modelRef = useRef<THREE.Group>(null);
+  const blinkPhase = useRef(0);
+
+  const lipSyncHints = React.useMemo(() => resolveLipSyncHints(url), [url]);
 
   const model = React.useMemo(() => {
     const clone = cloneSkeleton(scene);
     applyNaturalArmPose(clone);
     normalizeAvatarMeshes(clone);
+    normalizeAvatarHeight(clone);
     return clone;
   }, [scene]);
-  
-  useFrame((state) => {
-    if (modelRef.current) {
-      // Gentle floating animation
-      modelRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.05 - 1;
-      
-      // Pulse scale slightly when speaking
-      if (isSpeaking) {
-        const targetScale = 1 + (amplitude * 0.1);
-        modelRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
-      } else {
-        modelRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-      }
-    }
+
+  useFrame((state, delta) => {
+    if (!modelRef.current) return;
+
+    // Gentle, slow vertical bob — never scaled by audio, so the body never vibrates.
+    modelRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.04 - 1;
+
+    applyLipSyncAmplitude(model, isSpeaking ? amplitude : 0, lipSyncHints, delta);
+
+    blinkPhase.current += delta;
+    const blinkCycle = blinkPhase.current % 4.2;
+    const blinkAmount = blinkCycle > 3.9 ? (blinkCycle - 3.9) / 0.3 : 0;
+    applyBlink(model, Math.min(1, blinkAmount * 3), lipSyncHints);
   });
 
   return (

@@ -4,12 +4,15 @@ import {
   buildElevenLabsSpeechBody,
   resolveElevenLabsVoiceId,
   type ElevenLabsVoiceGender,
+  type ElevenLabsVoiceProfile,
 } from '@/lib/elevenLabsSpeech';
 
 interface ElevenLabsTtsBody {
   text?: string;
   gender?: ElevenLabsVoiceGender;
   voiceId?: string;
+  voiceProfile?: ElevenLabsVoiceProfile;
+  withTimestamps?: boolean;
 }
 
 async function proxyToBackend(
@@ -59,20 +62,23 @@ async function synthesizeWithElevenLabs(
   }
 
   const gender: ElevenLabsVoiceGender = body.gender === 'female' ? 'female' : 'male';
-  const voiceId = resolveElevenLabsVoiceId(gender, body.voiceId);
+  const voiceProfile: ElevenLabsVoiceProfile =
+    body.voiceProfile === 'kids' ? 'kids' : 'adult';
+  const voiceId = resolveElevenLabsVoiceId(gender, body.voiceId, voiceProfile);
+  const speechBody = buildElevenLabsSpeechBody({ text, gender, voiceId, voiceProfile });
+  const endpoint = body.withTimestamps
+    ? `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`
+    : `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-    {
-      method: 'POST',
-      headers: {
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json',
-        Accept: 'audio/mpeg',
-      },
-      body: JSON.stringify(buildElevenLabsSpeechBody({ text, gender, voiceId })),
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey,
+      'Content-Type': 'application/json',
+      Accept: body.withTimestamps ? 'application/json' : 'audio/mpeg',
     },
-  );
+    body: JSON.stringify(speechBody),
+  });
 
   if (!response.ok) {
     const detail = await response.text();
@@ -80,6 +86,14 @@ async function synthesizeWithElevenLabs(
       { error: detail || 'ElevenLabs request failed' },
       { status: response.status },
     );
+  }
+
+  if (body.withTimestamps) {
+    const payload = await response.json();
+    return NextResponse.json(payload, {
+      status: 200,
+      headers: { 'Cache-Control': 'no-store' },
+    });
   }
 
   const audio = await response.arrayBuffer();

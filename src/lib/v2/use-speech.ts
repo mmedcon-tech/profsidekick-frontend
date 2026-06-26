@@ -97,8 +97,8 @@ export function useSpeech(lang: "en" | "ar", gender: "male" | "female") {
             }
           },
         })
-          .then((stop) => {
-            stopAudioRef.current = stop
+          .then((result) => {
+            stopAudioRef.current = result.stop
           })
           .catch(() => {
             setSpeaking(false)

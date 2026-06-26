@@ -81,7 +81,8 @@ export default function AvatarShowcase({
           <GlbAvatarPreview
             glbUrl={entry.glbPath}
             lipSyncHints={entry.lipSync}
-            amplitude={speechPreview.active ? speechPreview.amplitude : 0}
+            visemeRef={speechPreview.visemeRef}
+            amplitude={speechPreview.amplitude}
             showControls
             framing={framing}
             fitMargin={fitMargin}

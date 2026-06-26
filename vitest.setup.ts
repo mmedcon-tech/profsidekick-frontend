@@ -1,1 +1,8 @@
 import '@testing-library/jest-dom';
+
+// `src/lib/config.ts` throws at import time if this is unset. Provide a default
+// for tests so any module that transitively imports it (e.g. API route handlers)
+// can be unit-tested without a real .env file.
+if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
+  process.env.NEXT_PUBLIC_BACKEND_URL = 'http://localhost:8000';
+}

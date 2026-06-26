@@ -2,14 +2,18 @@ const MALE_VOICE_PATTERN =
   /daniel|alex|david|james|fred|thomas|oliver|gordon|lee|aaron|nathan|raj|rishi|male|jamal|omar|khalid|tom|fred/i;
 const FEMALE_VOICE_PATTERN =
   /samantha|karen|victoria|zira|susan|kate|fiona|anna|melina|nora|tessa|female|sara|hoda|salma|ava|allison/i;
+const KIDS_VOICE_PATTERN =
+  /child|kid|junior|young|boy|girl|junior|moira|karen|samantha|zoe|flo|superstar/i;
 const PREMIUM_VOICE_PATTERN =
   /premium|enhanced|neural|natural|wavenet|siri|google.*english|online/i;
 
 export type SpeechVoiceGender = 'male' | 'female';
+export type SpeechVoiceProfile = 'adult' | 'kids';
 
 function scoreVoice(
   voice: SpeechSynthesisVoice,
   gender: SpeechVoiceGender,
+  profile: SpeechVoiceProfile,
 ): number {
   const prefers = gender === 'male' ? MALE_VOICE_PATTERN : FEMALE_VOICE_PATTERN;
   const avoids = gender === 'male' ? FEMALE_VOICE_PATTERN : MALE_VOICE_PATTERN;
@@ -17,6 +21,7 @@ function scoreVoice(
 
   if (prefers.test(voice.name)) score += 12;
   if (avoids.test(voice.name)) score -= 24;
+  if (profile === 'kids' && KIDS_VOICE_PATTERN.test(voice.name)) score += 16;
   if (PREMIUM_VOICE_PATTERN.test(voice.name)) score += 18;
   if (voice.localService === false) score += 8;
 
@@ -31,15 +36,16 @@ function scoreVoice(
 export function pickSpeechVoice(
   gender: SpeechVoiceGender,
   voices: SpeechSynthesisVoice[] = [],
+  profile: SpeechVoiceProfile = 'adult',
 ): SpeechSynthesisVoice | undefined {
   if (voices.length === 0) return undefined;
 
   const ranked = [...voices].sort(
-    (a, b) => scoreVoice(b, gender) - scoreVoice(a, gender),
+    (a, b) => scoreVoice(b, gender, profile) - scoreVoice(a, gender, profile),
   );
 
   const best = ranked[0];
-  if (best && scoreVoice(best, gender) > 0) return best;
+  if (best && scoreVoice(best, gender, profile) > 0) return best;
 
   const prefers = gender === 'male' ? MALE_VOICE_PATTERN : FEMALE_VOICE_PATTERN;
   const avoids = gender === 'male' ? FEMALE_VOICE_PATTERN : MALE_VOICE_PATTERN;

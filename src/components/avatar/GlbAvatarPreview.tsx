@@ -20,7 +20,10 @@ import {
 } from '@/lib/glbLipSync';
 import { applyNaturalArmPose } from '@/lib/glbArmPose';
 import { normalizeAvatarMeshes } from '@/lib/glbMaterialFix';
+import { normalizeAvatarHeight } from '@/lib/glbNormalize';
 import { computeSidewaysIdleRotation } from '@/lib/glbIdleMotion';
+import { applyVisemeMorphWeights } from '@/lib/glbVisemeSync';
+import type { VisemeMorphWeights } from '@/lib/visemeTypes';
 
 export type GlbFraming = 'bust' | 'full';
 
@@ -28,6 +31,7 @@ interface GlbModelProps {
   url: string;
   amplitude: number;
   lipSyncHints?: LipSyncHints;
+  visemeRef?: React.RefObject<VisemeMorphWeights | null>;
   framing: GlbFraming;
   fitMargin: number;
   modelScale: number;
@@ -37,9 +41,10 @@ interface GlbModelProps {
 function useClonedPosedModel(url: string): Group {
   const { scene } = useGLTF(url);
   return useMemo(() => {
-    const clone = cloneSkeleton(scene);
+    const clone = cloneSkeleton(scene) as Group;
     applyNaturalArmPose(clone);
     normalizeAvatarMeshes(clone);
+    normalizeAvatarHeight(clone);
     return clone;
   }, [scene]);
 }
@@ -49,9 +54,11 @@ function useAvatarAnimation(
   groupRef: React.RefObject<Group | null>,
   amplitude: number,
   lipSyncHints?: LipSyncHints,
+  visemeRef?: React.RefObject<VisemeMorphWeights | null>,
 ): void {
   const idlePhase = useRef(0);
   const blinkPhase = useRef(0);
+  const speakingBlend = useRef(0);
 
   useFrame((_, delta) => {
     const group = groupRef.current;
@@ -60,9 +67,32 @@ function useAvatarAnimation(
     idlePhase.current += delta;
     blinkPhase.current += delta;
 
-    group.rotation.y = computeSidewaysIdleRotation(idlePhase.current);
+    const forceTalk =
+      typeof window !== 'undefined' &&
+      (window as { __AVATAR_FORCE_TALK?: boolean }).__AVATAR_FORCE_TALK === true;
+    const visemeWeights = visemeRef?.current;
+    const effectiveAmplitude = forceTalk
+      ? 0.5 + 0.45 * Math.sin(idlePhase.current * 9)
+      : amplitude;
 
-    applyLipSyncAmplitude(model, amplitude, lipSyncHints);
+    const isSpeaking = visemeWeights
+      ? Object.values(visemeWeights).some((v) => v > 0.06)
+      : effectiveAmplitude > 0.04;
+
+    const speakingTarget = isSpeaking ? 1 : 0;
+    const blendStep = 1 - Math.exp(-6 * Math.max(0, delta));
+    speakingBlend.current += (speakingTarget - speakingBlend.current) * blendStep;
+
+    group.rotation.y = computeSidewaysIdleRotation(
+      idlePhase.current,
+      1 - speakingBlend.current,
+    );
+
+    if (visemeWeights) {
+      applyVisemeMorphWeights(model, visemeWeights, lipSyncHints, delta);
+    } else {
+      applyLipSyncAmplitude(model, effectiveAmplitude, lipSyncHints, delta);
+    }
 
     const blinkCycle = blinkPhase.current % 4.2;
     const blinkAmount = blinkCycle > 3.9 ? (blinkCycle - 3.9) / 0.3 : 0;
@@ -75,12 +105,13 @@ function BustModel({
   url,
   amplitude,
   lipSyncHints,
+  visemeRef,
   fitMargin,
   modelScale,
 }: Omit<GlbModelProps, 'framing' | 'coverHeightFraction'>): React.ReactElement {
   const groupRef = useRef<Group>(null);
   const model = useClonedPosedModel(url);
-  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints);
+  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints, visemeRef);
 
   return (
     <Bounds fit clip margin={fitMargin} maxDuration={0.35}>
@@ -102,6 +133,7 @@ function FullModel({
   url,
   amplitude,
   lipSyncHints,
+  visemeRef,
   fitMargin,
   modelScale,
   coverHeightFraction,
@@ -109,7 +141,7 @@ function FullModel({
   const groupRef = useRef<Group>(null);
   const innerRef = useRef<Group>(null);
   const model = useClonedPosedModel(url);
-  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints);
+  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints, visemeRef);
 
   const camera = useThree((state) => state.camera);
   const controls = useThree((state) => state.controls) as
@@ -170,6 +202,7 @@ export interface GlbAvatarPreviewProps {
   glbUrl: string;
   amplitude?: number;
   lipSyncHints?: LipSyncHints;
+  visemeRef?: React.RefObject<VisemeMorphWeights | null>;
   className?: string;
   showControls?: boolean;
   framing?: GlbFraming;
@@ -183,6 +216,7 @@ export default function GlbAvatarPreview({
   glbUrl,
   amplitude = 0,
   lipSyncHints,
+  visemeRef,
   className = '',
   showControls = true,
   framing = 'full',
@@ -225,6 +259,7 @@ export default function GlbAvatarPreview({
               url={glbUrl}
               amplitude={amplitude}
               lipSyncHints={lipSyncHints}
+              visemeRef={visemeRef}
               fitMargin={fitMargin}
               modelScale={modelScale}
             />
@@ -233,6 +268,7 @@ export default function GlbAvatarPreview({
               url={glbUrl}
               amplitude={amplitude}
               lipSyncHints={lipSyncHints}
+              visemeRef={visemeRef}
               fitMargin={fitMargin}
               modelScale={modelScale}
               coverHeightFraction={coverHeightFraction}
