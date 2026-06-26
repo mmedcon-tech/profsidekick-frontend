@@ -3,9 +3,11 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls } from '@react-three/drei';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import * as THREE from 'three';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
+import { applyNaturalArmPose } from '@/lib/glbArmPose';
 
 interface GlbModelProps {
   url: string;
@@ -14,10 +16,16 @@ interface GlbModelProps {
 }
 
 function Model({ url, amplitude, isSpeaking }: GlbModelProps) {
-  const { scene, nodes, animations } = useGLTF(url);
+  const { scene } = useGLTF(url);
   const modelRef = useRef<THREE.Group>(null);
+
+  const model = React.useMemo(() => {
+    const clone = cloneSkeleton(scene);
+    applyNaturalArmPose(clone);
+    return clone;
+  }, [scene]);
   
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (modelRef.current) {
       // Gentle floating animation
       modelRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.05 - 1;
@@ -34,7 +42,7 @@ function Model({ url, amplitude, isSpeaking }: GlbModelProps) {
 
   return (
     <group ref={modelRef} dispose={null}>
-      <primitive object={scene} />
+      <primitive object={model} />
     </group>
   );
 }

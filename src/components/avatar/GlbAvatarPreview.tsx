@@ -11,12 +11,14 @@ import {
   OrbitControls,
   useGLTF,
 } from '@react-three/drei';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { Group } from 'three';
 import {
   applyBlink,
   applyLipSyncAmplitude,
   type LipSyncHints,
 } from '@/lib/glbLipSync';
+import { applyNaturalArmPose } from '@/lib/glbArmPose';
 import { computeSidewaysIdleRotation } from '@/lib/glbIdleMotion';
 
 export type GlbFraming = 'bust' | 'full';
@@ -40,7 +42,11 @@ function GlbModel({
 }: GlbModelProps): React.ReactElement {
   const groupRef = useRef<Group>(null);
   const { scene } = useGLTF(url);
-  const model = useMemo(() => scene.clone(true), [scene]);
+  const model = useMemo(() => {
+    const clone = cloneSkeleton(scene);
+    applyNaturalArmPose(clone);
+    return clone;
+  }, [scene]);
   const idlePhase = useRef(0);
   const blinkPhase = useRef(0);
 
