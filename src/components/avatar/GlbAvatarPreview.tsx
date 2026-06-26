@@ -38,6 +38,15 @@ function useClonedPosedModel(url: string): Group {
   return useMemo(() => {
     const clone = cloneSkeleton(scene);
     applyNaturalArmPose(clone);
+    // Posing the skeleton invalidates each skinned mesh's precomputed bounding
+    // sphere. Without this, single-mesh rigs (e.g. the kids avatars) get frustum
+    // culled and vanish once the arms move. Disable culling so they always render.
+    clone.traverse((child) => {
+      const mesh = child as { isMesh?: boolean; frustumCulled?: boolean };
+      if (mesh.isMesh) {
+        mesh.frustumCulled = false;
+      }
+    });
     return clone;
   }, [scene]);
 }

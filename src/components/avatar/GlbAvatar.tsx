@@ -22,6 +22,12 @@ function Model({ url, amplitude, isSpeaking }: GlbModelProps) {
   const model = React.useMemo(() => {
     const clone = cloneSkeleton(scene);
     applyNaturalArmPose(clone);
+    clone.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if ((mesh as { isMesh?: boolean }).isMesh) {
+        mesh.frustumCulled = false;
+      }
+    });
     return clone;
   }, [scene]);
   
