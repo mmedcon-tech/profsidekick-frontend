@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send } from "lucide-react";
 import StreamingAvatar, {
   AvatarQuality,
   StreamingEvents,
@@ -74,7 +74,8 @@ export default function LearningInterface({
   const [isHydrated, setIsHydrated] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<"DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR">("DISCONNECTED");
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isMicMuted, setIsMicMuted] = useState(true);
+  const [textInput, setTextInput] = useState("");
   const [, setDataChannel] = useState<RTCDataChannel | null>(null);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
@@ -395,7 +396,8 @@ export default function LearningInterface({
           EPHEMERAL_KEY,
           audioElementRef,
           "opus",
-          realtimeModel
+          realtimeModel,
+          !isMicMuted,
         );
 
         console.log(`🔗 Created new peer connection and data channel [${connectionId}] -> [${dataChannelId}] - Lock: ${connectionLockRef.current}`);
@@ -404,6 +406,9 @@ export default function LearningInterface({
         pcRef.current = pc;
         dcRef.current = dc;
         mediaStreamRef.current = mediaStream;
+        mediaStream.getAudioTracks().forEach((track) => {
+          track.enabled = !isMicMuted;
+        });
 
         dc.addEventListener("open", () => {
           logClientEvent({}, "data_channel.open");
@@ -967,6 +972,33 @@ export default function LearningInterface({
     }
   };
 
+  const submitTextMessage = (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    const clean = textInput.trim();
+    if (!clean || sessionStatus !== "CONNECTED") return;
+
+    setTextInput("");
+    setShowStartPrompt(false);
+    setIsTranscriptVisible(true);
+    setTranscript((prev) => [...prev, { role: "user", text: clean }]);
+    handleTurnComplete("user", clean);
+
+    sendClientEvent({
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: clean,
+          },
+        ],
+      },
+    }, "text_input.user_message");
+    sendClientEvent({ type: "response.create" }, "text_input.response");
+  };
+
   const nextSlide = () => {
     const result = navigateNextSlide(currentSlideRef.current, slideCount);
     if (!result.success) return;
@@ -1502,12 +1534,15 @@ export default function LearningInterface({
           <button
             onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
             className={cn(
-              "p-2 rounded-full transition-colors ml-2",
+              "ml-2 flex min-h-[44px] items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors",
               isTranscriptVisible ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
             )}
-            title="Toggle Transcript"
+            aria-pressed={isTranscriptVisible}
+            aria-label={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
+            title={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
           >
             <MessageSquare size={18} />
+            <span className="hidden sm:inline">{isTranscriptVisible ? "Hide Transcript" : "Transcript"}</span>
           </button>
         </div>
       </header>
@@ -1617,6 +1652,31 @@ export default function LearningInterface({
               </button>
             </div>
 
+            {/* Text input alongside voice */}
+            <form onSubmit={submitTextMessage} className="flex gap-2">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(event) => setTextInput(event.target.value)}
+                disabled={sessionStatus !== "CONNECTED"}
+                placeholder={
+                  sessionStatus === "CONNECTED"
+                    ? "Type your question..."
+                    : "Connect to type a question"
+                }
+                className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Type a message to the AI tutor"
+              />
+              <button
+                type="submit"
+                disabled={sessionStatus !== "CONNECTED" || !textInput.trim()}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-primary px-3 text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Send typed message"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </form>
+
             {/* Session Action Button */}
             {sessionStatus === "CONNECTED" ? (
               <button
@@ -1664,7 +1724,9 @@ export default function LearningInterface({
                   {sessionStatus === "CONNECTED" ? (
                     <>
                       <p className="font-bold text-sm">Ready to start!</p>
-                      <p className="text-xs text-primary/5 mt-0.5">Say something to begin the conversation</p>
+                      <p className="text-xs text-primary/5 mt-0.5">
+                        Type a message, or turn on your mic when you want to speak.
+                      </p>
                     </>
                   ) : (
                     <>
@@ -1761,12 +1823,22 @@ export default function LearningInterface({
                 <MessageSquare className="h-3.5 w-3.5" />
                 Transcript
               </h3>
-              <button
-                onClick={() => setTranscript([])}
-                className="text-[10px] uppercase font-bold tracking-wider text-primary hover:text-primary/80 transition-colors px-2 py-1 bg-primary/10 rounded"
-              >
-                Clear
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTranscript([])}
+                  className="text-[10px] uppercase font-bold tracking-wider text-primary hover:text-primary/80 transition-colors px-2 py-1 bg-primary/10 rounded"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => setIsTranscriptVisible(false)}
+                  className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Close transcript"
+                  title="Close transcript"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4">
