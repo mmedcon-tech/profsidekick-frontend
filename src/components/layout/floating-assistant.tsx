@@ -128,8 +128,10 @@ export function FloatingAssistant() {
     return () => window.removeEventListener("toggle-assistant", handleToggle)
   }, [])
 
+  // Voice must match the chatbot avatar persona (Sultan = Emirati male).
+  const assistantGender = defaultChatbotAvatar.gender === "female" ? "female" : "male"
   const { speaking, listening, interim, speak, stopSpeaking, startListening, stopListening } =
-    useSpeech(lang, "female")
+    useSpeech(lang, assistantGender)
 
   const assistantName = lang === "ar" ? "مساعد MyOS" : "MyOS Assistant"
   const userName = user ? `${user.firstName} ${user.lastName}` : ""
@@ -156,34 +158,85 @@ export function FloatingAssistant() {
     }
   }, [assistantOpen, mode, stopSpeaking, stopListening])
 
-  function reply(text: string) {
-    setTyping(true)
-    setTimeout(() => {
-      let answer = getReply(text, lang, userName)
-      
-      const q = text.toLowerCase()
-      const has = (...w: string[]) => w.some((x) => q.includes(x))
-      
-      // Execute actions
-      if (has("course", "courses", "دوراتي", "الدورات")) {
-        router.push("/subscriber/dashboard") // Fallback to subscriber dashboard
-        answer = lang === "ar" ? "جاري الانتقال إلى دوراتك..." : "Navigating to your courses..."
-      } else if (has("nav", "navigate", "dashboard", "التنقل", "لوحة")) {
-        const role = user?.role === "student" ? "subscriber" : user?.role || "subscriber"
-        router.push(`/${role}/dashboard`)
-        answer = lang === "ar" ? "جاري الانتقال إلى لوحة التحكم..." : "Navigating to your dashboard..."
-      } else if (has("session", "بدء جلسة")) {
-        // Mock navigation to a session
-        answer = lang === "ar" ? "يرجى اختيار الدورة أولاً لبدء الجلسة." : "Please select a course first to start a session."
-      }
+  function emitAssistant(answer: string) {
+    setMessages((m) => [...m, { id: uid(), role: "assistant", text: answer }])
+    setTyping(false)
+    if (mode === "call" && !mutedRef.current) {
+      setCaption(answer)
+      speak(answer)
+    }
+  }
 
-      setMessages((m) => [...m, { id: uid(), role: "assistant", text: answer }])
-      setTyping(false)
-      if (mode === "call" && !mutedRef.current) {
-        setCaption(answer)
-        speak(answer)
+  // Explicit navigation commands act immediately; everything else goes to the AI.
+  function tryNavigationIntent(text: string): string | null {
+    const q = text.toLowerCase()
+    const has = (...w: string[]) => w.some((x) => q.includes(x))
+    const wantsGo = has("go to", "take me", "open", "navigate", "show me", "اذهب", "انتقل", "افتح")
+
+    if (wantsGo && has("course", "courses", "دورات")) {
+      const role = user?.role === "student" ? "subscriber" : user?.role || "subscriber"
+      router.push(`/${role}/dashboard`)
+      return lang === "ar" ? "جاري الانتقال إلى دوراتك..." : "Taking you to your courses..."
+    }
+    if (wantsGo && has("dashboard", "home", "لوحة", "الرئيسية")) {
+      const role = user?.role === "student" ? "subscriber" : user?.role || "subscriber"
+      router.push(`/${role}/dashboard`)
+      return lang === "ar" ? "جاري الانتقال إلى لوحة التحكم..." : "Taking you to your dashboard..."
+    }
+    if (wantsGo && has("marketplace", "السوق", "المتجر")) {
+      router.push("/subscriber/marketplace")
+      return lang === "ar" ? "جاري فتح السوق..." : "Opening the marketplace..."
+    }
+    return null
+  }
+
+  async function reply(text: string) {
+    setTyping(true)
+
+    const navAnswer = tryNavigationIntent(text)
+    if (navAnswer) {
+      emitAssistant(navAnswer)
+      return
+    }
+
+    try {
+      const history = messages
+        .slice(-8)
+        .map((m) => ({ role: m.role, text: m.text }))
+      const systemPrompt =
+        lang === "ar"
+          ? `أنت ${assistantName}، مساعد تعليمي ودود على منصة ProfSidekick (MyOS)${userName ? ` تساعد ${userName}` : ""}. أجب عن أسئلة المستخدم بوضوح وباختصار، ويمكنك أيضًا إرشاده للتنقل في المنصة (الدورات، لوحة التحكم، السوق، الجلسات).`
+          : `You are ${assistantName}, a friendly AI learning assistant on the ProfSidekick (MyOS) platform${userName ? `, helping ${userName}` : ""}. Answer the user's questions clearly and concisely. You can also guide them around the platform (courses, dashboard, marketplace, sessions). Keep replies short and conversational.`
+
+      const res = await fetch("/api/assistant/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history, systemPrompt }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.reply) {
+        throw new Error(data?.error || data?.detail || "Assistant unavailable")
       }
-    }, 800)
+      emitAssistant(data.reply)
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : ""
+      const quotaExceeded = detail.toLowerCase().includes("quota")
+      const needsKey =
+        detail.includes("OPENAI") ||
+        detail.includes("503") ||
+        detail.includes("Assistant unavailable")
+      emitAssistant(
+        quotaExceeded
+          ? lang === "ar"
+            ? "تم إعداد مفتاح OpenAI، لكن الحساب لا يملك رصيدًا أو حصة استخدام كافية. يرجى إضافة Billing/Credits في حساب OpenAI أو استخدام مفتاح من حساب لديه رصيد."
+            : "OpenAI is configured, but this key has no available quota. Add billing/credits in the OpenAI account or use a key from an account with available quota."
+          : needsKey
+          ? lang === "ar"
+            ? "خدمة الذكاء الاصطناعي غير متاحة حاليًا. اطلب من فريقك إضافة OPENAI_API_KEY في ملف backend .env أو frontend .env.local ثم إعادة تشغيل الخوادم."
+            : "The AI service is not configured yet. Add a valid OPENAI_API_KEY to profsidekick-api/.env (backend) or profsidekick-frontend/.env.local, then restart npm run dev and the backend."
+          : getReply(text, lang, userName),
+      )
+    }
   }
 
   function send(text: string) {
