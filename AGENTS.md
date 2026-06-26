@@ -275,7 +275,9 @@ Always check `response.ok` and read `detail` for user-facing messages. Do not as
 | GET | `/api/sessions/{id}/runs` | Yes | `useSessionRuns` |
 | POST | `/api/sessions/{id}/run/start` | Yes | `TeachingInterface` |
 | POST | `/api/sessions/{id}/run/{runId}/stop` | Yes | `TeachingInterface` |
+| POST | `/api/sessions/{id}/run/{runId}/transcript` | Yes | `useTranscriptPersistence` |
 | GET | `/api/session/ephemeral` | Yes | `TeachingInterface` (Realtime token) |
+| POST | `/api/tts/elevenlabs` | Yes | `playElevenLabsAudio`, `useSpeechPreview` |
 | GET | `/api/prompts` | Yes | `usePrompts` |
 | POST | `/api/prompts` | Yes | `PromptCreationModal` |
 | PUT | `/api/prompts/{id}` | Yes | `PromptLibrary` |
