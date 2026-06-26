@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Mic, GraduationCap, ShieldCheck, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { config } from '@/lib/config';
+import { toBackendRole } from '@/lib/roleMapping';
 
 type Step = 1 | 2;
 type Role = 'publisher' | 'subscriber' | 'admin';
@@ -106,7 +107,7 @@ export default function RegisterPage() {
           password:  formData.password,
           firstName: formData.firstName,
           lastName:  formData.lastName,
-          role:      formData.role,
+          role:      toBackendRole(formData.role),
         }),
       });
       const data = await res.json();
