@@ -182,7 +182,7 @@ export function SessionRuntime({
   }
 
   const fmtElapsed = `${String(Math.floor(elapsed / 60)).padStart(2, "0")}:${String(elapsed % 60).padStart(2, "0")}`
-  const avatarImgSrc = activeVariant?.model3dId.includes("male") ? "/avatars/male-avatar.png" : "/avatars/female-avatar.png"
+  const avatarImgSrc = activeVariant?.model3dId.includes("male") ? "/images/avatar-male.png" : "/images/avatar-female.png"
 
   if (!course || !session) return null
 
@@ -432,7 +432,7 @@ export function SessionRuntime({
                     <div key={msg.id} className={cn("flex gap-2", msg.role === "user" && "flex-row-reverse")}>
                       <div className="h-6 w-6 shrink-0 overflow-hidden rounded-full">
                         {msg.role === "avatar" ? (
-                          <Image src="/avatars/female-avatar.png" alt="" width={24} height={24} className="object-cover" />
+                          <Image src="/images/avatar-female.png" alt="" width={24} height={24} className="object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-primary/20 text-[9px] font-bold text-primary">
                             {lang === "ar" ? "أنا" : "Me"}

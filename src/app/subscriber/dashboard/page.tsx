@@ -118,7 +118,7 @@ export default function SubscriberDashboardPage() {
         <div className="relative shrink-0" style={{ width: 64, height: 64 }}>
           <span className="absolute inset-0 animate-ping rounded-full bg-accent/30" />
           <div className="relative h-full w-full overflow-hidden rounded-full ring-2 ring-accent/70 ring-offset-2 ring-offset-card">
-            <Image src="/avatars/female-avatar.png" alt="Salama" fill sizes="64px" className="object-cover" />
+            <Image src="/images/avatar-female.png" alt="Salama" fill sizes="64px" className="object-cover" />
           </div>
         </div>
         <div className="flex-1">
