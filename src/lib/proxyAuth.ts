@@ -13,7 +13,7 @@ export function requireAuthHeader(request: NextRequest): string | NextResponse {
 export async function proxyPublicToBackend(
   request: NextRequest,
   backendPath: string,
-  options: { method?: string } = {},
+  options: { method?: string; transformData?: (data: any) => any } = {},
 ): Promise<NextResponse> {
   const method = options.method ?? request.method;
   const init: RequestInit = {
@@ -41,13 +41,13 @@ export async function proxyPublicToBackend(
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(options.transformData ? options.transformData(data) : data);
 }
 
 export async function proxyToBackend(
   request: NextRequest,
   backendPath: string,
-  options: { method?: string; body?: unknown } = {},
+  options: { method?: string; body?: unknown; transformData?: (data: any) => any } = {},
 ): Promise<NextResponse> {
   const authHeader = requireAuthHeader(request);
   if (authHeader instanceof NextResponse) {
@@ -83,5 +83,5 @@ export async function proxyToBackend(
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(options.transformData ? options.transformData(data) : data);
 }
