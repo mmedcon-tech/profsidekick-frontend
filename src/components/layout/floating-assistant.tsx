@@ -20,8 +20,9 @@ import {
   X,
 } from "lucide-react"
 import Image from "next/image"
-import { ChatbotAvatar3D } from "@/components/layout/ChatbotAvatar3D"
+import { ChatbotAvatar3D, preloadChatbotAvatar } from "@/components/layout/ChatbotAvatar3D"
 import { getDefaultChatbotAvatar } from "@/lib/avatarLibrary"
+import { useDraggable } from "@/hooks/useDraggable"
 
 const defaultChatbotAvatar = getDefaultChatbotAvatar()
 
@@ -114,6 +115,32 @@ export function FloatingAssistant() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const mutedRef = useRef(muted)
   mutedRef.current = muted
+
+  // Draggable widget: launcher and panel share one offset so it stays where
+  // the user dropped it across open/close. Persisted to localStorage.
+  const { containerRef, offset, isDragging, dragHandleProps, wasDragged, reclamp } =
+    useDraggable("myos-assistant-position")
+  const dragStyle = { transform: `translate(${offset.x}px, ${offset.y}px)` }
+
+  // Warm the 3D avatar cache on idle so opening a call renders in ms, not the
+  // ~20s cold network+parse it used to take before GLB meshopt compression.
+  useEffect(() => {
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+    const schedule = w.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500))
+    const id = schedule(() => preloadChatbotAvatar())
+    return () => {
+      if (w.cancelIdleCallback && typeof id === "number") w.cancelIdleCallback(id)
+      else window.clearTimeout(id as unknown as number)
+    }
+  }, [])
+
+  // Re-clamp into view when the panel opens or switches size (chat ↔ call).
+  useEffect(() => {
+    if (assistantOpen) reclamp()
+  }, [assistantOpen, mode, reclamp])
 
   useEffect(() => {
     const handleToggle = (e: Event) => {
@@ -243,40 +270,63 @@ export function FloatingAssistant() {
 
   return (
     <>
-      {/* Launcher button */}
+      {/* Launcher button — draggable; a real drag suppresses the open click */}
       {!assistantOpen && (
-        <button
-          onClick={() => setAssistantOpen(true)}
+        <div
+          ref={containerRef}
           dir={dir}
-          className="fixed bottom-5 end-5 z-40 flex items-center gap-3 rounded-full bg-sidebar py-2 pe-5 ps-2 text-sidebar-foreground shadow-lg ring-1 ring-sidebar-border transition-transform hover:scale-[1.02]"
-          aria-label={lang === "ar" ? "فتح المساعد" : "Open assistant"}
+          style={dragStyle}
+          className="fixed bottom-5 end-5 z-40"
         >
-          <AvatarOrbV2 size={44} speaking />
-          <span className="text-start leading-tight">
-            <span className="block text-sm font-semibold">{assistantName}</span>
-            <span className="flex items-center gap-1 text-[11px] text-accent">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              {lang === "ar" ? "متاح" : "Online"}
+          <button
+            {...dragHandleProps}
+            onClick={() => {
+              if (wasDragged()) return
+              setAssistantOpen(true)
+            }}
+            className={cn(
+              "flex items-center gap-3 rounded-full bg-sidebar py-2 pe-5 ps-2 text-sidebar-foreground shadow-lg ring-1 ring-sidebar-border transition-transform hover:scale-[1.02]",
+              isDragging ? "cursor-grabbing" : "cursor-grab",
+            )}
+            aria-label={lang === "ar" ? "فتح المساعد" : "Open assistant"}
+          >
+            <AvatarOrbV2 size={44} speaking />
+            <span className="pointer-events-none text-start leading-tight">
+              <span className="block text-sm font-semibold">{assistantName}</span>
+              <span className="flex items-center gap-1 text-[11px] text-accent">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                {lang === "ar" ? "متاح" : "Online"}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        </div>
       )}
 
       {/* Panel */}
       {assistantOpen && (
         <div
+          ref={containerRef}
           dir={dir}
+          style={dragStyle}
           className="fixed inset-x-3 bottom-3 z-40 flex h-[80svh] max-h-[660px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl sm:inset-x-auto sm:end-5 sm:bottom-5 sm:w-[400px]"
         >
-          {/* Header */}
+          {/* Header — drag handle is the avatar + title region */}
           <div className="flex items-center gap-3 border-b border-border bg-sidebar p-3 text-sidebar-foreground">
-            <AvatarOrbV2 size={40} speaking={speaking || typing} />
-            <div className="min-w-0 flex-1 leading-tight">
-              <p className="text-sm font-semibold">{assistantName}</p>
-              <p className="flex items-center gap-1 text-[11px] text-accent">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                {speaking ? (lang === "ar" ? "يتحدث" : "Speaking") : listening ? (lang === "ar" ? "يستمع" : "Listening") : (lang === "ar" ? "متاح" : "Online")}
-              </p>
+            <div
+              {...dragHandleProps}
+              className={cn(
+                "flex min-w-0 flex-1 items-center gap-3 select-none",
+                isDragging ? "cursor-grabbing" : "cursor-grab",
+              )}
+            >
+              <AvatarOrbV2 size={40} speaking={speaking || typing} />
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="text-sm font-semibold">{assistantName}</p>
+                <p className="flex items-center gap-1 text-[11px] text-accent">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  {speaking ? (lang === "ar" ? "يتحدث" : "Speaking") : listening ? (lang === "ar" ? "يستمع" : "Listening") : (lang === "ar" ? "متاح" : "Online")}
+                </p>
+              </div>
             </div>
             <button
               onClick={() => (mode === "chat" ? enterCall() : endCall())}
@@ -291,52 +341,64 @@ export function FloatingAssistant() {
           </div>
 
           {mode === "call" ? (
-            /* Call mode */
-            <div className="flex flex-1 flex-col items-center justify-between bg-sidebar/95 px-5 py-6 text-sidebar-foreground">
-              <div className="flex w-full flex-1 flex-col items-center justify-center gap-5">
-                <ChatbotAvatar3D size={120} speaking={speaking} />
-                <p className="text-sm font-medium text-accent">{status}</p>
-                <div className="min-h-[88px] w-full rounded-xl bg-sidebar-accent/60 p-3 text-center">
+            /* Call mode — 3D avatar fills the whole surface, controls overlay on top */
+            <div className="relative flex flex-1 flex-col overflow-hidden bg-sidebar/95 text-sidebar-foreground">
+              {/* Full-bleed avatar (pointer-events-none, so controls/drag pass through) */}
+              <ChatbotAvatar3D fill speaking={speaking} />
+
+              {/* Status pill */}
+              <div className="relative z-10 flex justify-center px-5 pt-4">
+                <span className="rounded-full bg-black/40 px-3 py-1 text-xs font-medium text-accent backdrop-blur-sm">
+                  {status}
+                </span>
+              </div>
+
+              {/* Spacer lets the avatar show through the middle */}
+              <div className="relative z-10 flex-1" />
+
+              {/* Bottom controls over a readability scrim */}
+              <div className="relative z-10 flex flex-col items-center gap-4 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-5 pb-6 pt-12">
+                <div className="min-h-[60px] w-full rounded-xl bg-black/40 p-3 text-center backdrop-blur-sm">
                   {listening && interim ? (
-                    <p className="text-sm leading-relaxed text-sidebar-foreground/90">
+                    <p className="text-sm leading-relaxed text-white/90">
                       <span className="text-xs uppercase tracking-wide text-accent">{lang === "ar" ? "أنت: " : "You: "}</span>
                       {interim}
                     </p>
                   ) : (
-                    <p className="text-sm leading-relaxed text-sidebar-foreground/90">{caption || lastAssistant}</p>
+                    <p className="text-sm leading-relaxed text-white/90">{caption || lastAssistant}</p>
                   )}
                 </div>
+                <div className="flex items-center justify-center gap-5">
+                  <button
+                    onClick={() => { if (muted) { setMuted(false) } else { setMuted(true); stopSpeaking() } }}
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm hover:bg-white/25"
+                  >
+                    {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                  </button>
+                  <button
+                    onClick={callMic}
+                    className={cn(
+                      "flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition-all",
+                      listening ? "animate-pulse bg-destructive text-white" : "bg-accent text-accent-foreground hover:scale-105",
+                    )}
+                  >
+                    {listening ? <Square className="h-6 w-6" /> : <Mic className="h-7 w-7" />}
+                  </button>
+                  <button
+                    onClick={() => { if (lastAssistant && !muted) { setCaption(lastAssistant); speak(lastAssistant) } }}
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm hover:bg-white/25"
+                  >
+                    <RotateCcw className="h-5 w-5" />
+                  </button>
+                </div>
+                <button
+                  onClick={endCall}
+                  className="flex items-center gap-2 rounded-full bg-destructive px-5 py-2 text-sm font-medium text-white hover:opacity-90"
+                >
+                  <PhoneOff className="h-4 w-4" />
+                  {tr("endSession", lang)}
+                </button>
               </div>
-              <div className="flex items-center justify-center gap-5">
-                <button
-                  onClick={() => { if (muted) { setMuted(false) } else { setMuted(true); stopSpeaking() } }}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-foreground hover:opacity-90"
-                >
-                  {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                </button>
-                <button
-                  onClick={callMic}
-                  className={cn(
-                    "flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition-all",
-                    listening ? "animate-pulse bg-destructive text-white" : "bg-accent text-accent-foreground hover:scale-105",
-                  )}
-                >
-                  {listening ? <Square className="h-6 w-6" /> : <Mic className="h-7 w-7" />}
-                </button>
-                <button
-                  onClick={() => { if (lastAssistant && !muted) { setCaption(lastAssistant); speak(lastAssistant) } }}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-foreground hover:opacity-90"
-                >
-                  <RotateCcw className="h-5 w-5" />
-                </button>
-              </div>
-              <button
-                onClick={endCall}
-                className="mt-4 flex items-center gap-2 rounded-full bg-destructive px-5 py-2 text-sm font-medium text-white hover:opacity-90"
-              >
-                <PhoneOff className="h-4 w-4" />
-                {tr("endSession", lang)}
-              </button>
             </div>
           ) : (
             /* Chat mode */
