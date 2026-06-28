@@ -4,11 +4,22 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useSimulatedAmplitude } from '@/hooks/useSimulatedAmplitude';
 import { getDefaultChatbotAvatar } from '@/lib/avatarLibrary';
+import type { LipSyncHints } from '@/lib/glbLipSync';
 
 const GlbAvatarPreview = dynamic(() => import('@/components/avatar/GlbAvatarPreview'), {
   ssr: false,
   loading: () => <ChatbotAvatarStatic size={120} />,
 });
+
+/** Minimal avatar appearance the 3D widget needs to render. */
+export interface ChatbotAvatarConfig {
+  glbUrl: string;
+  posterSrc: string;
+  framing?: 'bust' | 'full';
+  fitMargin?: number;
+  modelScale?: number;
+  lipSync?: LipSyncHints;
+}
 
 interface ChatbotAvatar3DProps {
   size?: number;
@@ -19,9 +30,29 @@ interface ChatbotAvatar3DProps {
    * whole panel surface (controls are overlaid on top).
    */
   fill?: boolean;
+  /** Avatar to render. Defaults to the platform default chatbot avatar. */
+  avatar?: ChatbotAvatarConfig;
 }
 
-function ChatbotAvatarStatic({ size = 120 }: { size?: number }): React.ReactElement {
+function defaultConfig(): ChatbotAvatarConfig {
+  const avatar = getDefaultChatbotAvatar();
+  return {
+    glbUrl: avatar.glbPath,
+    posterSrc: avatar.thumbnailPath,
+    framing: avatar.previewFraming ?? 'bust',
+    fitMargin: avatar.previewFitMargin ?? 1.05,
+    modelScale: avatar.previewModelScale ?? 1.15,
+    lipSync: avatar.lipSync,
+  };
+}
+
+function ChatbotAvatarStatic({
+  size = 120,
+  posterSrc,
+}: {
+  size?: number;
+  posterSrc?: string;
+}): React.ReactElement {
   const avatar = getDefaultChatbotAvatar();
 
   return (
@@ -30,7 +61,7 @@ function ChatbotAvatarStatic({ size = 120 }: { size?: number }): React.ReactElem
       style={{ width: size, height: size }}
     >
       <Image
-        src={avatar.thumbnailPath}
+        src={posterSrc ?? avatar.thumbnailPath}
         alt={avatar.name}
         width={size}
         height={size}
@@ -41,14 +72,14 @@ function ChatbotAvatarStatic({ size = 120 }: { size?: number }): React.ReactElem
 }
 
 /**
- * Warm the GLB cache for the default chatbot avatar. Safe to call repeatedly;
- * `useGLTF.preload` de-dupes. Call from an idle callback so the model is ready
- * the instant the user opens a call.
+ * Warm the GLB cache for an avatar (defaults to the platform default). Safe to
+ * call repeatedly; `useGLTF.preload` de-dupes. Call from an idle callback so the
+ * model is ready the instant the user opens a call.
  */
-export function preloadChatbotAvatar(): void {
-  const avatar = getDefaultChatbotAvatar();
+export function preloadChatbotAvatar(glbUrl?: string): void {
+  const url = glbUrl ?? getDefaultChatbotAvatar().glbPath;
   void import('@/components/avatar/GlbAvatarPreview').then((mod) => {
-    mod.preloadGlbAvatar(avatar.glbPath);
+    mod.preloadGlbAvatar(url);
   });
 }
 
@@ -56,20 +87,21 @@ export function ChatbotAvatar3D({
   size = 120,
   speaking = false,
   fill = false,
+  avatar,
 }: ChatbotAvatar3DProps): React.ReactElement {
-  const avatar = getDefaultChatbotAvatar();
+  const cfg = avatar ?? defaultConfig();
   const amplitude = useSimulatedAmplitude(speaking);
 
   const preview = (
     <GlbAvatarPreview
-      glbUrl={avatar.glbPath}
+      glbUrl={cfg.glbUrl}
       amplitude={amplitude}
-      lipSyncHints={avatar.lipSync}
-      posterSrc={avatar.thumbnailPath}
+      lipSyncHints={cfg.lipSync}
+      posterSrc={cfg.posterSrc}
       showControls={false}
-      framing={avatar.previewFraming ?? 'bust'}
-      fitMargin={avatar.previewFitMargin ?? 1.05}
-      modelScale={avatar.previewModelScale ?? 1.15}
+      framing={cfg.framing ?? 'bust'}
+      fitMargin={cfg.fitMargin ?? 1.05}
+      modelScale={cfg.modelScale ?? 1.15}
       className="h-full w-full"
     />
   );

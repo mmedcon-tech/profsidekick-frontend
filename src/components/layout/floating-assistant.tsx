@@ -21,21 +21,34 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { ChatbotAvatar3D, preloadChatbotAvatar } from "@/components/layout/ChatbotAvatar3D"
-import { getDefaultChatbotAvatar } from "@/lib/avatarLibrary"
 import { useDraggable } from "@/hooks/useDraggable"
+import { useAssistantAvatar } from "@/hooks/useAssistantAvatar"
+import {
+  getQuickNavActions,
+  resolveNavDestination,
+  type NavDestination,
+} from "@/lib/navigation"
 
-const defaultChatbotAvatar = getDefaultChatbotAvatar()
-
-// Lightweight static orb for launcher/header — same Emirati male persona as the 3D call avatar
-function AvatarOrbV2({ size = 44, speaking = false }: { size?: number; speaking?: boolean }) {
+// Lightweight static orb for launcher/header — mirrors the active 3D avatar
+function AvatarOrbV2({
+  size = 44,
+  speaking = false,
+  src,
+  alt,
+}: {
+  size?: number
+  speaking?: boolean
+  src: string
+  alt: string
+}) {
   return (
     <div
       className="relative shrink-0 rounded-full overflow-hidden"
       style={{ width: size, height: size }}
     >
       <Image
-        src={defaultChatbotAvatar.thumbnailPath}
-        alt={defaultChatbotAvatar.name}
+        src={src}
+        alt={alt}
         width={size}
         height={size}
         className="h-full w-full object-cover"
@@ -102,9 +115,12 @@ function getReply(input: string, lang: "en" | "ar", userName: string): string {
 export function FloatingAssistant() {
   const { user } = useAuth()
   const router = useRouter()
-  const lang = "en" as "en" | "ar"
-  const dir = "ltr"
-  
+  // The active avatar (publisher's own / subscriber's subscribed / default) drives
+  // the 3D model, the voice, and the language the assistant speaks.
+  const { avatar } = useAssistantAvatar()
+  const lang = avatar.language
+  const dir = lang === "ar" ? "rtl" : "ltr"
+
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [mode, setMode] = useState<Mode>("chat")
   const [messages, setMessages] = useState<ChatMsg[]>([])
@@ -130,12 +146,12 @@ export function FloatingAssistant() {
       cancelIdleCallback?: (id: number) => void
     }
     const schedule = w.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500))
-    const id = schedule(() => preloadChatbotAvatar())
+    const id = schedule(() => preloadChatbotAvatar(avatar.glbUrl))
     return () => {
       if (w.cancelIdleCallback && typeof id === "number") w.cancelIdleCallback(id)
       else window.clearTimeout(id as unknown as number)
     }
-  }, [])
+  }, [avatar.glbUrl])
 
   // Re-clamp into view when the panel opens or switches size (chat ↔ call).
   useEffect(() => {
@@ -156,7 +172,7 @@ export function FloatingAssistant() {
   }, [])
 
   const { speaking, listening, interim, speak, stopSpeaking, startListening, stopListening } =
-    useSpeech(lang, "female")
+    useSpeech(lang, avatar.voice)
 
   const assistantName = lang === "ar" ? "مساعد MyOS" : "MyOS Assistant"
   const userName = user ? `${user.firstName} ${user.lastName}` : ""
@@ -186,22 +202,18 @@ export function FloatingAssistant() {
   function reply(text: string) {
     setTyping(true)
     setTimeout(() => {
-      let answer = getReply(text, lang, userName)
-      
-      const q = text.toLowerCase()
-      const has = (...w: string[]) => w.some((x) => q.includes(x))
-      
-      // Execute actions
-      if (has("course", "courses", "دوراتي", "الدورات")) {
-        router.push("/subscriber/dashboard") // Fallback to subscriber dashboard
-        answer = lang === "ar" ? "جاري الانتقال إلى دوراتك..." : "Navigating to your courses..."
-      } else if (has("nav", "navigate", "dashboard", "التنقل", "لوحة")) {
-        const role = user?.role === "student" ? "subscriber" : user?.role || "subscriber"
-        router.push(`/${role}/dashboard`)
-        answer = lang === "ar" ? "جاري الانتقال إلى لوحة التحكم..." : "Navigating to your dashboard..."
-      } else if (has("session", "بدء جلسة")) {
-        // Mock navigation to a session
-        answer = lang === "ar" ? "يرجى اختيار الدورة أولاً لبدء الجلسة." : "Please select a course first to start a session."
+      // Role-aware navigation: resolve the intent to a real route the current
+      // user can access, then navigate there. Falls back to a normal answer.
+      const dest = resolveNavDestination(user?.role, text)
+      let answer: string
+      if (dest) {
+        router.push(dest.route)
+        answer =
+          lang === "ar"
+            ? `جاري الانتقال إلى ${dest.label.ar}...`
+            : `Navigating to ${dest.label.en}...`
+      } else {
+        answer = getReply(text, lang, userName)
       }
 
       setMessages((m) => [...m, { id: uid(), role: "assistant", text: answer }])
@@ -211,6 +223,19 @@ export function FloatingAssistant() {
         speak(answer)
       }
     }, 800)
+  }
+
+  function navigateTo(dest: NavDestination) {
+    router.push(dest.route)
+    const answer =
+      lang === "ar"
+        ? `جاري الانتقال إلى ${dest.label.ar}...`
+        : `Navigating to ${dest.label.en}...`
+    setMessages((m) => [
+      ...m,
+      { id: uid(), role: "user", text: dest.label[lang] },
+      { id: uid(), role: "assistant", text: answer },
+    ])
   }
 
   function send(text: string) {
@@ -253,12 +278,8 @@ export function FloatingAssistant() {
 
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant")?.text || ""
 
-  const quickActions = [
-    { key: "nav", label: { en: "Navigate", ar: "التنقل" } },
-    { key: "courses", label: { en: "My Courses", ar: "دوراتي" } },
-    { key: "session", label: { en: "Start Session", ar: "بدء جلسة" } },
-    { key: "help", label: { en: "Help", ar: "مساعدة" } },
-  ]
+  // Quick actions are the navigation destinations valid for this user's role.
+  const quickActions = getQuickNavActions(user?.role)
 
   const status = listening
     ? tr("micOn", lang)
@@ -290,7 +311,7 @@ export function FloatingAssistant() {
             )}
             aria-label={lang === "ar" ? "فتح المساعد" : "Open assistant"}
           >
-            <AvatarOrbV2 size={44} speaking />
+            <AvatarOrbV2 size={44} speaking src={avatar.posterSrc} alt={avatar.name} />
             <span className="pointer-events-none text-start leading-tight">
               <span className="block text-sm font-semibold">{assistantName}</span>
               <span className="flex items-center gap-1 text-[11px] text-accent">
@@ -319,7 +340,7 @@ export function FloatingAssistant() {
                 isDragging ? "cursor-grabbing" : "cursor-grab",
               )}
             >
-              <AvatarOrbV2 size={40} speaking={speaking || typing} />
+              <AvatarOrbV2 size={40} speaking={speaking || typing} src={avatar.posterSrc} alt={avatar.name} />
               <div className="min-w-0 flex-1 leading-tight">
                 <p className="text-sm font-semibold">{assistantName}</p>
                 <p className="flex items-center gap-1 text-[11px] text-accent">
@@ -344,7 +365,7 @@ export function FloatingAssistant() {
             /* Call mode — 3D avatar fills the whole surface, controls overlay on top */
             <div className="relative flex flex-1 flex-col overflow-hidden bg-sidebar/95 text-sidebar-foreground">
               {/* Full-bleed avatar (pointer-events-none, so controls/drag pass through) */}
-              <ChatbotAvatar3D fill speaking={speaking} />
+              <ChatbotAvatar3D fill speaking={speaking} avatar={avatar} />
 
               {/* Status pill */}
               <div className="relative z-10 flex justify-center px-5 pt-4">
@@ -436,7 +457,7 @@ export function FloatingAssistant() {
                 {quickActions.map((qa) => (
                   <button
                     key={qa.key}
-                    onClick={() => send(qa.label[lang])}
+                    onClick={() => navigateTo(qa)}
                     className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
                   >
                     <Sparkles className="h-3 w-3" />

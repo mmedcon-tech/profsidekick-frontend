@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { playElevenLabsSpeech } from "@/lib/playElevenLabsAudio"
+import { resolveVoiceProfile, type VoiceProfile } from "@/lib/voiceProfiles"
 
 // Minimal typings for the Web Speech API (not in TS lib DOM by default)
 type SpeechRecognitionResultLike = {
@@ -36,8 +37,16 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 /**
  * Real browser speech: text-to-speech (the avatar talks) +
  * speech-to-text (the avatar listens).
+ *
+ * `voice` may be a full {@link VoiceProfile} (derived from the avatar's
+ * configured voice id) or a bare gender for convenience. The profile drives
+ * voice selection and pitch so each avatar sounds distinct — not always the
+ * default female voice.
  */
-export function useSpeech(lang: "en" | "ar", gender: "male" | "female") {
+export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "female") {
+  const profile: VoiceProfile =
+    typeof voice === "string" ? resolveVoiceProfile(undefined, voice) : voice
+  const gender = profile.gender
   const [speaking, setSpeaking] = useState(false)
   const [listening, setListening] = useState(false)
   const [interim, setInterim] = useState("")
@@ -122,8 +131,8 @@ export function useSpeech(lang: "en" | "ar", gender: "male" | "female") {
       const v = pickVoice()
       if (v) u.voice = v
       u.lang = v?.lang || "en-US"
-      u.rate = 1
-      u.pitch = gender === "female" ? 1.08 : 0.92
+      u.rate = profile.rate
+      u.pitch = profile.pitch
       u.onstart = () => setSpeaking(true)
       u.onend = () => {
         setSpeaking(false)
@@ -135,7 +144,7 @@ export function useSpeech(lang: "en" | "ar", gender: "male" | "female") {
       }
       window.speechSynthesis.speak(u)
     },
-    [lang, gender, pickVoice],
+    [lang, gender, pickVoice, profile.pitch, profile.rate],
   )
 
   const stopSpeaking = useCallback(() => {
