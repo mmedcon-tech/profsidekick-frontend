@@ -121,8 +121,8 @@ export function useSpeech(lang: "en" | "ar", gender: "male" | "female") {
       const u = new SpeechSynthesisUtterance(text)
       const v = pickVoice()
       if (v) u.voice = v
-      u.lang = lang === "ar" ? v?.lang || "ar-SA" : v?.lang || "en-US"
-      u.rate = lang === "ar" ? 0.95 : 1
+      u.lang = v?.lang || "en-US"
+      u.rate = 1
       u.pitch = gender === "female" ? 1.08 : 0.92
       u.onstart = () => setSpeaking(true)
       u.onend = () => {
