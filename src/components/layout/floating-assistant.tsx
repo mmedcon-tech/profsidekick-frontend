@@ -19,18 +19,25 @@ import {
   RotateCcw,
   X,
 } from "lucide-react"
+import Image from "next/image"
+import { ChatbotAvatar3D } from "@/components/layout/ChatbotAvatar3D"
+import { getDefaultChatbotAvatar } from "@/lib/avatarLibrary"
 
-// Self-contained orb — no dependency on v1 context
+const defaultChatbotAvatar = getDefaultChatbotAvatar()
+
+// Lightweight static orb for launcher/header — same Emirati male persona as the 3D call avatar
 function AvatarOrbV2({ size = 44, speaking = false }: { size?: number; speaking?: boolean }) {
   return (
     <div
-      className="relative shrink-0 rounded-full"
+      className="relative shrink-0 rounded-full overflow-hidden"
       style={{ width: size, height: size }}
     >
-      <img
-        src="/images/logo.png"
-        alt="Avatar Orb"
-        className="h-full w-full rounded-full object-cover"
+      <Image
+        src={defaultChatbotAvatar.thumbnailPath}
+        alt={defaultChatbotAvatar.name}
+        width={size}
+        height={size}
+        className="h-full w-full object-cover"
       />
       {speaking && (
         <span className="absolute bottom-0 end-0 flex h-3 w-3 items-center justify-center rounded-full bg-accent ring-2 ring-card">
@@ -287,7 +294,7 @@ export function FloatingAssistant() {
             /* Call mode */
             <div className="flex flex-1 flex-col items-center justify-between bg-sidebar/95 px-5 py-6 text-sidebar-foreground">
               <div className="flex w-full flex-1 flex-col items-center justify-center gap-5">
-                <AvatarOrbV2 size={120} speaking={speaking} />
+                <ChatbotAvatar3D size={120} speaking={speaking} />
                 <p className="text-sm font-medium text-accent">{status}</p>
                 <div className="min-h-[88px] w-full rounded-xl bg-sidebar-accent/60 p-3 text-center">
                   {listening && interim ? (
