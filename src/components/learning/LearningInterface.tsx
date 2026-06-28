@@ -12,6 +12,7 @@ import SessionAvatarRenderer from "@/components/avatar/SessionAvatarRenderer";
 import { cn } from "@/lib/utils";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
+import { useTranscriptPersistence } from "@/hooks/useTranscriptPersistence";
 import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
@@ -114,6 +115,7 @@ export default function LearningInterface({
   const { token } = useAuth();
   const { logClientEvent, } = useEvent();
   const { currentQuestion, latestResponse, keyConcepts, rollingNotes, addStructuredTurn } = useStructuredTranscript();
+  const persistTranscriptTurn = useTranscriptPersistence(classSession.sessionId, sessionRunId);
 
   const getRubricTerms = useCallback((): string[] => {
     try {
@@ -129,7 +131,8 @@ export default function LearningInterface({
   const handleTurnComplete = useCallback((role: "assistant" | "user", text: string) => {
     const turn = classifyTurn(role, text, getRubricTerms());
     addStructuredTurn(turn);
-  }, [addStructuredTurn, getRubricTerms]);
+    void persistTranscriptTurn({ role, text });
+  }, [addStructuredTurn, getRubricTerms, persistTranscriptTurn]);
 
   const sendClientEvent = (eventObj: any, eventNameSuffix = "") => {
     if (dcRef.current && dcRef.current.readyState === "open") {

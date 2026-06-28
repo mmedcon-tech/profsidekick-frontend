@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getAvatarLibraryEntryByName } from '@/lib/avatarLibrary';
 import { pickSpeechVoice, loadSpeechVoices } from '@/lib/speechVoice';
+import { playElevenLabsSpeech } from '@/lib/playElevenLabsAudio';
 
 const PREVIEW_TEXT =
   "Hello! I'm excited to guide you through the material and help you master every concept. Let's get started!";
@@ -21,6 +22,7 @@ export function useSpeechPreview(avatarName: string): SpeechPreviewState {
 
   const rafRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
+  const stopAudioRef = useRef<(() => void) | null>(null);
 
   const stopAmplitude = useCallback(() => {
     window.cancelAnimationFrame(rafRef.current);
@@ -43,6 +45,8 @@ export function useSpeechPreview(avatarName: string): SpeechPreviewState {
   }, []);
 
   const stop = useCallback(() => {
+    stopAudioRef.current?.();
+    stopAudioRef.current = null;
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -57,12 +61,41 @@ export function useSpeechPreview(avatarName: string): SpeechPreviewState {
       return;
     }
 
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
     setLoading(true);
-    const voices = await loadSpeechVoices();
     const entry = getAvatarLibraryEntryByName(avatarName);
     const gender = entry?.gender === 'male' ? 'male' : 'female';
+    const prefersElevenLabs =
+      entry?.languages.includes('ar') || entry?.name === 'Sultan' || entry?.name === 'Salama';
+
+    if (prefersElevenLabs) {
+      try {
+        const stop = await playElevenLabsSpeech({
+          text: PREVIEW_TEXT,
+          gender,
+          onSpeakingChange: (speaking) => {
+            setActive(speaking);
+            if (speaking) {
+              setLoading(false);
+              startAmplitude();
+            } else {
+              stopAmplitude();
+              setLoading(false);
+            }
+          },
+        });
+        stopAudioRef.current = stop;
+        setLoading(false);
+        setActive(true);
+        startAmplitude();
+        return;
+      } catch {
+        // Fall back to browser speech below.
+      }
+    }
+
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    const voices = await loadSpeechVoices();
     const voice = pickSpeechVoice(gender, voices);
 
     const utterance = new SpeechSynthesisUtterance(PREVIEW_TEXT);
