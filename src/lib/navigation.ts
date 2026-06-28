@@ -88,11 +88,12 @@ export const NAVIGATION_MAP: Record<FrontendRole, NavigationMap> = {
       keywords: ['program', 'programs', 'curriculum', 'البرامج', 'برنامج'],
     },
     {
+      // No standalone sessions list exists — sessions are created and managed
+      // from within a course, so route session intents to the courses page.
       key: 'sessions',
       label: { en: 'Sessions', ar: 'الجلسات' },
-      route: '/publisher/sessions',
+      route: '/publisher/courses',
       keywords: ['session', 'sessions', 'live', 'الجلسات', 'جلسة'],
-      quickAction: true,
     },
     {
       key: 'analytics',
