@@ -210,6 +210,18 @@ export interface GlbAvatarPreviewProps {
   modelScale?: number;
   /** Fraction of the model height to show in full framing (1 = whole body, 0.7 = top 70%). */
   coverHeightFraction?: number;
+  /** Optional thumbnail shown while the GLB streams/decodes (first paint only). */
+  posterSrc?: string;
+}
+
+/**
+ * Warm the GLTF cache ahead of time. Call on idle so the model is fetched,
+ * parsed and the meshopt buffers decoded before the avatar is ever shown —
+ * mounting the Canvas then resolves from cache in milliseconds instead of
+ * suspending for the full network + parse cost.
+ */
+export function preloadGlbAvatar(glbUrl: string): void {
+  useGLTF.preload(glbUrl);
 }
 
 export default function GlbAvatarPreview({
@@ -223,6 +235,7 @@ export default function GlbAvatarPreview({
   fitMargin = 1.05,
   modelScale = 1.15,
   coverHeightFraction = 0.74,
+  posterSrc,
 }: GlbAvatarPreviewProps): React.ReactElement {
   const cameraY = framing === 'bust' ? 1.45 : 1.05;
   const targetY = framing === 'bust' ? 1.35 : 0.95;
@@ -233,9 +246,12 @@ export default function GlbAvatarPreview({
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_20%,rgba(19,50,33,0.45),transparent_55%)]" />
       <Canvas
+        // Clamp pixel ratio: avatars are small, so capping DPR avoids rendering
+        // 3–4× the pixels on retina/hi-dpi screens for no visible benefit.
+        dpr={[1, 1.5]}
         camera={{ position: [0, cameraY, 2.35], fov: 32, near: 0.1, far: 100 }}
         className="relative z-[1] h-full w-full"
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
         <ambientLight intensity={0.5} />
         <directionalLight position={[3, 5, 4]} intensity={1.4} castShadow />
@@ -244,13 +260,19 @@ export default function GlbAvatarPreview({
 
         <Suspense
           fallback={
-            <mesh>
-              <Html center>
-                <div className="rounded-lg bg-black/60 px-4 py-2 text-sm text-white">
-                  Loading 3D model…
-                </div>
+            posterSrc ? (
+              <Html fullscreen>
+                {/* Lightweight poster keeps the avatar visible during the
+                    (now sub-second) GLB decode instead of a loading box. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={posterSrc}
+                  alt=""
+                  aria-hidden
+                  className="h-full w-full object-cover opacity-90"
+                />
               </Html>
-            </mesh>
+            ) : null
           }
         >
           <Environment preset="city" />

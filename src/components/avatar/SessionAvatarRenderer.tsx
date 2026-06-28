@@ -57,6 +57,14 @@ export default function SessionAvatarRenderer({
               </div>
             )}
           </>
+        ) : displayConfig.renderType === 'glb' ? (
+          <TeachingSessionAvatar
+            config={displayConfig}
+            audioElement={audioElement}
+            isConnected={isConnected}
+            isAISpeaking={isAISpeaking}
+            isUserSpeaking={isUserSpeaking}
+          />
         ) : displayConfig.renderType === '3d' && displayConfig.modelUrl ? (
           <GlbAvatar
             modelUrl={displayConfig.modelUrl}

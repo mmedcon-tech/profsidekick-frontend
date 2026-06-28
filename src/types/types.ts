@@ -333,7 +333,7 @@ export interface EphemeralTokenResponse {
   glb_library_id?: string | null;
 }
 
-export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | '3d';
+export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | '3d' | 'glb';
 
 export type AvatarWidgetState = 'idle' | 'listening' | 'speaking';
 

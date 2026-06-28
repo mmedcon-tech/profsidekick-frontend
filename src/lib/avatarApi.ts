@@ -86,6 +86,38 @@ async function req<T>(
   return json as T;
 }
 
+async function bffReq<T>(
+  path: string,
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
+  body?: unknown,
+): Promise<T> {
+  const token =
+    typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(path, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 204) return undefined as T;
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const msg =
+      json.message || json.detail || `Request failed (${res.status})`;
+    throw new ApiError(msg, res.status);
+  }
+
+  return json as T;
+}
+
 // ─── Avatar Templates — Admin (CRUD) ────────────────────────────────────────
 
 export const templateApi = {
@@ -338,8 +370,8 @@ export const referenceApi = {
 // ─── Marketplace — Subscriber ────────────────────────────────────────────────
 
 export const marketplaceApi = {
-  list: () => req<AvatarPublicListResponse>('/api/avatars'),
-  get: (id: string) => req<AvatarPublicResponse>(`/api/avatars/${id}`),
+  list: () => bffReq<AvatarPublicListResponse>('/api/avatars'),
+  get: (id: string) => bffReq<AvatarPublicResponse>(`/api/avatars/${id}`),
 };
 
 // ─── Subscriptions — Subscriber ─────────────────────────────────────────────
