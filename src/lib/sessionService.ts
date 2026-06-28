@@ -49,6 +49,7 @@ export async function fetchSessionEphemeral(
 
   return {
     openaiToken,
+    realtimeModel: data.realtime_model ?? 'gpt-realtime-2',
     avatar: resolveAvatarConfig(data, options.fallbackAvatar),
   };
 }

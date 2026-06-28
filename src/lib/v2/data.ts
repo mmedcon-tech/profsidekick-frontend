@@ -147,7 +147,7 @@ export const avatar3DModels: Avatar3DModel[] = [
     name: "Emirati Lady (Professional)",
     modelType: "heygen",
     modelUrl: "heygen_emirati_female_001",
-    thumbnailUrl: "/avatars/female-avatar.png",
+    thumbnailUrl: "/images/avatar-female.png",
     supportedLanguages: ["ar", "en"],
     gender: "female",
     isActive: true,
@@ -158,7 +158,7 @@ export const avatar3DModels: Avatar3DModel[] = [
     name: "Emirati Officer (Formal)",
     modelType: "heygen",
     modelUrl: "heygen_emirati_male_001",
-    thumbnailUrl: "/avatars/male-avatar.png",
+    thumbnailUrl: "/images/avatar-male.png",
     supportedLanguages: ["ar", "en"],
     gender: "male",
     isActive: true,
@@ -169,7 +169,7 @@ export const avatar3DModels: Avatar3DModel[] = [
     name: "Professional Neutral",
     modelType: "ready_player_me",
     modelUrl: "https://models.readyplayer.me/demo.glb",
-    thumbnailUrl: "/avatars/female-avatar.png",
+    thumbnailUrl: "/images/avatar-female.png",
     supportedLanguages: ["en", "ar", "fr", "es"],
     gender: "neutral",
     isActive: true,
@@ -447,7 +447,7 @@ export interface Session {
   title: { en: string; ar: string }
   description: { en: string; ar: string }
   duration: number // minutes
-  sessionMode: "teaching" | "examination"
+  sessionMode: "teaching" | "examination" | "consultation"
   isActive: boolean
   isPublished: boolean
   slideCount: number

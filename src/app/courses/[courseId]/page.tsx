@@ -8,7 +8,8 @@ import type { CourseDetails, CourseSessionSummary, CourseStudent } from '@/hooks
 import CourseSettingsTabs from '@/components/courses/CourseSettingsTabs';
 import {
   ArrowLeft, BookOpen, Users, Calendar, Clock, Play,
-  GraduationCap, Plus, Loader2, AlertCircle,
+  GraduationCap, Plus, Loader2, AlertCircle, Globe, EyeOff,
+  CreditCard, Lock,
 } from 'lucide-react';
 import { config } from '@/lib/config';
 
@@ -36,10 +37,16 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // For publisher settings panel
   const [localCourse, setLocalCourse] = useState<Partial<CourseDetails>>({});
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Per-session toggling
+  const [togglingSession, setTogglingSession] = useState<string | null>(null);
+  // Bulk publishing
+  const [publishingAll, setPublishingAll] = useState(false);
+  // Subscriber eligibility warnings (balance / subscription)
+  const [subscriberWarnings, setSubscriberWarnings] = useState<{ code: string; message: string }[]>([]);
 
   const fetchCourse = useCallback(async () => {
     if (!token || !courseId) return;
@@ -63,6 +70,28 @@ export default function CourseDetailPage() {
       ]);
       setSessions(sess);
       setStudents(studs);
+
+      // For subscribers: check eligibility on the first published session to surface
+      // credit/subscription blockers before they attempt to join.
+      if (!isPublisher && sess.length > 0) {
+        const firstPublished = sess.find(s => s.is_published) ?? sess[0];
+        try {
+          const eligRes = await fetch(config.getApiUrl(`/api/sessions/${firstPublished.sessionId}/eligibility`), {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (eligRes.ok) {
+            const eligData = await eligRes.json();
+            if (!eligData.eligible) {
+              const blocking = (eligData.issues as { code: string; message: string }[]).filter(
+                i => i.code === 'no_credits' || i.code === 'no_subscription',
+              );
+              setSubscriberWarnings(blocking);
+            }
+          }
+        } catch {
+          // Non-fatal: don't block the page if the check fails
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load course');
     } finally {
@@ -92,7 +121,7 @@ export default function CourseDetailPage() {
   };
 
   const handleCreateSession = () => {
-    router.push(`/courses/${courseId}/sessions/new`);
+    router.push(`/courses/${courseId}/sessions/new?courseId=${courseId}`);
   };
 
   const handleRunSession = (sessionId: string) => {
@@ -100,6 +129,47 @@ export default function CourseDetailPage() {
       router.push(`/publisher/sessions/${sessionId}/chat`);
     } else {
       router.push(`/sessions/${sessionId}/run`);
+    }
+  };
+
+  const patchPublish = async (sessionId: string, is_published: boolean) => {
+    const res = await fetch(config.getApiUrl(`/api/sessions/${sessionId}/publish`), {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_published }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || data.message || 'Failed to update');
+    }
+  };
+
+  const handleToggleSession = async (session: CourseSessionSummary) => {
+    setTogglingSession(session.sessionId);
+    try {
+      await patchPublish(session.sessionId, !session.is_published);
+      setSessions(prev =>
+        prev.map(s => s.sessionId === session.sessionId ? { ...s, is_published: !s.is_published } : s)
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update publish status');
+    } finally {
+      setTogglingSession(null);
+    }
+  };
+
+  const handlePublishAll = async () => {
+    const unpublished = sessions.filter(s => !s.is_published);
+    if (unpublished.length === 0) return;
+    setPublishingAll(true);
+    try {
+      await Promise.all(unpublished.map(s => patchPublish(s.sessionId, true)));
+      setSessions(prev => prev.map(s => ({ ...s, is_published: true })));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Some sessions could not be published');
+      await fetchCourse(); // re-sync on partial failure
+    } finally {
+      setPublishingAll(false);
     }
   };
 
@@ -130,6 +200,8 @@ export default function CourseDetailPage() {
       </div>
     );
   }
+
+  const unpublishedCount = sessions.filter(s => !s.is_published).length;
 
   return (
     <div className="space-y-6">
@@ -193,15 +265,58 @@ export default function CourseDetailPage() {
         </div>
 
         {isPublisher && (
-          <button
-            onClick={handleCreateSession}
-            className="shrink-0 flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New Session
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {unpublishedCount > 0 && (
+              <button
+                onClick={handlePublishAll}
+                disabled={publishingAll}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-400 transition-colors disabled:opacity-50"
+              >
+                {publishingAll ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Globe className="h-3.5 w-3.5" />
+                )}
+                Publish All ({unpublishedCount})
+              </button>
+            )}
+            <button
+              onClick={handleCreateSession}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              New Session
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Subscriber eligibility warnings */}
+      {!isPublisher && subscriberWarnings.length > 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950 p-4 space-y-2">
+          <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+            Action required before joining a session:
+          </p>
+          {subscriberWarnings.map((w) => (
+            <div key={w.code} className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
+              {w.code === 'no_credits' ? (
+                <CreditCard className="h-4 w-4 mt-0.5 shrink-0" />
+              ) : (
+                <Lock className="h-4 w-4 mt-0.5 shrink-0" />
+              )}
+              <span className="text-sm">{w.message}</span>
+              {w.code === 'no_credits' && (
+                <a
+                  href="/subscriber/billing"
+                  className="ml-auto text-xs font-medium underline shrink-0 hover:text-amber-900 dark:hover:text-amber-200"
+                >
+                  Redeem code →
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Sessions */}
       <div className="space-y-3">
@@ -258,9 +373,9 @@ export default function CourseDetailPage() {
                 )}
 
                 <div className="flex gap-3 text-xs text-muted-foreground">
-                  {session.duration > 0 && (
+                  {(session.duration ?? 0) > 0 && (
                     <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {formatDuration(session.duration)}
+                      <Clock className="h-3 w-3" /> {formatDuration(session.duration!)}
                     </span>
                   )}
                   {session.total_slides > 0 && (
@@ -279,6 +394,29 @@ export default function CourseDetailPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Publisher: publish toggle */}
+                {isPublisher && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <button
+                      onClick={() => handleToggleSession(session)}
+                      disabled={togglingSession === session.sessionId}
+                      className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${
+                        session.is_published
+                          ? 'bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-400'
+                          : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950 dark:text-amber-400'
+                      }`}
+                    >
+                      {togglingSession === session.sessionId ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : session.is_published ? (
+                        <><Globe className="h-3 w-3" /> Published — click to unpublish</>
+                      ) : (
+                        <><EyeOff className="h-3 w-3" /> Draft — click to publish</>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

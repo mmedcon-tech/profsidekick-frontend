@@ -102,7 +102,7 @@ export interface SessionRunDetails {
   avatarRenderType?: AvatarRenderType;
   heygenAvatarId?: string | null;
   sessionLanguage?: string;
-  sessionMode?: 'teaching' | 'examination';
+  sessionMode?: 'teaching' | 'examination' | 'consultation';
 }
 
 // Legacy types for backward compatibility (will be removed)
@@ -321,6 +321,7 @@ export interface EphemeralTokenResponse {
     expires_at: string;
   };
   openai_token?: string;
+  realtime_model?: string | null;
   heygen_avatar_id?: string | null;
   heygen_quality?: 'low' | 'medium' | 'high';
   heygen_access_token?: string | null;
@@ -329,11 +330,10 @@ export interface EphemeralTokenResponse {
   avatar_render_type?: AvatarRenderType;
   avatar_image_url?: string | null;
   avatar_name?: string | null;
-  avatar_model_url?: string | null;
-  avatar_library_id?: string | null;
+  glb_library_id?: string | null;
 }
 
-export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | 'glb' | '3d';
+export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | '3d';
 
 export type AvatarWidgetState = 'idle' | 'listening' | 'speaking';
 
@@ -342,18 +342,18 @@ export interface SessionAvatarConfig {
   avatarId?: string;
   avatarName: string;
   imageUrl?: string;
-  glbModelUrl?: string;
-  glbLibraryId?: string;
   modelUrl?: string;
+  glbLibraryId?: string;
   heygenAvatarId?: string | null;
   heygenQuality?: 'low' | 'medium' | 'high';
   heygenAccessToken?: string | null;
   sessionLanguage?: string;
-  sessionMode?: 'teaching' | 'examination';
+  sessionMode?: 'teaching' | 'examination' | 'consultation';
 }
 
 export interface SessionEphemeralBundle {
   openaiToken: string;
+  realtimeModel: string;
   avatar: SessionAvatarConfig;
 }
 

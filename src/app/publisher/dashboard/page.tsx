@@ -91,16 +91,27 @@ export default function PublisherDashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-5">
           <h3 className="mb-4 text-sm font-semibold text-foreground">{lang === "ar" ? "أداء الدورات" : "Course Performance"}</h3>
-          <div className="h-56">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics?.course_performance || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <BarChart data={analytics?.course_performance || []} margin={{ top: 4, right: 8, left: -16, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey={(d) => d.name[lang] || d.name}
-                  tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                   tickLine={false}
                   axisLine={false}
                   interval={0}
+                  height={70}
+                  tick={({ x, y, payload }: any) => {
+                    const name = String(payload.value);
+                    const label = name.length > 14 ? name.slice(0, 14) + "…" : name;
+                    return (
+                      <g transform={`translate(${x},${y})`}>
+                        <text x={0} y={0} dy={6} textAnchor="end" fill="var(--muted-foreground)" fontSize={11} transform="rotate(-35)">
+                          {label}
+                        </text>
+                      </g>
+                    );
+                  }}
                 />
                 <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
                 <Tooltip

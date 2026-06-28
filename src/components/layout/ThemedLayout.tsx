@@ -1,12 +1,12 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { ProgramContextProvider } from "@/contexts/ProgramContext"
 
 import ProgramThemeProvider from "./ProgramThemeProvider"
-import { AppSidebarV2 } from "./app-sidebar"
+import { AppSidebarV2, MobileNavDrawer } from "./app-sidebar"
 import { AppHeaderV2 } from "./app-header"
 import { FloatingAssistant } from "./floating-assistant"
 
@@ -31,6 +31,7 @@ function ThemedLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const title = getTitle(pathname)
   const isFullScreen = pathname.includes("/run") || pathname.includes("/chat")
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -42,9 +43,14 @@ function ThemedLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div dir="ltr" className="flex h-screen overflow-hidden bg-background font-sans">
+      {/* Desktop sidebar */}
       <AppSidebarV2 />
+
+      {/* Mobile slide-in drawer */}
+      <MobileNavDrawer isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+
       <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeaderV2 title={title} />
+        <AppHeaderV2 title={title} onMenuClick={() => setMobileNavOpen(true)} />
         <main className="flex-1 overflow-y-auto">
           {isFullScreen ? (
             children

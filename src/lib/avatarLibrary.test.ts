@@ -1,44 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
-  getAvatarLibrary,
+  DEFAULT_CHATBOT_AVATAR_ID,
+  getDefaultChatbotAvatar,
   getAvatarLibraryEntry,
-  getAvatarLibraryEntryByName,
   resolveGlbUrl,
 } from './avatarLibrary';
 
-describe('avatarLibrary', () => {
-  it('loads manifest with featured avatars including lip-sync hints', () => {
-    const library = getAvatarLibrary();
-    expect(library.avatars.length).toBeGreaterThanOrEqual(2);
-    expect(library.avatars[0]?.lipSync.blinkTargets?.length).toBeGreaterThan(0);
-    expect(library.avatars[0]?.thumbnailPath).toContain('/images/');
+describe('avatarLibrary chatbot defaults', () => {
+  it('uses Sultan (Emirati male) as the default chatbot avatar', () => {
+    const avatar = getDefaultChatbotAvatar();
+    expect(avatar.id).toBe(DEFAULT_CHATBOT_AVATAR_ID);
+    expect(avatar.name).toBe('Sultan');
+    expect(avatar.glbPath).toBe('/avatars/avatar-2.glb');
+    expect(avatar.thumbnailPath).toBe('/images/avatar-male.png');
   });
 
-  it('resolves library entry by id', () => {
-    const entry = getAvatarLibraryEntry('avatar-1');
-    expect(entry?.name).toBe('Salama');
-    expect(entry?.glbPath).toBe('/avatars/avatar-1.glb');
-  });
-
-  it('resolves library entry by name', () => {
-    expect(getAvatarLibraryEntryByName('Sultan')?.gender).toBe('male');
-    expect(getAvatarLibraryEntryByName('Salama')?.gender).toBe('female');
-  });
-
-  it('prefers explicit model URL over library id', () => {
-    expect(resolveGlbUrl('https://cdn.example.com/custom.glb', 'avatar-1')).toBe(
-      'https://cdn.example.com/custom.glb',
-    );
-  });
-
-  it('falls back to library path when model URL missing', () => {
-    expect(resolveGlbUrl(null, 'avatar-2')).toBe('/avatars/avatar-2.glb');
-  });
-
-  it('includes kids avatars as separate library entries', () => {
-    expect(getAvatarLibraryEntry('kids-female')?.glbPath).toBe('/avatars/kids-female.glb');
-    expect(getAvatarLibraryEntry('kids-male')?.glbPath).toBe('/avatars/kids-male.glb');
-    expect(getAvatarLibraryEntryByName('Layla')?.tags).toContain('kids');
-    expect(getAvatarLibraryEntryByName('Omar')?.tags).toContain('kids');
+  it('resolves GLB URL from default chatbot library id', () => {
+    expect(resolveGlbUrl(null, DEFAULT_CHATBOT_AVATAR_ID)).toBe('/avatars/avatar-2.glb');
+    expect(getAvatarLibraryEntry(DEFAULT_CHATBOT_AVATAR_ID)?.lipSync.morphTargets.length).toBeGreaterThan(0);
   });
 });

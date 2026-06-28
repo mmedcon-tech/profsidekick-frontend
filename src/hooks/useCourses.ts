@@ -44,8 +44,10 @@ export interface CourseSessionSummary {
   description?: string;
   duration: number;
   total_slides: number;
-  created_at: string;
   run_count: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 interface UseCoursesReturn {

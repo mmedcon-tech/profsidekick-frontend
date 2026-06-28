@@ -39,11 +39,10 @@ function PrefGroup({
               key={opt.value}
               type="button"
               onClick={() => onChange(opt.value)}
-              className={`text-left p-3 rounded-xl border-2 transition-all ${
-                selected
-                  ? 'border-[#133221] bg-primary/5 dark:bg-gray-800'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
-              }`}
+              className={`text-left p-3 rounded-xl border-2 transition-all ${selected
+                ? 'border-[#133221] bg-primary/5 dark:bg-gray-800'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
+                }`}
             >
               <p className={`text-xs font-semibold ${selected ? 'text-[#133221]' : 'text-gray-800 dark:text-gray-200'}`}>
                 {opt.label}
@@ -59,31 +58,31 @@ function PrefGroup({
 // ─── preference option definitions ───────────────────────────────────────────
 
 const PACE_OPTIONS: PrefOption[] = [
-  { value: 'thorough',  label: 'Thorough & Detailed',  description: 'Break ideas into smaller steps; ensure understanding before moving on.' },
-  { value: 'balanced',  label: 'Balanced',              description: 'Sufficient explanation while keeping the session focused and efficient.' },
-  { value: 'fast',      label: 'Fast & Concise',        description: 'Hit the most important points; avoid unnecessary detail.' },
+  { value: 'thorough', label: 'Thorough & Detailed', description: 'Break ideas into smaller steps; ensure understanding before moving on.' },
+  { value: 'balanced', label: 'Balanced', description: 'Sufficient explanation while keeping the session focused and efficient.' },
+  { value: 'fast', label: 'Fast & Concise', description: 'Hit the most important points; avoid unnecessary detail.' },
 ];
 
 const QUESTIONING_OPTIONS: PrefOption[] = [
-  { value: 'socratic', label: 'Socratic',         description: 'Teach through questions; let students reason toward answers.' },
-  { value: 'direct',   label: 'Direct',            description: 'Explain first, then check understanding with follow-ups.' },
-  { value: 'guided',   label: 'Guided Discovery',  description: 'Hints and progressive prompts lead students to conclusions.' },
+  { value: 'socratic', label: 'Socratic', description: 'Teach through questions; let students reason toward answers.' },
+  { value: 'direct', label: 'Direct', description: 'Explain first, then check understanding with follow-ups.' },
+  { value: 'guided', label: 'Guided Discovery', description: 'Hints and progressive prompts lead students to conclusions.' },
 ];
 
 const FORMALITY_OPTIONS: PrefOption[] = [
-  { value: 'casual',   label: 'Casual & Encouraging', description: 'Friendly and supportive; builds confidence and reduces anxiety.' },
-  { value: 'balanced', label: 'Balanced',              description: 'Professional but approachable; suits most educational settings.' },
-  { value: 'formal',   label: 'Formal & Academic',     description: 'Precise academic language and professional instructional style.' },
+  { value: 'casual', label: 'Casual & Encouraging', description: 'Friendly and supportive; builds confidence and reduces anxiety.' },
+  { value: 'balanced', label: 'Balanced', description: 'Professional but approachable; suits most educational settings.' },
+  { value: 'formal', label: 'Formal & Academic', description: 'Precise academic language and professional instructional style.' },
 ];
 
 const DEPTH_OPTIONS: PrefOption[] = [
-  { value: 'surface',  label: 'Surface',   description: 'Key concepts and practical understanding only.' },
-  { value: 'standard', label: 'Standard',  description: 'Conceptual explanations with enough detail for application.' },
-  { value: 'deep',     label: 'Deep',      description: 'Theory, edge cases, and deeper implications explored fully.' },
+  { value: 'surface', label: 'Surface', description: 'Key concepts and practical understanding only.' },
+  { value: 'standard', label: 'Standard', description: 'Conceptual explanations with enough detail for application.' },
+  { value: 'deep', label: 'Deep', description: 'Theory, edge cases, and deeper implications explored fully.' },
 ];
 
 const ENCOURAGEMENT_OPTIONS: PrefOption[] = [
-  { value: 'high',    label: 'High',    description: 'Frequent positive reinforcement and acknowledgment of progress.' },
+  { value: 'high', label: 'High', description: 'Frequent positive reinforcement and acknowledgment of progress.' },
   { value: 'neutral', label: 'Neutral', description: 'Encouragement when appropriate; focus stays on instruction.' },
   { value: 'minimal', label: 'Minimal', description: 'Neutral instructional style; limited motivational language.' },
 ];
@@ -91,31 +90,31 @@ const ENCOURAGEMENT_OPTIONS: PrefOption[] = [
 const LANGUAGE_OPTIONS: PrefOption[] = [
   { value: 'introductory', label: 'Introductory', description: 'Simple language; define technical terms; avoid jargon.' },
   { value: 'intermediate', label: 'Intermediate', description: 'Standard academic terminology; concepts remain accessible.' },
-  { value: 'advanced',     label: 'Advanced',     description: 'Advanced terminology; assumes strong foundational knowledge.' },
-  { value: 'adaptive',     label: 'Adaptive',     description: 'Adjusts complexity based on the student\'s demonstrated understanding.' },
+  { value: 'advanced', label: 'Advanced', description: 'Advanced terminology; assumes strong foundational knowledge.' },
+  { value: 'adaptive', label: 'Adaptive', description: 'Adjusts complexity based on the student\'s demonstrated understanding.' },
 ];
 
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 const STEP_LABELS: Record<Step, string> = {
-  template:    'Choose Template',
-  info:        'Name & Details',
-  preferences: 'Teaching Style',
+  template: 'Choose Template',
+  info: 'Name & Details',
+  preferences: 'Style',
 };
 const STEPS: Step[] = ['template', 'info', 'preferences'];
 
 export default function CreateAvatarPage() {
-  const router          = useRouter();
-  const { user }        = useAuth();
+  const router = useRouter();
+  const { user } = useAuth();
   const { activeProgram } = useProgramContext();
-  const [step,          setStep]       = useState<Step>('template');
-  const [templates,     setTemplates]  = useState<AvatarTemplateSummary[]>([]);
-  const [loadingT,      setLoadingT]   = useState(true);
-  const [selectedT,     setSelectedT]  = useState<AvatarTemplateSummary | null>(null);
-  const [name,          setName]       = useState('');
-  const [desc,          setDesc]       = useState('');
-  const [submitting,    setSubmitting] = useState(false);
-  const [error,         setError]      = useState<string | null>(null);
+  const [step, setStep] = useState<Step>('template');
+  const [templates, setTemplates] = useState<AvatarTemplateSummary[]>([]);
+  const [loadingT, setLoadingT] = useState(true);
+  const [selectedT, setSelectedT] = useState<AvatarTemplateSummary | null>(null);
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Teaching preferences
   const [prefs, setPrefs] = useState<TeachingPreferences>({});
@@ -140,7 +139,7 @@ export default function CreateAvatarPage() {
   };
 
   const goBack = () => {
-    if (step === 'info')        { setStep('template'); return; }
+    if (step === 'info') { setStep('template'); return; }
     if (step === 'preferences') { setStep('info'); return; }
     router.back();
   };
@@ -152,11 +151,11 @@ export default function CreateAvatarPage() {
     setError(null);
     try {
       const avatar = await avatarApi.create({
-        template_id:          selectedT.id,
-        name:                 name.trim(),
-        description:          desc.trim() || undefined,
+        template_id: selectedT.id,
+        name: name.trim(),
+        description: desc.trim() || undefined,
         teaching_preferences: Object.keys(prefs).length > 0 ? prefs : undefined,
-        program_id:           activeProgram?.id ?? undefined,
+        program_id: activeProgram?.id ?? undefined,
       });
       router.push(`/publisher/avatars/${avatar.id}`);
     } catch (e) {
@@ -180,16 +179,14 @@ export default function CreateAvatarPage() {
       {/* Step indicator */}
       <div className="flex items-center gap-2">
         {STEPS.map((s, i) => {
-          const done   = currentStepIndex > i;
+          const done = currentStepIndex > i;
           const active = step === s;
           return (
             <React.Fragment key={s}>
-              <div className={`flex items-center gap-1.5 text-xs font-medium ${
-                active ? 'text-[#133221]' : done ? 'text-primary' : 'text-gray-400'
-              }`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
-                  active ? 'bg-[#133221] text-white' : done ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500 dark:text-gray-400'
+              <div className={`flex items-center gap-1.5 text-xs font-medium ${active ? 'text-[#133221]' : done ? 'text-primary' : 'text-gray-400'
                 }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${active ? 'bg-[#133221] text-white' : done ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500 dark:text-gray-400'
+                  }`}>
                   {done ? <CheckCircle size={12} /> : i + 1}
                 </div>
                 <span className="hidden sm:inline">{STEP_LABELS[s]}</span>
@@ -220,11 +217,10 @@ export default function CreateAvatarPage() {
                 const isSelected = selectedT?.id === t.id;
                 return (
                   <button key={t.id} onClick={() => handleSelectTemplate(t)}
-                    className={`text-left p-5 rounded-xl border-2 transition-all ${
-                      isSelected
-                        ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 ring-2 ring-[#133221] ring-offset-1'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
-                    }`}>
+                    className={`text-left p-5 rounded-xl border-2 transition-all ${isSelected
+                      ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 ring-2 ring-[#133221] ring-offset-1'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
+                      }`}>
                     <div className="flex items-start gap-3">
                       <AvatarIcon imageUrl={t.avatar_image_url} name={t.name} size={40} rounded="lg" />
                       <div className="min-w-0 flex-1">
@@ -293,7 +289,7 @@ export default function CreateAvatarPage() {
           <div className="flex items-center gap-3">
             <button onClick={() => { setError(null); setStep('preferences'); }} disabled={!name.trim()}
               className="flex items-center gap-2 bg-[#133221] text-white px-5 py-2.5 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-              Next — Teaching Style <ArrowRight size={16} />
+              Next - Style <ArrowRight size={16} />
             </button>
             <button onClick={() => setStep('template')}
               className="text-sm text-gray-500 dark:text-gray-400 px-4 py-2.5 rounded-lg hover:bg-gray-100 dark:bg-gray-800 transition-colors">
@@ -316,19 +312,19 @@ export default function CreateAvatarPage() {
 
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-6">
             <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Teaching Style</h2>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Style</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 These preferences shape the AI&apos;s teaching persona. You can leave any unset to use the
                 default behaviour.
               </p>
             </div>
 
-            <PrefGroup title="Pacing"           options={PACE_OPTIONS}         value={prefs.teaching_pace}       onChange={(v) => setPref('teaching_pace',       v as any)} />
-            <PrefGroup title="Questioning Style" options={QUESTIONING_OPTIONS}  value={prefs.questioning_style}   onChange={(v) => setPref('questioning_style',   v as any)} />
-            <PrefGroup title="Formality"         options={FORMALITY_OPTIONS}    value={prefs.formality_level}     onChange={(v) => setPref('formality_level',     v as any)} />
-            <PrefGroup title="Explanation Depth" options={DEPTH_OPTIONS}        value={prefs.depth_level}         onChange={(v) => setPref('depth_level',         v as any)} />
-            <PrefGroup title="Encouragement"     options={ENCOURAGEMENT_OPTIONS} value={prefs.encouragement_level} onChange={(v) => setPref('encouragement_level', v as any)} />
-            <PrefGroup title="Language Complexity" options={LANGUAGE_OPTIONS}   value={prefs.language_level}      onChange={(v) => setPref('language_level',      v as any)} />
+            <PrefGroup title="Pacing" options={PACE_OPTIONS} value={prefs.teaching_pace} onChange={(v) => setPref('teaching_pace', v as any)} />
+            <PrefGroup title="Questioning Style" options={QUESTIONING_OPTIONS} value={prefs.questioning_style} onChange={(v) => setPref('questioning_style', v as any)} />
+            <PrefGroup title="Formality" options={FORMALITY_OPTIONS} value={prefs.formality_level} onChange={(v) => setPref('formality_level', v as any)} />
+            <PrefGroup title="Explanation Depth" options={DEPTH_OPTIONS} value={prefs.depth_level} onChange={(v) => setPref('depth_level', v as any)} />
+            <PrefGroup title="Encouragement" options={ENCOURAGEMENT_OPTIONS} value={prefs.encouragement_level} onChange={(v) => setPref('encouragement_level', v as any)} />
+            <PrefGroup title="Language Complexity" options={LANGUAGE_OPTIONS} value={prefs.language_level} onChange={(v) => setPref('language_level', v as any)} />
 
             {/* Post-Session Check — UI only, not sent to backend */}
             <div className="space-y-2">
@@ -336,11 +332,10 @@ export default function CreateAvatarPage() {
               <div className="flex gap-3">
                 {(['enabled', 'disabled'] as const).map((val) => (
                   <button key={val} type="button" onClick={() => setPostSessionCheck(val)}
-                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all capitalize ${
-                      postSessionCheck === val
-                        ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221]'
-                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                    }`}>
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all capitalize ${postSessionCheck === val
+                      ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221]'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                      }`}>
                     {val}
                   </button>
                 ))}

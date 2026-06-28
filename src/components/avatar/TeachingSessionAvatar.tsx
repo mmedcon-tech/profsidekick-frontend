@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
 import StaticAvatarWidget from '@/components/avatar/StaticAvatarWidget';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
 import { useTalkingHeadsAvatar } from '@/hooks/useTalkingHeadsAvatar';
-import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import type { SessionAvatarConfig } from '@/types/types';
+
+import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
+import GlbAvatarPreview from '@/components/avatar/GlbAvatarPreview';
+import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
 
 interface TeachingSessionAvatarProps {
   config: SessionAvatarConfig;
@@ -30,28 +32,44 @@ export default function TeachingSessionAvatar({
     isUserSpeaking,
   });
   const isSpeakingActive = widgetState === 'speaking' && isConnected;
-  const audioAmplitude = useAudioAmplitude(audioElement, isSpeakingActive);
+  const amplitude = useAudioAmplitude(audioElement, isSpeakingActive);
   const talkingHeads = useTalkingHeadsAvatar(config, isConnected);
 
   const libraryEntry = config.glbLibraryId
     ? getAvatarLibraryEntry(config.glbLibraryId)
     : undefined;
 
+  const isDirectGlbUrl = config.glbLibraryId?.endsWith('.glb');
+  const glbUrl = isDirectGlbUrl ? config.glbLibraryId : libraryEntry?.glbPath;
+
   const imageUrl =
     config.imageUrl ??
     libraryEntry?.thumbnailPath ??
-    (config.glbLibraryId === 'avatar-2'
+    (config.glbLibraryId === 'avatar-2' || (isDirectGlbUrl && config.glbLibraryId?.includes('male'))
       ? '/images/avatar-male.png'
       : '/images/avatar-female.png');
 
-  if (config.renderType === 'glb') {
+  if (config.renderType === '3d' && glbUrl) {
+    return (
+      <div className="flex h-full w-full flex-col bg-gray-900">
+        <GlbAvatarPreview
+          glbUrl={glbUrl}
+          amplitude={amplitude}
+          showControls={false}
+          framing="bust"
+        />
+      </div>
+    );
+  }
+
+  if (config.renderType === '3d') {
     return (
       <div className="flex h-full w-full flex-col bg-gray-900">
         <PortraitAvatarStage
           imageUrl={imageUrl}
           avatarName={config.avatarName}
           widgetState={widgetState}
-          amplitude={isSpeakingActive ? audioAmplitude : 0}
+          amplitude={amplitude}
         />
       </div>
     );
@@ -63,7 +81,7 @@ export default function TeachingSessionAvatar({
         imageUrl={imageUrl}
         avatarName={config.avatarName}
         widgetState={widgetState}
-        amplitude={isSpeakingActive ? audioAmplitude : 0}
+        amplitude={amplitude}
         size={200}
         variant={config.renderType === 'talkingheads' ? 'talkingheads' : 'static'}
       />
@@ -75,3 +93,4 @@ export default function TeachingSessionAvatar({
     </div>
   );
 }
+

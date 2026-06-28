@@ -8,6 +8,7 @@ import { BookOpen, Users, Zap, ArrowRight, CheckCircle, LogOut } from 'lucide-re
 export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, logout, user, token } = useAuth();
+  const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
 
   const handleLogout = async () => {
     await logout();
@@ -88,7 +89,7 @@ export default function LandingPage() {
                     {user?.firstName} · <span className="capitalize font-medium text-primary dark:text-primary/30">{user?.role}</span>
                   </span>
                   <button
-                    onClick={() => router.push('/dashboard')}
+                    onClick={() => router.push(dashboardUrl)}
                     className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors text-sm"
                   >
                     Dashboard
@@ -140,7 +141,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               {isAuthenticated ? (
                 <button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push(dashboardUrl)}
                   className="bg-primary dark:bg-primary/90 text-white px-8 py-4 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
                 >
                   Go to Dashboard
@@ -251,7 +252,7 @@ export default function LandingPage() {
                   <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Customizable AI Assistant</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Configure voice, personality, and teaching style to match your preferences and subject matter.</p>
+                    <p className="text-gray-600 dark:text-gray-400">Configure voice, personality, and style to match your preferences and subject matter.</p>
                   </div>
                 </div>
               </div>
@@ -263,7 +264,7 @@ export default function LandingPage() {
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Welcome Back!</h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-6">Ready to create your next amazing teaching session?</p>
                     <button
-                      onClick={() => router.push('/dashboard')}
+                      onClick={() => router.push(dashboardUrl)}
                       className="w-full bg-primary dark:bg-primary/90 text-white px-8 py-4 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
                     >
                       Go to Dashboard
@@ -431,7 +432,7 @@ export default function LandingPage() {
               <h3 className="font-semibold mb-4">Account</h3>
               <ul className="space-y-2 text-gray-400">
                 {isAuthenticated ? (
-                  <li><button onClick={() => router.push('/dashboard')} className="hover:text-white transition-colors">Dashboard</button></li>
+                  <li><button onClick={() => router.push(dashboardUrl)} className="hover:text-white transition-colors">Dashboard</button></li>
                 ) : (
                   <>
                     <li><button onClick={() => router.push('/login')} className="hover:text-white transition-colors">Sign In</button></li>

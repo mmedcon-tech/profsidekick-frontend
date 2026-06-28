@@ -1,202 +1,136 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { buildAvatarPreviewGreeting } from '@/lib/avatarGreeting';
 import { getAvatarLibraryEntryByName } from '@/lib/avatarLibrary';
-import type { SpeechVoiceGender } from '@/lib/openaiSpeech';
-import { loadSpeechVoices, pickSpeechVoice } from '@/lib/speechVoice';
-import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
+import { pickSpeechVoice, loadSpeechVoices } from '@/lib/speechVoice';
+import { playElevenLabsSpeech } from '@/lib/playElevenLabsAudio';
+
+const PREVIEW_TEXT =
+  "Hello! I'm excited to guide you through the material and help you master every concept. Let's get started!";
 
 export interface SpeechPreviewState {
   active: boolean;
   loading: boolean;
   amplitude: number;
-  start: () => void;
-  stop: () => void;
   toggle: () => void;
 }
 
-function resolveUserFirstName(
-  user: { firstName?: string; lastName?: string; username?: string } | null,
-): string {
-  if (!user) return 'there';
-  const full = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
-  return full || user.username || 'there';
-}
-
-function resolveVoiceGender(avatarName: string, override?: SpeechVoiceGender): SpeechVoiceGender {
-  if (override) return override;
-  const entry = getAvatarLibraryEntryByName(avatarName);
-  if (entry?.gender === 'male' || entry?.gender === 'female') return entry.gender;
-  return avatarName === 'Sultan' ? 'male' : 'female';
-}
-
-async function fetchNeuralSpeech(
-  text: string,
-  gender: SpeechVoiceGender,
-): Promise<Blob | null> {
-  const response = await fetch('/api/speech/preview', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, gender }),
-  });
-
-  if (!response.ok) return null;
-  return response.blob();
-}
-
-function speakWithBrowserTts(
-  text: string,
-  gender: SpeechVoiceGender,
-  voices: SpeechSynthesisVoice[],
-  onStart: () => void,
-  onWord: () => void,
-  onEnd: () => void,
-): SpeechSynthesisUtterance {
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voice = pickSpeechVoice(gender, voices);
-  utterance.rate = 0.94;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-  if (voice) utterance.voice = voice;
-
-  utterance.onstart = onStart;
-  utterance.onend = onEnd;
-  utterance.onerror = onEnd;
-  utterance.onboundary = (event) => {
-    if (event.name === 'word') onWord();
-  };
-
-  window.speechSynthesis.speak(utterance);
-  return utterance;
-}
-
-/** Speaks a personalised greeting via OpenAI TTS (with browser fallback) and drives lip-sync. */
-export function useSpeechPreview(
-  avatarName: string,
-  voiceGender?: SpeechVoiceGender,
-): SpeechPreviewState {
-  const { user } = useAuth();
+export function useSpeechPreview(avatarName: string): SpeechPreviewState {
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [browserAmplitude, setBrowserAmplitude] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const objectUrlRef = useRef<string | null>(null);
-  const gender = resolveVoiceGender(avatarName, voiceGender);
-  const neuralAmplitude = useAudioAmplitude(audioElement, active && !loading);
+  const [amplitude, setAmplitude] = useState(0);
 
-  const revokeObjectUrl = useCallback(() => {
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
+  const rafRef = useRef<number>(0);
+  const startTimeRef = useRef<number>(0);
+  const stopAudioRef = useRef<(() => void) | null>(null);
+
+  const stopAmplitude = useCallback(() => {
+    window.cancelAnimationFrame(rafRef.current);
+    setAmplitude(0);
+  }, []);
+
+  const startAmplitude = useCallback(() => {
+    startTimeRef.current = performance.now();
+    const tick = (): void => {
+      const elapsed = (performance.now() - startTimeRef.current) / 1000;
+      // Blend two sine waves to feel more natural than a single oscillation
+      const value =
+        0.45 +
+        0.3 * Math.sin(elapsed * 6.5) +
+        0.15 * Math.sin(elapsed * 13.1 + 1.2);
+      setAmplitude(Math.max(0, Math.min(1, value)));
+      rafRef.current = window.requestAnimationFrame(tick);
+    };
+    rafRef.current = window.requestAnimationFrame(tick);
   }, []);
 
   const stop = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.speechSynthesis?.cancel();
+    stopAudioRef.current?.();
+    stopAudioRef.current = null;
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
     }
-    utteranceRef.current = null;
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.removeAttribute('src');
-      audio.load();
-    }
-    revokeObjectUrl();
+    stopAmplitude();
     setActive(false);
     setLoading(false);
-    setBrowserAmplitude(0);
-  }, [revokeObjectUrl]);
+  }, [stopAmplitude]);
 
-  const start = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-
-    stop();
-    const userName = resolveUserFirstName(user);
-    const text = buildAvatarPreviewGreeting(userName, avatarName);
-    setLoading(true);
-
-    try {
-      const blob = await fetchNeuralSpeech(text, gender);
-      const audio = audioRef.current;
-      if (blob && audio) {
-        revokeObjectUrl();
-        const url = URL.createObjectURL(blob);
-        objectUrlRef.current = url;
-        audio.src = url;
-
-        const handleEnded = (): void => stop();
-        audio.onended = handleEnded;
-        audio.onerror = handleEnded;
-
-        setLoading(false);
-        setActive(true);
-        await audio.play();
-        return;
-      }
-    } catch {
-      // fall through to browser TTS
-    }
-
-    if (!window.speechSynthesis) {
-      setLoading(false);
+  const toggle = useCallback(async () => {
+    if (active || loading) {
+      stop();
       return;
     }
 
-    const voices = await loadSpeechVoices();
-    utteranceRef.current = speakWithBrowserTts(
-      text,
-      gender,
-      voices,
-      () => {
+    setLoading(true);
+    const entry = getAvatarLibraryEntryByName(avatarName);
+    const gender = entry?.gender === 'male' ? 'male' : 'female';
+    const prefersElevenLabs =
+      entry?.languages.includes('ar') || entry?.name === 'Sultan' || entry?.name === 'Salama';
+
+    if (prefersElevenLabs) {
+      try {
+        const stop = await playElevenLabsSpeech({
+          text: PREVIEW_TEXT,
+          gender,
+          onSpeakingChange: (speaking) => {
+            setActive(speaking);
+            if (speaking) {
+              setLoading(false);
+              startAmplitude();
+            } else {
+              stopAmplitude();
+              setLoading(false);
+            }
+          },
+        });
+        stopAudioRef.current = stop;
         setLoading(false);
         setActive(true);
-      },
-      () => setBrowserAmplitude(0.35 + Math.random() * 0.3),
-      () => stop(),
-    );
-  }, [avatarName, gender, revokeObjectUrl, stop, user]);
+        startAmplitude();
+        return;
+      } catch {
+        // Fall back to browser speech below.
+      }
+    }
 
-  const toggle = useCallback(() => {
-    if (active || loading) stop();
-    else void start();
-  }, [active, loading, start, stop]);
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
+    const voices = await loadSpeechVoices();
+    const voice = pickSpeechVoice(gender, voices);
+
+    const utterance = new SpeechSynthesisUtterance(PREVIEW_TEXT);
+    if (voice) utterance.voice = voice;
+    utterance.rate = 0.97;
+    utterance.pitch = gender === 'male' ? 0.92 : 1.08;
+
+    utterance.onstart = () => {
+      setLoading(false);
+      setActive(true);
+      startAmplitude();
+    };
+
+    const finish = (): void => {
+      stopAmplitude();
+      setActive(false);
+      setLoading(false);
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    setLoading(true);
+  }, [active, loading, avatarName, stop, startAmplitude, stopAmplitude]);
+
+  // Cancel on unmount
   useEffect(() => {
-    const audio = new Audio();
-    audio.preload = 'auto';
-    audioRef.current = audio;
-    setAudioElement(audio);
     return () => {
-      audio.pause();
-      audio.src = '';
-      audioRef.current = null;
-      revokeObjectUrl();
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      window.cancelAnimationFrame(rafRef.current);
     };
-  }, [revokeObjectUrl]);
+  }, []);
 
-  useEffect(() => {
-    if (!active || neuralAmplitude > 0) return;
-
-    let rafId = 0;
-    const decay = (): void => {
-      setBrowserAmplitude((prev) => Math.max(0, prev * 0.82));
-      rafId = window.requestAnimationFrame(decay);
-    };
-    rafId = window.requestAnimationFrame(decay);
-
-    return () => window.cancelAnimationFrame(rafId);
-  }, [active, neuralAmplitude]);
-
-  useEffect(() => () => stop(), [stop]);
-
-  const amplitude =
-    neuralAmplitude > 0 ? neuralAmplitude : browserAmplitude;
-
-  return { active, loading, amplitude, start, stop, toggle };
+  return { active, loading, amplitude, toggle };
 }

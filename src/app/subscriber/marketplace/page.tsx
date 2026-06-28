@@ -80,7 +80,7 @@ export default function MarketplacePage() {
           Discover available AI avatars in your program.
         </p>
       </div>
-
+      {/* 
       <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-4">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">Platform Avatars</h2>
@@ -93,7 +93,7 @@ export default function MarketplacePage() {
             <StarterAvatarCard key={sa.id} avatar={sa} role="subscriber" />
           ))}
         </div>
-      </div>
+      </div> */}
 
       <div>
         <div className="mb-4 flex items-center justify-between gap-4">

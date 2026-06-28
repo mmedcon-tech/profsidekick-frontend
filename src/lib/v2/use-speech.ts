@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { playElevenLabsSpeech } from "@/lib/playElevenLabsAudio"
 
 // Minimal typings for the Web Speech API (not in TS lib DOM by default)
 type SpeechRecognitionResultLike = {
@@ -46,6 +47,7 @@ export function useSpeech(lang: "en" | "ar", gender: "male" | "female") {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const finalRef = useRef<string>("")
   const onFinalRef = useRef<((t: string) => void) | null>(null)
+  const stopAudioRef = useRef<(() => void) | null>(null)
 
   // detect support + load voices
   useEffect(() => {
@@ -81,6 +83,30 @@ export function useSpeech(lang: "en" | "ar", gender: "male" | "female") {
 
   const speak = useCallback(
     (text: string, onDone?: () => void) => {
+      stopAudioRef.current?.()
+      stopAudioRef.current = null
+
+      if (lang === "ar") {
+        void playElevenLabsSpeech({
+          text,
+          gender,
+          onSpeakingChange: (isSpeaking) => {
+            setSpeaking(isSpeaking)
+            if (!isSpeaking) {
+              onDone?.()
+            }
+          },
+        })
+          .then((stop) => {
+            stopAudioRef.current = stop
+          })
+          .catch(() => {
+            setSpeaking(false)
+            onDone?.()
+          })
+        return
+      }
+
       if (typeof window === "undefined" || !("speechSynthesis" in window)) {
         // graceful fallback: simulate speaking duration
         setSpeaking(true)
@@ -113,6 +139,8 @@ export function useSpeech(lang: "en" | "ar", gender: "male" | "female") {
   )
 
   const stopSpeaking = useCallback(() => {
+    stopAudioRef.current?.()
+    stopAudioRef.current = null
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel()
     }
