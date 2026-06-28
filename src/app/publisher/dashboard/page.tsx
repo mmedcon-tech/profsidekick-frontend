@@ -5,25 +5,94 @@ import { tr } from "@/lib/v2/i18n"
 import { useProgramContext } from "@/contexts/ProgramContext"
 import { usePublisherAnalytics } from "@/hooks/usePublisherAnalytics"
 import { Progress } from "@/components/ui/progress"
-import { Button } from "@/components/ui/button"
-import { Bot, BookOpen, Users, TrendingUp, AlertTriangle, Sparkles, ArrowRight } from "lucide-react"
+import {
+  Bot, BookOpen, Users, TrendingUp, AlertTriangle,
+  LayoutGrid, Info,
+} from "lucide-react"
 import {
   Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
   Area, AreaChart, CartesianGrid,
 } from "recharts"
 
-function Stat({ icon: Icon, label, value, sub }: { icon: typeof Bot; label: string; value: string; sub?: string }) {
+// ── Skeleton primitives ──────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }: { className?: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <Icon className="h-4 w-4" />
-        <span className="text-xs font-medium">{label}</span>
-      </div>
-      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+    <div
+      className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className ?? ""}`}
+    />
+  )
+}
+
+function StatSkeleton() {
+  return (
+    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-3">
+      <SkeletonBlock className="h-3 w-24" />
+      <SkeletonBlock className="h-7 w-16" />
     </div>
   )
 }
+
+// ── Stat card ────────────────────────────────────────────────────────────────
+
+function Stat({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  icon: typeof Bot
+  label: string
+  value: string
+  sub?: string
+  accent?: boolean
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 transition-shadow hover:shadow-md ${
+        accent
+          ? "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40"
+          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+      }`}
+    >
+      <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+        <Icon className={`h-4 w-4 ${accent ? "text-blue-600 dark:text-blue-400" : ""}`} />
+        <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{sub}</p>}
+    </div>
+  )
+}
+
+// ── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyChart({ label }: { label: string }) {
+  return (
+    <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+      <Info className="h-5 w-5 text-gray-300 dark:text-gray-600" />
+      <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
+    </div>
+  )
+}
+
+// ── Chart colors — resolved to hsl() so recharts can consume them directly ──
+const CHART_BLUE  = "hsl(213 94% 58%)"
+const CHART_GOLD  = "hsl(46 65% 52%)"
+const CHART_MUTED = "hsl(220 13% 91%)"
+
+// ── Custom tooltip ────────────────────────────────────────────────────────────
+
+const TooltipStyle = {
+  background: "var(--popover)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  fontSize: 12,
+  color: "var(--popover-foreground)",
+} as const
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PublisherDashboardPage() {
   const { user } = useAuth()
@@ -34,170 +103,214 @@ export default function PublisherDashboardPage() {
     contextReady ? activeProgram?.id : undefined
   )
 
-  const totalSubscribers = analytics?.total_subscribers || 0
-  const totalCourses = analytics?.total_courses || 0
-  const totalSessions = analytics?.total_sessions || 0
-  const totalAvatars = analytics?.total_avatars || 0
+  const totalSubscribers = analytics?.total_subscribers ?? 0
+  const totalCourses     = analytics?.total_courses     ?? 0
+  const totalSessions    = analytics?.total_sessions    ?? 0
+  const totalAvatars     = analytics?.total_avatars     ?? 0
 
-  const recs = lang === "ar"
-    ? [
-        "3 مشتركين متأخرون عن دورة أساسيات السلامة — يُقترح إرسال تذكير آلي.",
-        "أداء دورة القيادة هو الأعلى (91٪) — فكر في مشاركة أفضل الممارسات.",
-        "معدل إكمال دورة حوكمة الذكاء الاصطناعي منخفض — يُنصح بإضافة جلسة مراجعة.",
-      ]
-    : [
-        "3 subscribers are behind on OHS Basics — suggest sending an automated reminder.",
-        "Leadership course leads completion (91%) — consider sharing best practices.",
-        "AI Governance completion is low — recommend adding an oral revision session.",
-      ]
+  const coursePerf     = analytics?.course_performance    ?? []
+  const monthlyComps   = analytics?.monthly_completions   ?? []
+  const atRisk         = analytics?.at_risk_learners      ?? []
 
   return (
-    <div className="space-y-6">
-      {/* Welcome */}
-      <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-card to-secondary/40 p-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <div className="px-4 sm:px-6 py-6 space-y-6 max-w-6xl mx-auto">
+
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <p className="text-xs font-medium uppercase tracking-widest text-gray-400 dark:text-gray-500">
           {tr("welcomeBack", lang)}, {user?.firstName}
         </p>
-        <h1 className="mt-1 text-xl font-bold text-foreground">
-          {lang === "ar" ? "لوحة تحكم الناشر" : "Publisher Dashboard"}
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+          Publisher Dashboard
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {lang === "ar"
-            ? "نظرة عامة على مساعديك وبرامجك وأداء المشتركين."
-            : "Overview of your avatars, programs, and subscriber performance."}
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Overview of your avatars, programs, and subscriber performance.
         </p>
       </div>
 
       {/* Program scope banner */}
       {contextReady && activeProgram && (
-        <div className="flex items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm">
-          <span className="h-2 w-2 rounded-full bg-primary" />
-          <span className="text-foreground">
-            Showing stats for <span className="font-semibold">{activeProgram.name.en}</span>
+        <div className="flex items-center gap-2.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-4 py-2.5 text-sm">
+          <span className="h-2 w-2 rounded-full bg-blue-500" />
+          <span className="text-gray-700 dark:text-gray-300">
+            Showing stats for{" "}
+            <span className="font-semibold text-gray-900 dark:text-gray-100">
+              {activeProgram.name.en}
+            </span>
           </span>
-          <span className="text-muted-foreground">— switch to MyOS to see all</span>
+          <span className="text-gray-400 dark:text-gray-500">— switch to MyOS to see all</span>
         </div>
       )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat icon={Bot} label={tr("myAvatars", lang)} value={`${totalAvatars}`} />
-        <Stat icon={Users} label={tr("totalSubscribers", lang)} value={`${totalSubscribers}`} />
-        <Stat icon={BookOpen} label={tr("activeCourses", lang)} value={`${totalCourses}`} />
-        <Stat icon={TrendingUp} label={tr("totalSessions", lang)} value={`${totalSessions}`} />
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
+        ) : (
+          <>
+            <Stat icon={Bot}        label={tr("myAvatars", lang)}        value={`${totalAvatars}`}     accent />
+            <Stat icon={Users}      label={tr("totalSubscribers", lang)} value={`${totalSubscribers}`} />
+            <Stat icon={BookOpen}   label={tr("activeCourses", lang)}    value={`${totalCourses}`}     />
+            <Stat icon={TrendingUp} label={tr("totalSessions", lang)}    value={`${totalSessions}`}    />
+          </>
+        )}
       </div>
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">{lang === "ar" ? "أداء الدورات" : "Course Performance"}</h3>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics?.course_performance || []} margin={{ top: 4, right: 8, left: -16, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis
-                  dataKey={(d) => d.name[lang] || d.name}
-                  tickLine={false}
-                  axisLine={false}
-                  interval={0}
-                  height={70}
-                  tick={({ x, y, payload }: any) => {
-                    const name = String(payload.value);
-                    const label = name.length > 14 ? name.slice(0, 14) + "…" : name;
-                    return (
-                      <g transform={`translate(${x},${y})`}>
-                        <text x={0} y={0} dy={6} textAnchor="end" fill="var(--muted-foreground)" fontSize={11} transform="rotate(-35)">
-                          {label}
-                        </text>
-                      </g>
-                    );
-                  }}
-                />
-                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-                <Tooltip
-                  cursor={{ fill: "var(--muted)" }}
-                  contentStyle={{
-                    background: "var(--popover)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    color: "var(--popover-foreground)",
-                  }}
-                  formatter={(v) => [`${v}%`, tr("completionRate", lang)]}
-                />
-                <Bar dataKey="completion" fill="var(--chart-1)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+
+        {/* Bar: Course Completion */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
+            Course Performance
+          </h3>
+          {loading ? (
+            <SkeletonBlock className="h-56 w-full" />
+          ) : coursePerf.length === 0 ? (
+            <EmptyChart label="No course data yet" />
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={coursePerf} margin={{ top: 4, right: 8, left: -16, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis
+                    dataKey={(d: any) => d.name[lang] ?? d.name}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                    height={60}
+                    tick={({ x, y, payload }: any) => {
+                      const name = String(payload.value)
+                      const label = name.length > 14 ? name.slice(0, 14) + "…" : name
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text
+                            x={0} y={0} dy={6}
+                            textAnchor="end"
+                            fill="currentColor"
+                            className="fill-gray-400 dark:fill-gray-500"
+                            fontSize={11}
+                            transform="rotate(-35)"
+                          >
+                            {label}
+                          </text>
+                        </g>
+                      )
+                    }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                    domain={[0, 100]}
+                    tickFormatter={(v) => `${v}%`}
+                  />
+                  <Tooltip
+                    cursor={{ fill: CHART_MUTED, opacity: 0.3 }}
+                    contentStyle={TooltipStyle}
+                    formatter={(v: any) => [`${v}%`, "Completion"]}
+                  />
+                  <Bar
+                    dataKey="completion"
+                    fill={CHART_BLUE}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={40}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">{tr("monthlyCompletions", lang)}</h3>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={analytics?.monthly_completions || []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="fill2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--popover)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    color: "var(--popover-foreground)",
-                  }}
-                />
-                <Area type="monotone" dataKey="value" stroke="var(--chart-2)" strokeWidth={2} fill="url(#fill2)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Area: Monthly Completions */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
+            {tr("monthlyCompletions", lang)}
+          </h3>
+          {loading ? (
+            <SkeletonBlock className="h-56 w-full" />
+          ) : monthlyComps.length === 0 ? (
+            <EmptyChart label="No completion data yet" />
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyComps} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="pubFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor={CHART_GOLD} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={CHART_GOLD} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip contentStyle={TooltipStyle} />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke={CHART_GOLD}
+                    strokeWidth={2}
+                    fill="url(#pubFill)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* At risk + AI recs */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-            {lang === "ar" ? "المشتركون المعرضون للخطر" : "Subscribers At Risk"}
-          </h3>
+      {/* At-risk learners */}
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
+          <AlertTriangle className="h-4 w-4 text-red-500" />
+          Subscribers At Risk
+        </h3>
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <SkeletonBlock className="h-4 flex-1" />
+                <SkeletonBlock className="h-2 w-28" />
+                <SkeletonBlock className="h-4 w-10" />
+              </div>
+            ))}
+          </div>
+        ) : atRisk.length === 0 ? (
+          <div className="flex flex-col items-center gap-1 py-8">
+            <LayoutGrid className="h-5 w-5 text-gray-300 dark:text-gray-600" />
+            <p className="text-sm text-gray-400 dark:text-gray-500">All subscribers are on track</p>
+          </div>
+        ) : (
           <ul className="space-y-3">
-            {(analytics?.at_risk_learners || []).map((e: any, i: number) => (
+            {atRisk.map((e: any, i: number) => (
               <li key={i} className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{e.name[lang] || e.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{e.course[lang] || e.course}</p>
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {e.name[lang] ?? e.name}
+                  </p>
+                  <p className="truncate text-xs text-gray-400 dark:text-gray-500">
+                    {e.course[lang] ?? e.course}
+                  </p>
                 </div>
-                <div className="w-28">
+                <div className="w-28 shrink-0">
                   <Progress value={e.progress} className="h-1.5" />
                 </div>
-                <span className="w-10 text-end text-xs font-medium text-destructive">{e.progress}%</span>
+                <span className="w-10 shrink-0 text-end text-xs font-semibold text-red-500">
+                  {e.progress}%
+                </span>
               </li>
             ))}
           </ul>
-        </div>
-
-        <div className="rounded-xl border border-accent/30 bg-gradient-to-br from-card to-secondary/40 p-5">
-          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Sparkles className="h-4 w-4 text-accent" />
-            {tr("aiRecommendations", lang)}
-          </h3>
-          <ul className="space-y-3">
-            {recs.map((r, i) => (
-              <li key={i} className="flex gap-2.5 rounded-lg bg-background/60 p-3 text-sm leading-relaxed text-foreground">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                {r}
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
       </div>
     </div>
   )
