@@ -17,6 +17,19 @@ describe('buildTimelineFromAlignment', () => {
     expect(timeline.duration).toBeCloseTo(0.45);
     expect(timeline.keyframes[0].time).toBe(0);
   });
+
+  it('collapses a "th" digraph into a single TH mouth shape', () => {
+    const timeline = buildTimelineFromAlignment({
+      characters: ['t', 'h', 'e'],
+      character_start_times_seconds: [0, 0.1, 0.2],
+      character_end_times_seconds: [0.1, 0.2, 0.35],
+    });
+
+    const visemes = timeline.keyframes.map((kf) => kf.viseme);
+    expect(visemes).toContain('TH');
+    // The "h" must not surface as its own wide-open "aa" gape.
+    expect(visemes).not.toContain('aa');
+  });
 });
 
 describe('buildEstimatedTimeline', () => {

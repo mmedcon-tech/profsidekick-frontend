@@ -54,6 +54,10 @@ function charToViseme(ch: string): VisemeId {
     case 'q':
     case 'x':
       return 'DD';
+    // 'h' is breathy with no lip shape of its own — keep it a soft, near-neutral
+    // open so it doesn't read as a wide "aa" gape (a common lip-sync artefact).
+    case 'h':
+      return 'nn';
     case ' ':
     case '.':
     case ',':
@@ -64,8 +68,19 @@ function charToViseme(ch: string): VisemeId {
     case '\n':
       return 'sil';
     default:
-      return 'aa';
+      // Unknown/foreign characters: a mild neutral shape, never a wide gape.
+      return 'nn';
   }
+}
+
+/** Resolve a two-character digraph (e.g. "th", "sh", "oo") to a viseme, or null. */
+export function digraphToViseme(twoChars: string): VisemeId | null {
+  return DIGRAPH_VISEMES[twoChars.toLowerCase()] ?? null;
+}
+
+/** Map a single character to a viseme (exposed for per-character alignment). */
+export function singleCharToViseme(ch: string): VisemeId {
+  return charToViseme(ch.toLowerCase());
 }
 
 /** Convert spoken text into a viseme sequence (English-oriented rules). */

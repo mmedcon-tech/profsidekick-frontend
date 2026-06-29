@@ -171,8 +171,17 @@ export function FloatingAssistant() {
     return () => window.removeEventListener("toggle-assistant", handleToggle)
   }, [])
 
-  const { speaking, listening, interim, speak, stopSpeaking, startListening, stopListening } =
-    useSpeech(lang, avatar.voice)
+  const {
+    speaking,
+    listening,
+    interim,
+    speak,
+    stopSpeaking,
+    startListening,
+    stopListening,
+    visemeTimeline,
+    getSpeechTime,
+  } = useSpeech(lang, avatar.voice)
 
   const assistantName = lang === "ar" ? "مساعد MyOS" : "MyOS Assistant"
   const userName = user ? `${user.firstName} ${user.lastName}` : ""
@@ -401,7 +410,13 @@ export function FloatingAssistant() {
             /* Call mode — 3D avatar fills the whole surface, controls overlay on top */
             <div className="relative flex flex-1 flex-col overflow-hidden bg-sidebar/95 text-sidebar-foreground">
               {/* Full-bleed avatar (pointer-events-none, so controls/drag pass through) */}
-              <ChatbotAvatar3D fill speaking={speaking} avatar={avatar} />
+              <ChatbotAvatar3D
+                fill
+                speaking={speaking}
+                avatar={avatar}
+                visemeTimeline={visemeTimeline}
+                speechClock={getSpeechTime}
+              />
 
               {/* Status pill */}
               <div className="relative z-10 flex justify-center px-5 pt-4">

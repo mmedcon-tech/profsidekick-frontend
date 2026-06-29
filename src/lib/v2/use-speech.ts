@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { playElevenLabsSpeech } from "@/lib/playElevenLabsAudio"
+import { buildEstimatedTimeline } from "@/lib/visemeTimeline"
+import type { VisemeTimeline } from "@/lib/visemeTypes"
 import { resolveVoiceProfile, type VoiceProfile } from "@/lib/voiceProfiles"
+
+/** Fallback speaking rate (chars/sec) used until onboundary events calibrate it. */
+const FALLBACK_CHARS_PER_SECOND = 13
 
 // Minimal typings for the Web Speech API (not in TS lib DOM by default)
 type SpeechRecognitionResultLike = {
@@ -52,11 +57,54 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
   const [interim, setInterim] = useState("")
   const [supported, setSupported] = useState({ tts: false, stt: false })
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  // Viseme timeline for the current utterance. The avatar samples it through a
+  // shared clock so the mouth shapes line up with the actual audio.
+  const [visemeTimeline, setVisemeTimeline] = useState<VisemeTimeline | null>(null)
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const finalRef = useRef<string>("")
   const onFinalRef = useRef<((t: string) => void) | null>(null)
   const stopAudioRef = useRef<(() => void) | null>(null)
+
+  // Clock sources: ElevenLabs uses the audio element's real currentTime; browser
+  // TTS estimates progress from onboundary word events (which fire as the engine
+  // actually speaks) so the viseme clock stays locked to the spoken words.
+  const audioElRef = useRef<HTMLAudioElement | null>(null)
+  const ttsStartRef = useRef(0)
+  const ttsBoundaryCharRef = useRef(0)
+  const ttsBoundaryTimeRef = useRef(0)
+  const ttsCharsPerSecRef = useRef(0)
+  const ttsTextLenRef = useRef(0)
+  const ttsDurationRef = useRef(0)
+
+  const resetTtsClock = useCallback(() => {
+    ttsStartRef.current = 0
+    ttsBoundaryCharRef.current = 0
+    ttsBoundaryTimeRef.current = 0
+    ttsCharsPerSecRef.current = 0
+  }, [])
+
+  /** Elapsed seconds within the current utterance, mapped onto the timeline. */
+  const getSpeechTime = useCallback((): number => {
+    const audio = audioElRef.current
+    if (audio) return audio.currentTime
+    if (ttsStartRef.current <= 0) return 0
+
+    const duration = ttsDurationRef.current || 0
+    const len = Math.max(1, ttsTextLenRef.current)
+
+    let charPos: number
+    if (ttsBoundaryTimeRef.current > 0) {
+      const since = (performance.now() - ttsBoundaryTimeRef.current) / 1000
+      const cps = ttsCharsPerSecRef.current || FALLBACK_CHARS_PER_SECOND
+      charPos = ttsBoundaryCharRef.current + cps * since
+    } else {
+      const elapsed = (performance.now() - ttsStartRef.current) / 1000
+      charPos = (elapsed * FALLBACK_CHARS_PER_SECOND)
+    }
+    const fraction = Math.min(1, charPos / len)
+    return fraction * duration
+  }, [])
 
   // detect support + load voices
   useEffect(() => {
@@ -90,71 +138,117 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
     return matched || pool[0]
   }, [voices, lang, gender])
 
-  const speak = useCallback(
+  // Browser TTS fallback (used when ElevenLabs is unavailable). Drives an
+  // estimated viseme timeline whose clock self-calibrates from onboundary events.
+  const speakWithBrowserTts = useCallback(
     (text: string, onDone?: () => void) => {
-      stopAudioRef.current?.()
-      stopAudioRef.current = null
-
-      if (lang === "ar") {
-        void playElevenLabsSpeech({
-          text,
-          gender,
-          onSpeakingChange: (isSpeaking) => {
-            setSpeaking(isSpeaking)
-            if (!isSpeaking) {
-              onDone?.()
-            }
-          },
-        })
-          .then((result) => {
-            stopAudioRef.current = result.stop
-          })
-          .catch(() => {
-            setSpeaking(false)
-            onDone?.()
-          })
-        return
-      }
-
       if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-        // graceful fallback: simulate speaking duration
+        // No TTS at all: simulate a speaking duration so the UI still reacts.
         setSpeaking(true)
         const ms = Math.min(6000, 1200 + text.length * 35)
-        const t = setTimeout(() => {
+        setTimeout(() => {
           setSpeaking(false)
           onDone?.()
         }, ms)
-        return () => clearTimeout(t)
+        return
       }
+
       window.speechSynthesis.cancel()
       const u = new SpeechSynthesisUtterance(text)
       const v = pickVoice()
       if (v) u.voice = v
-      u.lang = v?.lang || "en-US"
+      u.lang = v?.lang || (lang === "ar" ? "ar-SA" : "en-US")
       u.rate = profile.rate
       u.pitch = profile.pitch
-      u.onstart = () => setSpeaking(true)
-      u.onend = () => {
+
+      const estDuration = Math.max(2, (text.length / FALLBACK_CHARS_PER_SECOND) * (1 / profile.rate))
+      ttsTextLenRef.current = text.length
+      ttsDurationRef.current = estDuration
+
+      u.onboundary = (event: SpeechSynthesisEvent) => {
+        const now = performance.now()
+        const charIndex = event.charIndex ?? 0
+        if (ttsBoundaryTimeRef.current > 0 && charIndex > ttsBoundaryCharRef.current) {
+          const deltaChars = charIndex - ttsBoundaryCharRef.current
+          const deltaSeconds = (now - ttsBoundaryTimeRef.current) / 1000
+          if (deltaSeconds > 0.01) {
+            const instant = deltaChars / deltaSeconds
+            ttsCharsPerSecRef.current = ttsCharsPerSecRef.current
+              ? ttsCharsPerSecRef.current * 0.6 + instant * 0.4
+              : instant
+          }
+        }
+        ttsBoundaryCharRef.current = charIndex
+        ttsBoundaryTimeRef.current = now
+      }
+
+      u.onstart = () => {
+        ttsStartRef.current = performance.now()
+        ttsBoundaryCharRef.current = 0
+        ttsBoundaryTimeRef.current = 0
+        ttsCharsPerSecRef.current = 0
+        setSpeaking(true)
+        setVisemeTimeline(buildEstimatedTimeline(text, estDuration))
+      }
+      const finish = () => {
+        resetTtsClock()
+        setVisemeTimeline(null)
         setSpeaking(false)
         onDone?.()
       }
-      u.onerror = () => {
-        setSpeaking(false)
-        onDone?.()
-      }
+      u.onend = finish
+      u.onerror = finish
       window.speechSynthesis.speak(u)
     },
-    [lang, gender, pickVoice, profile.pitch, profile.rate],
+    [lang, pickVoice, profile.pitch, profile.rate, resetTtsClock],
+  )
+
+  const speak = useCallback(
+    (text: string, onDone?: () => void) => {
+      stopAudioRef.current?.()
+      stopAudioRef.current = null
+      audioElRef.current = null
+      resetTtsClock()
+
+      // Prefer ElevenLabs for both languages: it returns per-character timing,
+      // which is the only way to make the mouth shapes match the actual words.
+      // The audio element's currentTime then drives the viseme clock exactly.
+      playElevenLabsSpeech({
+        text,
+        gender,
+        onSpeakingChange: (isSpeaking) => {
+          setSpeaking(isSpeaking)
+          if (!isSpeaking) {
+            audioElRef.current = null
+            setVisemeTimeline(null)
+            onDone?.()
+          }
+        },
+      })
+        .then((result) => {
+          stopAudioRef.current = result.stop
+          audioElRef.current = result.audio
+          setVisemeTimeline(result.timeline)
+        })
+        .catch(() => {
+          // ElevenLabs unavailable (no key / quota / network) → browser TTS.
+          speakWithBrowserTts(text, onDone)
+        })
+    },
+    [gender, resetTtsClock, speakWithBrowserTts],
   )
 
   const stopSpeaking = useCallback(() => {
     stopAudioRef.current?.()
     stopAudioRef.current = null
+    audioElRef.current = null
+    resetTtsClock()
+    setVisemeTimeline(null)
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel()
     }
     setSpeaking(false)
-  }, [])
+  }, [resetTtsClock])
 
   const startListening = useCallback(
     (onFinal: (text: string) => void) => {
@@ -214,5 +308,7 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
     stopSpeaking,
     startListening,
     stopListening,
+    visemeTimeline,
+    getSpeechTime,
   }
 }
