@@ -18,7 +18,7 @@ export default function LandingPage() {
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
     if (user.role === 'admin')      router.replace('/admin/dashboard');
-    else if (user.role === 'subscriber') router.replace('/subscriber/marketplace');
+    else if (user.role === 'subscriber') router.replace('/subscriber/courses');
     else                            router.replace('/publisher/dashboard');
   }, [isAuthenticated, isLoading, user, router]);
 

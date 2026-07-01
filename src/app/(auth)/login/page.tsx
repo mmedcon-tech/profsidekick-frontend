@@ -29,7 +29,7 @@ function LoginForm() {
         return;
       }
       if (user.role === 'admin') router.push('/admin/dashboard');
-      else if (user.role === 'subscriber') router.push('/subscriber/marketplace');
+      else if (user.role === 'subscriber') router.push('/subscriber/courses');
       else router.push('/publisher/dashboard');
     }
   }, [isAuthenticated, isLoading, user, router, searchParams]);

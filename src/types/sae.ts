@@ -10,7 +10,7 @@ export interface SAEStudentRow {
   invitation_token: string;
   is_activated: boolean;
   activated_at: string | null;
-  has_submitted: boolean;
+  submission_count: number;
   submitted_at: string | null;
   country_of_origin: string | null;
   curriculum: string | null;
@@ -25,6 +25,7 @@ export interface SAETokenValidationResponse {
   valid: boolean;
   student_code: string;
   display_name: string;
+  is_first_use: boolean;
 }
 
 export interface SAESetupResponse {
@@ -37,6 +38,8 @@ export interface SAESetupResponse {
 /** Student-facing submission result. result_json is always the effective (possibly edited) grading. */
 export interface SAESubmissionResult {
   id: string;
+  submission_number: number | null;
+  is_active: boolean | null;
   score: number | null;
   overall_confidence: string | null;
   review_required: boolean;
@@ -53,19 +56,26 @@ export interface SAESubmissionResultPublisher extends SAESubmissionResult {
   last_edited_at: string | null;
 }
 
+/** Returned by GET /api/sae/publisher/students/{id} — now includes all submissions. */
 export interface SAEStudentDetail extends SAEStudentRow {
-  submission: SAESubmissionResultPublisher | null;
+  submissions: SAESubmissionResultPublisher[];
 }
 
+/**
+ * Returned by GET /api/sae/student/me for any authenticated subscriber.
+ * is_enrolled=false means this user is a regular subscriber not in the SAE system;
+ * all other fields will be undefined in that case.
+ */
 export interface SAEStudentMe {
-  id: string;
-  student_number: number;
-  student_code: string;
-  display_name: string;
-  is_activated: boolean;
-  has_submitted: boolean;
-  country_of_origin: string | null;
-  curriculum: string | null;
+  is_enrolled: boolean;
+  id?: string;
+  student_number?: number;
+  student_code?: string;
+  display_name?: string;
+  is_activated?: boolean;
+  submission_count?: number;
+  country_of_origin?: string | null;
+  curriculum?: string | null;
 }
 
 export interface SAERegenerateResponse {

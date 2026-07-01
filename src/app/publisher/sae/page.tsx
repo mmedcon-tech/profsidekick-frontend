@@ -298,7 +298,7 @@ export default function PublisherSAEPage() {
                       <StatusBadge on={s.is_activated} labelOn="Activated" labelOff="Not activated" />
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge on={s.has_submitted} labelOn="Submitted" labelOff="Pending" />
+                      <StatusBadge on={s.submission_count > 0} labelOn="Submitted" labelOff="Pending" />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
@@ -320,7 +320,7 @@ export default function PublisherSAEPage() {
                             Regenerate link
                           </button>
                         )}
-                        {s.has_submitted && (
+                        {s.submission_count > 0 && (
                           <button
                             onClick={() => router.push(`/publisher/sae/students/${s.id}`)}
                             className="rounded border border-blue-200 bg-blue-50 px-2.5 py-1
@@ -329,7 +329,7 @@ export default function PublisherSAEPage() {
                             Review
                           </button>
                         )}
-                        {!s.has_submitted && (
+                        {s.submission_count < 5 && (
                           <button
                             onClick={() => openSubmitModal(s)}
                             className="rounded border border-slate-200 px-2.5 py-1 text-xs
@@ -455,11 +455,11 @@ export default function PublisherSAEPage() {
                 login credentials. They will not be able to sign in until they
                 use the new link to choose a new username and password.
               </p>
-              {regenStudent.has_submitted && (
+              {regenStudent.submission_count > 0 && (
                 <p className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2
                                text-xs text-amber-800">
-                  This student has already submitted. Their submission and grades
-                  will be fully preserved.
+                  This student has {regenStudent.submission_count} submission{regenStudent.submission_count !== 1 ? "s" : ""}.
+                  Their submissions and grades will be fully preserved.
                 </p>
               )}
               <div className="flex gap-3 pt-1">

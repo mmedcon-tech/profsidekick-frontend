@@ -125,6 +125,7 @@ export async function regenerateStudentAccess(
   return handleResponse<SAERegenerateResponse>(res);
 }
 
+/** Edit the active submission for a student. */
 export async function updateSubmission(
   studentId: string,
   edits: SAESubmissionEditRequest
@@ -140,6 +141,7 @@ export async function updateSubmission(
   return handleResponse<SAESubmissionResultPublisher>(res);
 }
 
+/** Download the active submission's PDF for a student (publisher view). */
 export async function fetchPublisherStudentFile(
   studentId: string,
   fileType: "handwritten" | "webassign"
@@ -161,6 +163,7 @@ export async function fetchPublisherStudentFile(
 
 // ── Student ───────────────────────────────────────────────────────────────────
 
+/** Returns is_enrolled=false for regular subscribers not in the SAE system. */
 export async function getMyProfile(): Promise<SAEStudentMe> {
   const res = await fetch(`${API}/api/sae/student/me`, {
     headers: authHeaders(),
@@ -168,8 +171,27 @@ export async function getMyProfile(): Promise<SAEStudentMe> {
   return handleResponse<SAEStudentMe>(res);
 }
 
+/** Legacy: returns the active submission only. Prefer getMySubmissions(). */
 export async function getMySubmission(): Promise<SAESubmissionResult> {
   const res = await fetch(`${API}/api/sae/student/submission`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAESubmissionResult>(res);
+}
+
+/** Returns all submissions for the authenticated student, oldest first. */
+export async function getMySubmissions(): Promise<SAESubmissionResult[]> {
+  const res = await fetch(`${API}/api/sae/student/submissions`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAESubmissionResult[]>(res);
+}
+
+/** Returns a single historical submission by ID. */
+export async function getMySubmissionById(
+  submissionId: string
+): Promise<SAESubmissionResult> {
+  const res = await fetch(`${API}/api/sae/student/submissions/${submissionId}`, {
     headers: authHeaders(),
   });
   return handleResponse<SAESubmissionResult>(res);
@@ -190,6 +212,27 @@ export async function submitExam(
   return handleResponse<SAESubmissionResult>(res);
 }
 
+/** Download a PDF from a specific historical submission. */
+export async function fetchMySubmissionFile(
+  submissionId: string,
+  fileType: "handwritten" | "webassign"
+): Promise<ArrayBuffer> {
+  const res = await fetch(
+    `${API}/api/sae/student/submissions/${submissionId}/files/${fileType}`,
+    { headers: authHeaders() }
+  );
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      detail = body.detail ?? body.message ?? detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+  return res.arrayBuffer();
+}
+
+/** Legacy: download the active submission's PDF. Prefer fetchMySubmissionFile(). */
 export async function fetchMyFile(
   fileType: "handwritten" | "webassign"
 ): Promise<ArrayBuffer> {
