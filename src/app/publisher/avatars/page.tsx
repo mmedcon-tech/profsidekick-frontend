@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from "next/image"
 import Link from 'next/link';
+import AvatarIcon from '@/components/avatars/AvatarIcon';
 
 import { tr } from "@/lib/v2/i18n"
 import { avatarApi, ApiError } from '@/lib/avatarApi';
@@ -104,19 +105,13 @@ export default function PublisherAvatarsPage() {
                 {/* Header */}
                 <div className="relative flex items-center gap-4 bg-sidebar p-5">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-sidebar-border bg-muted">
-                    {avatar.template_image_url ? (
-                        <Image
-                            src={avatar.template_image_url}
-                            alt={avatar.name}
-                            fill
-                            sizes="64px"
-                            className="object-cover"
-                        />
-                    ) : (
-                        <span className="flex h-full w-full items-center justify-center text-xl font-bold uppercase text-muted-foreground">
-                          {avatar.name.charAt(0)}
-                        </span>
-                    )}
+                    <AvatarIcon
+                      imageUrl={avatar.template_image_url}
+                      name={avatar.name}
+                      size={64}
+                      rounded="full"
+                      className="w-full h-full"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
