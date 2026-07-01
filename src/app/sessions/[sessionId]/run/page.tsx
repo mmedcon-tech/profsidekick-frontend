@@ -8,6 +8,7 @@ import { TranscriptProvider } from '@/contexts/TranscriptContext';
 import { StructuredTranscriptProvider } from '@/contexts/StructuredTranscriptContext';
 import LearningInterface from '@/components/learning/LearningInterface';
 import type { ClassSession } from '@/types/types';
+import type { SessionMode } from '@/lib/sessionSlideControl';
 import { config } from '@/lib/config';
 import { Loader2, AlertCircle, CreditCard, Lock, BookOpen } from 'lucide-react';
 
@@ -77,6 +78,7 @@ function SessionRunInner() {
   const { token } = useAuth();
 
   const [classSession, setClassSession] = useState<ClassSession | null>(null);
+  const [sessionMode, setSessionMode] = useState<SessionMode>('teaching');
   const [runId, setRunId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -141,6 +143,7 @@ function SessionRunInner() {
           },
         };
         setClassSession(session);
+        setSessionMode(runData.sessionMode ?? 'teaching');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to start session');
       } finally {
@@ -192,6 +195,7 @@ function SessionRunInner() {
     <LearningInterface
       classSession={classSession}
       sessionRunId={runId ?? undefined}
+      sessionMode={sessionMode}
       onEndSession={handleEndSession}
     />
   );

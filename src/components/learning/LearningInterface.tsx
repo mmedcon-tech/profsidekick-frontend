@@ -29,9 +29,16 @@ import {
   navigatePreviousSlide,
   navigateToIndex,
   navigateToSlideNumber,
-  toSlideToolPayload,
   type SlideNavigationSource,
 } from "@/lib/slideNavigation";
+import {
+  buildAiLeadSystemPrompt,
+  buildSessionKickoffMessage,
+  buildSlideNavigationTools,
+  buildSlideToolResultData,
+  parsePublisherInstructions,
+  type SessionMode,
+} from "@/lib/sessionSlideControl";
 
 const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
   renderType: "static",
@@ -59,6 +66,7 @@ interface LearningInterfaceProps {
   startingSlide?: number;
   avatarConfig?: SessionAvatarConfig;
   isSharedLink?: boolean;
+  sessionMode?: SessionMode;
 }
 
 export default function LearningInterface({
@@ -68,6 +76,7 @@ export default function LearningInterface({
   startingSlide,
   avatarConfig,
   isSharedLink = false,
+  sessionMode: sessionModeProp,
 }: LearningInterfaceProps) {
   // Always start with slide 0 for SSR consistency
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -854,72 +863,45 @@ export default function LearningInterface({
   };
 
   const initializeSession = () => {
-    // if (sessionStatus !== "CONNECTED") {
-    //   console.log("⚠️ Cannot initialize session - not connected");
-    //   return;
-    // }
+    const mode: SessionMode =
+      sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? 'teaching';
+    const slideIndex = currentSlideRef.current;
+    const publisherInstructions = parsePublisherInstructions(
+      classSession.classDetails.assistant_parameters?.instructions,
+    );
 
-    console.log("🔧 Initializing session with slide navigation tools...");
+    console.log("🔧 Initializing session with AI-led slide navigation...", { mode, slideIndex });
 
     const sessionUpdate = {
       type: "session.update",
       session: {
+        tool_choice: "auto",
         tools: [
-          {
-            type: "function",
-            name: "nextSlide",
-            description: "Move to the next slide in the presentation",
-            parameters: {
-              type: "object",
-              properties: {},
-              required: [],
-              additionalProperties: false,
-            },
-          },
-          {
-            type: "function",
-            name: "previousSlide",
-            description: "Move to the previous slide in the presentation",
-            parameters: {
-              type: "object",
-              properties: {},
-              required: [],
-              additionalProperties: false,
-            },
-          },
-          {
-            type: "function",
-            name: "goToSlide",
-            description: "Jump to a specific slide number",
-            parameters: {
-              type: "object",
-              properties: {
-                slideNumber: {
-                  type: "number",
-                  description: "The slide number to navigate to (1-indexed)",
-                },
-              },
-              required: ["slideNumber"],
-              additionalProperties: false,
-            },
-          },
+          ...buildSlideNavigationTools(),
           {
             type: "function",
             name: "searchKnowledgeBase",
-            description: "Search the course materials and session slides for answers to the user's questions.",
+            description:
+              "Search the course materials and session slides for answers to the learner's questions.",
             parameters: {
               type: "object",
               properties: {
                 query: {
                   type: "string",
-                  description: "The search query to look up in the knowledge base."
-                }
+                  description: "The search query to look up in the knowledge base.",
+                },
               },
               required: ["query"],
               additionalProperties: false,
             },
           },
         ],
+        instructions: buildAiLeadSystemPrompt({
+          slides: classSession.slides,
+          sessionMode: mode,
+          currentSlideIndex: slideIndex,
+          publisherInstructions,
+        }),
       },
     };
 
@@ -927,7 +909,7 @@ export default function LearningInterface({
     const success = sendClientEvent(sessionUpdate);
     console.log("Session initialization sent successfully:", success);
 
-    // Auto-start the session by having the system command the AI to introduce itself
+    const kickoffSlide = classSession.slides[slideIndex];
     sendClientEvent({
       type: "conversation.item.create",
       item: {
@@ -936,10 +918,14 @@ export default function LearningInterface({
         content: [
           {
             type: "input_text",
-            text: "You are leading this teaching session. Proactively teach through the slides and use nextSlide, previousSlide, and goToSlide to control slide navigation as you explain the material. Welcome the learner, introduce the topic, and begin on the current slide."
-          }
-        ]
-      }
+            text: buildSessionKickoffMessage(
+              slideIndex,
+              kickoffSlide?.title ?? `Slide ${slideIndex + 1}`,
+              mode,
+            ),
+          },
+        ],
+      },
     });
     sendClientEvent({ type: "response.create" });
   };
@@ -1383,7 +1369,11 @@ export default function LearningInterface({
                 functionResult = {
                   success: result.success,
                   message: result.message,
-                  data: toSlideToolPayload(result),
+                  data: buildSlideToolResultData(
+                    classSession.slides,
+                    result.currentIndex,
+                    result.previousIndex,
+                  ),
                 };
               }
             } else if (outputItem.name === "previousSlide") {
@@ -1402,7 +1392,11 @@ export default function LearningInterface({
                 functionResult = {
                   success: result.success,
                   message: result.message,
-                  data: toSlideToolPayload(result),
+                  data: buildSlideToolResultData(
+                    classSession.slides,
+                    result.currentIndex,
+                    result.previousIndex,
+                  ),
                 };
               }
             } else if (outputItem.name === "goToSlide" && args.slideNumber !== undefined) {
@@ -1426,7 +1420,11 @@ export default function LearningInterface({
                 functionResult = {
                   success: result.success,
                   message: result.message,
-                  data: toSlideToolPayload(result),
+                  data: buildSlideToolResultData(
+                    classSession.slides,
+                    result.currentIndex,
+                    result.previousIndex,
+                  ),
                 };
               }
             }
@@ -1467,15 +1465,11 @@ export default function LearningInterface({
 
   // Track slide changes for analytics/resuming
   useEffect(() => {
-    if (isHydrated && currentSlide !== 0) {
+    if (isHydrated && sessionRunId) {
       console.log(`📄 Slide changed to ${currentSlide + 1}: "${classSession.slides[currentSlide]?.title || 'Unknown'}"`);
-
-      // Store in sessionStorage for persistence across page reloads
-      if (sessionRunId) {
-        sessionStorage.setItem(`session_${sessionRunId}_currentSlide`, currentSlide.toString());
-      }
+      sessionStorage.setItem(`session_${sessionRunId}_currentSlide`, currentSlide.toString());
     }
-  }, [currentSlide, isHydrated]);
+  }, [currentSlide, isHydrated, sessionRunId, classSession.slides]);
 
   const currentSlideData = classSession.slides[currentSlide];
 
