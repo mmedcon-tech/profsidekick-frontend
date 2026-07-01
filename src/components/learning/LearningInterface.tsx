@@ -17,6 +17,9 @@ import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext"
 import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
 import { classifyTurn } from "@/lib/turnClassifier";
+import { playElevenLabsSpeech } from "@/lib/playElevenLabsAudio";
+import { getAvatarLibraryEntry, getAvatarVoiceProfile } from "@/lib/avatarLibrary";
+import type { ElevenLabsVoiceGender } from "@/lib/elevenLabsSpeech";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
@@ -127,6 +130,10 @@ export default function LearningInterface({
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
   const heygenVideoRef = useRef<HTMLVideoElement>(null);
   const [heygenConnected, setHeygenConnected] = useState(false);
+  // ElevenLabs voice layer — OpenAI Realtime handles transcription/text only;
+  // ElevenLabs synthesises the assistant's speech (§ subscriber session runtime).
+  const elevenLabsStopRef = useRef<(() => void) | null>(null);
+  const elevenLabsAudioRef = useRef<HTMLAudioElement | null>(null);
   // Session-level avatar ID: backend may override DEFAULT via ephemeral response
   const heygenAvatarIdRef = useRef(DEFAULT_HEYGEN_AVATAR_ID);
   const GUARD_PHRASES = ["stop", "pause", "end session", "wait"]; // Guard phrases to allow intentional interruptions
@@ -337,6 +344,51 @@ export default function LearningInterface({
     }
   }, []);
 
+  // ── ElevenLabs voice layer ────────────────────────────────────────────────────
+  // OpenAI Realtime is configured for text-only output (transcription + text
+  // generation). Completed assistant turns are synthesised here via ElevenLabs
+  // and fed to HeyGen (when active) for lip-synced playback.
+
+  const stopElevenLabsSpeech = useCallback(() => {
+    elevenLabsStopRef.current?.();
+    elevenLabsStopRef.current = null;
+  }, []);
+
+  const speakAssistantText = useCallback(async (text: string) => {
+    const clean = text.trim();
+    if (!clean) return;
+
+    // Feed the completed text to HeyGen so it can lip-sync/repeat it visually.
+    if (heygenAvatarRef.current) {
+      heygenAvatarRef.current
+        .speak({ text: clean, taskType: TaskType.REPEAT })
+        .catch(() => { });
+    }
+
+    stopElevenLabsSpeech();
+
+    try {
+      const avatarConfigSnapshot = sessionAvatarRef.current;
+      const libraryEntry = avatarConfigSnapshot.glbLibraryId
+        ? getAvatarLibraryEntry(avatarConfigSnapshot.glbLibraryId)
+        : undefined;
+      const gender: ElevenLabsVoiceGender = libraryEntry?.gender === 'female' ? 'female' : 'male';
+      const voiceProfile = libraryEntry ? getAvatarVoiceProfile(libraryEntry) : 'adult';
+
+      const { stop, audio } = await playElevenLabsSpeech({
+        text: clean,
+        gender,
+        voiceProfile,
+        onSpeakingChange: setIsAISpeaking,
+      });
+      elevenLabsStopRef.current = stop;
+      elevenLabsAudioRef.current = audio;
+      audio.muted = !isAudioEnabled;
+    } catch (err) {
+      console.error('ElevenLabs speech synthesis failed:', err);
+    }
+  }, [isAudioEnabled, stopElevenLabsSpeech]);
+
   // ── OpenAI Realtime connection ───────────────────────────────────────────────
 
   const connectToRealtime = async () => {
@@ -534,6 +586,9 @@ export default function LearningInterface({
     // Stop HeyGen visual layer cleanly
     stopHeyGen();
 
+    // Stop any in-flight ElevenLabs speech playback
+    stopElevenLabsSpeech();
+
     // Mark as intentionally disconnected to prevent auto-reconnection
     isIntentionallyDisconnectedRef.current = true;
 
@@ -690,6 +745,9 @@ export default function LearningInterface({
     console.log('Disconnecting from realtime... (React Strict Mode cleanup)');
 
     stopHeyGen();
+
+    // Stop any in-flight ElevenLabs speech playback
+    stopElevenLabsSpeech();
 
     // Mark as intentionally disconnected to prevent auto-reconnection
     isIntentionallyDisconnectedRef.current = true;
@@ -875,6 +933,9 @@ export default function LearningInterface({
     const sessionUpdate = {
       type: "session.update",
       session: {
+        // Text-only output: OpenAI Realtime handles transcription + text generation,
+        // ElevenLabs synthesises the assistant's speech (see speakAssistantText).
+        modalities: ["text"],
         tool_choice: "auto",
         tools: [
           ...buildSlideNavigationTools(),
@@ -934,6 +995,9 @@ export default function LearningInterface({
     setIsAudioEnabled(!isAudioEnabled);
     if (audioElementRef.current) {
       audioElementRef.current.muted = isAudioEnabled; // Note: isAudioEnabled is the current state, so we want the opposite
+    }
+    if (elevenLabsAudioRef.current) {
+      elevenLabsAudioRef.current.muted = isAudioEnabled; // same flipped-closure logic as above
     }
   };
 
@@ -1062,6 +1126,9 @@ export default function LearningInterface({
     if (isAISpeaking) {
       console.log('🛑 AI is speaking, forcing interruption for slide change');
 
+      // Stop the ElevenLabs speech playback immediately
+      stopElevenLabsSpeech();
+
       // First, cancel the current response
       sendClientEvent({
         type: "response.cancel"
@@ -1106,7 +1173,7 @@ export default function LearningInterface({
     const triggerResponse = {
       type: "response.create",
       response: {
-        modalities: ["text", "audio"]
+        modalities: ["text"]
       }
     };
 
@@ -1269,19 +1336,9 @@ export default function LearningInterface({
         setIsAISpeaking(false);
       }
 
-      // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
-      // response.audio_transcript.done fires when a full assistant turn completes
-      if (
-        serverEvent.type === "response.audio_transcript.done" &&
-        serverEvent.transcript
-      ) {
-        setTranscript((prev) => [...prev, { role: "assistant", text: serverEvent.transcript }]);
-        if (heygenAvatarRef.current) {
-          heygenAvatarRef.current
-            .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
-            .catch(() => { });
-        }
-      }
+      // --- Assistant turn text → ElevenLabs speech + HeyGen lip-sync ---
+      // OpenAI Realtime runs in text-only mode (modalities: ["text"]); the
+      // completed assistant turn is extracted from response.done below.
 
       // --- Guard phrases: intercept intentional interruptions ---
       // Fix 2: "transcript.final" does not exist in the Realtime API; use the correct event.
@@ -1312,14 +1369,27 @@ export default function LearningInterface({
 
             if (outputItem.name === "searchKnowledgeBase") {
               const query = args.query;
-              // Fetch RAG context asynchronously
-              fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
+              if (!sessionRunId) {
+                sendClientEvent({
+                  type: "conversation.item.create",
+                  item: {
+                    type: "function_call_output",
+                    call_id: outputItem.call_id,
+                    output: JSON.stringify({ success: false, message: "No active session run", data: [] }),
+                  },
+                });
+                sendClientEvent({ type: "response.create" });
+                return;
+              }
+              // Live RAG retrieval (§11.5 searchKnowledge) — searches slide content,
+              // course materials, and avatar knowledge via rag_service.retrieve_context().
+              fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/runs/${sessionRunId}/search-knowledge`), {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ query, course_id: undefined })
+                body: JSON.stringify({ query, top_k: 5 })
               })
                 .then(res => res.json())
                 .then(data => {
@@ -1443,6 +1513,25 @@ export default function LearningInterface({
           sendClientEvent({ type: "response.create" });
           // Tool calls fully handled — do not forward to handleServerEventRef
           return;
+        }
+
+        // --- Completed assistant text turn (modalities: ["text"]) ---
+        // No audio_transcript events fire in text-only mode, so the assistant's
+        // turn is extracted here and handed to ElevenLabs for speech synthesis.
+        const assistantMessageItems = serverEvent.response.output.filter(
+          (item: any) => item.type === "message" && item.role === "assistant"
+        );
+        if (assistantMessageItems.length > 0) {
+          const combinedText = assistantMessageItems
+            .flatMap((item: any) => item.content || [])
+            .map((part: any) => part.text || part.transcript || "")
+            .join(" ")
+            .trim();
+          if (combinedText) {
+            setTranscript((prev) => [...prev, { role: "assistant", text: combinedText }]);
+            handleTurnComplete("assistant", combinedText);
+            speakAssistantText(combinedText);
+          }
         }
       }
 
