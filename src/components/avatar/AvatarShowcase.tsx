@@ -43,7 +43,7 @@ export default function AvatarShowcase({
   const modelScale = entry.previewModelScale ?? 1.15;
 
   return (
-    <div className={`relative flex min-h-[520px] flex-col ${className}`}>
+    <div className={`relative h-full min-h-[520px] ${className}`}>
       <div className="absolute left-5 top-5 z-20 flex gap-2">
         <button
           type="button"
@@ -69,7 +69,7 @@ export default function AvatarShowcase({
         </button>
       </div>
 
-      <div className="relative min-h-[520px] flex-1">
+      <div className="absolute inset-0">
         {tab === 'portrait' ? (
           <PortraitAvatarStage
             imageUrl={entry.thumbnailPath}
