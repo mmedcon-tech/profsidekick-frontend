@@ -55,45 +55,55 @@ export default function MarketplaceAvatarCard({
         </div>
       </div>
 
-      <div className="-mt-8 flex-1 px-5 pb-5">
+      <div className="flex-1 px-5 pb-5">
         <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-2 flex items-center justify-between gap-2">
             <h3 className="truncate text-base font-bold text-gray-900 dark:text-gray-100">
               {avatar.name}
             </h3>
-            <span className="flex items-center gap-1 text-xs font-semibold text-amber-600">
-              <Star size={12} className="fill-amber-400 text-amber-400" />
-              {stats.rating != null ? stats.rating.toFixed(1) : '—'}
-            </span>
+            {stats.rating != null && (
+              <span className="flex items-center gap-1 text-xs font-semibold text-amber-600">
+                <Star size={12} className="fill-amber-400 text-amber-400" />
+                {stats.rating.toFixed(1)}
+              </span>
+            )}
           </div>
 
           <p className="mb-3 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
             {avatar.tagline || avatar.description || 'AI-powered educational avatar.'}
           </p>
 
-          <div className="mb-3 grid grid-cols-3 gap-2 text-center text-[10px] text-gray-500">
-            <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
-              <BookOpen size={12} className="mx-auto mb-0.5 text-[#133221]" />
-              <div className="font-semibold text-gray-800 dark:text-gray-200">
-                {formatMarketplaceStat(stats.courseCount)}
-              </div>
-              <div>courses</div>
+          {(stats.courseCount != null || stats.subscriberCount != null || stats.creditsPerSession != null) && (
+            <div className="mb-3 grid grid-cols-3 gap-2 text-center text-[10px] text-gray-500">
+              {stats.courseCount != null && (
+                <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
+                  <BookOpen size={12} className="mx-auto mb-0.5 text-[#133221]" />
+                  <div className="font-semibold text-gray-800 dark:text-gray-200">
+                    {formatMarketplaceStat(stats.courseCount)}
+                  </div>
+                  <div>courses</div>
+                </div>
+              )}
+              {stats.subscriberCount != null && (
+                <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
+                  <Users size={12} className="mx-auto mb-0.5 text-[#133221]" />
+                  <div className="font-semibold text-gray-800 dark:text-gray-200">
+                    {formatMarketplaceStat(stats.subscriberCount)}
+                  </div>
+                  <div>learners</div>
+                </div>
+              )}
+              {stats.creditsPerSession != null && (
+                <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
+                  <Coins size={12} className="mx-auto mb-0.5 text-[#133221]" />
+                  <div className="font-semibold text-gray-800 dark:text-gray-200">
+                    {formatMarketplaceStat(stats.creditsPerSession)}
+                  </div>
+                  <div>credits</div>
+                </div>
+              )}
             </div>
-            <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
-              <Users size={12} className="mx-auto mb-0.5 text-[#133221]" />
-              <div className="font-semibold text-gray-800 dark:text-gray-200">
-                {formatMarketplaceStat(stats.subscriberCount)}
-              </div>
-              <div>learners</div>
-            </div>
-            <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-gray-800">
-              <Coins size={12} className="mx-auto mb-0.5 text-[#133221]" />
-              <div className="font-semibold text-gray-800 dark:text-gray-200">
-                {formatMarketplaceStat(stats.creditsPerSession)}
-              </div>
-              <div>credits</div>
-            </div>
-          </div>
+          )}
 
           <div className="mb-4 flex flex-wrap gap-1.5">
             {chips.map((chip) => (
