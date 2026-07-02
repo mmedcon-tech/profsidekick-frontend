@@ -5,6 +5,7 @@
  */
 
 import type {
+  SAEAssessmentRow,
   SAEBatchCreateResponse,
   SAERegenerateResponse,
   SAESetupResponse,
@@ -69,23 +70,47 @@ export async function setupAccount(
 
 // ── Publisher ─────────────────────────────────────────────────────────────────
 
+export async function listAssessments(): Promise<SAEAssessmentRow[]> {
+  const res = await fetch(`${API}/api/sae/publisher/assessments`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAEAssessmentRow[]>(res);
+}
+
+export async function createAssessment(
+  name: string,
+  description?: string
+): Promise<SAEAssessmentRow> {
+  const res = await fetch(`${API}/api/sae/publisher/assessments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ name, description: description ?? null, course_id: null }),
+  });
+  return handleResponse<SAEAssessmentRow>(res);
+}
+
 export async function createStudentBatch(
+  assessmentId: string,
   count: number,
   expiresDays?: number
 ): Promise<SAEBatchCreateResponse> {
   const res = await fetch(`${API}/api/sae/publisher/students/batch`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ count, expires_days: expiresDays ?? null }),
+    body: JSON.stringify({ assessment_id: assessmentId, count, expires_days: expiresDays ?? null }),
   });
   return handleResponse<SAEBatchCreateResponse>(res);
 }
 
 export async function listStudents(
-  search?: string
+  search?: string,
+  assessmentId?: string
 ): Promise<SAEStudentRow[]> {
-  const params = search ? `?search=${encodeURIComponent(search)}` : "";
-  const res = await fetch(`${API}/api/sae/publisher/students${params}`, {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (assessmentId) params.set("assessment_id", assessmentId);
+  const qs = params.toString() ? `?${params}` : "";
+  const res = await fetch(`${API}/api/sae/publisher/students${qs}`, {
     headers: authHeaders(),
   });
   return handleResponse<SAEStudentRow[]>(res);

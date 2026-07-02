@@ -1,8 +1,19 @@
 // Self Assessment Exam (SAE) TypeScript types.
 // Mirror the Pydantic schemas in profsidekick-api/app/schemas/sae.py.
 
+export interface SAEAssessmentRow {
+  id: string;
+  publisher_id: string;
+  course_id: string | null;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface SAEStudentRow {
   id: string;
+  assessment_id: string;
   student_number: number;
   student_code: string;
   display_name: string;
