@@ -516,7 +516,8 @@ export default function LearningInterface({
           audioElementRef.current = document.createElement("audio");
         }
         audioElementRef.current.autoplay = true;
-        audioElementRef.current.muted = !isAudioEnabled;
+        // Permanently mute the OpenAI Realtime audio track since we use ElevenLabs for the voice
+        audioElementRef.current.muted = true;
         setOutputAudioElement(audioElementRef.current);
 
         const { pc, dc, mediaStream } = await createRealtimeConnection(
@@ -1326,42 +1327,6 @@ export default function LearningInterface({
 
   return (
     <div className="flex h-screen w-full flex-col bg-background font-sans text-foreground">
-      {/* ── Header ── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-10 shadow-sm relative">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <MessageSquare className="h-4 w-4" />
-          </div>
-          <div>
-            <h1 className="text-sm font-semibold text-foreground leading-none">
-              {classSession.classDetails.className}
-            </h1>
-            <p className="text-xs text-muted-foreground mt-1">
-              {classSession.classDetails.courseName} — {classSession.classDetails.courseCode}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden sm:flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            AI Tutor Session
-          </span>
-          <button
-            onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
-            className={cn(
-              "ml-2 flex min-h-[44px] items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors",
-              isTranscriptVisible ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-            aria-pressed={isTranscriptVisible}
-            aria-label={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
-            title={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
-          >
-            <MessageSquare size={18} />
-            <span className="hidden sm:inline">{isTranscriptVisible ? "Hide Transcript" : "Transcript"}</span>
-          </button>
-        </div>
-      </header>
-
       {/* ── Main Layout ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── Left Sidebar: Avatar & Controls ── */}
@@ -1443,12 +1408,12 @@ export default function LearningInterface({
               </div>
             </div>
 
-            {/* Mic & Sound toggles */}
+            {/* Mic, Sound & Transcript toggles */}
             <div className="flex gap-2">
               <button
                 onClick={toggleMicrophone}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
+                  "flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
                   !isMicMuted ? "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80" : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                 )}
               >
@@ -1458,12 +1423,22 @@ export default function LearningInterface({
               <button
                 onClick={toggleAudio}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
+                  "flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
                   isAudioEnabled ? "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80" : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                 )}
               >
                 {isAudioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                 {isAudioEnabled ? "Sound On" : "Sound Off"}
+              </button>
+              <button
+                onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
+                className={cn(
+                  "flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
+                  isTranscriptVisible ? "bg-primary/20 text-primary border-primary/30 hover:bg-primary/30" : "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80"
+                )}
+              >
+                <MessageSquare className="h-4 w-4" />
+                {isTranscriptVisible ? "Hide Text" : "Show Text"}
               </button>
             </div>
 
