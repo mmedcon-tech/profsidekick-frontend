@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@heygen/streaming-avatar": "^2.0.17",
     "@radix-ui/react-icons": "^1.3.2",
     "@tanstack/react-query": "^5.79.0",
     "@types/react-router-dom": "^5.3.3",

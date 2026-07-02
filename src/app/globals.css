@@ -13,6 +13,16 @@
   }
 }
 
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
 @layer utilities {
   .line-clamp-3 {
     overflow: hidden;

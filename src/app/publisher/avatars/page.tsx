@@ -72,7 +72,7 @@ export default function MyAvatarsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Avatars</h1>
         <Link href="/publisher/avatars/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+          className="flex items-center gap-2 bg-[#133221] text-white px-4 py-2.5 rounded-lg hover:bg-[#0a1e13] transition-colors text-sm font-medium">
           <Plus size={16} /> Create Avatar
         </Link>
       </div>
@@ -83,7 +83,7 @@ export default function MyAvatarsPage() {
           <button key={t.value} onClick={() => setTab(t.value)}
             className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               tab === t.value
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-[#133221] text-[#133221]'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
             }`}>
             {t.label}
@@ -98,7 +98,7 @@ export default function MyAvatarsPage() {
       ) : error ? (
         <div className="text-center py-16">
           <p className="text-red-600 mb-2">{error}</p>
-          <button onClick={load} className="text-blue-600 hover:underline text-sm">Retry</button>
+          <button onClick={load} className="text-[#133221] hover:underline text-sm">Retry</button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
@@ -107,7 +107,7 @@ export default function MyAvatarsPage() {
             {tab === 'all' ? 'No avatars yet. Create one from a template to get started.' : `No ${tab} avatars.`}
           </p>
           <Link href="/publisher/avatars/new"
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+            className="inline-flex items-center gap-2 bg-[#133221] text-white px-4 py-2 rounded-lg hover:bg-[#0a1e13] transition-colors text-sm">
             <Plus size={15} /> Create your first avatar
           </Link>
         </div>
@@ -126,7 +126,7 @@ export default function MyAvatarsPage() {
 
               <div>
                 <Link href={`/publisher/avatars/${a.id}`}
-                  className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 transition-colors line-clamp-1">
+                  className="font-semibold text-gray-900 dark:text-gray-100 hover:text-[#133221] transition-colors line-clamp-1">
                   {a.name}
                 </Link>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
@@ -143,7 +143,7 @@ export default function MyAvatarsPage() {
                   onClick={() => handlePublishToggle(a)}
                   disabled={!!publishing}
                   title={a.is_published ? 'Unpublish' : 'Publish to marketplace'}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-40">
+                  className="p-1.5 text-gray-400 hover:text-[#133221] transition-colors disabled:opacity-40">
                   {a.is_published ? <EyeOff size={16} /> : <Globe size={16} />}
                 </button>
                 <button

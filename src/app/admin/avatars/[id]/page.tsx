@@ -48,8 +48,8 @@ function StatCard({ label, value, icon, color = 'blue' }: {
   label: string; value: number | string; icon: React.ReactNode; color?: string;
 }) {
   const colors: Record<string, string> = {
-    blue:    'bg-blue-50 text-blue-600',
-    indigo:  'bg-indigo-50 text-indigo-600',
+    blue:    'bg-green-50 dark:bg-gray-800 text-[#133221]',
+    indigo:  'bg-gray-50 text-indigo-600',
     emerald: 'bg-emerald-50 text-emerald-600',
     amber:   'bg-amber-50 text-amber-600',
   };
@@ -73,7 +73,7 @@ function StatusPill({ state }: { state: string }) {
     archived:    'bg-gray-100 dark:bg-gray-800 text-gray-400',
     unpublished: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
     active:      'bg-emerald-100 text-emerald-700',
-    completed:   'bg-blue-100 text-blue-700',
+    completed:   'bg-[#BA984E]/20 text-[#133221]',
     failed:      'bg-red-100 text-red-600',
   };
   return (
@@ -380,7 +380,7 @@ function PromptsTab({ template, onReload }: {
         title="Teaching Prompt"
         description="Used when a session is started in Teaching Mode. The avatar explains concepts, provides examples, breaks down difficult ideas, and scaffolds learning toward understanding."
         badge="Teaching Mode"
-        badgeColor="bg-blue-100 text-blue-700"
+        badgeColor="bg-[#BA984E]/20 text-[#133221]"
         value={teachPrompt}
         onChange={setTeachPrompt}
         rows={12}
@@ -485,7 +485,7 @@ function RoleRow({ role, templateId, onUpdated, onDeleted }: {
             {role.is_enabled ? 'Disable' : 'Enable'}
           </button>
           <button onClick={() => setExpanded((p) => !p)}
-            className="text-xs text-indigo-600 border border-indigo-200 px-2.5 py-1 rounded-lg hover:bg-indigo-50 transition-colors">
+            className="text-xs text-indigo-600 border border-indigo-200 px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors">
             Edit
           </button>
           <button onClick={handleDelete}
@@ -577,7 +577,7 @@ function RolesTab({ template, onReload }: {
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
 
       {adding && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
+        <div className="bg-gray-50 border border-indigo-200 rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-indigo-900">New Role</p>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Name <span className="text-red-500">*</span></label>

@@ -278,7 +278,7 @@ export default function ProfilePage() {
                       name="firstName"
                       value={personalInfo.firstName}
                       onChange={handlePersonalInfoChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                       placeholder="Enter your first name"
                     />
                   </div>
@@ -292,7 +292,7 @@ export default function ProfilePage() {
                       name="lastName"
                       value={personalInfo.lastName}
                       onChange={handlePersonalInfoChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                       placeholder="Enter your last name"
                     />
                   </div>
@@ -308,7 +308,7 @@ export default function ProfilePage() {
                     name="email"
                     value={personalInfo.email}
                     onChange={handlePersonalInfoChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                     placeholder="Enter your email address"
                   />
                 </div>
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                     name="username"
                     value={personalInfo.username}
                     onChange={handlePersonalInfoChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                     placeholder="Enter your username"
                   />
                 </div>
@@ -339,7 +339,7 @@ export default function ProfilePage() {
                       name="jobTitle"
                       value={personalInfo.jobTitle}
                       onChange={handlePersonalInfoChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                       placeholder="e.g. Mathematics Teacher"
                     />
                   </div>
@@ -353,7 +353,7 @@ export default function ProfilePage() {
                       name="organization"
                       value={personalInfo.organization}
                       onChange={handlePersonalInfoChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                       placeholder="e.g. Springfield High School"
                     />
                   </div>
@@ -369,7 +369,7 @@ export default function ProfilePage() {
                     rows={4}
                     value={personalInfo.bio}
                     onChange={handlePersonalInfoChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                     placeholder="Tell us a bit about yourself..."
                   />
                 </div> */}
@@ -377,7 +377,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  className="bg-[#133221] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#0a1e13] focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 >
                   {isSaving ? (
                     <>
@@ -406,7 +406,7 @@ export default function ProfilePage() {
               </div>
               <button 
                 onClick={() => setShowPromptModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="bg-[#133221] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#0a1e13] transition-colors flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 New Prompt
@@ -416,7 +416,7 @@ export default function ProfilePage() {
             {/* Loading State */}
             {promptsLoading && (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#133221]"></div>
                 <span className="ml-3 text-gray-600 dark:text-gray-400">Loading your prompts...</span>
               </div>
             )}
@@ -441,7 +441,7 @@ export default function ProfilePage() {
                 <p className="text-gray-400 mb-4">Create your first custom AI prompt to get started</p>
                 <button 
                   onClick={() => setShowPromptModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="bg-[#133221] text-white px-4 py-2 rounded-lg font-medium hover:bg-[#0a1e13] transition-colors"
                 >
                   Create Your First Prompt
                 </button>
@@ -449,7 +449,7 @@ export default function ProfilePage() {
             ) : !promptsLoading && !promptsError && (
               <div className="grid gap-4">
                 {savedPrompts.map((prompt) => (
-                  <div key={prompt.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+                  <div key={prompt.id} className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700 hover:border-[#133221] hover:shadow-md transition-all duration-200">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
@@ -482,7 +482,7 @@ export default function ProfilePage() {
                             {new Date(prompt.updatedAt).toLocaleDateString()}
                           </span>
                           <span>{prompt.usageCount} uses</span>
-                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                          <span className="px-2 py-1 bg-[#BA984E]/20 text-[#0a1e13] rounded-full">
                             {prompt.category}
                           </span>
                         </div>
@@ -499,7 +499,7 @@ export default function ProfilePage() {
                               setMessage({ type: 'error', text: 'Failed to copy prompt' });
                             }
                           }}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-[#133221] hover:bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors"
                           title="Copy prompt"
                         >
                           <Copy className="w-4 h-4" />
@@ -509,7 +509,7 @@ export default function ProfilePage() {
                             setEditingPrompt(prompt);
                             setShowPromptModal(true);
                           }}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-[#133221] hover:bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors"
                           title="Edit prompt"
                         >
                           <Edit className="w-4 h-4" />
@@ -525,7 +525,7 @@ export default function ProfilePage() {
                     </div>
                     
                     {/* Prompt Content Preview */}
-                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border-l-4 border-blue-500">
+                    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border-l-4 border-[#133221]">
                       <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">
                         {prompt.content}
                       </p>
@@ -554,7 +554,7 @@ export default function ProfilePage() {
                     name="currentPassword"
                     value={passwordData.currentPassword}
                     onChange={handlePasswordChange}
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                     placeholder="Enter your current password"
                   />
                   <button
@@ -579,7 +579,7 @@ export default function ProfilePage() {
                       name="newPassword"
                       value={passwordData.newPassword}
                       onChange={handlePasswordChange}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                       placeholder="Enter new password"
                     />
                     <button
@@ -602,7 +602,7 @@ export default function ProfilePage() {
                       name="confirmPassword"
                       value={passwordData.confirmPassword}
                       onChange={handlePasswordChange}
-                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                       placeholder="Confirm new password"
                     />
                     <button
@@ -623,7 +623,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={isChangingPassword}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="bg-[#133221] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#0a1e13] focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
               >
                 {isChangingPassword ? (
                   <>
@@ -668,7 +668,7 @@ export default function ProfilePage() {
                       onChange={(e) => handleNotificationChange(key, e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#133221] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-gray-800 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#133221]"></div>
                   </label>
                 </div>
               ))}
@@ -690,7 +690,7 @@ export default function ProfilePage() {
                   id="theme"
                   value={preferences.theme}
                   onChange={(e) => handlePreferenceChange('theme', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                 >
                   <option value="light">Light</option>
                   <option value="dark">Dark</option>
@@ -706,7 +706,7 @@ export default function ProfilePage() {
                   id="language"
                   value={preferences.language}
                   onChange={(e) => handlePreferenceChange('language', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                 >
                   <option value="en">English</option>
                   <option value="es">Spanish</option>
@@ -723,7 +723,7 @@ export default function ProfilePage() {
                   id="timezone"
                   value={preferences.timezone}
                   onChange={(e) => handlePreferenceChange('timezone', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                 >
                   <option value="UTC">UTC</option>
                   <option value="America/New_York">Eastern Time</option>
@@ -741,7 +741,7 @@ export default function ProfilePage() {
                   id="dateFormat"
                   value={preferences.dateFormat}
                   onChange={(e) => handlePreferenceChange('dateFormat', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
                 >
                   <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                   <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -812,7 +812,7 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-gray-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
@@ -835,16 +835,16 @@ export default function ProfilePage() {
                         onClick={() => handleTabChange(tab.id)}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600 shadow-sm'
+                            ? 'bg-gray-50 dark:bg-gray-800 text-[#0a1e13] border-r-2 border-[#133221] shadow-sm'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 hover:text-gray-900 dark:text-gray-100'
                         }`}
                       >
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'}`} />
+                        <Icon className={`w-5 h-5 ${isActive ? 'text-[#133221]' : 'text-gray-500 dark:text-gray-400'}`} />
                         <div className="flex-1 min-w-0">
                           <div className="font-medium">{tab.label}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{tab.description}</div>
                         </div>
-                        {isActive && <ChevronRight className="w-4 h-4 text-blue-600" />}
+                        {isActive && <ChevronRight className="w-4 h-4 text-[#133221]" />}
                       </button>
                     );
                   })}

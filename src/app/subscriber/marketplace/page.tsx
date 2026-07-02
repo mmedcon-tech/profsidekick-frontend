@@ -3,25 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { marketplaceApi, ApiError } from '@/lib/avatarApi';
+import { STARTER_AVATARS } from '@/lib/starterAvatars';
+import StarterAvatarCard from '@/components/avatars/StarterAvatarCard';
 import type { AvatarPublicResponse } from '@/types/avatar';
-import { Bot, Search, Coins } from 'lucide-react';
+import { Bot, Search, Calendar } from 'lucide-react';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
-
-function CostBadge({ cost }: { cost: number | null }) {
-  if (!cost || cost <= 0) {
-    return (
-      <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">
-        Free
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-medium">
-      <Coins size={11} />
-      {cost} credits
-    </span>
-  );
-}
 
 export default function MarketplacePage() {
   const [avatars, setAvatars] = useState<AvatarPublicResponse[]>([]);
@@ -42,23 +28,36 @@ export default function MarketplacePage() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Marketplace</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Discover AI-powered educational avatars. Subscribe to access their sessions.
-        </p>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">Discover AI-powered educational avatars.</p>
       </div>
 
-      {/* Published Avatars */}
+      {/* ── Platform Avatars (always visible) ───────────────────── */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="mb-4">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Platform Avatars</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Official avatars from the ProfSidekick platform.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-4">
+          {STARTER_AVATARS.filter((sa) => sa.isAvailable).map((sa) => (
+            <StarterAvatarCard key={sa.id} avatar={sa} role="subscriber" />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Publisher-created Avatars ────────────────────────────── */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">All Published Avatars</h2>
           <div className="relative max-w-xs w-full">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={query} onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#133221] focus:border-transparent text-sm"
               placeholder="Search avatars…" />
           </div>
         </div>
@@ -68,8 +67,13 @@ export default function MarketplacePage() {
             {[1, 2, 3].map((i) => <div key={i} className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
           </div>
         ) : error ? (
-          <div className="text-center py-10 bg-red-50 rounded-xl border border-red-200">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className="text-center py-10 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+            <p className="text-amber-800 dark:text-amber-300 text-sm font-medium">
+              Publisher avatars are not available yet.
+            </p>
+            <p className="text-amber-700/80 dark:text-amber-400/80 text-xs mt-1 max-w-md mx-auto">
+              Platform avatars above are ready to use. The marketplace catalog will appear once the backend database is fully migrated.
+            </p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-14 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
@@ -82,22 +86,28 @@ export default function MarketplacePage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((a) => (
               <Link key={a.id} href={`/subscriber/marketplace/${a.id}`}
-                className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-blue-300 hover:shadow-md transition-all flex flex-col gap-3">
+                className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-[#133221] hover:shadow-md transition-all flex flex-col gap-3">
                 <div className="flex items-start justify-between">
                   <AvatarIcon imageUrl={a.template_image_url} name={a.name} size={48} rounded="lg" />
-                  <CostBadge cost={a.subscription_cost} />
+                  <span className="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">
+                    Available
+                  </span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#133221] transition-colors">
                     {a.name}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                     {a.description || 'AI-powered educational avatar.'}
                   </p>
                 </div>
-                <div className="pt-2 border-t border-gray-100 dark:border-gray-800 mt-auto">
-                  <span className="text-sm text-blue-600 font-medium group-hover:underline">
-                    View &amp; Subscribe →
+                <div className="flex items-center gap-2 text-xs text-gray-400 mt-auto">
+                  <Calendar size={12} />
+                  <span>{new Date(a.created_at).toLocaleDateString()}</span>
+                </div>
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                  <span className="text-sm text-[#133221] font-medium group-hover:underline">
+                    View Sessions →
                   </span>
                 </div>
               </Link>

@@ -102,7 +102,7 @@ export default function NewTemplatePage() {
               {/* Preview / placeholder */}
               <div
                 onClick={() => fileRef.current?.click()}
-                className="relative w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors flex-shrink-0 group overflow-hidden"
+                className="relative w-20 h-20 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-gray-50 transition-colors flex-shrink-0 group overflow-hidden"
               >
                 {imagePreview ? (
                   <>

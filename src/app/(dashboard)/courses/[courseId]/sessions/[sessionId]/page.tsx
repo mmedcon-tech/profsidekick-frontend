@@ -225,7 +225,7 @@ export default function SessionDetailsPage() {
 
   return (
     <ProtectedRoute requireAuth={!isSharedLink}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="min-h-screen bg-gray-50/50 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -242,7 +242,7 @@ export default function SessionDetailsPage() {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Session Details</h1>
                 <p className="text-gray-600 dark:text-gray-400">Course: {sessionDetails?.classDetails.courseName || 'Loading...'}</p>
                 {isSharedLink && (
-                  <p className="text-sm text-blue-600 mt-1">
+                  <p className="text-sm text-[#133221] mt-1">
                     👋 You are viewing a shared session. Start learning with AI!
                   </p>
                 )}
@@ -252,7 +252,7 @@ export default function SessionDetailsPage() {
             <button
               onClick={handleStartTeaching}
               disabled={startingTeaching}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center space-x-2 px-6 py-3 bg-[#133221] text-white rounded-xl hover:bg-[#0a1e13] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {startingTeaching ? (
                 <>
@@ -393,7 +393,7 @@ export default function SessionDetailsPage() {
                   <button
                     onClick={handleStartTeaching}
                     disabled={startingTeaching}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#133221] text-white rounded-xl hover:bg-[#0a1e13] transition-colors disabled:opacity-50"
                   >
                     <Play className="w-4 h-4" />
                     {(user?.role === 'publisher' || user?.role === 'admin') && (

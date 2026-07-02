@@ -96,7 +96,13 @@ export interface SessionRunDetails {
   slidesDetails: SlideData[];
   startTime: string;
   endTime?: string;
-  runtimeModeUsed?: string;
+  avatarId?: string;
+  avatarName?: string;
+  avatarImageUrl?: string;
+  avatarRenderType?: AvatarRenderType;
+  heygenAvatarId?: string | null;
+  sessionLanguage?: string;
+  sessionMode?: 'teaching' | 'examination';
 }
 
 // Legacy types for backward compatibility (will be removed)
@@ -314,6 +320,36 @@ export interface EphemeralTokenResponse {
     value: string;
     expires_at: string;
   };
+  openai_token?: string;
+  heygen_avatar_id?: string | null;
+  heygen_quality?: 'low' | 'medium' | 'high';
+  heygen_access_token?: string | null;
+  session_language?: string;
+  session_mode?: 'teaching' | 'examination';
+  avatar_render_type?: AvatarRenderType;
+  avatar_image_url?: string | null;
+  avatar_name?: string | null;
+}
+
+export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads';
+
+export type AvatarWidgetState = 'idle' | 'listening' | 'speaking';
+
+export interface SessionAvatarConfig {
+  renderType: AvatarRenderType;
+  avatarId?: string;
+  avatarName: string;
+  imageUrl?: string;
+  heygenAvatarId?: string | null;
+  heygenQuality?: 'low' | 'medium' | 'high';
+  heygenAccessToken?: string | null;
+  sessionLanguage?: string;
+  sessionMode?: 'teaching' | 'examination';
+}
+
+export interface SessionEphemeralBundle {
+  openaiToken: string;
+  avatar: SessionAvatarConfig;
 }
 
 export interface Avatar {

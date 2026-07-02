@@ -29,7 +29,7 @@ function LoginForm() {
         return;
       }
       if (user.role === 'admin') router.push('/admin/dashboard');
-      else if (user.role === 'subscriber') router.push('/subscriber/courses');
+      else if (user.role === 'subscriber') router.push('/subscriber/dashboard');
       else router.push('/publisher/dashboard');
     }
   }, [isAuthenticated, isLoading, user, router, searchParams]);
@@ -70,8 +70,8 @@ function LoginForm() {
   // Show loading spinner while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133221]"></div>
       </div>
     );
   }
@@ -82,25 +82,12 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Image
-              src="/images/logo.png"
-              alt="ProfSidekick Logo"
-              width={48}
-              height={48}
-              className="object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400">ProfSidekick</h1>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400">Sign in to your account</p>
-        </div>
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-10">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Sign in</h2>
+        <p className="text-gray-500">Sign in to continue your training</p>
+      </div>
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -120,15 +107,15 @@ function LoginForm() {
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter your username"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
+              placeholder="MOI-48217"
               disabled={isSubmitting}
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
               Password
             </label>
             <div className="relative">
@@ -138,8 +125,8 @@ function LoginForm() {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter your password"
+                className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-[#133221] focus:border-[#133221] transition-colors"
+                placeholder="••••••••"
                 disabled={isSubmitting}
                 required
               />
@@ -154,47 +141,54 @@ function LoginForm() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            aria-busy={isSubmitting}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Signing in...
-              </>
-            ) : (
-              <>
-                <LogIn size={20} />
-                Sign In
-              </>
-            )}
-          </button>
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              className="w-full bg-[#133221] text-white py-3 px-4 rounded-xl font-medium hover:bg-[#0a1e13] focus:ring-2 focus:ring-[#133221] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 14 0"/><path d="m13 19 6-7-6-7"/></svg>
+                </>
+              )}
+            </button>
+          </div>
+          
+          <div className="text-center mt-6">
+            <p className="text-xs text-gray-500">
+              Demo credentials pre-filled — click to sign in.
+            </p>
+          </div>
         </form>
 
         {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-12 text-center">
+          <p className="text-sm text-gray-600">
             Do not have an account?{' '}
             <Link
               href="/register"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+              className="text-[#133221] hover:underline font-semibold"
             >
               Create one here
             </Link>
           </p>
         </div>
       </div>
-    </div>
   );
 }
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div className="flex items-center justify-center py-12">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133221]"></div>
     </div>
   );
 }

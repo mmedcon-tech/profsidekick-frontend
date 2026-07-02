@@ -107,7 +107,7 @@ export default function KnowledgePage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
             <input value={title} onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm"
               placeholder="e.g., Lecture Notes - Week 3" />
           </div>
           <div>
@@ -122,7 +122,7 @@ export default function KnowledgePage() {
             )}
           </div>
           <button onClick={handleUpload} disabled={uploading || !title.trim()}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm font-medium">
+            className="flex items-center gap-2 bg-[#133221] text-white px-4 py-2 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 transition-colors text-sm font-medium">
             <Upload size={15} /> {uploading ? 'Uploading...' : 'Upload'}
           </button>
         </div>
@@ -137,7 +137,7 @@ export default function KnowledgePage() {
           </div>
         ) : docs.map((doc) => (
           <div key={doc.id} className="flex items-center gap-3 p-4">
-            <FileText size={18} className="text-blue-500 flex-shrink-0" />
+            <FileText size={18} className="text-[#133221] flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{doc.title}</p>
               <p className="text-xs text-gray-400">

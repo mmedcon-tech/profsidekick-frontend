@@ -344,7 +344,7 @@ function RoleRow({
           </button>
           <button
             onClick={() => setExpanded((p) => !p)}
-            className="text-xs text-indigo-600 border border-indigo-200 px-2.5 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
+            className="text-xs text-indigo-600 border border-indigo-200 px-2.5 py-1 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Edit
           </button>
@@ -478,7 +478,7 @@ function RolesTab({
       )}
 
       {adding && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
+        <div className="bg-gray-50 border border-indigo-200 rounded-xl p-4 space-y-3">
           <p className="text-sm font-semibold text-indigo-900">New Role</p>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">

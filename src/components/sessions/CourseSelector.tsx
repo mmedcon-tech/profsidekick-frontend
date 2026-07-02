@@ -121,7 +121,7 @@ export default function CourseSelector({
               const course = courses.find(c => c.course_id === courseId);
               onCourseSelect(courseId, course);
             }}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors"
             required={required}
             disabled={disabled}
           >
@@ -139,7 +139,7 @@ export default function CourseSelector({
             <button
               type="button"
               onClick={() => setShowCreateForm(true)}
-              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors"
               title="Create new course"
             >
               <Plus className="w-4 h-4" />
@@ -148,17 +148,17 @@ export default function CourseSelector({
         </div>
 
         {selectedCourse && (
-          <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mt-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-lg">
             <div className="flex items-start gap-2">
-              <BookOpen className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <BookOpen className="w-4 h-4 text-emerald-700 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
               <div className="text-sm">
-                <div className="font-medium text-blue-900">
+                <div className="font-medium text-emerald-950 dark:text-emerald-100">
                   {selectedCourse.name}
                 </div>
                 {selectedCourse.description && (
-                  <div className="text-blue-700 mt-1">{selectedCourse.description}</div>
+                  <div className="text-emerald-800 dark:text-emerald-300 mt-1">{selectedCourse.description}</div>
                 )}
-                <div className="text-blue-600 mt-1 space-x-4">
+                <div className="text-emerald-700 dark:text-emerald-400 mt-1 space-x-4">
                   {selectedCourse.code && <span>Code: {selectedCourse.code}</span>}
                   {selectedCourse.department && <span>Dept: {selectedCourse.department}</span>}
                   {selectedCourse.semester && selectedCourse.year && (
@@ -192,7 +192,7 @@ export default function CourseSelector({
                   type="text"
                   value={newCourse.name}
                   onChange={(e) => setNewCourse({...newCourse, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   placeholder="Introduction to Computer Science"
                   required
                   disabled={createLoading}
@@ -206,7 +206,7 @@ export default function CourseSelector({
                     type="text"
                     value={newCourse.code}
                     onChange={(e) => setNewCourse({...newCourse, code: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                     placeholder="CS101"
                     disabled={createLoading}
                   />
@@ -217,7 +217,7 @@ export default function CourseSelector({
                     type="text"
                     value={newCourse.section}
                     onChange={(e) => setNewCourse({...newCourse, section: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                     placeholder="A"
                     disabled={createLoading}
                   />
@@ -229,7 +229,7 @@ export default function CourseSelector({
                 <textarea
                   value={newCourse.description}
                   onChange={(e) => setNewCourse({...newCourse, description: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   rows={3}
                   placeholder="Course description..."
                   disabled={createLoading}
@@ -243,7 +243,7 @@ export default function CourseSelector({
                     type="text"
                     value={newCourse.department}
                     onChange={(e) => setNewCourse({...newCourse, department: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                     placeholder="Computer Science"
                     disabled={createLoading}
                   />
@@ -254,7 +254,7 @@ export default function CourseSelector({
                     type="number"
                     value={newCourse.year}
                     onChange={(e) => setNewCourse({...newCourse, year: parseInt(e.target.value) || new Date().getFullYear()})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                     disabled={createLoading}
                   />
                 </div>
@@ -265,7 +265,7 @@ export default function CourseSelector({
                 <select
                   value={newCourse.semester}
                   onChange={(e) => setNewCourse({...newCourse, semester: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
                   disabled={createLoading}
                 >
                   <option value="">Select semester...</option>
@@ -282,7 +282,7 @@ export default function CourseSelector({
                   id="is_public"
                   checked={newCourse.is_public}
                   onChange={(e) => setNewCourse({...newCourse, is_public: e.target.checked})}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500 dark:focus:ring-emerald-500 border-gray-300 rounded"
                   disabled={createLoading}
                 />
                 <label htmlFor="is_public" className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -297,14 +297,14 @@ export default function CourseSelector({
                     setShowCreateForm(false);
                     setCreateError(null);
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-blue-500 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 transition-colors"
                   disabled={createLoading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-emerald-600 dark:bg-emerald-700 text-white rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 transition-colors disabled:opacity-50"
                   disabled={createLoading}
                 >
                   {createLoading ? 'Creating...' : 'Create Course'}
