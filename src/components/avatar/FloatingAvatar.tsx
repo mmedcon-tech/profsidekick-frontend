@@ -14,6 +14,7 @@ import StreamingAvatar, {
   StreamingEvents,
   TaskType,
 } from '@heygen/streaming-avatar';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourses } from '@/hooks/useCourses';
 import { useSubscriberStats } from '@/hooks/useSubscriberStats';
@@ -71,7 +72,8 @@ interface SpeechRecognitionLike {
   stop: () => void;
 }
 
-export default function FloatingAvatar(): React.ReactElement {
+export default function FloatingAvatar(): React.ReactElement | null {
+  const pathname = usePathname();
   const { user } = useAuth();
   const { courses } = useCourses();
   const { stats } = useSubscriberStats(courses.length);
@@ -400,6 +402,8 @@ export default function FloatingAvatar(): React.ReactElement {
     };
   }, [stopAvatar, stopBrowserVoice]);
 
+  if (pathname?.includes('/run/')) return null;
+
   const progressLabel =
     stats != null
       ? `${stats.overallProgressPct}% session progress · ${stats.completedRuns} completed runs`
@@ -412,7 +416,7 @@ export default function FloatingAvatar(): React.ReactElement {
         title={`Chat with ${activePersona.name}`}
         className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-1 group"
       >
-        <div className="relative w-14 h-14 rounded-full overflow-hidden ring-2 ring-white shadow-xl group-hover:ring-emerald-400 active:scale-95 transition-all duration-150 bg-gray-800">
+        <div className="relative w-14 h-14 rounded-full overflow-hidden ring-2 ring-white shadow-xl group-hover:ring-primary/40 active:scale-95 transition-all duration-150 bg-gray-800">
           <Image
             src={activePersona.img}
             alt={activePersona.name}
@@ -428,7 +432,7 @@ export default function FloatingAvatar(): React.ReactElement {
         </div>
         <div className="bg-white rounded-full px-2.5 py-0.5 shadow-md flex items-center gap-1.5 text-[11px] font-semibold text-gray-700">
           <span
-            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}
+            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-primary/50' : 'bg-gray-400'}`}
           />
           {activePersona.name}
         </div>
@@ -437,11 +441,11 @@ export default function FloatingAvatar(): React.ReactElement {
   }
 
   const panelHeader = (
-    <div className="flex items-center justify-between px-4 py-3 bg-emerald-900 border-b border-emerald-800">
+    <div className="flex items-center justify-between px-4 py-3 bg-primary border-b border-primary/95">
       <div className="flex items-center gap-2 min-w-0">
         <span
           className={`w-2 h-2 rounded-full flex-shrink-0 ${
-            isOnline ? 'bg-green-400' : isConnecting ? 'bg-yellow-400 animate-pulse' : 'bg-gray-500'
+            isOnline ? 'bg-primary/40' : isConnecting ? 'bg-yellow-400 animate-pulse' : 'bg-gray-500'
           }`}
         />
         <span className="text-white font-semibold text-sm truncate">
@@ -453,7 +457,7 @@ export default function FloatingAvatar(): React.ReactElement {
           type="button"
           onClick={() => setPanelMode('chat')}
           className={`px-2 py-1 rounded text-[11px] font-medium ${
-            panelMode === 'chat' ? 'bg-white text-emerald-900' : 'text-emerald-100 hover:bg-emerald-800'
+            panelMode === 'chat' ? 'bg-white text-primary' : 'text-primary/10 hover:bg-primary/95'
           }`}
         >
           Chat
@@ -462,7 +466,7 @@ export default function FloatingAvatar(): React.ReactElement {
           type="button"
           onClick={() => void switchToVoice()}
           className={`px-2 py-1 rounded text-[11px] font-medium ${
-            panelMode === 'voice' ? 'bg-white text-emerald-900' : 'text-emerald-100 hover:bg-emerald-800'
+            panelMode === 'voice' ? 'bg-white text-primary' : 'text-primary/10 hover:bg-primary/95'
           }`}
         >
           Voice
@@ -470,7 +474,7 @@ export default function FloatingAvatar(): React.ReactElement {
         <button
           type="button"
           onClick={handleMinimize}
-          className="p-1.5 rounded-full hover:bg-emerald-800 text-emerald-100"
+          className="p-1.5 rounded-full hover:bg-primary/95 text-primary/10"
           title="Minimise"
         >
           <Minus size={14} />
@@ -478,7 +482,7 @@ export default function FloatingAvatar(): React.ReactElement {
         <button
           type="button"
           onClick={() => void handleClose()}
-          className="p-1.5 rounded-full hover:bg-emerald-800 text-emerald-100"
+          className="p-1.5 rounded-full hover:bg-primary/95 text-primary/10"
           title="Close"
         >
           <X size={14} />
@@ -497,7 +501,7 @@ export default function FloatingAvatar(): React.ReactElement {
           disabled={isConnecting}
           className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all disabled:opacity-50 ${
             activePersonaId === p.id
-              ? 'bg-emerald-600 text-white'
+              ? 'bg-primary text-white'
               : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
           }`}
         >
@@ -508,14 +512,14 @@ export default function FloatingAvatar(): React.ReactElement {
   );
 
   const progressBanner = (
-    <div className="px-4 py-2 bg-emerald-950/40 border-b border-gray-800 text-[10px] text-emerald-200/90">
+    <div className="px-4 py-2 bg-primary/40 border-b border-gray-800 text-[10px] text-primary/20/90">
       {courses.length} course{courses.length === 1 ? '' : 's'} enrolled · {progressLabel}
     </div>
   );
 
   const avatarPortrait = (
-    <div className="relative flex flex-col items-center bg-gradient-to-b from-emerald-950 to-gray-950 px-4 pt-5 pb-4 flex-shrink-0">
-      <div className="relative h-36 w-36 overflow-hidden rounded-full ring-4 ring-emerald-600/80 shadow-xl">
+    <div className="relative flex flex-col items-center bg-gradient-to-b from-primary to-gray-950 px-4 pt-5 pb-4 flex-shrink-0">
+      <div className="relative h-36 w-36 overflow-hidden rounded-full ring-4 ring-primary/80 shadow-xl">
         {HEYGEN_LIVE && panelMode === 'voice' && isConnected ? (
           <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" />
         ) : (
@@ -530,12 +534,12 @@ export default function FloatingAvatar(): React.ReactElement {
         )}
         {HEYGEN_LIVE && panelMode === 'voice' && isConnecting && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/40 border-t-transparent" />
           </div>
         )}
       </div>
       {panelMode === 'voice' && (
-        <p className="mt-3 text-xs text-emerald-200/80">Tap the mic and ask your question</p>
+        <p className="mt-3 text-xs text-primary/20/80">Tap the mic and ask your question</p>
       )}
     </div>
   );
@@ -636,7 +640,7 @@ export default function FloatingAvatar(): React.ReactElement {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex max-h-[90vh] w-[24rem] flex-col overflow-hidden rounded-2xl border border-emerald-900/40 bg-gray-900 shadow-2xl">
+    <div className="fixed bottom-6 right-6 z-50 flex max-h-[90vh] w-[24rem] flex-col overflow-hidden rounded-2xl border border-primary/40 bg-gray-900 shadow-2xl">
       {panelHeader}
       {personaToggle}
       {progressBanner}
@@ -652,7 +656,7 @@ export default function FloatingAvatar(): React.ReactElement {
             <div
               className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
                 m.role === 'user'
-                  ? 'rounded-br-sm bg-emerald-600 text-white'
+                  ? 'rounded-br-sm bg-primary text-white'
                   : 'rounded-bl-sm bg-gray-800 text-gray-200'
               }`}
             >
@@ -675,13 +679,13 @@ export default function FloatingAvatar(): React.ReactElement {
           onChange={(e) => setChatInput(e.target.value)}
           onKeyDown={handleChatKeyDown}
           placeholder="Ask about your courses or progress…"
-          className="flex-1 rounded-lg bg-gray-700 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="flex-1 rounded-lg bg-gray-700 px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary/50"
         />
         <button
           type="button"
           onClick={() => void sendMessage()}
           disabled={!chatInput.trim() || isSending}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-40"
           aria-label="Send"
         >
           <Send size={13} />

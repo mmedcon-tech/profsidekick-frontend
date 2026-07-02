@@ -43,7 +43,7 @@ export interface AssistantParameters {
     model: "gpt-4o-transcribe" | "gpt-4o-mini-transcribe" | "whisper-1";
   };
   instructions: string;
-  model: "gpt-4o-realtime-preview-2024-12-17" | "gpt-4o-mini-realtime-preview-2024-12-17" | "gpt-realtime";
+  model: "gpt-realtime-2" | "gpt-realtime-mini" | "gpt-realtime";
   output_audio_format: "pcm16" | "g711_ulaw" | "g711_alaw";
   temperature: number;
   tool_choice: "auto" | "none" | "required";
@@ -102,7 +102,7 @@ export interface SessionRunDetails {
   avatarRenderType?: AvatarRenderType;
   heygenAvatarId?: string | null;
   sessionLanguage?: string;
-  sessionMode?: 'teaching' | 'examination';
+  sessionMode?: 'teaching' | 'examination' | 'consultation';
 }
 
 // Legacy types for backward compatibility (will be removed)
@@ -123,7 +123,7 @@ export interface ClassDetails {
       model: "gpt-4o-transcribe" | "gpt-4o-mini-transcribe" | "whisper-1";
     };
     instructions: string;
-    model: "gpt-4o-realtime-preview-2024-12-17" | "gpt-4o-mini-realtime-preview-2024-12-17" | "gpt-realtime";
+    model: "gpt-realtime-2" | "gpt-realtime-mini" | "gpt-realtime";
     output_audio_format: "pcm16" | "g711_ulaw" | "g711_alaw";
     temperature: number;
     tool_choice: "auto" | "none" | "required";
@@ -321,6 +321,7 @@ export interface EphemeralTokenResponse {
     expires_at: string;
   };
   openai_token?: string;
+  realtime_model?: string | null;
   heygen_avatar_id?: string | null;
   heygen_quality?: 'low' | 'medium' | 'high';
   heygen_access_token?: string | null;
@@ -329,9 +330,10 @@ export interface EphemeralTokenResponse {
   avatar_render_type?: AvatarRenderType;
   avatar_image_url?: string | null;
   avatar_name?: string | null;
+  glb_library_id?: string | null;
 }
 
-export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads';
+export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | '3d' | 'glb';
 
 export type AvatarWidgetState = 'idle' | 'listening' | 'speaking';
 
@@ -340,15 +342,18 @@ export interface SessionAvatarConfig {
   avatarId?: string;
   avatarName: string;
   imageUrl?: string;
+  modelUrl?: string;
+  glbLibraryId?: string;
   heygenAvatarId?: string | null;
   heygenQuality?: 'low' | 'medium' | 'high';
   heygenAccessToken?: string | null;
   sessionLanguage?: string;
-  sessionMode?: 'teaching' | 'examination';
+  sessionMode?: 'teaching' | 'examination' | 'consultation';
 }
 
 export interface SessionEphemeralBundle {
   openaiToken: string;
+  realtimeModel: string;
   avatar: SessionAvatarConfig;
 }
 

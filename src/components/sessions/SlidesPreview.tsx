@@ -110,7 +110,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
           },
           body: JSON.stringify({
             visionInstructions: editingVisionInstructions,
-            visionModel: 'gpt-4o', // Default model for now
+            visionModel: 'gpt-5.5', // Default model for now
           }),
         }
       );
@@ -206,7 +206,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
       const formData = new FormData();
       formData.append('slide_image', file);
       formData.append('vision_instructions', 'You are an AI assignment analysis system. Analyze the student solution against the correct solution and generate structured guidance for an oral examiner.\n\nInputs:\n[Correct solution-ground truth]\n[Student assignment solution]\n[Course Material-optional]\n\nCompare the student solution against the correct solution step-by-step.\nIdentify:\n- correct and incorrect steps\n- reasoning breaks or gaps in logic of the whole solution\n- missing justifications between steps\n- possible misunderstandings\n\nFor each major step, state the key rule, theorem, property, or concept involved for the student to state.\nFlag likely error sources and concepts the examiner should focus on during questioning.\nSuggested probing areas (non-binding) based on observed mistakes and reasoning patterns.\n\nRules:\n- Stay strictly grounded in the submitted work\n- Do not tutor, explain, or solve the problem\n- Do not assign final grades or outcomes');
-      formData.append('vision_model', 'gpt-4o');
+      formData.append('vision_model', 'gpt-5.5');
 
       const response = await fetch(
         config.getApiUrl(`/api/sessions/${sessionId}/slides/add`),
@@ -297,7 +297,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
       if (slide?.visionInstructions) {
         formData.append('vision_instructions', slide.visionInstructions);
       }
-      formData.append('vision_model', slide?.visionModel || 'gpt-4o');
+      formData.append('vision_model', slide?.visionModel || 'gpt-5.5');
 
       const response = await fetch(
         config.getApiUrl(`/api/sessions/${sessionId}/slides/${slideId}/replace-image`),
@@ -513,7 +513,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isAddingSlide}
-            className="px-3 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 text-sm bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isAddingSlide ? (
               <>
@@ -550,8 +550,8 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                 onClick={() => handleSlideClick(slide)}
                 className={`relative bg-gray-50 dark:bg-gray-900 rounded-lg border ${
                   draggedSlideId === slide.id
-                    ? 'border-emerald-500 dark:border-emerald-500 opacity-50'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:border-emerald-600'
+                    ? 'border-primary/50 dark:border-primary/50 opacity-50'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-primary/30 dark:border-primary'
                 } hover:shadow-md transition-all duration-200 cursor-move group aspect-[4/3]`}
               >
                 <div className="absolute inset-0 rounded-lg overflow-hidden">
@@ -587,7 +587,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                       setSelectedSlide(slide);
                       setEditingVisionInstructions(slide.visionInstructions || '');
                     }}
-                    className="p-1 bg-emerald-600 dark:bg-emerald-700 text-white rounded hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
+                    className="p-1 bg-primary dark:bg-primary/90 text-white rounded hover:bg-primary/90 dark:hover:bg-primary transition-colors"
                     title="View & Edit"
                   >
                     <RefreshCw className="w-3 h-3" />
@@ -628,7 +628,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                   onClick={() => handleSlideClick(slide)}
                   className={`flex items-center space-x-4 p-4 rounded-lg cursor-move transition-colors ${
                     draggedSlideId === slide.id
-                      ? 'bg-emerald-100 dark:bg-emerald-900/40 opacity-50'
+                      ? 'bg-primary/10 dark:bg-primary/40 opacity-50'
                       : 'bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:bg-gray-800'
                   }`}
                 >
@@ -660,7 +660,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                         e.stopPropagation();
                         handleSlideClick(slide);
                       }}
-                      className="p-2 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:bg-emerald-900/20 rounded-lg transition-colors"
+                      className="p-2 text-primary/90 dark:text-primary/40 hover:bg-primary/5 dark:bg-primary/20 rounded-lg transition-colors"
                       title="View & Edit"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -709,7 +709,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                       onClick={() => goToPage(page)}
                       className={`px-3 py-1 rounded-lg text-sm transition-colors ${
                         page === currentPage
-                          ? 'bg-emerald-600 dark:bg-emerald-700 text-white'
+                          ? 'bg-primary dark:bg-primary/90 text-white'
                           : 'hover:bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
                       }`}
                     >
@@ -827,14 +827,14 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                   <h4 className="font-semibold text-gray-900 dark:text-gray-100">Vision Instructions</h4>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500 dark:text-gray-400 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
-                      Model: {selectedSlide.visionModel || 'gpt-4o'}
+                      Model: {selectedSlide.visionModel || 'gpt-5.5'}
                     </span>
                   </div>
                 </div>
                 <textarea
                   value={editingVisionInstructions}
                   onChange={(e) => setEditingVisionInstructions(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 resize-none"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 resize-none"
                   rows={4}
                   placeholder="Enter vision instructions for analyzing this slide..."
                 />
@@ -845,7 +845,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                   <button
                     onClick={() => handleRegenerateSlide(selectedSlide)}
                     disabled={isRegenerating}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 dark:bg-emerald-700 text-white rounded-lg hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isRegenerating ? (
                       <>
@@ -870,7 +870,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                     {!isEditingContent ? (
                       <button
                         onClick={() => setIsEditingContent(true)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-emerald-100 dark:bg-emerald-900/40 hover:bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 rounded-lg transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary/10 dark:bg-primary/40 hover:bg-primary/20 dark:bg-primary/60 text-primary/95 dark:text-primary/30 rounded-lg transition-colors"
                       >
                         <Edit3 className="w-4 h-4" />
                         Edit
@@ -890,7 +890,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                         <button
                           onClick={() => handleSaveContent(selectedSlide)}
                           disabled={isSavingContent}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                         >
                           {isSavingContent ? (
                             <>
@@ -916,7 +916,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                         type="text"
                         value={editingTitle}
                         onChange={(e) => setEditingTitle(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                         placeholder="Enter slide title..."
                       />
                     </div>
@@ -927,7 +927,7 @@ export default function SlidesPreview({ slides, sessionId }: SlidesPreviewProps)
                       <textarea
                         value={editingContent}
                         onChange={(e) => setEditingContent(e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 resize-none"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 resize-none"
                         rows={8}
                         placeholder="Enter slide content..."
                       />

@@ -7,6 +7,10 @@ import { useTalkingHeadsAvatar } from '@/hooks/useTalkingHeadsAvatar';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import type { SessionAvatarConfig } from '@/types/types';
 
+import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
+import GlbAvatarPreview from '@/components/avatar/GlbAvatarPreview';
+import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
+
 interface TeachingSessionAvatarProps {
   config: SessionAvatarConfig;
   audioElement: HTMLAudioElement | null;
@@ -27,17 +31,49 @@ export default function TeachingSessionAvatar({
     isAISpeaking,
     isUserSpeaking,
   });
-  const amplitude = useAudioAmplitude(
-    audioElement,
-    widgetState === 'speaking' && isConnected,
-  );
+  const isSpeakingActive = widgetState === 'speaking' && isConnected;
+  const amplitude = useAudioAmplitude(audioElement, isSpeakingActive);
   const talkingHeads = useTalkingHeadsAvatar(config, isConnected);
+
+  const libraryEntry = config.glbLibraryId
+    ? getAvatarLibraryEntry(config.glbLibraryId)
+    : undefined;
+
+  const isDirectGlbUrl = config.glbLibraryId?.endsWith('.glb');
+  const glbUrl = isDirectGlbUrl ? config.glbLibraryId : libraryEntry?.glbPath;
 
   const imageUrl =
     config.imageUrl ??
-    (process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE
-      ? '/images/avatar-female.png'
-      : '/images/avatar-male.png');
+    libraryEntry?.thumbnailPath ??
+    (config.glbLibraryId === 'avatar-2' || (isDirectGlbUrl && config.glbLibraryId?.includes('male'))
+      ? '/images/avatar-male.png'
+      : '/images/avatar-female.png');
+
+  if (config.renderType === '3d' && glbUrl) {
+    return (
+      <div className="flex h-full w-full flex-col bg-gray-900">
+        <GlbAvatarPreview
+          glbUrl={glbUrl}
+          amplitude={amplitude}
+          showControls={false}
+          framing="bust"
+        />
+      </div>
+    );
+  }
+
+  if (config.renderType === '3d') {
+    return (
+      <div className="flex h-full w-full flex-col bg-gray-900">
+        <PortraitAvatarStage
+          imageUrl={imageUrl}
+          avatarName={config.avatarName}
+          widgetState={widgetState}
+          amplitude={amplitude}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center bg-gray-900 gap-2">
@@ -57,3 +93,4 @@ export default function TeachingSessionAvatar({
     </div>
   );
 }
+

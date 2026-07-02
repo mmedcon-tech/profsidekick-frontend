@@ -6,13 +6,5 @@
 // To restore one item: comment out its line.
 
 export const HIDDEN_NAV_HREFS = new Set<string>([
-  // ── Subscriber ──────────────────────────────────────────────────────────────
-  '/subscriber/marketplace',   // Marketplace
-  '/subscriber/my-avatars',    // My Avatars
-  '/subscriber/history',       // Learning History
-  '/billing',                  // Wallet
-
-  // ── Publisher ───────────────────────────────────────────────────────────────
-  '/publisher/dashboard',      // Dashboard
-  '/publisher/avatars',        // My Avatars
+  // All items visible — simplified view is off
 ]);

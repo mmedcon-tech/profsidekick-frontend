@@ -5,6 +5,8 @@
  */
 
 import type {
+  SAEAdminAssessmentRow,
+  SAEAdminStudentRow,
   SAEAssessmentRow,
   SAEBatchCreateResponse,
   SAERegenerateResponse,
@@ -255,6 +257,25 @@ export async function fetchMySubmissionFile(
     throw new Error(detail);
   }
   return res.arrayBuffer();
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+export async function adminListSAEAssessments(): Promise<SAEAdminAssessmentRow[]> {
+  const res = await fetch(`${API}/api/admin/sae/assessments`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAEAdminAssessmentRow[]>(res);
+}
+
+export async function adminListSAEStudents(
+  assessmentId?: string
+): Promise<SAEAdminStudentRow[]> {
+  const qs = assessmentId ? `?assessment_id=${assessmentId}` : "";
+  const res = await fetch(`${API}/api/admin/sae/students${qs}`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAEAdminStudentRow[]>(res);
 }
 
 /** Legacy: download the active submission's PDF. Prefer fetchMySubmissionFile(). */

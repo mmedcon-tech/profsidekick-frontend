@@ -36,7 +36,7 @@ function fmt(iso: string) {
 
 function StatusPill({ published }: { published: boolean }) {
   return published ? (
-    <span className="flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+    <span className="flex items-center gap-1 text-xs font-medium text-primary/90 bg-primary/10 px-2 py-0.5 rounded-full">
       <Globe size={10} /> Live
     </span>
   ) : (

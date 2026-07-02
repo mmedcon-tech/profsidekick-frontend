@@ -1,5 +1,36 @@
 import { RefObject } from "react";
 
+export const DEFAULT_REALTIME_MODEL = "gpt-realtime-2025-08-28";
+
+export function normalizeRealtimeModel(model?: string | null): string {
+  if (!model) {
+    return DEFAULT_REALTIME_MODEL;
+  }
+
+  const supportedModels = new Set([
+    "gpt-realtime",
+    "gpt-realtime-1.5",
+    "gpt-realtime-2",
+    "gpt-realtime-2025-08-28",
+    "gpt-realtime-mini",
+    "gpt-realtime-mini-2025-10-06",
+    "gpt-realtime-mini-2025-12-15",
+    "gpt-realtime-translate",
+    "gpt-realtime-whisper",
+  ]);
+
+  if (supportedModels.has(model)) {
+    return model;
+  }
+
+  if (model.includes("mini")) {
+    return "gpt-realtime-mini";
+  }
+
+  // Remap any legacy gpt-4o-realtime-* to the current GA default
+  return DEFAULT_REALTIME_MODEL;
+}
+
 // Check if the environment supports getUserMedia
 export function checkWebRTCSupport(): { supported: boolean; error?: string } {
   // Check if we're in a browser environment
@@ -38,7 +69,7 @@ export async function createRealtimeConnection(
   EPHEMERAL_KEY: string,
   audioElement: RefObject<HTMLAudioElement | null>,
   codec: string,
-  model: string = "gpt-realtime"
+  model: string = DEFAULT_REALTIME_MODEL
 ): Promise<{ pc: RTCPeerConnection; dc: RTCDataChannel; mediaStream: MediaStream }> {
   // Check WebRTC support first
   const supportCheck = checkWebRTCSupport();
@@ -81,11 +112,11 @@ export async function createRealtimeConnection(
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
 
-  const baseUrl = "https://api.openai.com/v1/realtime";
-  // Use the model parameter passed to the function
-  console.log(`🤖 Using model: ${model}`);
+  const realtimeModel = normalizeRealtimeModel(model);
+  const sdpUrl = `https://api.openai.com/v1/realtime/calls?model=${encodeURIComponent(realtimeModel)}`;
+  console.log(`🤖 Using model: ${realtimeModel} (requested: ${model})`);
 
-  const sdpResponse = await fetch(`${baseUrl}?model=${model}`, {
+  const sdpResponse = await fetch(sdpUrl, {
     method: "POST",
     body: offer.sdp,
     headers: {

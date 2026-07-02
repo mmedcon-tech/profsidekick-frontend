@@ -114,9 +114,9 @@ export default function SAEExamPage() {
 
   if (pageState.kind === "loading") {
     return (
-      <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-full bg-slate-50 flex items-center justify-center">
         <p className="text-slate-500 text-sm">Loading…</p>
-      </main>
+      </div>
     );
   }
 
@@ -126,13 +126,13 @@ export default function SAEExamPage() {
 
   if (pageState.kind === "submitting") {
     return (
-      <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="min-h-full bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
           <p className="text-slate-700 font-medium">Grading your exam…</p>
           <p className="mt-1 text-xs text-slate-500">This may take up to 30 seconds.</p>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -167,7 +167,7 @@ export default function SAEExamPage() {
 
 function NotEnrolledView() {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
+    <div className="min-h-full bg-slate-50 px-4 py-10">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
           <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
@@ -199,7 +199,7 @@ function NotEnrolledView() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -236,7 +236,7 @@ function MainView({
   );
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
+    <div className="min-h-full bg-slate-50 px-4 py-10">
       <div className="mx-auto max-w-2xl space-y-8">
 
         {/* ── Header ─────────────────────────────────────────────────────── */}
@@ -411,7 +411,7 @@ function MainView({
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -627,7 +627,7 @@ function ResultView({
   );
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
 
       {/* ── Top bar ──────────────────────────────────────────────────────── */}
       <header className="shrink-0 flex items-center px-4 h-12 bg-white border-b border-slate-200 gap-3">

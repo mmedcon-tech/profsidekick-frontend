@@ -94,6 +94,31 @@ export interface SAERegenerateResponse {
   invitation_token: string;
 }
 
+// ── Admin read-only views (no grading data) ───────────────────────────────────
+
+export interface SAEAdminAssessmentRow {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  publisher_id: string;
+  publisher_username: string;
+  enrolled_count: number;
+}
+
+export interface SAEAdminStudentRow {
+  id: string;
+  student_code: string;
+  is_activated: boolean;
+  activation_date: string | null;
+  submission_count: number;
+  created_at: string;
+  assessment_id: string;
+  assessment_name: string;
+  publisher_username: string;
+  user_username: string | null;
+}
+
 // ── Grading question shape inside result_json ─────────────────────────────────
 
 export interface SAEGradingBasis {

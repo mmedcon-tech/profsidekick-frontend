@@ -13,55 +13,55 @@ const FIELDS: {
   label: string;
   options: { value: string; label: string }[];
 }[] = [
-  {
-    key: 'teachingStyle',
-    label: 'Teaching style',
-    options: [
-      { value: 'collaborative', label: 'Collaborative' },
-      { value: 'lecture', label: 'Lecture-based' },
-      { value: 'socratic', label: 'Socratic' },
-      { value: 'hands-on', label: 'Hands-on' },
-    ],
-  },
-  {
-    key: 'tone',
-    label: 'Tone',
-    options: [
-      { value: 'encouraging', label: 'Encouraging' },
-      { value: 'formal', label: 'Formal' },
-      { value: 'casual', label: 'Casual' },
-      { value: 'enthusiastic', label: 'Enthusiastic' },
-    ],
-  },
-  {
-    key: 'pace',
-    label: 'Pace',
-    options: [
-      { value: 'slow', label: 'Slow' },
-      { value: 'moderate', label: 'Moderate' },
-      { value: 'fast', label: 'Fast' },
-    ],
-  },
-  {
-    key: 'interactionLevel',
-    label: 'Student interaction',
-    options: [
-      { value: 'high', label: 'High' },
-      { value: 'medium', label: 'Medium' },
-      { value: 'low', label: 'Low' },
-    ],
-  },
-  {
-    key: 'subjectFocus',
-    label: 'Subject focus',
-    options: [
-      { value: 'conceptual understanding', label: 'Conceptual understanding' },
-      { value: 'exam preparation', label: 'Exam preparation' },
-      { value: 'problem solving', label: 'Problem solving' },
-      { value: 'real-world application', label: 'Real-world application' },
-    ],
-  },
-];
+    {
+      key: 'teachingStyle',
+      label: 'Style',
+      options: [
+        { value: 'collaborative', label: 'Collaborative' },
+        { value: 'lecture', label: 'Lecture-based' },
+        { value: 'socratic', label: 'Socratic' },
+        { value: 'hands-on', label: 'Hands-on' },
+      ],
+    },
+    {
+      key: 'tone',
+      label: 'Tone',
+      options: [
+        { value: 'encouraging', label: 'Encouraging' },
+        { value: 'formal', label: 'Formal' },
+        { value: 'casual', label: 'Casual' },
+        { value: 'enthusiastic', label: 'Enthusiastic' },
+      ],
+    },
+    {
+      key: 'pace',
+      label: 'Pace',
+      options: [
+        { value: 'slow', label: 'Slow' },
+        { value: 'moderate', label: 'Moderate' },
+        { value: 'fast', label: 'Fast' },
+      ],
+    },
+    {
+      key: 'interactionLevel',
+      label: 'Interaction',
+      options: [
+        { value: 'high', label: 'High' },
+        { value: 'medium', label: 'Medium' },
+        { value: 'low', label: 'Low' },
+      ],
+    },
+    {
+      key: 'subjectFocus',
+      label: 'Subject focus',
+      options: [
+        { value: 'conceptual understanding', label: 'Conceptual understanding' },
+        { value: 'exam preparation', label: 'Exam preparation' },
+        { value: 'problem solving', label: 'Problem solving' },
+        { value: 'real-world application', label: 'Real-world application' },
+      ],
+    },
+  ];
 
 export default function PreferencesForm({ preferences, onChange }: PreferencesFormProps) {
   const update = (key: keyof PersonaPreferenceSelections, value: string) => {
@@ -78,7 +78,7 @@ export default function PreferencesForm({ preferences, onChange }: PreferencesFo
           <select
             value={preferences[field.key]}
             onChange={(e) => update(field.key, e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
           >
             {field.options.map((opt) => (
               <option key={opt.value} value={opt.value}>

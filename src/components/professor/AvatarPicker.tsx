@@ -22,7 +22,7 @@ export default function AvatarPicker({
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 dark:border-emerald-500" />
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary dark:border-primary/50" />
       </div>
     );
   }
@@ -46,12 +46,12 @@ export default function AvatarPicker({
             onClick={() => onSelect(avatar.id)}
             className={`relative text-left p-4 rounded-xl border-2 transition-all ${
               selected
-                ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-md'
-                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-emerald-300 dark:border-emerald-600'
+                ? 'border-primary dark:border-primary/50 bg-primary/5 dark:bg-primary/20 shadow-md'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary/30 dark:border-primary'
             }`}
           >
             {selected && (
-              <span className="absolute top-3 right-3 bg-emerald-600 dark:bg-emerald-700 text-white rounded-full p-0.5">
+              <span className="absolute top-3 right-3 bg-primary dark:bg-primary/90 text-white rounded-full p-0.5">
                 <Check size={16} />
               </span>
             )}

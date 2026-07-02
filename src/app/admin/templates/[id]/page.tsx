@@ -20,7 +20,7 @@ import AvatarIcon from '@/components/avatars/AvatarIcon';
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    published: 'bg-emerald-100 text-emerald-700',
+    published: 'bg-primary/10 text-primary/90',
     draft:     'bg-amber-100 text-amber-700',
     archived:  'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
   };
@@ -181,7 +181,7 @@ function PromptsTab({ template, onReload }: {
       </div>
 
       {error   && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
-      {success && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-sm">{success}</div>}
+      {success && <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-primary/90 text-sm">{success}</div>}
 
       {/* Examination Prompt */}
       <PromptBlock
@@ -796,7 +796,7 @@ export default function EditTemplatePage() {
                     <Tag size={11} /> {template.category}
                   </span>
                 )}
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${template.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${template.is_active ? 'bg-primary/10 text-primary/90' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'}`}>
                   {template.is_active ? 'Active' : 'Archived'}
                 </span>
               </div>

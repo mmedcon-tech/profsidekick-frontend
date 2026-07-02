@@ -7,7 +7,8 @@ import { ArrowLeft, Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react'
 
 export default function ContactPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -45,9 +46,9 @@ export default function ContactPage() {
   // Show loading while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 dark:border-emerald-500 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -72,7 +73,7 @@ export default function ContactPage() {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <span className="text-2xl font-bold text-emerald-950 dark:text-emerald-100">ProfSidekick</span>
+              <span className="text-2xl font-bold text-primary dark:text-primary/10">ProfSidekick</span>
             </button>
             
             <div className="flex items-center space-x-4">
@@ -85,15 +86,15 @@ export default function ContactPage() {
               </button>
               {isAuthenticated ? (
                 <button
-                  onClick={() => router.push('/dashboard')}
-                  className="bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
+                  onClick={() => router.push(dashboardUrl)}
+                  className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
                 >
                   Dashboard
                 </button>
               ) : (
                 <button
                   onClick={() => router.push('/login')}
-                  className="bg-emerald-600 dark:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors"
+                  className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
                 >
                   Sign In
                 </button>
@@ -104,7 +105,7 @@ export default function ContactPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-gray-900 dark:to-gray-800 py-20">
+      <section className="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
             Get in Touch
@@ -126,7 +127,7 @@ export default function ContactPage() {
               
               {isSubmitted ? (
                 <div className="text-center py-8">
-                  <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+                  <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
                   <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Message Sent!</h3>
                   <p className="text-gray-600 dark:text-gray-400">Thank you for contacting us. We will get back to you soon.</p>
                 </div>
@@ -144,7 +145,7 @@ export default function ContactPage() {
                         value={formData.name}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors"
                         placeholder="Your full name"
                       />
                     </div>
@@ -159,7 +160,7 @@ export default function ContactPage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors"
                         placeholder="your.email@example.com"
                       />
                     </div>
@@ -175,7 +176,7 @@ export default function ContactPage() {
                       value={formData.subject}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors"
                     >
                       <option value="">Select a subject</option>
                       <option value="general">General Inquiry</option>
@@ -198,7 +199,7 @@ export default function ContactPage() {
                       onChange={handleInputChange}
                       required
                       rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 transition-colors resize-vertical"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors resize-vertical"
                       placeholder="Tell us how we can help you..."
                     />
                   </div>
@@ -206,7 +207,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-emerald-600 dark:bg-emerald-700 text-white py-4 px-6 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-primary dark:bg-primary/90 text-white py-4 px-6 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                   >
                     {isSubmitting ? (
                       <>
@@ -236,21 +237,21 @@ export default function ContactPage() {
 
               <div className="space-y-6">
                 <div className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-6 h-6 text-emerald-700 dark:text-emerald-400" />
+                  <div className="w-12 h-12 bg-primary/10 dark:bg-primary/40 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-6 h-6 text-primary/90 dark:text-primary/40" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Email Support</h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-2">Get help with technical issues or general questions</p>
-                    <a href="mailto:support@profsidekick.com" className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:text-emerald-300 font-medium">
+                    <a href="mailto:support@profsidekick.com" className="text-primary/90 dark:text-primary/40 hover:text-primary/95 dark:text-primary/30 font-medium">
                       support@profsidekick.com
                     </a>
                   </div>
                 </div>
 
                 {/* <div className="flex items-start gap-4 p-6 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MessageSquare className="w-6 h-6 text-green-600" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MessageSquare className="w-6 h-6 text-primary" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Live Chat</h3>
@@ -266,7 +267,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Phone Support</h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-2">Speak directly with our support team</p>
-                    <p className="text-emerald-700 dark:text-emerald-400 font-medium">+1 (555) 123-4567</p>
+                    <p className="text-primary/90 dark:text-primary/40 font-medium">+1 (555) 123-4567</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Monday - Friday, 9 AM - 6 PM PST</p>
                   </div>
                 </div>
@@ -371,7 +372,7 @@ export default function ContactPage() {
                <h3 className="font-semibold mb-4">Account</h3>
                <ul className="space-y-2 text-gray-400">
                  {isAuthenticated ? (
-                   <li><button onClick={() => router.push('/dashboard')} className="hover:text-white transition-colors">Dashboard</button></li>
+                   <li><button onClick={() => router.push(dashboardUrl)} className="hover:text-white transition-colors">Dashboard</button></li>
                  ) : (
                    <>
                      <li><button onClick={() => router.push('/login')} className="hover:text-white transition-colors">Sign In</button></li>

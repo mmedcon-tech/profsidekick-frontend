@@ -45,12 +45,12 @@ function CourseCard({ course, onClick }: CourseCardProps) {
   }
 
   const duration = course.description?.includes("weeks") ? "8 weeks" : "4 weeks";
-  const location = course.name?.includes('English') ? "Federal Police School - Sharjah" : "Officers Training Institute - Police College, Abu Dhabi";
+  const location = course.name?.includes('English') ? "Federal Training Center" : "MyOS Academy";
   
   return (
     <button
       onClick={onClick}
-      className="group text-left bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 flex flex-col h-full"
+      className="group text-left bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 flex flex-col h-full"
     >
       <div className="p-5 flex-1">
         {/* Tags row */}
@@ -126,7 +126,7 @@ export default function StudentDashboard() {
         {/* Header subtitle */}
         <div>
           <p className="text-sm text-gray-500 font-medium">
-            All courses assigned to you by the Officers Training Institute.
+            All courses assigned to you by MyOS Academy.
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export default function StudentDashboard() {
               <p className="text-xs text-gray-400 mb-4">{error}</p>
               <button
                 onClick={refetch}
-                className="text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:text-emerald-300 font-medium"
+                className="text-sm text-primary/90 dark:text-primary/40 hover:text-primary/95 dark:text-primary/30 font-medium"
               >
                 Try again
               </button>

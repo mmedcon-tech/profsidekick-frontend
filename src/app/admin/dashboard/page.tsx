@@ -1,221 +1,264 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { templateApi, adminAvatarApi, adminUserApi } from '@/lib/avatarApi';
-import type { AvatarTemplateResponse } from '@/types/avatar';
-import AvatarIcon from '@/components/avatars/AvatarIcon';
+import { tr } from "@/lib/v2/i18n"
+import { useAdminAnalytics } from "@/hooks/useAdminAnalytics"
+import { Users, Bot, Layers, TrendingUp, Monitor, Info } from "lucide-react"
 import {
-  Layers, Users, ShieldCheck, Plus, ArrowRight, ChevronRight,
-  BarChart2,
-} from 'lucide-react';
+  Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
+  Area, AreaChart, CartesianGrid,
+} from "recharts"
 
-function StatusPill({ state }: { state: string }) {
-  const map: Record<string, string> = {
-    published:   'bg-emerald-100 text-emerald-700',
-    draft:       'bg-amber-100 text-amber-700',
-    unpublished: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400',
-    archived:    'bg-gray-100 dark:bg-gray-800 text-gray-400',
-  };
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+
+function SkeletonBlock({ className }: { className?: string }) {
   return (
-    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize ${map[state] ?? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>
-      {state}
-    </span>
-  );
+    <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className ?? ""}`} />
+  )
 }
 
-export default function AdminDashboard() {
-  const [templateList, setTemplateList] = useState<AvatarTemplateResponse[]>([]);
-  const [avatarCount,   setAvatarCount]   = useState(0);
-  const [publishers,    setPublishers]    = useState(0);
-  const [subscribers,   setSubscribers]   = useState(0);
-  const [loading,       setLoading]       = useState(true);
+function StatSkeleton() {
+  return (
+    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-3">
+      <SkeletonBlock className="h-3 w-24" />
+      <SkeletonBlock className="h-7 w-16" />
+    </div>
+  )
+}
 
-  useEffect(() => {
-    Promise.allSettled([
-      templateApi.list(),
-      adminAvatarApi.list(),
-      adminUserApi.list('publisher'),
-      adminUserApi.list('subscriber'),
-    ]).then(([t, a, pub, sub]) => {
-      if (t.status   === 'fulfilled') setTemplateList(t.value);
-      if (a.status   === 'fulfilled') setAvatarCount(a.value.total);
-      if (pub.status === 'fulfilled') setPublishers(pub.value.length);
-      if (sub.status === 'fulfilled') setSubscribers(sub.value.length);
-    }).finally(() => setLoading(false));
-  }, []);
+// ── Stat card ────────────────────────────────────────────────────────────────
 
-  const stats = [
-    {
-      label: 'Templates',
-      value: loading ? '—' : templateList.length,
-      icon: <Layers size={20} className="text-indigo-600" />,
-      bg: 'bg-gray-50',
-      href: '/admin/templates',
-    },
-    {
-      label: 'Avatars',
-      value: loading ? '—' : avatarCount,
-      icon: <AvatarIcon imageUrl={null} name="" size={20} className="text-[#133221]" />,
-      bg: 'bg-green-50 dark:bg-gray-800',
-      href: '/admin/marketplace',
-    },
-    {
-      label: 'Publishers',
-      value: loading ? '—' : publishers,
-      icon: <ShieldCheck size={20} className="text-purple-600" />,
-      bg: 'bg-purple-50',
-      href: '/admin/publishers',
-    },
-    {
-      label: 'Subscribers',
-      value: loading ? '—' : subscribers,
-      icon: <Users size={20} className="text-green-600" />,
-      bg: 'bg-green-50',
-      href: '/admin/subscribers',
-    },
-  ];
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  icon: typeof Bot
+  label: string
+  value: string
+  sub?: string
+  accent?: boolean
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 transition-shadow hover:shadow-md ${
+        accent
+          ? "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40"
+          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+      }`}
+    >
+      <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+        <Icon className={`h-4 w-4 ${accent ? "text-blue-600 dark:text-blue-400" : ""}`} />
+        <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
+      </div>
+      <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+      {sub && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{sub}</p>}
+    </div>
+  )
+}
 
-  const actions = [
-    { label: 'Create Template',    href: '/admin/templates/new', icon: <Plus size={16} />,       color: 'bg-indigo-600 hover:bg-indigo-700' },
-    { label: 'All Templates',      href: '/admin/templates',     icon: <Layers size={16} />,     color: 'bg-[#133221] hover:bg-[#0a1e13]'    },
-    { label: 'Manage Marketplace', href: '/admin/marketplace',   icon: <ArrowRight size={16} />, color: 'bg-gray-800 hover:bg-gray-900'   },
-  ];
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function EmptyChart({ label }: { label: string }) {
+  return (
+    <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+      <Info className="h-5 w-5 text-gray-300 dark:text-gray-600" />
+      <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
+    </div>
+  )
+}
+
+// ── Chart colors — concrete hsl() so recharts can render them ────────────────
+const CHART_BLUE  = "hsl(213 94% 58%)"
+const CHART_GOLD  = "hsl(46 65% 52%)"
+const CHART_MUTED = "hsl(220 13% 91%)"
+
+const TooltipStyle = {
+  background: "var(--popover)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  fontSize: 12,
+  color: "var(--popover-foreground)",
+} as const
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default function AdminDashboardPage() {
+  const lang = "en" as "en" | "ar"
+  const { data: analytics, loading } = useAdminAnalytics()
+
+  const coursePerf   = analytics?.course_performance  ?? []
+  const monthlyComps = analytics?.monthly_completions ?? []
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Platform overview and management.</p>
+    <div className="px-4 sm:px-6 py-6 space-y-6 max-w-6xl mx-auto">
+
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <p className="text-xs font-medium uppercase tracking-widest text-gray-400 dark:text-gray-500">
+          MyOS Platform Admin
+        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+          Platform Dashboard
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Platform-wide overview across all publishers and subscribers.
+        </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s) => (
-          <Link key={s.label} href={s.href}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-[#133221] hover:shadow-sm transition-all flex items-center gap-4">
-            <div className={`w-10 h-10 rounded-lg ${s.bg} flex items-center justify-center flex-shrink-0`}>
-              {s.icon}
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{s.label}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Avatar Templates — dynamic, links to per-template management dashboard */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Avatar Templates</h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Click a template to manage its prompts, roles, publishers, courses, and sessions.
-            </p>
-          </div>
-          <Link href="/admin/templates"
-            className="text-xs text-indigo-600 hover:underline flex items-center gap-1">
-            View all <ChevronRight size={12} />
-          </Link>
-        </div>
-
+      {/* Stats — 3 on md, 6 on xl */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-800 rounded-xl animate-pulse">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-40 bg-gray-100 dark:bg-gray-800 rounded" />
-                  <div className="h-3 w-24 bg-gray-100 dark:bg-gray-800 rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : templateList.length === 0 ? (
-          <div className="text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-            <Layers size={32} className="mx-auto text-gray-300 mb-2" />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">No templates yet.</p>
-            <Link href="/admin/templates/new"
-              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors">
-              <Plus size={14} /> Create first template
-            </Link>
-          </div>
+          Array.from({ length: 6 }).map((_, i) => <StatSkeleton key={i} />)
         ) : (
-          <div className="space-y-2">
-            {templateList.filter((t) => t.is_active).map((t) => (
-              <Link
-                key={t.id}
-                href={`/admin/avatars/${t.id}`}
-                className="flex items-center gap-4 p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:border-indigo-200 hover:bg-gray-50/40 transition-all group"
-              >
-                <AvatarIcon imageUrl={t.avatar_image_url} name={t.name} size={48} rounded="lg" />
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{t.name}</span>
-                    <StatusPill state={t.published_state} />
-                    {t.category && (
-                      <span className="text-[10px] text-indigo-600 bg-gray-50 px-2 py-0.5 rounded-full">
-                        {t.category}
-                      </span>
-                    )}
-                  </div>
-                  {t.description && (
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">{t.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Layers size={10} /> {t.version_count} version{t.version_count !== 1 ? 's' : ''}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users size={10} /> {t.roles.length} role{t.roles.length !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Right: CTA */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-indigo-600 bg-gray-50 border border-indigo-200 px-3 py-1.5 rounded-lg group-hover:bg-indigo-100 transition-colors">
-                    <BarChart2 size={13} /> Manage
-                  </span>
-                  <ChevronRight size={16} className="text-gray-300 group-hover:text-indigo-400 transition-colors" />
-                </div>
-              </Link>
-            ))}
-          </div>
+          <>
+            <StatCard
+              icon={Users}
+              label={tr("totalPublishers", lang)}
+              value={`${analytics?.total_publishers ?? 0}`}
+              accent
+            />
+            <StatCard
+              icon={Bot}
+              label={tr("totalSubscribers", lang)}
+              value={`${analytics?.total_subscribers ?? 0}`}
+            />
+            <StatCard
+              icon={Layers}
+              label={tr("activeAvatars", lang)}
+              value={`${analytics?.total_avatars ?? 0}`}
+            />
+            <StatCard
+              icon={TrendingUp}
+              label={tr("totalSessions", lang)}
+              value={`${(analytics?.active_sessions_today ?? 0).toLocaleString()}`}
+            />
+            <StatCard
+              icon={Monitor}
+              label={tr("systemHealth", lang)}
+              value={`${analytics?.system_health ?? 100}%`}
+              sub="All systems operational"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="Total Users"
+              value={`${analytics?.total_users ?? 0}`}
+            />
+          </>
         )}
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
-        <div className="flex flex-wrap gap-3">
-          {actions.map((a) => (
-            <Link key={a.label} href={a.href}
-              className={`flex items-center gap-2 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${a.color}`}>
-              {a.icon} {a.label}
-            </Link>
-          ))}
-        </div>
-      </div>
+      {/* Charts */}
+      <div className="grid gap-6 lg:grid-cols-2">
 
-      {/* Info cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-gray-50 rounded-xl border border-indigo-200 p-5">
-          <h3 className="font-semibold text-indigo-900 mb-2">Prompt Isolation</h3>
-          <p className="text-sm text-indigo-700">
-            All AI prompts are stored exclusively in Templates. Publishers and subscribers never see
-            prompt content. Only admins can view or edit prompts.
-          </p>
+        {/* Bar: Course Performance */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
+            Course Performance
+          </h3>
+          {loading ? (
+            <SkeletonBlock className="h-56 w-full" />
+          ) : coursePerf.length === 0 ? (
+            <EmptyChart label="No course data yet" />
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={coursePerf} margin={{ top: 4, right: 8, left: -16, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis
+                    dataKey={(d: any) => d.name[lang] ?? d.name}
+                    tickLine={false}
+                    axisLine={false}
+                    interval={0}
+                    height={60}
+                    tick={({ x, y, payload }: any) => {
+                      const name = String(payload.value)
+                      const label = name.length > 14 ? name.slice(0, 14) + "…" : name
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text
+                            x={0} y={0} dy={6}
+                            textAnchor="end"
+                            fill="var(--muted-foreground)"
+                            fontSize={11}
+                            transform="rotate(-35)"
+                          >
+                            {label}
+                          </text>
+                        </g>
+                      )
+                    }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                    domain={[0, 100]}
+                    tickFormatter={(v) => `${v}%`}
+                  />
+                  <Tooltip
+                    cursor={{ fill: CHART_MUTED, opacity: 0.3 }}
+                    contentStyle={TooltipStyle}
+                    formatter={(v: any) => [`${v}%`, "Completion"]}
+                  />
+                  <Bar
+                    dataKey="completion"
+                    fill={CHART_BLUE}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={40}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
-        <div className="bg-purple-50 rounded-xl border border-purple-200 p-5">
-          <h3 className="font-semibold text-purple-900 mb-2">Admin Seed Script</h3>
-          <p className="text-sm text-purple-700 font-mono text-xs break-all">
-            python scripts/seed_admin.py --username admin --email admin@example.com --password changeme
-          </p>
+
+        {/* Area: Monthly Completions */}
+        <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
+            {tr("monthlyCompletions", lang)}
+          </h3>
+          {loading ? (
+            <SkeletonBlock className="h-56 w-full" />
+          ) : monthlyComps.length === 0 ? (
+            <EmptyChart label="No completion data yet" />
+          ) : (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={monthlyComps} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="adminFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%"   stopColor={CHART_GOLD} stopOpacity={0.35} />
+                      <stop offset="100%" stopColor={CHART_GOLD} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip contentStyle={TooltipStyle} />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke={CHART_GOLD}
+                    strokeWidth={2}
+                    fill="url(#adminFill)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
     </div>
-  );
+  )
 }

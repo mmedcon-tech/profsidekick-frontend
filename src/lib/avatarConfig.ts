@@ -1,3 +1,4 @@
+import { resolveGlbUrl } from '@/lib/avatarLibrary';
 import type {
   AvatarRenderType,
   EphemeralTokenResponse,
@@ -15,12 +16,21 @@ export function resolveAvatarConfig(
     fallback?.renderType ??
     (response.heygen_avatar_id ? 'heygen' : 'static');
 
+  const glbLibraryId =
+    response.glb_library_id ?? fallback?.glbLibraryId ?? null;
+  const resolvedModelUrl = resolveGlbUrl(
+    fallback?.modelUrl ?? null,
+    glbLibraryId,
+  );
+
   return {
     renderType,
     avatarId: fallback?.avatarId,
     avatarName:
       response.avatar_name ?? fallback?.avatarName ?? DEFAULT_AVATAR_NAME,
     imageUrl: response.avatar_image_url ?? fallback?.imageUrl,
+    glbLibraryId: glbLibraryId ?? undefined,
+    modelUrl: renderType === 'glb' ? resolvedModelUrl : fallback?.modelUrl,
     heygenAvatarId: response.heygen_avatar_id ?? fallback?.heygenAvatarId ?? null,
     heygenQuality: response.heygen_quality ?? fallback?.heygenQuality ?? 'high',
     heygenAccessToken:
@@ -39,6 +49,7 @@ export function parseSessionRunAvatar(
     avatarImageUrl: string;
     avatarRenderType: AvatarRenderType;
     heygenAvatarId: string | null;
+    glbLibraryId?: string;
     sessionLanguage: string;
     sessionMode: 'teaching' | 'examination';
   }>,
@@ -50,6 +61,8 @@ export function parseSessionRunAvatar(
     imageUrl: run.avatarImageUrl,
     heygenAvatarId: run.heygenAvatarId ?? null,
     heygenQuality: 'high',
+    glbLibraryId: run.glbLibraryId,
+    modelUrl: run.glbLibraryId,
     sessionLanguage: run.sessionLanguage ?? 'en',
     sessionMode: run.sessionMode ?? 'teaching',
   };

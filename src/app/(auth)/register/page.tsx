@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, Mic, GraduationCap, ShieldCheck, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { config } from '@/lib/config';
+import { toBackendRole } from '@/lib/roleMapping';
 
 type Step = 1 | 2;
 type Role = 'publisher' | 'subscriber' | 'admin';
@@ -36,14 +37,14 @@ const ROLES: { value: Role; label: string; description: string; icon: React.Reac
 ];
 
 const colorMap: Record<string, string> = {
-  blue:   'border-emerald-500 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 ring-blue-500',
-  green:  'border-green-500 bg-green-50 ring-green-500',
+  blue:   'border-primary/50 dark:border-primary/50 bg-primary/5 dark:bg-primary/20 ring-blue-500',
+  green:  'border-primary/50 bg-primary/5 ring-primary/50',
   purple: 'border-purple-500 bg-purple-50 ring-purple-500',
 };
 
 const iconColorMap: Record<string, string> = {
-  blue:   'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40',
-  green:  'text-green-600 bg-green-100',
+  blue:   'text-primary/90 dark:text-primary/40 bg-primary/10 dark:bg-primary/40',
+  green:  'text-primary bg-primary/10',
   purple: 'text-purple-600 bg-purple-100',
 };
 
@@ -106,7 +107,7 @@ export default function RegisterPage() {
           password:  formData.password,
           firstName: formData.firstName,
           lastName:  formData.lastName,
-          role:      formData.role,
+          role:      toBackendRole(formData.role),
         }),
       });
       const data = await res.json();
@@ -123,7 +124,7 @@ export default function RegisterPage() {
   if (isLoading || isAuthenticated) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#133221]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50" />
       </div>
     );
   }
@@ -139,7 +140,7 @@ export default function RegisterPage() {
           {/* progress bar */}
           <div className="mt-4 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#133221] rounded-full transition-all duration-300"
+              className="h-full bg-primary dark:bg-primary/90 rounded-full transition-all duration-300"
               style={{ width: step === 1 ? '50%' : '100%' }}
             />
           </div>
@@ -158,13 +159,13 @@ export default function RegisterPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-1">First Name</label>
                 <input name="firstName" value={formData.firstName} onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 text-sm"
                   placeholder="Jane" required />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-1">Last Name</label>
                 <input name="lastName" value={formData.lastName} onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 text-sm"
                   placeholder="Doe" required />
               </div>
             </div>
@@ -172,14 +173,14 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-1">Username</label>
               <input name="username" value={formData.username} onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 text-sm"
                 placeholder="janedoe" required />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 dark:text-gray-300 mb-1">Email</label>
               <input name="email" type="email" value={formData.email} onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 text-sm"
                 placeholder="jane@example.com" required />
             </div>
 
@@ -188,7 +189,7 @@ export default function RegisterPage() {
               <div className="relative">
                 <input name="password" type={showPassword ? 'text' : 'password'}
                   value={formData.password} onChange={handleChange}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 text-sm"
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 text-sm"
                   placeholder="Min 6 characters" required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -202,7 +203,7 @@ export default function RegisterPage() {
               <div className="relative">
                 <input name="confirmPassword" type={showConfirm ? 'text' : 'password'}
                   value={formData.confirmPassword} onChange={handleChange}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500 text-sm"
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:bg-gray-700 text-gray-900 dark:text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 text-sm"
                   placeholder="Repeat password" required />
                 <button type="button" onClick={() => setShowConfirm(!showConfirm)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -216,7 +217,7 @@ export default function RegisterPage() {
               onClick={handleContinue}
               disabled={isSubmitting}
               aria-busy={isSubmitting}
-              className="w-full bg-[#133221] text-white py-3 rounded-xl font-medium hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-primary dark:bg-primary/90 text-white py-3 rounded-xl font-medium hover:bg-primary/90 dark:hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -230,7 +231,7 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-gray-500 mt-6">
               Already have an account?{' '}
-              <Link href="/login" className="text-[#133221] hover:underline font-semibold">
+              <Link href="/login" className="text-primary/90 dark:text-primary/40 hover:underline font-semibold">
                 Sign in
               </Link>
             </p>
@@ -263,7 +264,7 @@ export default function RegisterPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-gray-900 dark:text-white dark:text-gray-100">{r.label}</span>
-                        {selected && <CheckCircle size={18} className="text-emerald-700 dark:text-emerald-400 flex-shrink-0" />}
+                        {selected && <CheckCircle size={18} className="text-primary/90 dark:text-primary/40 flex-shrink-0" />}
                       </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{r.description}</p>
                     </div>
@@ -278,7 +279,7 @@ export default function RegisterPage() {
                 <ArrowLeft size={16} /> Back
               </button>
               <button onClick={handleSubmit} disabled={isSubmitting || !formData.role}
-                className="flex-1 bg-[#133221] text-white py-3 rounded-xl font-medium hover:bg-[#0a1e13] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                className="flex-1 bg-primary dark:bg-primary/90 text-white py-3 rounded-xl font-medium hover:bg-primary/90 dark:hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
                 {isSubmitting ? (
                   <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Creating...</>
                 ) : 'Create Account'}
@@ -289,3 +290,4 @@ export default function RegisterPage() {
       </div>
   );
 }
+

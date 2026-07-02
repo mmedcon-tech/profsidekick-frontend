@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { marketplaceApi } from '@/lib/avatarApi';
 import { config } from '@/lib/config';
+import { subscriptionApi } from '@/lib/avatarApi';
+import AvatarShowcase from '@/components/avatar/AvatarShowcase';
+import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
+import { useSpeechPreview } from '@/hooks/useSpeechPreview';
+import {
+  avatarSupportsGlbShowcase,
+  buildShowcaseEntryFromAvatar,
+} from '@/lib/marketplaceShowcase';
+import { isPlatformLibraryAvatarId } from '@/lib/marketplaceUtils';
 import type { AvatarPublicResponse } from '@/types/avatar';
-import { Bot, ArrowLeft, Calendar, Play, Clock, Upload, Info } from 'lucide-react';
+import { ArrowLeft, Calendar, Play, Clock, Square, Upload, Info, Volume2 } from 'lucide-react';
 
 interface PublicSession {
   sessionId: string;
@@ -30,8 +39,15 @@ export default function SubscriberAvatarDetailPage() {
   const [loading,   setLoading]  = useState(true);
   const [error,     setError]    = useState<string | null>(null);
   const [launching, setLaunching] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
 
   useEffect(() => {
+    if (isPlatformLibraryAvatarId(avatarId)) {
+      router.replace(`/subscriber/marketplace/glb/${avatarId}`);
+      return;
+    }
+
     Promise.all([
       marketplaceApi.get(avatarId),
       fetch(config.getApiUrl(`/api/sessions?avatar_id=${avatarId}&limit=20`), {
@@ -40,11 +56,30 @@ export default function SubscriberAvatarDetailPage() {
         .then((r) => r.ok ? r.json() : { sessions: [] })
         .then((d) => d.sessions ?? [])
         .catch(() => []),
+      token ? subscriptionApi.checkStatus(avatarId).catch(() => ({ subscribed: false })) : Promise.resolve({ subscribed: false }),
     ])
-      .then(([av, sess]) => { setAvatar(av); setSessions(sess); })
+      .then(([av, sess, subStatus]) => { setAvatar(av); setSessions(sess); setIsSubscribed((subStatus as { subscribed: boolean }).subscribed); })
       .catch((e) => setError(e.message ?? 'Failed to load'))
       .finally(() => setLoading(false));
-  }, [avatarId, token]);
+  }, [avatarId, token, router]);
+
+  const handleSubscribe = async () => {
+    if (!token) { router.push('/login'); return; }
+    setSubscribing(true);
+    try {
+      await subscriptionApi.subscribe(avatarId);
+      setIsSubscribed(true);
+      const newSessions = await fetch(config.getApiUrl(`/api/sessions?avatar_id=${avatarId}&limit=20`), {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.ok ? r.json() : { sessions: [] }).then(d => d.sessions ?? []);
+      setSessions(newSessions);
+      alert("Successfully subscribed and enrolled in associated courses!");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Subscription failed");
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   const handleLaunch = async (sessionId: string) => {
     if (!token) { router.push('/login'); return; }
@@ -64,6 +99,19 @@ export default function SubscriberAvatarDetailPage() {
       setLaunching(null);
     }
   };
+
+  const showcaseEntry = useMemo(
+    () => (avatar ? buildShowcaseEntryFromAvatar(avatar) : null),
+    [avatar],
+  );
+  const speechPreview = useSpeechPreview(avatar?.name ?? 'Assistant');
+  const portraitUrl =
+    avatar?.template_image_url ??
+    showcaseEntry?.thumbnailPath ??
+    '/images/avatar-female.png';
+  const hasGlbShowcase = !!(avatar && avatarSupportsGlbShowcase(avatar) && showcaseEntry);
+  const hasPortraitOnly = !!(avatar?.template_image_url && !hasGlbShowcase);
+  const widgetState = speechPreview.active ? 'speaking' as const : 'idle' as const;
 
   if (loading) {
     return (
@@ -86,26 +134,89 @@ export default function SubscriberAvatarDetailPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <Link href="/subscriber/marketplace"
         className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300 w-fit">
         <ArrowLeft size={16} /> Marketplace
       </Link>
 
-      {/* Avatar hero */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
-          <Bot size={40} className="text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avatar.name}</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">{avatar.description || 'AI-powered educational avatar.'}</p>
-        <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-400">
-          <Calendar size={13} />
-          <span>Published {new Date(avatar.created_at).toLocaleDateString()}</span>
+      <div className={`grid gap-6 ${hasGlbShowcase || hasPortraitOnly ? 'lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]' : ''}`}>
+        {hasGlbShowcase && showcaseEntry && (
+          <div className="overflow-hidden rounded-3xl border border-gray-200 shadow-lg dark:border-gray-700">
+            <AvatarShowcase entry={showcaseEntry} className="min-h-[520px]" />
+          </div>
+        )}
+
+        {hasPortraitOnly && (
+          <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-lg dark:border-gray-700">
+            <div className="min-h-[520px]">
+              <PortraitAvatarStage
+                imageUrl={portraitUrl}
+                avatarName={avatar.name}
+                widgetState={widgetState}
+                amplitude={speechPreview.amplitude}
+              />
+            </div>
+            <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
+              <button
+                type="button"
+                onClick={speechPreview.toggle}
+                className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-md transition-colors ${
+                  speechPreview.active
+                    ? 'bg-white text-[#133221]'
+                    : 'bg-[#133221] text-white'
+                }`}
+              >
+                {speechPreview.active ? (
+                  <>
+                    <Square size={12} /> Stop preview
+                  </>
+                ) : (
+                  <>
+                    <Volume2 size={12} /> Preview how they talk
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avatar.name}</h1>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
+            {avatar.tagline || avatar.description || 'AI-powered educational avatar.'}
+          </p>
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs text-gray-400">
+            <Calendar size={13} />
+            <span>Published {new Date(avatar.created_at).toLocaleDateString()}</span>
+          </div>
+
+          <div className="mt-6">
+            {isSubscribed ? (
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Already Enrolled
+              </div>
+            ) : (
+              <button
+                onClick={handleSubscribe}
+                disabled={subscribing}
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+              >
+                {subscribing ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Enrolling…
+                  </>
+                ) : (
+                  <>Enroll</>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Available sessions */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
         <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Available Sessions</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -149,7 +260,6 @@ export default function SubscriberAvatarDetailPage() {
         )}
       </div>
 
-      {/* Solution upload note */}
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-3">
         <Upload size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
         <div className="text-sm text-amber-800">
@@ -160,7 +270,6 @@ export default function SubscriberAvatarDetailPage() {
         </div>
       </div>
 
-      {/* Mic note */}
       <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-4 flex items-start gap-3">
         <Info size={16} className="text-emerald-700 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-emerald-800 dark:text-emerald-300">

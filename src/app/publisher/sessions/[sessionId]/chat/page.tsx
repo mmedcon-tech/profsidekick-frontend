@@ -179,9 +179,9 @@ function useDragResize(storageKey: string, defaultPct = 0.38) {
 // ─── Option dimension labels ──────────────────────────────────────────────────
 
 const OPTION_DIMENSIONS: Record<string, { label: string; badge: string; border: string }> = {
-  A: { label: 'Balanced',    badge: 'bg-[#BA984E]/20 text-[#133221]',     border: 'border-[#133221] hover:border-[#133221] hover:bg-green-50 dark:bg-gray-800'    },
+  A: { label: 'Balanced',    badge: 'bg-[#BA984E]/20 text-[#133221]',     border: 'border-[#133221] hover:border-[#133221] hover:bg-primary/5 dark:bg-gray-800'    },
   B: { label: 'Encouraging', badge: 'bg-purple-100 text-purple-700', border: 'border-purple-300 hover:border-purple-500 hover:bg-purple-50' },
-  C: { label: 'Rigorous',    badge: 'bg-emerald-100 text-emerald-700',border: 'border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50' },
+  C: { label: 'Rigorous',    badge: 'bg-primary/10 text-primary/90',border: 'border-primary/30 hover:border-primary/50 hover:bg-primary/5' },
 };
 
 // ─── Role Selection Modal ─────────────────────────────────────────────────────
@@ -315,14 +315,14 @@ function EditableResponse({
       <button
         onClick={handleEdit}
         title="Edit this response"
-        className="flex items-center gap-1 p-1 rounded text-gray-300 hover:text-[#133221] hover:bg-green-50 dark:bg-gray-800 transition-colors text-[11px]">
+        className="flex items-center gap-1 p-1 rounded text-gray-300 hover:text-[#133221] hover:bg-primary/5 dark:bg-gray-800 transition-colors text-[11px]">
         <Pencil size={12} />
         <span>Edit</span>
       </button>
       {(editedContent && editedContent !== originalContent) && (
-        <span className="text-[10px] text-[#133221] bg-green-50 dark:bg-gray-800 px-1.5 py-0.5 rounded font-medium">Refined</span>
+        <span className="text-[10px] text-[#133221] bg-primary/5 dark:bg-gray-800 px-1.5 py-0.5 rounded font-medium">Refined</span>
       )}
-      {saved && <span className="text-[10px] text-emerald-600 font-medium">Saved</span>}
+      {saved && <span className="text-[10px] text-primary font-medium">Saved</span>}
     </div>
   );
 }
@@ -609,7 +609,7 @@ function RightPanel({ session, avatar }: {
         <div className="space-y-0.5 text-[10px] text-gray-400">
           {['System prompt', 'Rubric', 'Knowledge', 'Slides', 'History'].map((l) => (
             <p key={l} className="flex items-center gap-1">
-              <CheckCircle size={8} className="text-green-500 flex-shrink-0" /> {l}
+              <CheckCircle size={8} className="text-primary/50 flex-shrink-0" /> {l}
             </p>
           ))}
         </div>
@@ -895,7 +895,7 @@ function SessionChatInner() {
         {/* Role selection bar — always visible, prominent */}
         {avatar?.template_id && (
           <div className={`flex items-center gap-3 px-4 py-2 border-b flex-shrink-0 transition-colors ${
-            selectedRole ? 'bg-green-50 dark:bg-gray-800 border-emerald-100 dark:border-emerald-800' : 'bg-amber-50 border-amber-100'
+            selectedRole ? 'bg-primary/5 dark:bg-gray-800 border-primary/10 dark:border-primary/95' : 'bg-amber-50 border-amber-100'
           }`}>
             <Users size={14} className={selectedRole ? 'text-[#133221]' : 'text-amber-500'} />
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400 flex-shrink-0">Role:</span>

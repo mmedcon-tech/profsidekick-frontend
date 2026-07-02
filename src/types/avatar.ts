@@ -231,6 +231,8 @@ export interface AvatarResponse extends AvatarSummary {
   configuration: AvatarConfigurationResponse | null;
 }
 
+export type MarketplaceRenderType = 'static' | 'talkingheads' | 'heygen' | 'glb';
+
 export interface AvatarPublicResponse {
   id: string;
   name: string;
@@ -240,6 +242,17 @@ export interface AvatarPublicResponse {
   subscription_cost: number | null;
   created_at: string;
   updated_at: string;
+  tagline?: string | null;
+  render_type?: MarketplaceRenderType;
+  glb_library_id?: string | null;
+  glb_preview_url?: string | null;
+  is_enrolled?: boolean;
+  rating?: number | null;
+  course_count?: number | null;
+  subscriber_count?: number | null;
+  credits_per_session?: number | null;
+  languages?: string[];
+  voice_labels?: string[];
 }
 
 export interface AvatarListResponse {

@@ -61,7 +61,7 @@ export default function StaticAvatarWidget({
         : 1;
 
   const ringColor =
-    variant === 'talkingheads' ? 'border-violet-400' : 'border-blue-400';
+    variant === 'talkingheads' ? 'border-violet-400' : 'border-primary/40';
   const faceGradient =
     variant === 'talkingheads'
       ? 'from-violet-700 to-indigo-900'
@@ -75,18 +75,10 @@ export default function StaticAvatarWidget({
       data-variant={variant}
     >
       <div
-        className={`absolute inset-0 rounded-full border-2 ${ringColor} transition-transform duration-150 ${
-          widgetState === 'listening' ? 'animate-pulse' : ''
-        } ${widgetState === 'speaking' ? 'animate-ping' : ''}`}
-        style={{ opacity: ringOpacity, transform: `scale(${ringScale})` }}
-        aria-hidden
-      />
-      <div
-        className={`relative overflow-hidden rounded-full bg-gradient-to-br ${faceGradient} shadow-lg`}
+        className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${faceGradient} shadow-lg`}
         style={{
           width: size,
           height: size,
-          clipPath: 'circle(50% at 50% 50%)',
           animation:
             widgetState === 'idle'
               ? 'breathe 3s ease-in-out infinite'
@@ -98,7 +90,7 @@ export default function StaticAvatarWidget({
           <img
             src={imageUrl}
             alt={avatarName}
-            className="h-full w-full object-cover object-top"
+            className="h-full w-full object-cover object-center"
             style={{
               transform: blink ? 'scaleY(0.12)' : 'scaleY(1)',
               transformOrigin: 'center 28%',

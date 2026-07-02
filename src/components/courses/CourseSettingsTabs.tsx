@@ -77,7 +77,7 @@ export default function CourseSettingsTabs({
                 type="text"
                 value={course.name}
                 onChange={(e) => onCourseUpdate('name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="Introduction to Computer Science"
               />
             </div>
@@ -91,7 +91,7 @@ export default function CourseSettingsTabs({
                 value={course.code || ''}
                 required
                 onChange={(e) => onCourseUpdate('code', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="CS101"
               />
             </div>
@@ -104,7 +104,7 @@ export default function CourseSettingsTabs({
                 type="text"
                 value={course.section || ''}
                 onChange={(e) => onCourseUpdate('section', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="001"
               />
             </div>
@@ -117,7 +117,7 @@ export default function CourseSettingsTabs({
                 type="text"
                 value={course.department || ''}
                 onChange={(e) => onCourseUpdate('department', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="Computer Science"
               />
             </div>
@@ -129,7 +129,7 @@ export default function CourseSettingsTabs({
               <select
                 value={course.semester || ''}
                 onChange={(e) => onCourseUpdate('semester', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
               >
                 <option value="">Select semester</option>
                 <option value="fall">Fall</option>
@@ -146,7 +146,7 @@ export default function CourseSettingsTabs({
               <select
                 value={course.year || currentYear}
                 onChange={(e) => onCourseUpdate('year', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
               >
                 {years.map(year => (
                   <option key={year} value={year}>{year}</option>
@@ -164,7 +164,7 @@ export default function CourseSettingsTabs({
             value={course.description || ''}
             onChange={(e) => onCourseUpdate('description', e.target.value)}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
             placeholder="Describe your course objectives, topics, and expectations..."
           />
         </div>
@@ -178,7 +178,7 @@ export default function CourseSettingsTabs({
               id="is_active"
               checked={course.is_active}
               onChange={(e) => onCourseUpdate('is_active', e.target.checked)}
-              className="h-4 w-4 text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500 dark:focus:ring-emerald-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary/90 dark:text-primary/40 focus:ring-primary/50 dark:focus:ring-primary/50 border-gray-300 rounded"
             />
             <label htmlFor="is_active" className="ml-3 block text-sm text-gray-900 dark:text-gray-100">
               Active course
@@ -202,7 +202,7 @@ export default function CourseSettingsTabs({
               id="allow_self_enrollment"
               checked={course.allow_self_enrollment || false}
               onChange={(e) => onCourseUpdate('allow_self_enrollment', e.target.checked)}
-              className="h-4 w-4 text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500 dark:focus:ring-emerald-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary/90 dark:text-primary/40 focus:ring-primary/50 dark:focus:ring-primary/50 border-gray-300 rounded"
             />
             <label htmlFor="allow_self_enrollment" className="ml-3 block text-sm text-gray-900 dark:text-gray-100">
               Allow self-enrollment
@@ -236,7 +236,7 @@ export default function CourseSettingsTabs({
               min="1"
               value={course.max_enrollment || ''}
               onChange={(e) => onCourseUpdate('max_enrollment', e.target.value ? parseInt(e.target.value) : undefined)}
-              className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:border-emerald-500 dark:border-emerald-500"
+              className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
               placeholder="No limit"
             />
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Leave empty for no enrollment limit</p>
@@ -259,7 +259,7 @@ export default function CourseSettingsTabs({
               id="is_public"
               checked={course.is_public}
               onChange={(e) => onCourseUpdate('is_public', e.target.checked)}
-              className="h-4 w-4 text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500 dark:focus:ring-emerald-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary/90 dark:text-primary/40 focus:ring-primary/50 dark:focus:ring-primary/50 border-gray-300 rounded"
             />
             <label htmlFor="is_public" className="ml-3 block text-sm text-gray-900 dark:text-gray-100">
               Public course
@@ -267,6 +267,22 @@ export default function CourseSettingsTabs({
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 ml-7">
             Public courses can be discovered and viewed by other users
+          </p>
+
+          <div className="flex items-center pt-4">
+            <input
+              type="checkbox"
+              id="allow_subscriber_sessions"
+              checked={course.allow_subscriber_sessions || false}
+              onChange={(e) => onCourseUpdate('allow_subscriber_sessions', e.target.checked)}
+              className="h-4 w-4 text-primary/90 dark:text-primary/40 focus:ring-primary/50 dark:focus:ring-primary/50 border-gray-300 rounded"
+            />
+            <label htmlFor="allow_subscriber_sessions" className="ml-3 block text-sm text-gray-900 dark:text-gray-100">
+              Allow Subscriber Sessions
+            </label>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 ml-7">
+            Automatically enroll subscribers of your avatar in this course and allow them to run sessions
           </p>
         </div>
       </div>
@@ -304,7 +320,7 @@ export default function CourseSettingsTabs({
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex-shrink-0 ${
                     isActive
-                      ? 'border-emerald-500 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400 dark:text-blue-400'
+                      ? 'border-primary/50 dark:border-primary/50 text-primary/90 dark:text-primary/40 dark:text-primary/40'
                       : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -344,7 +360,7 @@ export default function CourseSettingsTabs({
               onClick={onSave}
               disabled={saving}
               aria-busy={saving}
-              className="flex items-center gap-2 bg-emerald-600 dark:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-500 focus:ring-offset-2 transition-colors"
+              className="flex items-center gap-2 bg-primary dark:bg-primary/90 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:ring-offset-2 transition-colors"
             >
               {saving ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
