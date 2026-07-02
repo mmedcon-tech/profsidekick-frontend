@@ -5,6 +5,7 @@ interface TranscriptTurnBody {
   role?: 'assistant' | 'user';
   text?: string;
   captured_at?: string;
+  turn_index?: number;
 }
 
 export async function POST(
@@ -47,6 +48,7 @@ export async function POST(
           role,
           text,
           captured_at: body.captured_at ?? new Date().toISOString(),
+          turn_index: body.turn_index,
         }),
       },
     );

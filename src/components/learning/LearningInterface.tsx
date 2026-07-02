@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send, AlertTriangle } from "lucide-react";
 import StreamingAvatar, {
   AvatarQuality,
   StreamingEvents,
@@ -85,6 +85,7 @@ export default function LearningInterface({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<"DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR">("DISCONNECTED");
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isMicMuted, setIsMicMuted] = useState(true);
   const [textInput, setTextInput] = useState("");
@@ -125,6 +126,10 @@ export default function LearningInterface({
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  // Lifecycle hardening: ref-based mirrors of React state to avoid stale closures
+  const isTerminatingRef = useRef(false);
+  const sessionStatusRef = useRef<"DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR">("DISCONNECTED");
+  const isConnectingRef = useRef(false);
 
   // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
@@ -180,28 +185,17 @@ export default function LearningInterface({
       );
 
       // Try to reconnect if the connection is lost (but not if intentionally disconnected)
-      if (sessionStatus === "CONNECTED" && (!dcRef.current || dcRef.current.readyState === "closed") && !isIntentionallyDisconnectedRef.current) {
+      if (sessionStatusRef.current === "CONNECTED" && (!dcRef.current || dcRef.current.readyState === "closed") && !isIntentionallyDisconnectedRef.current) {
         console.log("🔄 Data channel lost, attempting reconnection...");
         setSessionStatus("DISCONNECTED");
         hasConnectedRef.current = false;
         setIsConnecting(false);
 
-        // Attempt reconnection after a short delay - BUT ONLY IF NOT ALREADY CONNECTING
+        // Attempt reconnection after a short delay — uses refs to avoid stale closure
         setTimeout(() => {
-          // Check if we're not already trying to connect using the ref and still not intentionally disconnected
-          console.log('🔄 Auto-reconnection check:', {
-            hasConnectedRef: hasConnectedRef.current,
-            isConnecting: isConnecting,
-            isIntentionallyDisconnected: isIntentionallyDisconnectedRef.current,
-            connectionLock: connectionLockRef.current,
-            sessionStatus: sessionStatus
-          });
-
-          if (!hasConnectedRef.current && !isConnecting && !isIntentionallyDisconnectedRef.current && !connectionLockRef.current) {
+          if (!hasConnectedRef.current && !isConnectingRef.current && !isIntentionallyDisconnectedRef.current && !connectionLockRef.current) {
             console.log('🔄 Auto-reconnecting due to lost connection...');
             connectToRealtime();
-          } else {
-            console.log('🚫 Auto-reconnection blocked - connection in progress or intentionally disconnected');
           }
         }, 1000);
       }
@@ -389,53 +383,131 @@ export default function LearningInterface({
     }
   }, [isAudioEnabled, stopElevenLabsSpeech]);
 
+  // ── Shared WebRTC / media cleanup ─────────────────────────────────────────
+  // Single idempotent function used by both user-disconnect and React cleanup.
+  // Eliminates ~150 lines of duplication across the old disconnect functions.
+  const cleanupRealtimeResources = useCallback(() => {
+    // Stop HeyGen visual layer
+    stopHeyGen();
+    // Stop ElevenLabs speech
+    stopElevenLabsSpeech();
+
+    // Mark disconnected to block auto-reconnection and queued messages
+    isIntentionallyDisconnectedRef.current = true;
+    connectionLockRef.current = false;
+    messageHandlerRef.current = null;
+
+    // Reset UI state
+    setIsUserSpeaking(false);
+    setIsAISpeaking(false);
+
+    // Stop media stream tracks (microphone)
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => {
+        track.enabled = false;
+        track.stop();
+      });
+      mediaStreamRef.current = null;
+    }
+
+    // Tear down peer connection and data channel
+    if (pcRef.current) {
+      pcRef.current.getSenders().forEach((sender) => {
+        if (sender.track) {
+          sender.track.enabled = false;
+          sender.track.stop();
+          try { pcRef.current!.removeTrack(sender); } catch { /* already removed */ }
+        }
+      });
+      pcRef.current.getTransceivers().forEach((t) => {
+        if (t.direction !== 'inactive') {
+          try { t.stop(); } catch { /* already stopped */ }
+        }
+      });
+      pcRef.current.getReceivers().forEach((r) => {
+        if (r.track) r.track.stop();
+      });
+    }
+
+    // Data channel cleanup
+    if (dcRef.current) {
+      const dc = dcRef.current;
+      if ((dc as any)._messageHandler) {
+        dc.removeEventListener('message', (dc as any)._messageHandler);
+      }
+      dcRef.current = null;
+      dc.close();
+      dc.onmessage = null;
+      dc.onopen = null;
+      dc.onclose = null;
+      dc.onerror = null;
+    }
+
+    // Close peer connection
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+
+    // Stop audio playback
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current.srcObject = null;
+    }
+
+    setDataChannel(null);
+    hasConnectedRef.current = false;
+  }, [stopHeyGen, stopElevenLabsSpeech]);
+
   // ── OpenAI Realtime connection ───────────────────────────────────────────────
 
   const connectToRealtime = async () => {
-    // Generate unique connection ID for this attempt
     const connectionId = Math.random().toString(36).substr(2, 9);
 
-    // Prevent duplicate connections
-    if (sessionStatus === "CONNECTED" || sessionStatus === "CONNECTING" || isConnecting || hasConnectedRef.current || connectionLockRef.current) {
-      console.log('🚫 Connection blocked - already in progress or established:', {
-        sessionStatus,
-        isConnecting,
-        hasConnectedRef: hasConnectedRef.current,
-        connectionLock: connectionLockRef.current
-      });
+    // Use refs for race-condition-free guard checks (React state is stale in async)
+    if (
+      sessionStatusRef.current === "CONNECTED" ||
+      sessionStatusRef.current === "CONNECTING" ||
+      isConnectingRef.current ||
+      hasConnectedRef.current ||
+      connectionLockRef.current
+    ) {
+      console.log('🚫 Connection blocked:', { sessionStatus: sessionStatusRef.current, connectionId });
       return;
     }
 
-    // CRITICAL: Prevent React Strict Mode double-execution
+    // Prevent React Strict Mode double-execution
     if (globalConnectionId && globalConnectionPromise) {
-      console.log(`🚫 STRICT MODE PROTECTION: Connection ${connectionId} blocked - ${globalConnectionId} already connecting`);
+      console.log(`🚫 STRICT MODE PROTECTION: Connection ${connectionId} blocked`);
       return globalConnectionPromise;
     }
 
-    console.log(`🔐 Acquiring connection lock... [${connectionId}]`);
-    connectionLockRef.current = true; // Lock immediately to prevent race conditions
+    connectionLockRef.current = true;
     globalConnectionId = connectionId;
-
-    console.log(`Starting realtime connection... [${connectionId}]`);
-
-    // Clear the intentional disconnect flag when manually connecting
     isIntentionallyDisconnectedRef.current = false;
+    setSessionError(null);
 
     setIsConnecting(true);
     setSessionStatus("CONNECTING");
     hasConnectedRef.current = true;
 
-    // Create a promise to track this connection
     globalConnectionPromise = (async () => {
       try {
         const ephemeral = await loadSessionEphemeral();
         if (!ephemeral?.openaiToken) {
+          // Token missing — terminate the session run to prevent orphan
+          setSessionError('Failed to obtain session credentials. The session has been ended.');
           setSessionStatus("ERROR");
           setIsConnecting(false);
           hasConnectedRef.current = false;
-          connectionLockRef.current = false; // Release lock on error
+          connectionLockRef.current = false;
           globalConnectionId = null;
           globalConnectionPromise = null;
+          // Auto-terminate: signal the parent to stop the backend session run
+          if (!isTerminatingRef.current) {
+            isTerminatingRef.current = true;
+            onEndSession({ ended_by_error: true, error: 'Ephemeral token missing' });
+          }
           return;
         }
         const { openaiToken: EPHEMERAL_KEY, realtimeModel } = ephemeral;
@@ -447,12 +519,6 @@ export default function LearningInterface({
         audioElementRef.current.muted = !isAudioEnabled;
         setOutputAudioElement(audioElementRef.current);
 
-        // Generate unique ID for this connection
-        const dataChannelId = Math.random().toString(36).substr(2, 9);
-
-        console.log(`🌐 Creating WebRTC connection... [${connectionId}] -> [${dataChannelId}]`);
-        console.log(`🎯 Using model for session ${sessionRunId}: ${realtimeModel}`);
-
         const { pc, dc, mediaStream } = await createRealtimeConnection(
           EPHEMERAL_KEY,
           audioElementRef,
@@ -460,9 +526,6 @@ export default function LearningInterface({
           realtimeModel,
           !isMicMuted,
         );
-
-        console.log(`🔗 Created new peer connection and data channel [${connectionId}] -> [${dataChannelId}] - Lock: ${connectionLockRef.current}`);
-        console.log(`🔗 Data channel ready state: ${dc.readyState}`);
 
         pcRef.current = pc;
         dcRef.current = dc;
@@ -475,18 +538,14 @@ export default function LearningInterface({
           logClientEvent({}, "data_channel.open");
           setSessionStatus("CONNECTED");
           setIsConnecting(false);
-          hasConnectedRef.current = true; // Mark as successfully connected
-          connectionLockRef.current = false; // Release lock on successful connection
-          isIntentionallyDisconnectedRef.current = false; // Reset disconnect flag for active connection
+          hasConnectedRef.current = true;
+          connectionLockRef.current = false;
+          isIntentionallyDisconnectedRef.current = false;
           globalConnectionId = null;
           globalConnectionPromise = null;
 
-          // Set up message handler immediately when data channel opens
           setMessageHandler();
-
-          initializeSession(); // Enable tools for AI
-
-          // Start HeyGen visual layer alongside OpenAI voice (no-op if not configured)
+          initializeSession();
           initHeyGen();
         });
         dc.addEventListener("close", () => {
@@ -494,7 +553,7 @@ export default function LearningInterface({
           setSessionStatus("DISCONNECTED");
           setIsConnecting(false);
           hasConnectedRef.current = false;
-          connectionLockRef.current = false; // Release lock on close
+          connectionLockRef.current = false;
           if (globalConnectionId === connectionId) {
             globalConnectionId = null;
             globalConnectionPromise = null;
@@ -503,236 +562,70 @@ export default function LearningInterface({
         dc.addEventListener("error", (err: any) => {
           logClientEvent({ error: err }, "data_channel.error");
           setSessionStatus("ERROR");
+          setSessionError('Connection to the AI service was interrupted.');
           setIsConnecting(false);
           hasConnectedRef.current = false;
-          connectionLockRef.current = false; // Release lock on error
+          connectionLockRef.current = false;
           if (globalConnectionId === connectionId) {
             globalConnectionId = null;
             globalConnectionPromise = null;
           }
         });
 
-        // Store the message handler for proper cleanup
+        // Message handler with disconnect guard
         const dataChannelMessageHandler = (e: MessageEvent) => {
-          // FIRST CHECK: Global disconnect state (highest priority)
-          if (isIntentionallyDisconnectedRef.current) {
-            console.log(`🛑 BLOCKED: Message ignored due to intentional disconnect [${dataChannelId}]`);
-            return; // Exit immediately
-          }
-
+          if (isIntentionallyDisconnectedRef.current) return;
           if (messageHandlerRef.current && hasConnectedRef.current) {
             messageHandlerRef.current(e);
           }
         };
-
-        // Handle server events with custom tool call logic
         dc.addEventListener("message", dataChannelMessageHandler);
-
         setDataChannel(dc);
-
-        // Store the handler reference for cleanup (after setDataChannel)
         (dc as any)._messageHandler = dataChannelMessageHandler;
       } catch (err) {
         console.error("Error connecting to realtime:", err);
 
-        // Provide specific error message for getUserMedia issues
-        let errorMessage = "Error connecting to realtime";
+        // Build user-facing error message
+        let errorMessage = "Unable to connect to the AI service.";
         if (err instanceof Error) {
           if (err.message.includes('getUserMedia') || err.message.includes('HTTPS')) {
-            errorMessage = "Microphone access requires HTTPS. Please ensure you're using a secure connection.";
+            errorMessage = "Microphone access requires HTTPS. Please use a secure connection.";
           } else if (err.message.includes('Permission denied')) {
-            errorMessage = "Microphone permission denied. Please allow microphone access and try again.";
+            errorMessage = "Microphone permission was denied. Please allow access and try again.";
           } else {
             errorMessage = err.message;
           }
         }
 
-        // Set error status with message
+        // Clean up partial resources
+        cleanupRealtimeResources();
         setSessionStatus("ERROR");
+        setSessionError(errorMessage);
         setIsConnecting(false);
-
-        // Show error to user
-        alert(errorMessage);
-
-        // Clean up any partial connections
-        if (mediaStreamRef.current) {
-          mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-          mediaStreamRef.current = null;
-        }
-        if (pcRef.current) {
-          pcRef.current.close();
-          pcRef.current = null;
-        }
-        if (dcRef.current) {
-          dcRef.current.close();
-          dcRef.current = null;
-        }
-
-        setSessionStatus("ERROR");
-        setIsConnecting(false);
-        hasConnectedRef.current = false;
-        connectionLockRef.current = false; // Release lock on error
+        connectionLockRef.current = false;
         if (globalConnectionId === connectionId) {
           globalConnectionId = null;
           globalConnectionPromise = null;
+        }
+
+        // Auto-terminate the backend session run to prevent orphan
+        if (!isTerminatingRef.current) {
+          isTerminatingRef.current = true;
+          onEndSession({ ended_by_error: true, error: errorMessage });
         }
       }
     })();
   };
 
+  // User-initiated disconnect
   const disconnectFromRealtime = () => {
     console.log('Disconnecting from realtime... (user initiated)');
-
-    // Stop HeyGen visual layer cleanly
-    stopHeyGen();
-
-    // Stop any in-flight ElevenLabs speech playback
-    stopElevenLabsSpeech();
-
-    // Mark as intentionally disconnected to prevent auto-reconnection
-    isIntentionallyDisconnectedRef.current = true;
-
-    // Release connection lock immediately to prevent issues
-    connectionLockRef.current = false;
-
-    // Clear global connection state for real disconnects
-    console.log('🧹 Clearing global connection state (real disconnect)');
     globalConnectionId = null;
     globalConnectionPromise = null;
-
-    // Immediately clear the message handler to stop processing any new messages
-    messageHandlerRef.current = null;
-
-    // Reset states immediately to prevent any UI updates from queued messages
-    setIsUserSpeaking(false);
-    setIsAISpeaking(false);
-    setIsMicMuted(false); // Reset mic mute state on disconnect
+    cleanupRealtimeResources();
+    setIsMicMuted(false);
     setSessionStatus("DISCONNECTED");
     setIsConnecting(false);
-    hasConnectedRef.current = false;
-
-    // FIRST: Immediately disable microphone tracks to stop any new audio capture
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => {
-        // Immediately disable the track to stop capture
-        track.enabled = false;
-        // Then stop it completely
-        track.stop();
-      });
-      mediaStreamRef.current = null;
-    }
-
-    // AGGRESSIVE CLEANUP: Force stop ALL active media tracks globally
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
-    }
-
-    if (pcRef.current) {
-      // STEP 1: Remove all tracks from the peer connection to stop transmission
-      pcRef.current.getSenders().forEach((sender) => {
-        if (sender.track) {
-          sender.track.enabled = false;
-          sender.track.stop();
-          // Remove the track from the peer connection
-          pcRef.current!.removeTrack(sender);
-        }
-      });
-
-      // STEP 2: Stop all transceivers to halt media negotiation
-      pcRef.current.getTransceivers().forEach((transceiver) => {
-        if (transceiver.direction !== 'inactive') {
-          transceiver.stop();
-        }
-      });
-
-      // STEP 3: Stop all receiver tracks
-      pcRef.current.getReceivers().forEach((receiver) => {
-        if (receiver.track) {
-          receiver.track.stop();
-        }
-      });
-
-      // STEP 4: Properly handle data channel closure with state monitoring
-      if (dcRef.current) {
-        const originalDc = dcRef.current;
-
-        // Remove the specific message handler we stored
-        if ((originalDc as any)._messageHandler) {
-          originalDc.removeEventListener("message", (originalDc as any)._messageHandler);
-        }
-
-        try {
-          const events = ['message', 'open', 'close', 'error'];
-          events.forEach(eventType => {
-            const dummyHandler = () => { };
-            originalDc.addEventListener(eventType, dummyHandler);
-            originalDc.removeEventListener(eventType, dummyHandler);
-          });
-        } catch (e) {
-        }
-
-        // Add a one-time listener for the close event
-        const closeHandler = () => {
-          console.log('✅ Data channel actually closed - state:', originalDc.readyState);
-          console.log('✅ Timestamp of close:', new Date().toISOString());
-          originalDc.removeEventListener('close', closeHandler);
-        };
-        originalDc.addEventListener('close', closeHandler);
-
-        // Nullify our reference immediately to prevent new usage
-        dcRef.current = null;
-
-        // Close the data channel
-        originalDc.close();
-
-        // Force stop any remaining message processing by overriding ALL message handlers
-        originalDc.onmessage = null;
-        originalDc.onopen = null;
-        originalDc.onclose = null;
-        originalDc.onerror = null;
-      }
-
-      // STEP 5: Monitor connection state during close
-
-      // Add a listener to verify the connection actually closes
-      const connectionCloseHandler = () => {
-      };
-      pcRef.current.addEventListener('connectionstatechange', connectionCloseHandler);
-
-      // STEP 6: Finally close the peer connection
-      pcRef.current.close();
-
-      // Check state immediately after close
-
-      pcRef.current = null;
-    } else if (dcRef.current) {
-      // Handle case where data channel exists but peer connection doesn't
-      dcRef.current.close();
-      dcRef.current = null;
-    }
-
-    // Stop the audio element
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current.srcObject = null;
-    }
-
-    // Reset data channel state
-    setDataChannel(null);
-
-    // FINAL SAFEGUARD: Force close any remaining WebRTC connections
-
-    if (typeof window !== 'undefined') {
-    }
-
-    if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        if (window.gc) {
-          window.gc();
-        }
-
-      }, 500);
-    }
-
   };
 
   // Update ref so handleUserSpeech can access disconnectFromRealtime
@@ -740,184 +633,16 @@ export default function LearningInterface({
     disconnectFromRealtimeRef.current = disconnectFromRealtime;
   }, [disconnectFromRealtime]);
 
-  // Separate function for React Strict Mode cleanup
+  // Keep ref-based mirrors in sync with React state (avoids stale closures)
+  useEffect(() => { sessionStatusRef.current = sessionStatus; }, [sessionStatus]);
+  useEffect(() => { isConnectingRef.current = isConnecting; }, [isConnecting]);
+
+  // React Strict Mode cleanup — same teardown but preserves global connection state
   const disconnectFromRealtimeReactCleanup = () => {
-    console.log('Disconnecting from realtime... (React Strict Mode cleanup)');
-
-    stopHeyGen();
-
-    // Stop any in-flight ElevenLabs speech playback
-    stopElevenLabsSpeech();
-
-    // Mark as intentionally disconnected to prevent auto-reconnection
-    isIntentionallyDisconnectedRef.current = true;
-
-    // Release connection lock immediately to prevent issues
-    connectionLockRef.current = false;
-
-    // DO NOT clear global connection state during React cleanup
-    // Immediately clear the message handler to stop processing any new messages
-    messageHandlerRef.current = null;
-
-    // Reset states immediately to prevent any UI updates from queued messages
-    setIsUserSpeaking(false);
-    setIsAISpeaking(false);
+    console.log('Disconnecting from realtime... (React cleanup)');
+    cleanupRealtimeResources();
     setSessionStatus("DISCONNECTED");
     setIsConnecting(false);
-    hasConnectedRef.current = false;
-
-    // FIRST: Immediately disable microphone tracks to stop any new audio capture
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => {
-        console.log('🛑 Disabling and stopping media track:', track.kind, 'ID:', track.id, 'State:', track.readyState);
-        // Immediately disable the track to stop capture
-        track.enabled = false;
-        // Then stop it completely
-        track.stop();
-        console.log('🛑 Track stopped, new state:', track.readyState);
-      });
-      mediaStreamRef.current = null;
-    } else {
-      console.log('⚠️ No mediaStreamRef.current to stop!');
-    }
-
-    // AGGRESSIVE CLEANUP: Force stop ALL active media tracks globally
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
-    }
-
-    if (pcRef.current) {
-      // STEP 1: Remove all tracks from the peer connection to stop transmission
-      pcRef.current.getSenders().forEach((sender) => {
-        if (sender.track) {
-          sender.track.enabled = false;
-          sender.track.stop();
-          pcRef.current!.removeTrack(sender);
-        }
-      });
-
-      // STEP 2: Stop all transceivers to halt media negotiation
-      pcRef.current.getTransceivers().forEach((transceiver) => {
-        if (transceiver.direction !== 'inactive') {
-          console.log('🛑 Stopping transceiver:', transceiver.direction);
-          transceiver.stop();
-        }
-      });
-
-      // STEP 3: Stop all receiver tracks
-      pcRef.current.getReceivers().forEach((receiver) => {
-        if (receiver.track) {
-          receiver.track.stop();
-        }
-      });
-
-      // STEP 4: Properly handle data channel closure with state monitoring
-      if (dcRef.current) {
-        const originalDc = dcRef.current;
-
-        // Remove the specific message handler we stored
-        if ((originalDc as any)._messageHandler) {
-          originalDc.removeEventListener("message", (originalDc as any)._messageHandler);
-        }
-
-        // Try to remove any other potential message handlers by cloning and replacing
-        // This is a more aggressive approach to ensure no listeners remain
-        try {
-          const events = ['message', 'open', 'close', 'error'];
-          events.forEach(eventType => {
-            // Create a dummy handler and remove it to clear any lingering listeners
-            const dummyHandler = () => { };
-            originalDc.addEventListener(eventType, dummyHandler);
-            originalDc.removeEventListener(eventType, dummyHandler);
-          });
-        } catch (e) {
-        }
-
-        // Add a one-time listener for the close event
-        const closeHandler = () => {
-          console.log('✅ Data channel actually closed - state:', originalDc.readyState);
-          console.log('✅ Timestamp of close:', new Date().toISOString());
-          originalDc.removeEventListener('close', closeHandler);
-        };
-        originalDc.addEventListener('close', closeHandler);
-
-        // Nullify our reference immediately to prevent new usage
-        dcRef.current = null;
-
-        // Close the data channel
-        originalDc.close();
-
-        // Force stop any remaining message processing by overriding ALL message handlers
-        originalDc.onmessage = null;
-        originalDc.onopen = null;
-        originalDc.onclose = null;
-        originalDc.onerror = null;
-
-      }
-
-      // STEP 5: Monitor connection state during close
-
-      // Add a listener to verify the connection actually closes
-      const connectionCloseHandler = () => {
-      };
-      pcRef.current.addEventListener('connectionstatechange', connectionCloseHandler);
-
-      // STEP 6: Finally close the peer connection
-      pcRef.current.close();
-
-
-      pcRef.current = null;
-    } else if (dcRef.current) {
-      // Handle case where data channel exists but peer connection doesn't
-      dcRef.current.close();
-      dcRef.current = null;
-    }
-
-    // Stop the audio element
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current.srcObject = null;
-    }
-
-    // Reset data channel state
-    setDataChannel(null);
-
-    // FINAL SAFEGUARD: Force close any remaining WebRTC connections
-    console.log('🔧 Performing final cleanup of any remaining connections');
-
-    // Get all RTCPeerConnection objects globally (if any are still active)
-    if (typeof window !== 'undefined') {
-      // This is a brute force approach to ensure no connections remain
-      setTimeout(() => {
-        console.log('🔍 Checking for any remaining active connections after disconnect...');
-        if (hasConnectedRef.current === false && isIntentionallyDisconnectedRef.current === true) {
-          console.log('✅ Disconnect confirmed - no reconnection detected');
-        } else {
-          console.warn('⚠️ Unexpected connection state after disconnect');
-        }
-      }, 2000);
-    }
-
-    // FINAL NUCLEAR OPTION: Try to stop ALL possible media streams
-    console.log('☢️ NUCLEAR CLEANUP: Attempting to stop all possible media streams...');
-    if (typeof window !== 'undefined') {
-      // Try to access the global media stream registry (if available)
-      setTimeout(() => {
-        // Force garbage collection of any lingering streams
-        if (window.gc) {
-          window.gc();
-          console.log('🗑️ Forced garbage collection');
-        }
-
-        // Check browser media indicator after cleanup
-        console.log('🔍 Media cleanup complete. Browser should no longer show microphone indicator.');
-        console.log('📊 Final state check:');
-        console.log('   - hasConnectedRef:', hasConnectedRef.current);
-        console.log('   - isIntentionallyDisconnectedRef:', isIntentionallyDisconnectedRef.current);
-        console.log('   - sessionStatus:', sessionStatus);
-      }, 500);
-    }
-
-    console.log('✅ Successfully disconnected from realtime - all audio capture and processing stopped');
   };
 
   const initializeSession = () => {
@@ -1560,6 +1285,13 @@ export default function LearningInterface({
     }
   }, [currentSlide, isHydrated, sessionRunId, classSession.slides]);
 
+  // Auto-scroll transcript panel to the latest message
+  useEffect(() => {
+    if (transcriptEndRef.current && isTranscriptVisible) {
+      transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [transcript, isTranscriptVisible]);
+
   const currentSlideData = classSession.slides[currentSlide];
 
   // Fix image URL to ensure it points to backend server
@@ -1633,9 +1365,9 @@ export default function LearningInterface({
       {/* ── Main Layout ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── Left Sidebar: Avatar & Controls ── */}
-        <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-sidebar md:w-[320px]">
+        <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-sidebar md:w-[320px] overflow-y-auto">
           {/* Avatar Video Area */}
-          <div className="relative flex-1 bg-black/5 p-4 flex flex-col justify-center items-center">
+          <div className="relative min-h-0 flex-1 bg-black/5 p-4 flex flex-col justify-center items-center">
             <div className="relative h-64 w-64 overflow-hidden rounded-2xl shadow-xl border-4 border-sidebar bg-gray-900 pointer-events-none">
               <SessionAvatarRenderer
                 config={sessionAvatar}
@@ -1785,7 +1517,7 @@ export default function LearningInterface({
         </div>
 
         {/* ── Center: Slides ── */}
-        <div className="flex flex-1 flex-col overflow-hidden bg-muted/10 relative">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/10 relative">
 
           {/* Start Conversation Prompt overlay */}
           {showStartPrompt && (
@@ -1830,8 +1562,45 @@ export default function LearningInterface({
             </div>
           )}
 
+          {/* Error state panel — replaces alert() */}
+          {sessionStatus === "ERROR" && sessionError && (
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-300 w-full max-w-lg px-4">
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/10 backdrop-blur-md p-5 shadow-xl">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/20">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-destructive">Connection Error</p>
+                    <p className="mt-1 text-xs text-destructive/80 leading-relaxed">{sessionError}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2 justify-end">
+                  <button
+                    onClick={() => {
+                      setSessionError(null);
+                      setSessionStatus("DISCONNECTED");
+                      isTerminatingRef.current = false;
+                      hasConnectedRef.current = false;
+                      connectToRealtime();
+                    }}
+                    className="rounded-lg bg-secondary px-4 py-2 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                  >
+                    Retry Connection
+                  </button>
+                  <button
+                    onClick={handleEndSessionClick}
+                    className="rounded-lg bg-destructive px-4 py-2 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                  >
+                    End Session
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Slide content area */}
-          <div className="flex flex-1 items-center justify-center overflow-auto p-4 md:p-8">
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4 md:p-8">
             <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
               {currentSlideData?.imagePath ? (
                 <img
