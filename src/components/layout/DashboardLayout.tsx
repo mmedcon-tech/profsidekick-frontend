@@ -69,6 +69,12 @@ export const subscriberNav: SidebarConfig = [
   { label: 'Certificates',     href: '/subscriber/certificates', icon: <Award size={18} /> },
   { label: 'Learning History', href: '/subscriber/history',      icon: <History size={18} /> },
   { label: 'Profile',          href: '/subscriber/profile',      icon: <UserCircle size={18} /> },
+  {
+    label: 'Assessments',
+    items: [
+      { label: 'Self Assessment Exam', href: '/sae/exam', icon: <ClipboardList size={18} /> },
+    ],
+  },
   // ── LOCAL NAV — uncomment to switch back to marketplace-centric nav ───────
   // { label: 'Marketplace',      href: '/subscriber/marketplace', icon: <Store size={18} /> },
   // { label: 'My Avatars',       href: '/subscriber/my-avatars',  icon: <Bookmark size={18} /> },
@@ -76,12 +82,6 @@ export const subscriberNav: SidebarConfig = [
   // { label: 'Learning History', href: '/subscriber/history',     icon: <History size={18} /> },
   // { label: 'Wallet',           href: '/billing',                icon: <Wallet size={18} /> },
   // { label: 'Profile',          href: '/subscriber/profile',     icon: <UserCircle size={18} /> },
-  // {
-  //   label: 'Assessments',
-  //   items: [
-  //     { label: 'Self Assessment Exam', href: '/sae/exam', icon: <ClipboardList size={18} /> },
-  //   ],
-  // },
 ];
 
 export const adminNav: SidebarConfig = [
