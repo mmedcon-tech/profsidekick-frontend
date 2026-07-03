@@ -40,15 +40,15 @@ export default function SessionAvatarRenderer({
     config.renderType === 'heygen' && !isHeyGenEnabled();
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-gray-900">
-      <div className="flex flex-1 items-center justify-center pt-10">
+    <div className="relative flex h-full w-full flex-col bg-gray-900 overflow-hidden">
+      <div className="flex flex-1 items-center justify-center">
         {useHeyGen && heygenVideoRef ? (
           <>
             <video
               ref={heygenVideoRef}
               autoPlay
               playsInline
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover scale-[1.6] origin-[50%_20%]"
             />
             {!heygenConnected && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-900">

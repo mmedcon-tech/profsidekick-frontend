@@ -331,6 +331,12 @@ export interface EphemeralTokenResponse {
   avatar_image_url?: string | null;
   avatar_name?: string | null;
   glb_library_id?: string | null;
+  // Dual voice pipeline — resolved server-side via voice_resolution_service
+  // (subscriber override > publisher default). See SessionAvatarConfig.
+  voice_provider?: 'openai' | 'elevenlabs' | null;
+  voice_id?: string | null;
+  voice_dialect?: string | null;
+  voice_source?: 'subscriber' | 'publisher' | null;
 }
 
 export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | '3d' | 'glb';
@@ -349,6 +355,67 @@ export interface SessionAvatarConfig {
   heygenAccessToken?: string | null;
   sessionLanguage?: string;
   sessionMode?: 'teaching' | 'examination' | 'consultation';
+  // Dual voice pipeline — the actual voice to speak with, resolved server-side
+  // (subscriber override > publisher default). Replaces guessing gender from
+  // the 3-D avatar's library entry.
+  resolvedVoiceProvider?: 'openai' | 'elevenlabs';
+  resolvedVoiceId?: string;
+  resolvedVoiceDialect?: string;
+}
+
+// ── Dual voice pipeline — subscriber preferences, provider catalog, usage ──
+
+export type VoiceProvider = 'openai' | 'elevenlabs';
+
+export interface ResolvedVoice {
+  provider: VoiceProvider;
+  voice_id: string;
+  dialect?: string | null;
+  source: 'subscriber' | 'publisher';
+}
+
+export interface VoicePreference {
+  id: string;
+  provider: VoiceProvider;
+  voice_id?: string | null;
+  dialect?: string | null;
+  is_valid: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VoicePreferenceWithResolution {
+  preference: VoicePreference | null;
+  resolved: ResolvedVoice;
+}
+
+export interface VoiceCatalogEntry {
+  id: string;
+  name: string;
+  dialects: string[];
+}
+
+export interface VoiceCatalogResponse {
+  provider: VoiceProvider;
+  voices: VoiceCatalogEntry[];
+  cost_per_1k_characters_usd: string;
+}
+
+export interface ProviderAvailability {
+  available: boolean;
+  /** 'platform_quota_exceeded' | 'unreachable' | null */
+  reason?: string | null;
+}
+
+export interface VoiceAvailability {
+  openai: ProviderAvailability;
+  elevenlabs: ProviderAvailability;
+}
+
+export interface VoiceUsageApiResponse {
+  operation_type: string;
+  credits_charged: string;
+  new_balance: string;
 }
 
 export interface SessionEphemeralBundle {

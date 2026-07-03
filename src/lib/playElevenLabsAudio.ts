@@ -3,14 +3,33 @@
 import { buildEstimatedTimeline, buildTimelineFromAlignment } from '@/lib/visemeTimeline';
 import type { ElevenLabsCharacterAlignment, VisemeTimeline } from '@/lib/visemeTypes';
 import type {
+  ElevenLabsErrorCode,
   ElevenLabsVoiceGender,
   ElevenLabsVoiceProfile,
 } from '@/lib/elevenLabsSpeech';
+
+/**
+ * Thrown when the ElevenLabs BFF route fails. Carries the errorCode the
+ * route already classified (platform_quota_exceeded vs unknown) so callers
+ * can distinguish a platform-side outage from any other failure without
+ * re-parsing the error body themselves.
+ */
+export class ElevenLabsSynthesisError extends Error {
+  errorCode: ElevenLabsErrorCode;
+
+  constructor(message: string, errorCode: ElevenLabsErrorCode = 'unknown') {
+    super(message);
+    this.name = 'ElevenLabsSynthesisError';
+    this.errorCode = errorCode;
+  }
+}
 
 export interface PlayElevenLabsSpeechOptions {
   text: string;
   gender: ElevenLabsVoiceGender;
   voiceProfile?: ElevenLabsVoiceProfile;
+  /** Explicit ElevenLabs voice id (e.g. from the dual voice pipeline's resolved session voice). */
+  voiceId?: string;
   onSpeakingChange?: (speaking: boolean) => void;
 }
 
@@ -52,16 +71,29 @@ export async function synthesizeElevenLabsSpeech(
   text: string,
   gender: ElevenLabsVoiceGender,
   voiceProfile: ElevenLabsVoiceProfile = 'adult',
+  voiceId?: string,
 ): Promise<{ audioBuffer: ArrayBuffer; timeline: VisemeTimeline | null }> {
   const response = await fetch('/api/tts/elevenlabs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, gender, voiceProfile, withTimestamps: true }),
+    body: JSON.stringify({ text, gender, voiceProfile, voiceId, withTimestamps: true }),
   });
 
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(detail || 'ElevenLabs speech synthesis failed');
+    let errorCode: ElevenLabsErrorCode = 'unknown';
+    try {
+      const parsed = JSON.parse(detail);
+      if (parsed.errorCode === 'platform_quota_exceeded') {
+        errorCode = 'platform_quota_exceeded';
+      }
+    } catch {
+      // Not JSON — leave errorCode as 'unknown'.
+    }
+    throw new ElevenLabsSynthesisError(
+      detail || 'ElevenLabs speech synthesis failed',
+      errorCode,
+    );
   }
 
   const contentType = response.headers.get('content-type') ?? '';
@@ -80,12 +112,14 @@ export async function playElevenLabsSpeech({
   text,
   gender,
   voiceProfile = 'adult',
+  voiceId,
   onSpeakingChange,
 }: PlayElevenLabsSpeechOptions): Promise<PlayElevenLabsSpeechResult> {
   const { audioBuffer, timeline: syncedTimeline } = await synthesizeElevenLabsSpeech(
     text,
     gender,
     voiceProfile,
+    voiceId,
   );
   const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
   const objectUrl = URL.createObjectURL(blob);

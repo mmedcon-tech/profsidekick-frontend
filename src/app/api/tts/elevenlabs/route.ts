@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
 import {
   buildElevenLabsSpeechBody,
+  classifyElevenLabsErrorResponse,
   resolveElevenLabsVoiceId,
   type ElevenLabsVoiceGender,
   type ElevenLabsVoiceProfile,
@@ -82,8 +83,9 @@ async function synthesizeWithElevenLabs(
 
   if (!response.ok) {
     const detail = await response.text();
+    const errorCode = classifyElevenLabsErrorResponse(response.status, detail);
     return NextResponse.json(
-      { error: detail || 'ElevenLabs request failed' },
+      { error: detail || 'ElevenLabs request failed', errorCode },
       { status: response.status },
     );
   }

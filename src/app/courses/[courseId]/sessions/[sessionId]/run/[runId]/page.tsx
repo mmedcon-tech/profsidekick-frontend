@@ -7,6 +7,7 @@ import { EventProvider } from '@/contexts/EventContext';
 import { TranscriptProvider } from '@/contexts/TranscriptContext';
 import { StructuredTranscriptProvider } from '@/contexts/StructuredTranscriptContext';
 import LearningInterface from '@/components/learning/LearningInterface';
+import VoiceSettingsPanel from '@/components/sessions/VoiceSettingsPanel';
 import type { ClassSession } from '@/types/types';
 import type { SessionMode } from '@/lib/sessionSlideControl';
 import { config } from '@/lib/config';
@@ -25,6 +26,7 @@ function RunPageInner() {
   const [sessionMode, setSessionMode] = useState<SessionMode>('teaching');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [voiceConfigured, setVoiceConfigured] = useState(false);
 
   useEffect(() => {
     if (!token || !sessionId || !runId) return;
@@ -99,6 +101,12 @@ function RunPageInner() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  if (!voiceConfigured) {
+    return (
+      <VoiceSettingsPanel open onDone={() => setVoiceConfigured(true)} />
     );
   }
 

@@ -7,8 +7,13 @@ import StreamingAvatar, {
   StreamingEvents,
   TaskType,
 } from "@heygen/streaming-avatar";
-import { ClassSession, SessionAvatarConfig } from "@/types";
+import { ClassSession, SessionAvatarConfig, VoiceProvider } from "@/types";
 import SessionAvatarRenderer from "@/components/avatar/SessionAvatarRenderer";
+import VoiceUsageIndicator from "@/components/sessions/VoiceUsageIndicator";
+import VoiceUsageSummaryModal, {
+  type VoiceUsageBreakdownEntry,
+} from "@/components/sessions/VoiceUsageSummaryModal";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
@@ -17,9 +22,9 @@ import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext"
 import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
 import { classifyTurn } from "@/lib/turnClassifier";
-import { playElevenLabsSpeech } from "@/lib/playElevenLabsAudio";
-import { getAvatarLibraryEntry, getAvatarVoiceProfile } from "@/lib/avatarLibrary";
-import type { ElevenLabsVoiceGender } from "@/lib/elevenLabsSpeech";
+import { synthesizeAssistantSpeech } from "@/lib/voiceSynthesis";
+import { resolveSpeechDispatch } from "@/lib/speechDispatch";
+import { logVoiceUsage } from "@/lib/voiceUsage";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
@@ -112,6 +117,25 @@ export default function LearningInterface({
   const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
   const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
   const [aiLeadEnabled] = useState(true);
+
+  // Dual voice pipeline — session-wide usage/billing state
+  const [voiceProviderOverride, setVoiceProviderOverride] = useState<VoiceProvider | null>(null);
+  // Persists for the rest of the session (not a dismissible toast) — shown
+  // in VoiceUsageIndicator. 'platform_unavailable' = our shared ElevenLabs
+  // account issue (not the subscriber's fault); 'user_low_credits' = the
+  // subscriber's own balance is running low.
+  const [voiceFallbackReason, setVoiceFallbackReason] = useState<
+    'platform_unavailable' | 'user_low_credits' | null
+  >(null);
+  const [activeVoiceProvider, setActiveVoiceProvider] = useState<VoiceProvider | null>(null);
+  const [voiceUsageByProvider, setVoiceUsageByProvider] = useState<
+    Partial<Record<VoiceProvider, VoiceUsageBreakdownEntry>>
+  >({});
+  const [voiceBalance, setVoiceBalance] = useState<number | null>(null);
+  const [showVoiceSummary, setShowVoiceSummary] = useState(false);
+  const sessionStartBalanceRef = useRef<number | null>(null);
+  const lowBalanceWarnedRef = useRef(false);
+  const pendingEndMetadataRef = useRef<Record<string, unknown> | undefined>(undefined);
 
   const slideCount = classSession.slides.length;
 
@@ -338,10 +362,12 @@ export default function LearningInterface({
     }
   }, []);
 
-  // ── ElevenLabs voice layer ────────────────────────────────────────────────────
+  // ── Dual voice pipeline (TTS) ──────────────────────────────────────────────
   // OpenAI Realtime is configured for text-only output (transcription + text
-  // generation). Completed assistant turns are synthesised here via ElevenLabs
-  // and fed to HeyGen (when active) for lip-synced playback.
+  // generation). Completed assistant turns are synthesised here via the
+  // backend-resolved provider (ElevenLabs or OpenAI TTS — see
+  // resolveSpeechDispatch) and fed to HeyGen (when active) for lip-synced
+  // playback.
 
   const stopElevenLabsSpeech = useCallback(() => {
     elevenLabsStopRef.current?.();
@@ -362,26 +388,109 @@ export default function LearningInterface({
     stopElevenLabsSpeech();
 
     try {
-      const avatarConfigSnapshot = sessionAvatarRef.current;
-      const libraryEntry = avatarConfigSnapshot.glbLibraryId
-        ? getAvatarLibraryEntry(avatarConfigSnapshot.glbLibraryId)
-        : undefined;
-      const gender: ElevenLabsVoiceGender = libraryEntry?.gender === 'female' ? 'female' : 'male';
-      const voiceProfile = libraryEntry ? getAvatarVoiceProfile(libraryEntry) : 'adult';
+      // Dual voice pipeline — dispatch to the backend-resolved provider/voice
+      // (subscriber override > publisher default) instead of guessing gender
+      // from the 3-D avatar's library entry. `voiceProviderOverride` skips
+      // straight to the fallback provider once one has already been forced
+      // this session (avoids retrying a known-broken ElevenLabs on every turn).
+      const dispatch = resolveSpeechDispatch(
+        sessionAvatarRef.current,
+        voiceProviderOverride ?? undefined,
+      );
 
-      const { stop, audio } = await playElevenLabsSpeech({
-        text: clean,
-        gender,
-        voiceProfile,
-        onSpeakingChange: setIsAISpeaking,
-      });
+      // synthesizeAssistantSpeech automatically retries via OpenAI TTS if
+      // ElevenLabs fails — any such failure is a platform-side issue (shared
+      // account), never the subscriber's own credit balance. `providerUsed`
+      // (not `dispatch.provider`) must drive billing/notifications below,
+      // since a fallback can change it mid-call.
+      const { stop, audio, providerUsed, fallbackReason } = await synthesizeAssistantSpeech(
+        clean,
+        dispatch,
+        setIsAISpeaking,
+      );
       elevenLabsStopRef.current = stop;
       elevenLabsAudioRef.current = audio;
       audio.muted = !isAudioEnabled;
+      setActiveVoiceProvider(providerUsed);
+
+      if (fallbackReason === 'platform_unavailable' && voiceProviderOverride !== providerUsed) {
+        setVoiceProviderOverride(providerUsed);
+        setVoiceFallbackReason('platform_unavailable');
+        toast.warning(
+          'The premium voice service is temporarily unavailable. Your session is continuing with a standard voice.',
+          { id: 'voice-fallback-platform' },
+        );
+      }
+
+      // Meter the synthesized characters for usage-based billing, using the
+      // provider that actually spoke — never the originally dispatched one —
+      // so a platform-side fallback is never billed at the wrong rate.
+      if (sessionRunId) {
+        const usage = await logVoiceUsage(
+          classSession.sessionId,
+          sessionRunId,
+          providerUsed,
+          clean.length,
+          token,
+        );
+
+        if (usage.insufficientCredits) {
+          // This 402 comes from OUR OWN billing endpoint — it is always the
+          // subscriber's own balance, never the platform's ElevenLabs
+          // account (that failure mode is handled above, before billing is
+          // even attempted).
+          if (providerUsed === 'elevenlabs' && voiceProviderOverride !== 'openai') {
+            setVoiceProviderOverride('openai');
+            setVoiceFallbackReason('user_low_credits');
+            toast.info('Switching to a lower-cost voice — your credits are running low.', {
+              id: 'voice-fallback-credits',
+            });
+          } else {
+            toast.error('Out of credits for voice responses. Add credits to continue hearing replies.', {
+              id: 'voice-out-of-credits',
+            });
+          }
+        } else if (usage.ok) {
+          const creditsCharged = usage.creditsCharged ?? 0;
+          setVoiceUsageByProvider((prev) => {
+            const existing = prev[providerUsed] ?? { characters: 0, credits: 0 };
+            return {
+              ...prev,
+              [providerUsed]: {
+                characters: existing.characters + clean.length,
+                credits: existing.credits + creditsCharged,
+              },
+            };
+          });
+
+          if (typeof usage.newBalance === 'number') {
+            setVoiceBalance(usage.newBalance);
+            if (sessionStartBalanceRef.current === null) {
+              sessionStartBalanceRef.current = usage.newBalance + creditsCharged;
+            }
+            const startingBalance = sessionStartBalanceRef.current;
+            if (
+              !lowBalanceWarnedRef.current &&
+              startingBalance > 0 &&
+              usage.newBalance < startingBalance * 0.2
+            ) {
+              lowBalanceWarnedRef.current = true;
+              toast.warning('Your credit balance is running low.', { id: 'voice-low-balance' });
+            }
+          }
+        }
+      }
     } catch (err) {
-      console.error('ElevenLabs speech synthesis failed:', err);
+      console.error('Speech synthesis failed:', err);
     }
-  }, [isAudioEnabled, stopElevenLabsSpeech]);
+  }, [
+    isAudioEnabled,
+    stopElevenLabsSpeech,
+    sessionRunId,
+    classSession.sessionId,
+    token,
+    voiceProviderOverride,
+  ]);
 
   // ── Shared WebRTC / media cleanup ─────────────────────────────────────────
   // Single idempotent function used by both user-disconnect and React cleanup.
@@ -797,6 +906,30 @@ export default function LearningInterface({
     setShowFeedbackModal(true);
   };
 
+  // Dual voice pipeline — show a voice-usage summary before actually handing
+  // off to onEndSession (which typically navigates away), but only when the
+  // session actually synthesised any billed speech.
+  const finalizeEndSession = useCallback(() => {
+    const metadata = pendingEndMetadataRef.current;
+    pendingEndMetadataRef.current = undefined;
+    setShowVoiceSummary(false);
+    if (typeof onEndSession === 'function') {
+      onEndSession(metadata);
+    }
+  }, [onEndSession]);
+
+  const proceedToEndSession = useCallback(
+    (metadata?: Record<string, unknown>) => {
+      pendingEndMetadataRef.current = metadata;
+      if (Object.keys(voiceUsageByProvider).length > 0) {
+        setShowVoiceSummary(true);
+      } else {
+        finalizeEndSession();
+      }
+    },
+    [voiceUsageByProvider, finalizeEndSession],
+  );
+
   const handleFeedbackSubmit = async () => {
     try {
       // Include feedback in session run metadata
@@ -814,27 +947,19 @@ export default function LearningInterface({
 
       console.log('Submitting feedback:', sessionRunMetadata);
 
-      // Call the original onEndSession with metadata
-      if (typeof onEndSession === 'function') {
-        await onEndSession(sessionRunMetadata);
-      }
-
       setShowFeedbackModal(false);
+      proceedToEndSession(sessionRunMetadata);
     } catch (error) {
       console.error('Error submitting feedback:', error);
       // Still close modal and end session even if feedback fails
       setShowFeedbackModal(false);
-      if (typeof onEndSession === 'function') {
-        onEndSession({ ended_by_user: true });
-      }
+      proceedToEndSession({ ended_by_user: true });
     }
   };
 
   const handleSkipFeedback = () => {
     setShowFeedbackModal(false);
-    if (typeof onEndSession === 'function') {
-      onEndSession({ ended_by_user: true });
-    }
+    proceedToEndSession({ ended_by_user: true });
   };
 
   const handleFeedbackChange = (field: string, value: string | number) => {
@@ -1365,6 +1490,18 @@ export default function LearningInterface({
                   sessionStatus === "CONNECTING" ? 'Establishing link...' : 'Ready to start'}
               </span>
             </div>
+
+            {/* Dual voice pipeline — active provider + running credit cost */}
+            <div className="mt-2">
+              <VoiceUsageIndicator
+                provider={activeVoiceProvider}
+                creditsUsed={Object.values(voiceUsageByProvider).reduce(
+                  (sum, entry) => sum + entry.credits,
+                  0,
+                )}
+                fallbackReason={voiceFallbackReason}
+              />
+            </div>
           </div>
 
           {/* Controls */}
@@ -1789,6 +1926,13 @@ export default function LearningInterface({
           </div>
         </div>
       )}
+
+      <VoiceUsageSummaryModal
+        open={showVoiceSummary}
+        usageByProvider={voiceUsageByProvider}
+        balance={voiceBalance}
+        onContinue={finalizeEndSession}
+      />
 
       {/* Global styles for equalizer animation */}
       <style dangerouslySetInnerHTML={{

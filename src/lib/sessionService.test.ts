@@ -20,4 +20,28 @@ describe('resolveAvatarConfig', () => {
     expect(config.renderType).toBe('heygen');
     expect(config.heygenAvatarId).toBe('emirati_lady_001');
   });
+
+  it('maps the resolved dual voice pipeline fields', () => {
+    const response: EphemeralTokenResponse = {
+      client_secret: { value: 'tok', expires_at: '2026-01-01T00:00:00Z' },
+      voice_provider: 'elevenlabs',
+      voice_id: 'rachel',
+      voice_dialect: 'ar-AE',
+      voice_source: 'publisher',
+    };
+    const config = resolveAvatarConfig(response);
+    expect(config.resolvedVoiceProvider).toBe('elevenlabs');
+    expect(config.resolvedVoiceId).toBe('rachel');
+    expect(config.resolvedVoiceDialect).toBe('ar-AE');
+  });
+
+  it('leaves resolved voice fields undefined when the backend has none', () => {
+    const response: EphemeralTokenResponse = {
+      client_secret: { value: 'tok', expires_at: '2026-01-01T00:00:00Z' },
+    };
+    const config = resolveAvatarConfig(response);
+    expect(config.resolvedVoiceProvider).toBeUndefined();
+    expect(config.resolvedVoiceId).toBeUndefined();
+    expect(config.resolvedVoiceDialect).toBeUndefined();
+  });
 });

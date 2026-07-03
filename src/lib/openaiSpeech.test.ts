@@ -17,4 +17,22 @@ describe('openaiSpeech', () => {
     expect(body.input).toBe('Hello there');
     expect(body.response_format).toBe('mp3');
   });
+
+  it('prefers an explicit voiceId over the gender-based default', () => {
+    const body = buildOpenAiSpeechBody({
+      text: 'Hello there',
+      gender: 'female',
+      voiceId: 'nova',
+    });
+    expect(body.voice).toBe('nova');
+  });
+
+  it('falls back to gender when voiceId is empty', () => {
+    const body = buildOpenAiSpeechBody({
+      text: 'Hello there',
+      gender: 'male',
+      voiceId: '  ',
+    });
+    expect(body.voice).toBe('cedar');
+  });
 });

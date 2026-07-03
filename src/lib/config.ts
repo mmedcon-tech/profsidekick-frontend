@@ -47,6 +47,13 @@ export const config = {
       addCredits: '/api/billing/add-credits',
       usage: '/api/billing/usage',
     },
+    voice: {
+      preferences: '/api/voice-preferences',
+      catalog: (provider: string) => `/api/voice-catalog?provider=${provider}`,
+      availability: '/api/voice-availability',
+      usage: (sessionId: string, sessionRunId: string) =>
+        `/api/sessions/${sessionId}/runs/${sessionRunId}/voice-usage`,
+    },
   },
   
   // Get full URL for API calls

@@ -56,4 +56,32 @@ describe('POST /api/tts/elevenlabs', () => {
       }),
     );
   });
+
+  it('classifies a platform quota_exceeded failure and includes errorCode in the response', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(new Response(null, { status: 404 })) // backend proxy unavailable
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            detail: {
+              type: 'invalid_request',
+              code: 'quota_exceeded',
+              message: 'This request exceeds your quota of 10000.',
+              status: 'quota_exceeded',
+            },
+          }),
+          { status: 401 },
+        ),
+      );
+
+    const request = new NextRequest('http://localhost/api/tts/elevenlabs', {
+      method: 'POST',
+      body: JSON.stringify({ text: 'Marhaba', gender: 'male' }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(401);
+    const body = await response.json();
+    expect(body.errorCode).toBe('platform_quota_exceeded');
+  });
 });

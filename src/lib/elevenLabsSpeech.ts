@@ -70,3 +70,35 @@ export function resolveElevenLabsVoiceId(
 ): string {
   return voiceId?.trim() || pickElevenLabsVoiceId(gender, voiceProfile);
 }
+
+/**
+ * Dual voice pipeline — classifies a failed ElevenLabs API response.
+ *
+ * ElevenLabs is a single shared platform account (one API key for every
+ * subscriber's synthesis calls), so a quota/auth failure here is always a
+ * platform-side problem — never an individual subscriber's own credit
+ * balance (that is a completely separate signal: a 402 from our own
+ * `/voice-usage` billing endpoint). `'unknown'` covers anything else (bad
+ * input text, transient network error, etc.) which isn't a quota issue but
+ * still isn't the subscriber's fault either.
+ */
+export type ElevenLabsErrorCode = 'platform_quota_exceeded' | 'unknown';
+
+export function classifyElevenLabsErrorResponse(
+  status: number,
+  rawBody: string,
+): ElevenLabsErrorCode {
+  if (status === 401 || status === 429) {
+    return 'platform_quota_exceeded';
+  }
+  try {
+    const parsed = JSON.parse(rawBody);
+    const code = parsed?.detail?.code ?? parsed?.detail?.status ?? parsed?.status;
+    if (code === 'quota_exceeded') {
+      return 'platform_quota_exceeded';
+    }
+  } catch {
+    // Not JSON — fall through to 'unknown'.
+  }
+  return 'unknown';
+}

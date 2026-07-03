@@ -7,6 +7,7 @@ import { EventProvider } from '@/contexts/EventContext';
 import { TranscriptProvider } from '@/contexts/TranscriptContext';
 import { StructuredTranscriptProvider } from '@/contexts/StructuredTranscriptContext';
 import LearningInterface from '@/components/learning/LearningInterface';
+import VoiceSettingsPanel from '@/components/sessions/VoiceSettingsPanel';
 import type { ClassSession } from '@/types/types';
 import type { SessionMode } from '@/lib/sessionSlideControl';
 import { config } from '@/lib/config';
@@ -83,6 +84,7 @@ function SessionRunInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [blockers, setBlockers] = useState<EligibilityIssue[] | null>(null);
+  const [voiceConfigured, setVoiceConfigured] = useState(false);
 
   useEffect(() => {
     if (!token || !sessionId) return;
@@ -188,6 +190,16 @@ function SessionRunInner() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  // Dual voice pipeline — let the subscriber confirm/override the voice
+  // *before* LearningInterface mounts and mints an ephemeral token, so the
+  // resolved voice reflects any change made here rather than a stale
+  // resolution from before the preference was saved.
+  if (!voiceConfigured) {
+    return (
+      <VoiceSettingsPanel open onDone={() => setVoiceConfigured(true)} />
     );
   }
 

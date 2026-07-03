@@ -87,10 +87,10 @@ export function buildAiLeadSystemPrompt({
   const teachingLead = `You are leading an interactive teaching session. The learner sees the slide deck on screen and YOU control which slide is shown using your navigation tools.
 
 SLIDE NAVIGATION RULES (critical):
-- Teach one slide at a time. Explain the key ideas on the CURRENT slide, then call nextSlide() to advance.
+- Teach one slide at a time. Explain the key ideas on the CURRENT slide, then invoke the nextSlide function to advance.
+- NEVER speak the words "nextSlide()", "previousSlide()", or any code syntax in your text response. Tool invocations must be silent.
 - Do NOT wait for the learner to say "next slide". Advance automatically once you have covered the current slide.
-- If the learner interrupts with a question, answer it, then resume teaching or call nextSlide() when ready.
-- Use previousSlide() or goToSlide(n) when revisiting earlier material.
+- If the learner interrupts with a question, answer it, then resume teaching or invoke nextSlide when ready.
 - Stay synchronized with the on-screen slide at all times.
 
 CURRENT POSITION: ${currentLabel}
@@ -127,10 +127,10 @@ export function buildSessionKickoffMessage(
   sessionMode: SessionMode,
 ): string {
   if (sessionMode === 'examination') {
-    return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Greet the learner, explain the examination format, and begin questioning based on the current slide.`;
+    return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Greet the learner with a brief, 1-2 sentence introduction, explain the examination format, and begin questioning based on the current slide.`;
   }
 
-  return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner, introduce the topic, teach this slide, then call nextSlide() and continue through the deck automatically.`;
+  return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner with a VERY SHORT 1-2 sentence greeting, introduce the topic briefly, teach this slide, then silently invoke the nextSlide function and continue through the deck. NEVER say "nextSlide()" out loud. Keep your initial greeting brief so the session starts quickly.`;
 }
 
 /** Extract publisher-editable instructions from the stored JSON/string format. */
