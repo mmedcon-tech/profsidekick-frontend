@@ -87,8 +87,8 @@ export default function GlbAvatar({
   );
 
   return (
-    <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-gray-900 rounded-xl overflow-hidden relative">
-      <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+    <div className="relative flex h-full min-h-0 w-full items-center justify-center overflow-hidden bg-sidebar">
+      <Canvas camera={{ position: [0, 0.25, 1.9], fov: 32 }}>
         <ambientLight intensity={0.8} />
         <directionalLight position={[10, 10, 5]} intensity={1.2} />
         <directionalLight position={[-5, 5, -5]} intensity={0.4} />
@@ -96,7 +96,13 @@ export default function GlbAvatar({
         <React.Suspense fallback={null}>
           <Model url={modelUrl} amplitude={amplitude} isSpeaking={widgetState === 'speaking'} />
         </React.Suspense>
-        <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI / 2 + 0.1} minPolarAngle={Math.PI / 2 - 0.1} />
+        <OrbitControls
+          enableZoom={false}
+          enablePan={false}
+          target={[0, 0.25, 0]}
+          maxPolarAngle={Math.PI / 2 + 0.1}
+          minPolarAngle={Math.PI / 2 - 0.1}
+        />
       </Canvas>
       
       {widgetState === 'speaking' && (

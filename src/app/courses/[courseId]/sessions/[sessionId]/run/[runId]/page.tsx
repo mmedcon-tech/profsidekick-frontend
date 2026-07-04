@@ -71,7 +71,7 @@ function RunPageInner() {
   }, [token, sessionId, runId]);
 
   const handleEndSession = (metadata?: unknown) => {
-    router.push(`/courses/${courseId}/sessions/${sessionId}`);
+    router.push(`/courses/${courseId}`);
   };
 
   if (loading) {

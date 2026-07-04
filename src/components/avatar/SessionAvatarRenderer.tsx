@@ -4,9 +4,7 @@ import React from 'react';
 import TeachingSessionAvatar from '@/components/avatar/TeachingSessionAvatar';
 import GlbAvatar from '@/components/avatar/GlbAvatar';
 import {
-  getAvatarModeLabel,
   getEffectiveRenderType,
-  isHeyGenEnabled,
   shouldUseHeyGenVideo,
 } from '@/lib/heygenConfig';
 import type { SessionAvatarConfig } from '@/types/types';
@@ -36,12 +34,10 @@ export default function SessionAvatarRenderer({
     renderType: effectiveType,
   };
   const useHeyGen = shouldUseHeyGenVideo(config);
-  const heygenPaused =
-    config.renderType === 'heygen' && !isHeyGenEnabled();
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-gray-900 overflow-hidden">
-      <div className="flex flex-1 items-center justify-center">
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-sidebar">
+      <div className="flex min-h-0 flex-1 items-stretch justify-center">
         {useHeyGen && heygenVideoRef ? (
           <>
             <video
@@ -51,9 +47,9 @@ export default function SessionAvatarRenderer({
               className="h-full w-full object-cover scale-[1.6] origin-[50%_20%]"
             />
             {!heygenConnected && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-900">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-sidebar">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/50 dark:border-primary/50 border-t-transparent" />
-                <span className="text-[11px] text-gray-500">Connecting HeyGen…</span>
+                <span className="text-[11px] text-sidebar-foreground/70">Connecting HeyGen...</span>
               </div>
             )}
           </>

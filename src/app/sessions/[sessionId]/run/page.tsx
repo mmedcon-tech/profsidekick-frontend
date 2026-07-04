@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { EventProvider } from '@/contexts/EventContext';
 import { TranscriptProvider } from '@/contexts/TranscriptContext';
@@ -76,11 +76,15 @@ function EligibilityBlock({ issues, onBack }: { issues: EligibilityIssue[]; onBa
 function SessionRunInner() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { token } = useAuth();
 
   const [classSession, setClassSession] = useState<ClassSession | null>(null);
   const [sessionMode, setSessionMode] = useState<SessionMode>('teaching');
   const [runId, setRunId] = useState<string | null>(null);
+  const [returnCourseId, setReturnCourseId] = useState<string | null>(
+    searchParams.get('courseId'),
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [blockers, setBlockers] = useState<EligibilityIssue[] | null>(null);
@@ -115,6 +119,9 @@ function SessionRunInner() {
 
         const sessionRunId: string = startData.sessionRunId;
         setRunId(sessionRunId);
+        if (startData.courseId || startData.course_id) {
+          setReturnCourseId(startData.courseId ?? startData.course_id);
+        }
 
         // Fetch run details (includes slides + session metadata)
         const runRes = await fetch(config.getApiUrl(`/api/sessions/${sessionId}/run/${sessionRunId}`), {
@@ -122,6 +129,9 @@ function SessionRunInner() {
         });
         const runData = await runRes.json();
         if (!runRes.ok) throw new Error(runData.detail || runData.message || `HTTP ${runRes.status}`);
+        if (runData.courseId || runData.course_id) {
+          setReturnCourseId(runData.courseId ?? runData.course_id);
+        }
 
         const session: ClassSession = {
           sessionId: runData.sessionId ?? sessionId,
@@ -155,7 +165,7 @@ function SessionRunInner() {
   }, [token, sessionId]);
 
   const handleEndSession = () => {
-    router.push('/subscriber/marketplace');
+    router.push(returnCourseId ? `/courses/${returnCourseId}` : '/subscriber/courses');
   };
 
   if (loading) {

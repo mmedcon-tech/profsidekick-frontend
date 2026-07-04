@@ -49,15 +49,18 @@ export default function TeachingSessionAvatar({
       ? '/images/avatar-male.png'
       : '/images/avatar-female.png');
 
-  if (config.renderType === '3d' && glbUrl) {
+  if ((config.renderType === '3d' || config.renderType === 'glb') && glbUrl) {
     return (
-      <div className="flex h-full w-full flex-col bg-gray-900">
+      <div className="flex h-full min-h-0 w-full flex-col bg-sidebar">
         <GlbAvatarPreview
           glbUrl={glbUrl}
           lipSyncHints={libraryEntry?.lipSync}
           amplitude={amplitude}
           showControls={false}
-          framing="bust"
+          framing="full"
+          fitMargin={1.08}
+          modelScale={1.2}
+          coverHeightFraction={0.62}
         />
       </div>
     );
@@ -65,7 +68,7 @@ export default function TeachingSessionAvatar({
 
   if (config.renderType === '3d') {
     return (
-      <div className="flex h-full w-full flex-col bg-gray-900">
+      <div className="flex h-full min-h-0 w-full flex-col bg-sidebar">
         <PortraitAvatarStage
           imageUrl={imageUrl}
           avatarName={config.avatarName}
@@ -77,7 +80,7 @@ export default function TeachingSessionAvatar({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-gray-900 gap-2">
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-center gap-2 bg-sidebar">
       <StaticAvatarWidget
         imageUrl={imageUrl}
         avatarName={config.avatarName}
