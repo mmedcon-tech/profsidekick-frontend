@@ -51,7 +51,7 @@ function ThemedLayoutInner({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeaderV2 title={title} onMenuClick={() => setMobileNavOpen(true)} />
-        <main className="flex-1 overflow-y-auto">
+        <main className={`min-h-0 flex-1 ${isFullScreen ? "overflow-hidden" : "overflow-y-auto"}`}>
           {isFullScreen ? (
             children
           ) : (

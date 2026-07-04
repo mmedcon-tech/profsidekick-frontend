@@ -66,7 +66,7 @@ export default function TeachingSessionAvatar({
     const isSpeaking = isConnected && (isAISpeaking || amplitude > 0.035);
 
     return (
-      <div className="flex h-full w-full flex-col overflow-hidden bg-gray-900">
+      <div className="flex h-full min-h-0 w-full flex-col bg-sidebar">
         <GlbAvatarPreview
           glbUrl={glbUrl}
           lipSyncHints={lipSync}
@@ -74,9 +74,9 @@ export default function TeachingSessionAvatar({
           isSpeaking={isSpeaking}
           showControls={false}
           framing="full"
-          coverHeightFraction={0.36}
-          fitMargin={0.92}
-          modelScale={libraryEntry?.previewModelScale ?? 1.35}
+          fitMargin={1.08}
+          modelScale={1.2}
+          coverHeightFraction={0.62}
         />
       </div>
     );
@@ -84,7 +84,7 @@ export default function TeachingSessionAvatar({
 
   if (config.renderType === '3d' || config.renderType === 'glb') {
     return (
-      <div className="flex h-full w-full flex-col bg-gray-900">
+      <div className="flex h-full min-h-0 w-full flex-col bg-sidebar">
         <PortraitAvatarStage
           imageUrl={imageUrl}
           avatarName={config.avatarName}
@@ -96,7 +96,7 @@ export default function TeachingSessionAvatar({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-gray-900 gap-2">
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-center gap-2 bg-sidebar">
       <StaticAvatarWidget
         imageUrl={imageUrl}
         avatarName={config.avatarName}

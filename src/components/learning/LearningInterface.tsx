@@ -20,7 +20,6 @@ import { classifyTurn } from "@/lib/turnClassifier";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
-  isHeyGenEnabled,
 } from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
@@ -1591,7 +1590,7 @@ export default function LearningInterface({
   // --------------------------------------------------------------
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background font-sans text-foreground">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-background font-sans text-foreground">
       {/* ── Header ── */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-10 shadow-sm relative">
         <div className="flex items-center gap-3">
@@ -1628,13 +1627,14 @@ export default function LearningInterface({
         </div>
       </header>
 
+
       {/* ── Main Layout ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* ── Left Sidebar: Avatar & Controls ── */}
-        <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-sidebar md:w-[320px]">
+        <div className="flex w-[280px] shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:w-[320px]">
           {/* Avatar Video Area */}
-          <div className="relative flex-1 bg-black/5 p-4 flex flex-col justify-center items-center">
-            <div className="relative h-64 w-64 overflow-hidden rounded-2xl shadow-xl border-4 border-sidebar bg-gray-900 pointer-events-none">
+          <div className="relative flex min-h-0 flex-1 flex-col items-center gap-2 bg-sidebar p-3">
+            <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent shadow-xl pointer-events-none">
               <SessionAvatarRenderer
                 config={sessionAvatar}
                 audioElement={outputAudioElement}
@@ -1656,7 +1656,7 @@ export default function LearningInterface({
             </div>
 
             {/* Status indicator */}
-            <div className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-sidebar-accent/50">
+            <div className="flex shrink-0 items-center gap-2 rounded-full bg-sidebar-accent px-3 py-1.5">
               <span className={cn(
                 "h-2 w-2 rounded-full",
                 sessionStatus === "CONNECTED" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" :
@@ -1670,7 +1670,7 @@ export default function LearningInterface({
           </div>
 
           {/* Controls */}
-          <div className="flex shrink-0 flex-col gap-3 p-4 bg-sidebar border-t border-border/50">
+          <div className="flex shrink-0 flex-col gap-3 border-t border-sidebar-border bg-sidebar p-4">
             {/* Voice Activity equalizers (visual only for now) */}
             <div className="flex items-center justify-between rounded-xl border border-border bg-background p-3">
               <div className="flex items-center gap-2">
@@ -1697,14 +1697,14 @@ export default function LearningInterface({
                     <div
                       key={i}
                       className={cn(
-                        "w-1 rounded-full bg-primary/50/60 transition-all duration-75",
+                        "w-1 rounded-full bg-primary/60 transition-all duration-75",
                         isAISpeaking ? "animate-[eq_0.5s_ease-in-out_infinite]" : "h-1"
                       )}
                       style={{ animationDelay: `${i * 0.1}s` }}
                     />
                   ))}
                 </div>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/50/10 text-primary">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Volume2 className="h-3.5 w-3.5" />
                 </div>
               </div>
@@ -1784,7 +1784,7 @@ export default function LearningInterface({
         </div>
 
         {/* ── Center: Slides ── */}
-        <div className="flex flex-1 flex-col overflow-hidden bg-muted/10 relative">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/10">
 
           {/* Start Conversation Prompt overlay */}
           {showStartPrompt && (
@@ -1792,12 +1792,12 @@ export default function LearningInterface({
               <div className={cn(
                 "px-6 py-4 rounded-2xl shadow-xl flex items-center gap-4 border backdrop-blur-md transition-all duration-300",
                 sessionStatus === "CONNECTED"
-                  ? "bg-primary/50/90 text-white border-primary/40 shadow-primary/50/20"
+                  ? "bg-primary/90 text-primary-foreground border-primary/40 shadow-primary/20"
                   : "bg-amber-500/90 text-white border-amber-400 shadow-amber-500/20"
               )}>
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
                   {sessionStatus === "CONNECTED" ? (
-                    <Mic size={20} className="text-white animate-pulse" />
+                    <Mic size={20} className="text-primary-foreground animate-pulse" />
                   ) : (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   )}
@@ -1806,7 +1806,7 @@ export default function LearningInterface({
                   {sessionStatus === "CONNECTED" ? (
                     <>
                       <p className="font-bold text-sm">Ready to start!</p>
-                      <p className="text-xs text-primary/5 mt-0.5">
+                      <p className="text-xs text-primary-foreground/80 mt-0.5">
                         Type a message, or turn on your mic when you want to speak.
                       </p>
                     </>
@@ -1864,13 +1864,15 @@ export default function LearningInterface({
                 </button>
               </div>
             </div>
-
+          </div>
+          {/* Slide content area */}
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 md:p-6">
             <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
               {currentSlideData?.imagePath ? (
                 <img
                   src={getCorrectImageUrl(currentSlideData.imagePath)}
                   alt={currentSlideData?.title}
-                  className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-lg ring-1 ring-border/50 bg-card"
+                  className="max-h-full max-w-full object-contain rounded-xl bg-card shadow-lg ring-1 ring-border/50"
                   onError={(e) => {
                     console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
                   }}
