@@ -4,49 +4,47 @@ import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourses } from '@/hooks/useCourses';
-import { Clock, MapPin, BookOpen } from 'lucide-react';
+import { useSubscriberAnalytics } from '@/hooks/useSubscriberAnalytics';
+import { Clock, BookOpen } from 'lucide-react';
 
 // ── course card ──────────────────────────────────────────────────────────────
 
 interface CourseCardProps {
   course: ReturnType<typeof useCourses>['courses'][number];
+  progress: number;
+  lastSessionAt: string | null;
   onClick: () => void;
 }
 
-function CourseCard({ course, onClick }: CourseCardProps) {
-  // Using some logic to match the visual states in the UI screenshot
+function CourseCard({ course, progress, lastSessionAt, onClick }: CourseCardProps) {
   const tag = course.department || "General";
-  
-  // Decide status based on session_count or enrolled for demo
-  let status = "Not started";
-  let progress = 0;
-  let actionText = "Start";
-  let statusColor = "bg-gray-100 text-gray-600";
-  let statusIcon = <div className="w-2 h-2 rounded-full border border-gray-400 mr-1.5" />;
 
-  if (course.name?.includes('Leadership')) {
-    status = "In progress";
-    progress = 60;
-    actionText = "Resume";
-    statusColor = "bg-[#FDF9EB] text-[#A88C4B]";
-    statusIcon = <Clock size={10} className="mr-1" />;
-  } else if (course.name?.includes('Occupational')) {
+  let status: string;
+  let actionText: string;
+  let statusColor: string;
+  let statusIcon: React.ReactNode;
+
+  if (progress >= 100) {
     status = "Completed";
-    progress = 100;
     actionText = "Review";
     statusColor = "bg-green-50 text-green-700";
     statusIcon = <div className="w-2 h-2 rounded-full bg-green-500 mr-1.5" />;
-  } else if (course.name?.includes('English')) {
+  } else if (progress > 0) {
     status = "In progress";
-    progress = 20;
     actionText = "Resume";
     statusColor = "bg-[#FDF9EB] text-[#A88C4B]";
     statusIcon = <Clock size={10} className="mr-1" />;
+  } else {
+    status = "Not started";
+    actionText = "Start";
+    statusColor = "bg-gray-100 text-gray-600";
+    statusIcon = <div className="w-2 h-2 rounded-full border border-gray-400 mr-1.5" />;
   }
 
-  const duration = course.description?.includes("weeks") ? "8 weeks" : "4 weeks";
-  const location = course.name?.includes('English') ? "Federal Training Center" : "MyOS Academy";
-  
+  const footerLabel = lastSessionAt
+    ? `Last session: ${new Date(lastSessionAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+    : progress === 100 ? "Completed" : "No sessions yet";
+
   return (
     <button
       onClick={onClick}
@@ -71,12 +69,6 @@ function CourseCard({ course, onClick }: CourseCardProps) {
           {course.description || "Course description not available."}
         </p>
 
-        {/* Metadata */}
-        <div className="flex items-center gap-4 text-[11px] text-gray-500 mb-5">
-          <span className="flex items-center gap-1"><Clock size={12} /> {duration}</span>
-          <span className="flex items-center gap-1"><MapPin size={12} /> {location}</span>
-        </div>
-
         {/* Progress bar */}
         <div>
           <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium mb-1.5">
@@ -91,10 +83,14 @@ function CourseCard({ course, onClick }: CourseCardProps) {
 
       {/* Footer */}
       <div className="p-5 pt-0 mt-auto flex items-end justify-between">
-        <span className="text-[11px] text-gray-500">
-          {progress === 100 ? "Completed" : progress === 0 ? "Starts 04/10" : "Assessment: tomorrow"}
-        </span>
-        <div className={`${progress === 100 ? 'bg-[#133221]' : progress === 0 ? 'bg-white border border-gray-300 text-gray-700' : 'bg-[#133221] text-white'} text-xs font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity`}>
+        <span className="text-[11px] text-gray-500">{footerLabel}</span>
+        <div className={`${
+          progress >= 100
+            ? 'bg-[#133221] text-white'
+            : progress === 0
+            ? 'bg-white border border-gray-300 text-gray-700'
+            : 'bg-[#133221] text-white'
+        } text-xs font-semibold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity`}>
           {actionText}
         </div>
       </div>
@@ -104,8 +100,7 @@ function CourseCard({ course, onClick }: CourseCardProps) {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 shadow-sm animate-pulse h-64">
-    </div>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 shadow-sm animate-pulse h-64" />
   );
 }
 
@@ -114,10 +109,20 @@ function SkeletonCard() {
 export default function StudentDashboard() {
   const router = useRouter();
   const { user } = useAuth();
-  const { courses, loading, error, refetch } = useCourses();
+  const { courses, loading: loadingCourses, error, refetch } = useCourses();
+  const { data: analytics, loading: loadingAnalytics } = useSubscriberAnalytics();
 
-  // Using all courses
+  const isLoading = loadingCourses || loadingAnalytics;
+
   const displayCourses = useMemo(() => courses, [courses]);
+
+  function getAnalytics(courseId: string) {
+    const p = analytics?.course_progress?.find((x) => x.course_id === courseId);
+    return {
+      progress: p ? Math.round(p.completion_pct) : 0,
+      lastSessionAt: p?.last_session_at ?? null,
+    };
+  }
 
   return (
     <div className="min-h-full bg-gray-50/50 dark:bg-gray-950">
@@ -126,13 +131,13 @@ export default function StudentDashboard() {
         {/* Header subtitle */}
         <div>
           <p className="text-sm text-gray-500 font-medium">
-            All courses assigned to you by MyOS Academy.
+            All courses assigned to you.
           </p>
         </div>
 
         {/* Course grid */}
         <section>
-          {loading ? (
+          {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
@@ -144,7 +149,7 @@ export default function StudentDashboard() {
               <p className="text-xs text-gray-400 mb-4">{error}</p>
               <button
                 onClick={refetch}
-                className="text-sm text-primary/90 dark:text-primary/40 hover:text-primary/95 dark:text-primary/30 font-medium"
+                className="text-sm text-primary/90 hover:text-primary/95 font-medium"
               >
                 Try again
               </button>
@@ -161,13 +166,18 @@ export default function StudentDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {displayCourses.map((course) => (
-                <CourseCard
-                  key={course.course_id}
-                  course={course}
-                  onClick={() => router.push(`/courses/${course.course_id}`)}
-                />
-              ))}
+              {displayCourses.map((course) => {
+                const { progress, lastSessionAt } = getAnalytics(course.course_id);
+                return (
+                  <CourseCard
+                    key={course.course_id}
+                    course={course}
+                    progress={progress}
+                    lastSessionAt={lastSessionAt}
+                    onClick={() => router.push(`/courses/${course.course_id}`)}
+                  />
+                );
+              })}
             </div>
           )}
         </section>

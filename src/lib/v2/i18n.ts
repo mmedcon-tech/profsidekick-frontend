@@ -31,8 +31,16 @@ const translations: Record<string, { en: string; ar: string }> = {
   accessCodes: { en: "Access Codes", ar: "رموز الوصول" },
   subscribers: { en: "Subscribers", ar: "المشتركون" },
 
+  // Navigation — SAE / AutoGrader
+  saeExam: { en: "My Assessments", ar: "تقييماتي" },
+  saeAssessments: { en: "Assessments", ar: "التقييمات" },
+
+  // Navigation — publisher
+  prompts: { en: "My Prompts", ar: "موجّهاتي" },
+
   // Navigation — admin
   templates: { en: "Avatar Templates", ar: "قوالب المساعدين" },
+  promptTemplates: { en: "Prompt Templates", ar: "قوالب الموجّهات" },
   models: { en: "3D Model Catalog", ar: "كتالوج النماذج ثلاثية الأبعاد" },
   users: { en: "User Management", ar: "إدارة المستخدمين" },
   newTemplate: { en: "New Template", ar: "قالب جديد" },

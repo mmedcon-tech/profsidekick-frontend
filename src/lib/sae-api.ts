@@ -12,6 +12,7 @@ import type {
   SAERegenerateResponse,
   SAESetupResponse,
   SAEStudentDetail,
+  SAEStudentEnrollment,
   SAEStudentMe,
   SAEStudentRow,
   SAESubmissionEditRequest,
@@ -81,13 +82,36 @@ export async function listAssessments(): Promise<SAEAssessmentRow[]> {
 
 export async function createAssessment(
   name: string,
-  description?: string
+  description?: string,
+  grading_prompt_template_id?: string | null,
+  avatar_id?: string | null,
 ): Promise<SAEAssessmentRow> {
   const res = await fetch(`${API}/api/sae/publisher/assessments`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ name, description: description ?? null, course_id: null }),
+    body: JSON.stringify({
+      name,
+      description: description ?? null,
+      course_id: null,
+      grading_prompt_template_id: grading_prompt_template_id ?? null,
+      avatar_id: avatar_id ?? null,
+    }),
   });
+  return handleResponse<SAEAssessmentRow>(res);
+}
+
+export async function linkAvatarToAssessment(
+  assessmentId: string,
+  avatarId: string | null,
+): Promise<SAEAssessmentRow> {
+  const res = await fetch(
+    `${API}/api/sae/publisher/assessments/${assessmentId}/avatar`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ avatar_id: avatarId }),
+    }
+  );
   return handleResponse<SAEAssessmentRow>(res);
 }
 
@@ -198,6 +222,18 @@ export async function getMyProfile(): Promise<SAEStudentMe> {
   return handleResponse<SAEStudentMe>(res);
 }
 
+/**
+ * Returns all active SAE enrolments for the authenticated student.
+ * Triggers a server-side sync so new active assessments auto-appear.
+ * Returns an empty array for subscribers not enrolled in any assessment.
+ */
+export async function getMyEnrollments(): Promise<SAEStudentEnrollment[]> {
+  const res = await fetch(`${API}/api/sae/student/enrollments`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAEStudentEnrollment[]>(res);
+}
+
 /** Legacy: returns the active submission only. Prefer getMySubmissions(). */
 export async function getMySubmission(): Promise<SAESubmissionResult> {
   const res = await fetch(`${API}/api/sae/student/submission`, {
@@ -206,9 +242,13 @@ export async function getMySubmission(): Promise<SAESubmissionResult> {
   return handleResponse<SAESubmissionResult>(res);
 }
 
-/** Returns all submissions for the authenticated student, oldest first. */
-export async function getMySubmissions(): Promise<SAESubmissionResult[]> {
-  const res = await fetch(`${API}/api/sae/student/submissions`, {
+/**
+ * Returns all submissions for the authenticated student, oldest first.
+ * Pass assessmentId to scope to a specific assessment; omit to use the first enrolment.
+ */
+export async function getMySubmissions(assessmentId?: string): Promise<SAESubmissionResult[]> {
+  const qs = assessmentId ? `?assessment_id=${encodeURIComponent(assessmentId)}` : "";
+  const res = await fetch(`${API}/api/sae/student/submissions${qs}`, {
     headers: authHeaders(),
   });
   return handleResponse<SAESubmissionResult[]>(res);
@@ -226,11 +266,13 @@ export async function getMySubmissionById(
 
 export async function submitExam(
   handwrittenFile: File,
-  webassignFile: File
+  webassignFile: File,
+  assessmentId?: string,
 ): Promise<SAESubmissionResult> {
   const form = new FormData();
   form.append("student_answer", handwrittenFile);
   form.append("webassign_pdf", webassignFile);
+  if (assessmentId) form.append("assessment_id", assessmentId);
   const res = await fetch(`${API}/api/sae/student/submit`, {
     method: "POST",
     headers: authHeaders(),

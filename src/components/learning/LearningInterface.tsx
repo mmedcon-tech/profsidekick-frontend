@@ -99,7 +99,17 @@ export default function LearningInterface({
   const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
   const [aiLeadEnabled] = useState(true);
 
-  const slideCount = classSession.slides.length;
+  // Assessment sessions have slides with source "handwritten" and "question".
+  // Upload sessions have source "student". The tab only renders for assessment sessions.
+  const [activeDocTab, setActiveDocTab] = useState<"handwritten" | "question">("handwritten");
+  const handwrittenSlides = classSession.slides.filter((s) => s.source === "handwritten");
+  const questionSlides = classSession.slides.filter((s) => s.source === "question");
+  const isAssessmentSession = handwrittenSlides.length > 0 && questionSlides.length > 0;
+  const activeSlides = isAssessmentSession
+    ? (activeDocTab === "handwritten" ? handwrittenSlides : questionSlides)
+    : classSession.slides;
+
+  const slideCount = activeSlides.length;
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -1445,7 +1455,7 @@ export default function LearningInterface({
     }
   }, [currentSlide, isHydrated]);
 
-  const currentSlideData = classSession.slides[currentSlide];
+  const currentSlideData = activeSlides[currentSlide];
 
   // Fix image URL to ensure it points to backend server
   const getCorrectImageUrl = (imageUrl: string | undefined) => {
@@ -1682,6 +1692,34 @@ export default function LearningInterface({
                   </button>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Document tab toggle — assessment sessions only */}
+          {isAssessmentSession && (
+            <div className="flex shrink-0 items-center gap-2 border-b border-border bg-card/80 px-4 py-2">
+              <button
+                type="button"
+                onClick={() => { setActiveDocTab("handwritten"); setCurrentSlide(0); currentSlideRef.current = 0; }}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                  activeDocTab === "handwritten"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                Handwritten ({handwrittenSlides.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveDocTab("question"); setCurrentSlide(0); currentSlideRef.current = 0; }}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+                  activeDocTab === "question"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                Question ({questionSlides.length})
+              </button>
             </div>
           )}
 

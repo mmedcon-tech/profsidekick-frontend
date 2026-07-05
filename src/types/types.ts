@@ -24,6 +24,7 @@ export interface SlideData {
   content: string;
   imagePath: string;
   thumbnailPath: string;
+  source?: string;
 }
 
 export interface PresentationData {

@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { useParams, usePathname } from 'next/navigation';
 import { avatarApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarResponse } from '@/types/avatar';
-import { Globe, ArrowLeft, RefreshCw, CheckCircle, Upload, BookOpen, Settings, Send } from 'lucide-react';
+import { Globe, ArrowLeft, RefreshCw, CheckCircle, BookOpen, Settings, Link2, Unlink } from 'lucide-react';
 import AvatarIcon from '@/components/avatars/AvatarIcon';
+import { listAssessments, linkAvatarToAssessment } from '@/lib/sae-api';
+import type { SAEAssessmentRow } from '@/types/sae';
 
 const TABS = [
   { label: 'Overview',            href: (id: string) => `/publisher/avatars/${id}`,            exact: true  },
@@ -15,6 +17,7 @@ const TABS = [
   { label: 'Knowledge',           href: (id: string) => `/publisher/avatars/${id}/knowledge`,  exact: false },
   { label: 'References',          href: (id: string) => `/publisher/avatars/${id}/references`, exact: false },
   { label: 'Rubrics',             href: (id: string) => `/publisher/avatars/${id}/rubrics`,    exact: false },
+  { label: 'Prompts',             href: (id: string) => `/publisher/avatars/${id}/prompts`,    exact: false },
   { label: 'Access Codes',        href: (id: string) => `/publisher/avatars/${id}/codes`,      exact: false },
 ];
 
@@ -31,6 +34,12 @@ export default function AvatarDetailPage() {
   const [publishing, setPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
 
+  // Linked assessments state
+  const [allAssessments, setAllAssessments] = useState<SAEAssessmentRow[]>([]);
+  const [assessmentsLoading, setAssessmentsLoading] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linking, setLinking] = useState<string | null>(null);
+
   const load = () => {
     setLoading(true);
     avatarApi.get(id)
@@ -39,7 +48,15 @@ export default function AvatarDetailPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, [id]);
+  const loadAssessments = () => {
+    setAssessmentsLoading(true);
+    listAssessments()
+      .then(setAllAssessments)
+      .catch(() => setAllAssessments([]))
+      .finally(() => setAssessmentsLoading(false));
+  };
+
+  useEffect(() => { load(); loadAssessments(); }, [id]);
 
   const handlePublish = async () => {
     if (!avatar) return;
@@ -206,7 +223,158 @@ export default function AvatarDetailPage() {
             </button>
           )}
         </div>
+
+        {/* Linked Assessments */}
+        <LinkedAssessmentsCard
+          avatarId={id}
+          allAssessments={allAssessments}
+          loading={assessmentsLoading}
+          linking={linking}
+          showLinkModal={showLinkModal}
+          setShowLinkModal={setShowLinkModal}
+          onLink={async (assessmentId) => {
+            setLinking(assessmentId);
+            try {
+              const updated = await linkAvatarToAssessment(assessmentId, id);
+              setAllAssessments((prev) => prev.map((a) => a.id === updated.id ? updated : a));
+            } finally {
+              setLinking(null);
+              setShowLinkModal(false);
+            }
+          }}
+          onUnlink={async (assessmentId) => {
+            setLinking(assessmentId);
+            try {
+              const updated = await linkAvatarToAssessment(assessmentId, null);
+              setAllAssessments((prev) => prev.map((a) => a.id === updated.id ? updated : a));
+            } finally {
+              setLinking(null);
+            }
+          }}
+        />
       </div>
+    </div>
+  );
+}
+
+// ── Linked Assessments card ───────────────────────────────────────────────────
+
+function LinkedAssessmentsCard({
+  avatarId,
+  allAssessments,
+  loading,
+  linking,
+  showLinkModal,
+  setShowLinkModal,
+  onLink,
+  onUnlink,
+}: {
+  avatarId: string;
+  allAssessments: SAEAssessmentRow[];
+  loading: boolean;
+  linking: string | null;
+  showLinkModal: boolean;
+  setShowLinkModal: (v: boolean) => void;
+  onLink: (assessmentId: string) => Promise<void>;
+  onUnlink: (assessmentId: string) => Promise<void>;
+}) {
+  const linked   = allAssessments.filter((a) => a.avatar_id === avatarId);
+  const unlinked = allAssessments.filter((a) => !a.avatar_id);
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">Linked Assessments</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Assessments that use this avatar&apos;s grading prompt.
+          </p>
+        </div>
+        {unlinked.length > 0 && (
+          <button
+            onClick={() => setShowLinkModal(true)}
+            className="flex items-center gap-1.5 text-xs font-medium text-[#133221] border border-[#133221]/30 bg-[#133221]/5 hover:bg-[#133221]/10 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Link2 size={13} /> Link assessment
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2].map((i) => <div key={i} className="h-10 rounded-lg bg-muted animate-pulse" />)}
+        </div>
+      ) : linked.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-3 text-center border border-dashed border-border rounded-lg">
+          No assessments linked yet.{' '}
+          {unlinked.length > 0 && (
+            <button onClick={() => setShowLinkModal(true)} className="text-[#133221] hover:underline">
+              Link one now
+            </button>
+          )}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {linked.map((a) => (
+            <div key={a.id} className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-2.5 gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{a.name}</p>
+                {a.description && (
+                  <p className="text-xs text-muted-foreground truncate">{a.description}</p>
+                )}
+              </div>
+              <button
+                onClick={() => onUnlink(a.id)}
+                disabled={linking === a.id}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-600 disabled:opacity-40 transition-colors shrink-0"
+              >
+                <Unlink size={13} />
+                {linking === a.id ? 'Unlinking…' : 'Unlink'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Link modal */}
+      {showLinkModal && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+          onClick={(e) => e.target === e.currentTarget && setShowLinkModal(false)}
+        >
+          <div className="relative rounded-xl bg-white dark:bg-gray-900 shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h2 className="text-base font-semibold text-foreground">Link an Assessment</h2>
+              <button onClick={() => setShowLinkModal(false)} className="text-muted-foreground hover:text-foreground text-xl leading-none">×</button>
+            </div>
+            <div className="px-6 py-5 space-y-2">
+              <p className="text-xs text-muted-foreground mb-3">
+                Linking will re-snapshot this avatar&apos;s grading prompt into the assessment. All future gradings for that assessment will use the frozen snapshot.
+              </p>
+              {unlinked.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">All your assessments are already linked.</p>
+              ) : (
+                unlinked.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => onLink(a.id)}
+                    disabled={linking === a.id}
+                    className="w-full flex items-center justify-between rounded-lg border border-border px-4 py-3 text-left hover:bg-muted/50 disabled:opacity-50 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{a.name}</p>
+                      {a.description && <p className="text-xs text-muted-foreground truncate">{a.description}</p>}
+                    </div>
+                    <span className="text-xs text-[#133221] font-medium shrink-0 ml-3">
+                      {linking === a.id ? 'Linking��' : 'Link →'}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

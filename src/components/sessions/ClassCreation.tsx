@@ -9,6 +9,7 @@ import { config } from "@/lib/config";
 import { ChevronLeft } from "lucide-react";
 import CourseSelector from "./CourseSelector";
 import { CourseDetails } from "@/hooks/useCourses";
+import { publisherPromptApi, type PromptTemplateResponse } from "@/lib/avatarApi";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -83,6 +84,25 @@ export default function ClassCreation() {
   const [sessionMode, setSessionMode] = useState<"teaching" | "examination" | "consultation">("teaching");
   const [subscriberRuntimeMode, setSubscriberRuntimeMode] = useState<'avatar' | 'chat' | 'choice'>('avatar');
 
+  // Prompt picker (publishers only)
+  const [availablePrompts, setAvailablePrompts] = useState<PromptTemplateResponse[]>([]);
+  const [selectedPromptTemplateId, setSelectedPromptTemplateId] = useState<string>("");
+
+  const SESSION_MODE_TO_USE_CASE: Record<string, string> = {
+    teaching:     'session.teaching',
+    examination:  'session.examination',
+    consultation: 'session.conversation',
+  };
+
+  useEffect(() => {
+    if (!token || user?.role !== 'publisher') return;
+    const useCase = SESSION_MODE_TO_USE_CASE[sessionMode] ?? 'session.teaching';
+    publisherPromptApi.listTemplates(useCase)
+      .then(setAvailablePrompts)
+      .catch(() => setAvailablePrompts([]));
+    setSelectedPromptTemplateId('');
+  }, [sessionMode, token, user?.role]);
+
   const [availableAvatars, setAvailableAvatars] = useState<{ id: string; name: string; template_id: string; template_image_url: string | null }[]>([]);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string>("");
   const [selectedAvatarTemplateId, setSelectedAvatarTemplateId] = useState<string>("");
@@ -121,6 +141,22 @@ export default function ClassCreation() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const solutionFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Assessment mode state
+  const [sessionSource, setSessionSource] = useState<"upload" | "assessment">("upload");
+  type SubmissionRow = { id: string; display_name: string; student_name: string; score: number | null; version_number: number | null; created_at: string | null };
+  const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>("");
+
+  useEffect(() => {
+    if (sessionSource !== "assessment" || !token) return;
+    fetch(config.getApiUrl("/api/autograder/submissions"), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setSubmissions(Array.isArray(data) ? data : []))
+      .catch(() => setSubmissions([]));
+  }, [sessionSource, token]);
 
   const handleCourseSelect = (courseId: string, course?: CourseDetails) => {
     setSelectedCourseId(courseId);
@@ -214,7 +250,8 @@ export default function ClassCreation() {
   const validateForm = (): boolean => {
     if (!selectedCourseId.trim()) { setError("Please select a course"); return false; }
     if (!classDetails.className.trim()) { setError("Class name is required"); return false; }
-    if (!selectedFile) { setError("Please upload a presentation file"); return false; }
+    if (sessionSource === "upload" && !selectedFile) { setError("Please upload a presentation file"); return false; }
+    if (sessionSource === "assessment" && !selectedSubmissionId) { setError("Please select a submission"); return false; }
     if (!classDetails.visionInstructions.trim()) { setError("Vision instructions are required"); return false; }
     return true;
   };
@@ -269,10 +306,15 @@ export default function ClassCreation() {
         },
         materialId: selectedMaterialIds || null,
         subscriberRuntimeMode,
+        promptTemplateId: selectedPromptTemplateId || null,
+        source: sessionSource,
+        ...(sessionSource === "assessment" ? { submissionId: selectedSubmissionId } : {}),
       };
       const formData = new FormData();
-      formData.append("presentation", selectedFile!);
-      if (selectedSolutionFile) formData.append("solution_file", selectedSolutionFile);
+      if (sessionSource === "upload") {
+        formData.append("presentation", selectedFile!);
+        if (selectedSolutionFile) formData.append("solution_file", selectedSolutionFile);
+      }
       formData.append("sessionDetails", JSON.stringify(sessionDetails));
       const response = await fetch(config.getApiUrl("/api/sessions/create"), {
         method: "POST",
@@ -553,6 +595,40 @@ export default function ClassCreation() {
                 </div>
               )}
 
+              {/* Prompt override — publishers only */}
+              {user?.role === 'publisher' && availablePrompts.length > 0 && (
+                <div>
+                  <label htmlFor="prompt_select" className="mb-1 block text-sm font-medium text-foreground">
+                    Prompt Override (Optional)
+                  </label>
+                  <select
+                    id="prompt_select"
+                    value={selectedPromptTemplateId}
+                    onChange={(e) => setSelectedPromptTemplateId(e.target.value)}
+                    className="w-full input-style"
+                  >
+                    <option value="">— Use avatar / system default —</option>
+                    {availablePrompts.filter((p) => p.is_system).length > 0 && (
+                      <optgroup label="System Defaults">
+                        {availablePrompts.filter((p) => p.is_system).map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {availablePrompts.filter((p) => !p.is_system).length > 0 && (
+                      <optgroup label="My Prompts">
+                        {availablePrompts.filter((p) => !p.is_system).map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Override the AI system prompt for this session only. Leave blank to use the avatar's configured prompt.
+                  </p>
+                </div>
+              )}
+
               {/* Course materials */}
               <div>
                 <label className="mb-1 block text-sm font-medium text-foreground">
@@ -627,73 +703,130 @@ export default function ClassCreation() {
             <fieldset className="space-y-4 rounded-lg border border-border p-4">
               <legend className="px-2 text-lg font-semibold text-foreground">Presentation File</legend>
 
-              <div
-                className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
-                  isDragOver
-                    ? "border-primary/50 bg-primary/5"
-                    : selectedFile
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/40 hover:bg-accent/50"
-                }`}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input ref={fileInputRef} type="file" accept=".pdf,.ppt,.pptx,.docx" onChange={handleFileInputChange} className="hidden" />
-                {selectedFile ? (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-primary">
-                      {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
-                    </p>
-                    <button type="button" onClick={() => setSelectedFile(null)} className="text-xs text-destructive hover:underline">
-                      Remove file
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Drag & drop or click to browse (up to 50MB)</p>
-                    <p className="text-xs text-muted-foreground/60">Supported: PDF, PowerPoint (PPTX), Word (DOCX)</p>
-                  </div>
-                )}
+              {/* Source toggle */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSessionSource("upload")}
+                  className={`${modeCardBase} ${sessionSource === "upload" ? "border-primary bg-primary/5" : modeCardIdle}`}
+                >
+                  <span className={`text-sm font-semibold ${sessionSource === "upload" ? "text-primary" : "text-foreground"}`}>
+                    📎 Upload Files
+                  </span>
+                  <span className="text-xs leading-relaxed text-muted-foreground">Upload a new presentation PDF or PPTX.</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSessionSource("assessment"); setSelectedSubmissionId(""); }}
+                  className={`${modeCardBase} ${sessionSource === "assessment" ? "border-primary bg-primary/5" : modeCardIdle}`}
+                >
+                  <span className={`text-sm font-semibold ${sessionSource === "assessment" ? "text-primary" : "text-foreground"}`}>
+                    📋 From Assessment
+                  </span>
+                  <span className="text-xs leading-relaxed text-muted-foreground">Use an existing graded submission as session material.</span>
+                </button>
               </div>
 
-              {/* Solution file */}
-              <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
-                  Solution File{" "}
-                  <span className="font-normal text-muted-foreground">(optional — AI reference only, never shown to student)</span>
-                </label>
-                <div
-                  className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
-                    selectedSolutionFile
-                      ? "border-primary/50 bg-primary/5"
-                      : "border-border hover:border-primary/40 hover:bg-accent/50"
-                  }`}
-                  onClick={() => solutionFileInputRef.current?.click()}
-                >
-                  <input ref={solutionFileInputRef} type="file" accept=".pdf,.ppt,.pptx,.docx" onChange={handleSolutionFileInputChange} className="hidden" />
-                  {selectedSolutionFile ? (
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-primary">
-                        {selectedSolutionFile.name} ({(selectedSolutionFile.size / 1024 / 1024).toFixed(1)} MB)
-                      </p>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedSolutionFile(null); }}
-                        className="text-xs text-destructive hover:underline"
-                      >
-                        Remove
-                      </button>
+              {sessionSource === "upload" ? (
+                <>
+                  <div
+                    className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                      isDragOver
+                        ? "border-primary/50 bg-primary/5"
+                        : selectedFile
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40 hover:bg-accent/50"
+                    }`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input ref={fileInputRef} type="file" accept=".pdf,.ppt,.pptx,.docx" onChange={handleFileInputChange} className="hidden" />
+                    {selectedFile ? (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-primary">
+                          {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
+                        </p>
+                        <button type="button" onClick={() => setSelectedFile(null)} className="text-xs text-destructive hover:underline">
+                          Remove file
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Drag & drop or click to browse (up to 50MB)</p>
+                        <p className="text-xs text-muted-foreground/60">Supported: PDF, PowerPoint (PPTX), Word (DOCX)</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Solution file */}
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">
+                      Solution File{" "}
+                      <span className="font-normal text-muted-foreground">(optional — AI reference only, never shown to student)</span>
+                    </label>
+                    <div
+                      className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+                        selectedSolutionFile
+                          ? "border-primary/50 bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-accent/50"
+                      }`}
+                      onClick={() => solutionFileInputRef.current?.click()}
+                    >
+                      <input ref={solutionFileInputRef} type="file" accept=".pdf,.ppt,.pptx,.docx" onChange={handleSolutionFileInputChange} className="hidden" />
+                      {selectedSolutionFile ? (
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-primary">
+                            {selectedSolutionFile.name} ({(selectedSolutionFile.size / 1024 / 1024).toFixed(1)} MB)
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setSelectedSolutionFile(null); }}
+                            className="text-xs text-destructive hover:underline"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Click to upload solution file (optional)</p>
+                          <p className="text-xs text-muted-foreground/60">Supported: PDF, PPTX, DOCX</p>
+                        </div>
+                      )}
                     </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <label className="mb-1 block text-sm font-medium text-foreground">
+                    Select Submission *
+                  </label>
+                  {submissions.length === 0 ? (
+                    <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                      No graded submissions found. Submit and grade an assignment first.
+                    </p>
                   ) : (
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Click to upload solution file (optional)</p>
-                      <p className="text-xs text-muted-foreground/60">Supported: PDF, PPTX, DOCX</p>
-                    </div>
+                    <select
+                      value={selectedSubmissionId}
+                      onChange={(e) => setSelectedSubmissionId(e.target.value)}
+                      className="w-full input-style"
+                    >
+                      <option value="">— Select a submission —</option>
+                      {submissions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.display_name || s.student_name}
+                          {s.version_number != null ? ` (v${s.version_number})` : ""}
+                          {s.score != null ? ` — Score: ${s.score}` : ""}
+                        </option>
+                      ))}
+                    </select>
                   )}
+                  <p className="text-xs text-muted-foreground">
+                    The student's handwritten work and the question sheet will be loaded as session material. Grading feedback will be injected into the AI's context.
+                  </p>
                 </div>
-              </div>
+              )}
 
               <div>
                 <label htmlFor="visionInstructions" className="mb-1 block text-sm font-medium text-foreground">

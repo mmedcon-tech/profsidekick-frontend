@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchMySubmissionFile,
-  getMyProfile,
+  getMyEnrollments,
   getMySubmissions,
   submitExam,
 } from "@/lib/sae-api";
@@ -12,7 +12,7 @@ import SAEPdfViewer from "@/components/sae/SAEPdfViewer";
 import type {
   SAEGradingBasis,
   SAEGradingQuestion,
-  SAEStudentMe,
+  SAEStudentEnrollment,
   SAESubmissionResult,
 } from "@/types/sae";
 
@@ -21,9 +21,8 @@ import type {
 type PageState =
   | { kind: "loading" }
   | { kind: "not_enrolled" }
-  | { kind: "main"; profile: SAEStudentMe; submissions: SAESubmissionResult[] }
-  | { kind: "viewing"; profile: SAEStudentMe; submissions: SAESubmissionResult[]; selected: SAESubmissionResult }
-  | { kind: "submitting"; profile: SAEStudentMe; submissions: SAESubmissionResult[] };
+  | { kind: "main"; enrollments: SAEStudentEnrollment[]; selected: SAEStudentEnrollment; submissions: SAESubmissionResult[] }
+  | { kind: "viewing"; enrollments: SAEStudentEnrollment[]; selected: SAEStudentEnrollment; submissions: SAESubmissionResult[]; viewedSub: SAESubmissionResult };
 
 // ── Divider helpers ────────────────────────────────────────────────────────────
 
@@ -41,12 +40,49 @@ function loadStudentDividerPct(): number {
     : Math.min(MAX_PANEL_PCT, Math.max(MIN_PANEL_PCT, parsed));
 }
 
+// ── Shared components ──────────────────────────────────────────────────────────
+
+function StatusBadge({ on, labelOn, labelOff }: { on: boolean; labelOn: string; labelOff: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+      ${on ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-500"}`}>
+      {on ? labelOn : labelOff}
+    </span>
+  );
+}
+
+function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="relative rounded-xl bg-white shadow-xl w-full max-w-md">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+        </div>
+        <div className="px-6 py-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 // ── Root page component ────────────────────────────────────────────────────────
 
 export default function SAEExamPage() {
   const router = useRouter();
   const [pageState, setPageState] = useState<PageState>({ kind: "loading" });
   const [submitError, setSubmitError] = useState("");
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
@@ -55,59 +91,72 @@ export default function SAEExamPage() {
       return;
     }
 
-    getMyProfile()
-      .then((profile) => {
-        if (!profile.is_enrolled) {
+    getMyEnrollments()
+      .then((enrollments) => {
+        if (enrollments.length === 0) {
           setPageState({ kind: "not_enrolled" });
           return;
         }
-        return getMySubmissions().then((submissions) => {
-          setPageState({ kind: "main", profile, submissions });
+        const selected = enrollments[0];
+        return getMySubmissions(selected.assessment_id).then((submissions) => {
+          setPageState({ kind: "main", enrollments, selected, submissions });
         });
       })
       .catch((err: Error) => {
         if (err.message.includes("401")) {
           router.replace("/login?next=/sae/exam");
         } else {
-          // Any other error (403, network, etc.) — treat as not enrolled
           setPageState({ kind: "not_enrolled" });
         }
       });
   }, [router]);
 
+  async function handleSelectEnrollment(assessmentId: string) {
+    const base = pageState as { enrollments: SAEStudentEnrollment[]; selected: SAEStudentEnrollment };
+    const next = base.enrollments.find((e) => e.assessment_id === assessmentId);
+    if (!next) return;
+    const submissions = await getMySubmissions(next.assessment_id);
+    setPageState({ kind: "main", enrollments: base.enrollments, selected: next, submissions });
+  }
+
   async function handleSubmit(handwrittenFile: File, webassignFile: File) {
-    const { profile, submissions } = pageState as {
-      profile: SAEStudentMe;
+    const { enrollments, selected, submissions } = pageState as {
+      enrollments: SAEStudentEnrollment[];
+      selected: SAEStudentEnrollment;
       submissions: SAESubmissionResult[];
     };
-    setPageState({ kind: "submitting", profile, submissions });
     setSubmitError("");
     try {
-      const newSub = await submitExam(handwrittenFile, webassignFile);
+      const newSub = await submitExam(handwrittenFile, webassignFile, selected.assessment_id);
       const updated = [...submissions, newSub];
-      setPageState({ kind: "viewing", profile, submissions: updated, selected: newSub });
+      // Refresh the selected enrollment to update submission_count
+      const freshEnrollments = await getMyEnrollments();
+      const freshSelected = freshEnrollments.find((e) => e.assessment_id === selected.assessment_id) ?? selected;
+      setShowSubmitModal(false);
+      setPageState({ kind: "viewing", enrollments: freshEnrollments, selected: freshSelected, submissions: updated, viewedSub: newSub });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Submission failed.";
       setSubmitError(msg);
-      setPageState({ kind: "main", profile, submissions });
     }
   }
 
-  function handleViewSubmission(selected: SAESubmissionResult) {
+  function handleViewSubmission(viewedSub: SAESubmissionResult) {
     const base = pageState as {
-      profile: SAEStudentMe;
+      enrollments: SAEStudentEnrollment[];
+      selected: SAEStudentEnrollment;
       submissions: SAESubmissionResult[];
     };
-    setPageState({ kind: "viewing", profile: base.profile, submissions: base.submissions, selected });
+    setPageState({ kind: "viewing", enrollments: base.enrollments, selected: base.selected, submissions: base.submissions, viewedSub });
   }
 
   function handleBackFromViewing() {
-    const { profile, submissions } = pageState as {
-      profile: SAEStudentMe;
+    const { enrollments, selected, submissions } = pageState as {
+      enrollments: SAEStudentEnrollment[];
+      selected: SAEStudentEnrollment;
       submissions: SAESubmissionResult[];
-      selected: SAESubmissionResult;
+      viewedSub: SAESubmissionResult;
     };
-    setPageState({ kind: "main", profile, submissions });
+    setPageState({ kind: "main", enrollments, selected, submissions });
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -124,26 +173,14 @@ export default function SAEExamPage() {
     return <NotEnrolledView />;
   }
 
-  if (pageState.kind === "submitting") {
-    return (
-      <div className="min-h-full bg-slate-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
-          <p className="text-slate-700 font-medium">Grading your exam…</p>
-          <p className="mt-1 text-xs text-slate-500">This may take up to 30 seconds.</p>
-        </div>
-      </div>
-    );
-  }
-
   if (pageState.kind === "viewing") {
-    const { profile, selected } = pageState;
+    const { selected, viewedSub } = pageState;
     const fetchFile = (fileType: "handwritten" | "webassign") =>
-      fetchMySubmissionFile(selected.id, fileType);
+      fetchMySubmissionFile(viewedSub.id, fileType);
     return (
       <ResultView
-        profile={profile}
-        submission={selected}
+        enrollment={selected}
+        submission={viewedSub}
         fetchFile={fetchFile}
         onBack={handleBackFromViewing}
       />
@@ -151,219 +188,77 @@ export default function SAEExamPage() {
   }
 
   // kind === "main"
-  const { profile, submissions } = pageState;
-  return (
-    <MainView
-      profile={profile}
-      submissions={submissions}
-      onSubmit={handleSubmit}
-      submitError={submitError}
-      onViewSubmission={handleViewSubmission}
-    />
-  );
-}
-
-// ── Not enrolled view ─────────────────────────────────────────────────────────
-
-function NotEnrolledView() {
-  return (
-    <div className="min-h-full bg-slate-50 px-4 py-10">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
-            Self Assessment Exam
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">My Exam</h1>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">Submit New Assessment</h2>
-          </div>
-          <div className="px-6 py-8 text-center">
-            <p className="text-sm font-medium text-slate-600">
-              You don&apos;t have credits or access to make a submission.
-            </p>
-            <p className="mt-1 text-sm text-slate-500">
-              Contact your instructor if you believe this is an error.
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">My Submissions</h2>
-          </div>
-          <div className="px-6 py-8 text-center">
-            <p className="text-sm text-slate-500">No submissions yet.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main view (enrolled student) ──────────────────────────────────────────────
-
-function MainView({
-  profile,
-  submissions,
-  onSubmit,
-  submitError,
-  onViewSubmission,
-}: {
-  profile: SAEStudentMe;
-  submissions: SAESubmissionResult[];
-  onSubmit: (handwritten: File, webassign: File) => void;
-  submitError: string;
-  onViewSubmission: (sub: SAESubmissionResult) => void;
-}) {
-  const [handwrittenFile, setHandwrittenFile] = useState<File | null>(null);
-  const [webassignFile, setWebassignFile] = useState<File | null>(null);
-
-  const submissionCount = submissions.length;
-  const atLimit = submissionCount >= 5;
-
-  function handleFormSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!handwrittenFile || !webassignFile) return;
-    onSubmit(handwrittenFile, webassignFile);
-  }
-
-  // Display newest-first
+  const { enrollments, selected, submissions } = pageState;
+  const atLimit = selected.submission_count >= 5;
   const sortedSubmissions = [...submissions].sort(
     (a, b) => (b.submission_number ?? 0) - (a.submission_number ?? 0)
   );
 
   return (
-    <div className="min-h-full bg-slate-50 px-4 py-10">
-      <div className="mx-auto max-w-2xl space-y-8">
+    <div className="p-4 sm:p-6">
+    <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* ── Header ─────────────────────────────────────────────────────── */}
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
-            Self Assessment Exam
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">My Exam</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Logged in as{" "}
-            <span className="font-semibold text-slate-800">
-              {profile.display_name}
-            </span>{" "}
-            <span className="text-slate-400">({profile.student_code})</span>
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Assessments</h1>
+          <p className="mt-1 text-sm text-slate-500">View and submit your exam results.</p>
         </div>
+        <button
+          onClick={() => { setSubmitError(""); setShowSubmitModal(true); }}
+          disabled={atLimit}
+          title={atLimit ? "Maximum submissions reached" : undefined}
+          className="shrink-0 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          + Submit Exam
+        </button>
+      </div>
 
-        {/* ── Submit section ──────────────────────────────────────────────── */}
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 pt-5 pb-1 border-b border-slate-100">
-            <h2 className="text-base font-semibold text-slate-900">
-              Submit New Assessment
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5 pb-3">
-              {atLimit
-                ? "Maximum submissions reached"
-                : `Submission ${submissionCount + 1} of 5 allowed`}
-            </p>
+      {/* Assessment selector */}
+      <div className="flex items-center gap-3">
+        <select
+          value={selected.assessment_id}
+          onChange={(e) => handleSelectEnrollment(e.target.value)}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm bg-white min-w-[220px] text-slate-700"
+        >
+          {enrollments.map((e) => (
+            <option key={e.assessment_id} value={e.assessment_id}>
+              {e.assessment_name ?? e.assessment_id}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-slate-400">
+          {selected.submission_count} of 5 submissions used
+        </span>
+      </div>
+
+      {/* Submissions table */}
+      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+        {sortedSubmissions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+            <p className="text-sm">No submissions yet.</p>
+            {!atLimit && (
+              <button
+                onClick={() => { setSubmitError(""); setShowSubmitModal(true); }}
+                className="mt-3 text-sm text-blue-600 hover:underline"
+              >
+                Submit your first exam
+              </button>
+            )}
           </div>
-
-          {atLimit ? (
-            <div className="px-6 py-8 text-center">
-              <p className="text-sm font-medium text-amber-900">
-                You have used all 5 allowed submissions.
-              </p>
-              <p className="mt-1 text-sm text-amber-800">
-                Contact your instructor if you need assistance.
-              </p>
-            </div>
-          ) : (
-            <div className="px-6 pb-6 pt-4">
-              <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-4">
-                <p className="text-sm font-medium text-blue-900 mb-1">
-                  Before you submit
-                </p>
-                <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
-                  <li>Upload your handwritten exam as a single PDF.</li>
-                  <li>
-                    Upload the WebAssign questions PDF your instructor provided.
-                  </li>
-                </ul>
-              </div>
-
-              <form onSubmit={handleFormSubmit} className="space-y-4">
-                <div className="rounded-xl border bg-slate-50 p-4">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Handwritten Exam <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) =>
-                      setHandwrittenFile(e.target.files?.[0] ?? null)
-                    }
-                    className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  {handwrittenFile && (
-                    <p className="mt-1 text-xs text-green-700">
-                      Selected: {handwrittenFile.name}
-                    </p>
-                  )}
-                </div>
-
-                <div className="rounded-xl border bg-slate-50 p-4">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    WebAssign Questions PDF <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) =>
-                      setWebassignFile(e.target.files?.[0] ?? null)
-                    }
-                    className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  {webassignFile && (
-                    <p className="mt-1 text-xs text-green-700">
-                      Selected: {webassignFile.name}
-                    </p>
-                  )}
-                </div>
-
-                {submitError && (
-                  <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    {submitError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={!handwrittenFile || !webassignFile}
-                  className="w-full rounded-md bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
-                >
-                  Submit Exam
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
-
-        {/* ── Submissions history ────────────────────────────────────────── */}
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-slate-900">
-              My Submissions
-            </h2>
-            <span className="text-xs text-slate-500">
-              {submissionCount} of 5 used
-            </span>
-          </div>
-
-          {sortedSubmissions.length === 0 ? (
-            <div className="px-6 py-8 text-center">
-              <p className="text-sm text-slate-500">No submissions yet.</p>
-            </div>
-          ) : (
-            <ul className="divide-y divide-slate-100">
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-slate-50">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">#</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Submitted by</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Score</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Human Review</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
               {sortedSubmissions.map((sub) => {
                 const rj = sub.result_json as Record<string, unknown> | null;
                 const rawScore = rj?.raw_score as number | undefined;
@@ -373,44 +268,183 @@ function MainView({
                     ? `${rawScore} / ${rawMax}`
                     : sub.score !== null
                     ? `${sub.score}%`
-                    : "Grading…";
+                    : "—";
 
                 return (
-                  <li key={sub.id}>
-                    <button
-                      onClick={() => onViewSubmission(sub)}
-                      className="w-full text-left px-6 py-4 hover:bg-slate-50 transition-colors flex items-center justify-between gap-4"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">
-                          Submission #{sub.submission_number ?? "—"}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {new Date(sub.created_at).toLocaleString("en-US", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                          {sub.submitted_by_publisher && " · by instructor"}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-slate-900">
-                          {scoreDisplay}
-                        </p>
-                        {sub.review_required && (
-                          <p className="text-xs text-amber-700 mt-0.5">
-                            Review required
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  </li>
+                  <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">{sub.submission_number ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-600 text-xs">
+                      {new Date(sub.created_at).toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge
+                        on={sub.submitted_by_publisher}
+                        labelOn="Instructor"
+                        labelOff="You"
+                      />
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-800">{scoreDisplay}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge
+                        on={sub.review_required}
+                        labelOn="Required"
+                        labelOff="Not required"
+                      />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleViewSubmission(sub)}
+                        className="rounded border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
                 );
               })}
-            </ul>
-          )}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <p className="mt-3 text-xs text-slate-400">
+        {sortedSubmissions.length} submission{sortedSubmissions.length !== 1 ? "s" : ""} shown
+      </p>
+
+      {/* Submit modal */}
+      {showSubmitModal && (
+        <Modal title="Submit Exam" onClose={() => setShowSubmitModal(false)}>
+          <SubmitForm
+            enrollment={selected}
+            submissionCount={submissions.length}
+            submitError={submitError}
+            onSubmit={handleSubmit}
+            onCancel={() => setShowSubmitModal(false)}
+          />
+        </Modal>
+      )}
+    </div>
+    </div>
+  );
+}
+
+// ── Submit form (inside modal) ────────────────────────────────────────────────
+
+function SubmitForm({
+  enrollment,
+  submissionCount,
+  submitError,
+  onSubmit,
+  onCancel,
+}: {
+  enrollment: SAEStudentEnrollment;
+  submissionCount: number;
+  submitError: string;
+  onSubmit: (handwritten: File, webassign: File) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [handwrittenFile, setHandwrittenFile] = useState<File | null>(null);
+  const [webassignFile, setWebassignFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!handwrittenFile || !webassignFile || submitting) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(handwrittenFile, webassignFile);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleFormSubmit} className="space-y-4">
+      <p className="text-sm text-slate-600">
+        Submitting as{" "}
+        <span className="font-semibold">{enrollment.display_name}</span>{" "}
+        <span className="text-slate-400">({enrollment.student_code})</span>
+        {" "}· Submission {submissionCount + 1} of 5
+      </p>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Student Answer PDF</label>
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={(e) => setHandwrittenFile(e.target.files?.[0] ?? null)}
+          className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium"
+        />
+        {handwrittenFile && (
+          <p className="mt-1 text-xs text-green-700">Selected: {handwrittenFile.name}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Questions PDF</label>
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={(e) => setWebassignFile(e.target.files?.[0] ?? null)}
+          className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium"
+        />
+        {webassignFile && (
+          <p className="mt-1 text-xs text-green-700">Selected: {webassignFile.name}</p>
+        )}
+      </div>
+
+      {submitError && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {submitError}
+        </div>
+      )}
+
+      <div className="flex gap-3 pt-2">
+        <button
+          type="submit"
+          disabled={!handwrittenFile || !webassignFile || submitting}
+          className="flex-1 rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {submitting ? "Grading…" : "Submit & Grade"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={submitting}
+          className="flex-1 rounded-md border border-slate-300 py-2.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ── Not enrolled view ─────────────────────────────────────────────────────────
+
+function NotEnrolledView() {
+  return (
+    <div className="p-4 sm:p-6">
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Assessments</h1>
+        <p className="mt-1 text-sm text-slate-500">View and submit your exam results.</p>
+      </div>
+
+      <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <p className="text-sm font-medium text-slate-600">
+            You don&apos;t have credits or access to make a submission.
+          </p>
+          <p className="mt-1 text-sm text-slate-500">
+            Contact your instructor if you believe this is an error.
+          </p>
         </div>
       </div>
+    </div>
     </div>
   );
 }
@@ -418,12 +452,12 @@ function MainView({
 // ── Result view (full-screen) ─────────────────────────────────────────────────
 
 function ResultView({
-  profile,
+  enrollment,
   submission,
   fetchFile,
   onBack,
 }: {
-  profile: SAEStudentMe;
+  enrollment: SAEStudentEnrollment;
   submission: SAESubmissionResult;
   fetchFile: (fileType: "handwritten" | "webassign") => Promise<ArrayBuffer>;
   onBack: () => void;
@@ -437,9 +471,7 @@ function ResultView({
 
   // ── PDF toggle ────────────────────────────────────────────────────────────
   const [pdfVisible, setPdfVisible] = useState(false);
-  const [activeFile, setActiveFile] = useState<"handwritten" | "webassign">(
-    "handwritten"
-  );
+  const [activeFile, setActiveFile] = useState<"handwritten" | "webassign">("handwritten");
 
   function handlePdfButton(file: "handwritten" | "webassign") {
     if (pdfVisible && activeFile === file) {
@@ -541,9 +573,7 @@ function ResultView({
 
       {overallFeedback && (
         <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <p className="text-sm font-semibold text-slate-500 mb-2">
-            Overall Feedback
-          </p>
+          <p className="text-sm font-semibold text-slate-500 mb-2">Overall Feedback</p>
           <p className="whitespace-pre-wrap text-slate-800">{overallFeedback}</p>
         </div>
       )}
@@ -566,21 +596,12 @@ function ResultView({
           </p>
           <div className="space-y-3">
             {questions.map((q) => (
-              <div
-                key={q.id}
-                className="rounded-lg border border-slate-200 bg-white p-4"
-              >
+              <div key={q.id} className="rounded-lg border border-slate-200 bg-white p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-slate-900">
-                      Question {q.id}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      Confidence: {q.confidence}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      Readability: {q.readability}
-                    </p>
+                    <p className="font-semibold text-slate-900">Question {q.id}</p>
+                    <p className="text-sm text-slate-500">Confidence: {q.confidence}</p>
+                    <p className="text-sm text-slate-500">Readability: {q.readability}</p>
                   </div>
                   <p className="text-lg font-bold text-slate-900">
                     {q.score ?? "N/A"} / {q.max_score}
@@ -608,14 +629,11 @@ function ResultView({
 
                 {q.grading_basis && <GradingBasisPanel basis={q.grading_basis} />}
 
-                <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">
-                  {q.feedback}
-                </p>
+                <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">{q.feedback}</p>
 
                 {q.human_review_required && (
                   <p className="mt-3 rounded-md bg-amber-50 p-2 text-sm text-amber-800">
-                    Instructor review:{" "}
-                    {q.human_review_reason || "Review required."}
+                    Instructor review: {q.human_review_reason || "Review required."}
                   </p>
                 )}
               </div>
@@ -629,7 +647,7 @@ function ResultView({
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
 
-      {/* ── Top bar ──────────────────────────────────────────────────────── */}
+      {/* Top bar */}
       <header className="shrink-0 flex items-center px-4 h-12 bg-white border-b border-slate-200 gap-3">
         <button
           onClick={onBack}
@@ -644,10 +662,10 @@ function ResultView({
         <span className="text-slate-300">|</span>
         <div className="min-w-0 flex-1">
           <span className="text-sm font-semibold text-slate-800 truncate">
-            {profile.display_name}
+            {enrollment.display_name}
           </span>
           <span className="ml-2 font-mono text-xs text-slate-500">
-            {profile.student_code}
+            {enrollment.student_code}
           </span>
           <span className="ml-2 text-xs text-slate-400">
             · Submission #{submission.submission_number ?? "—"}
@@ -664,7 +682,7 @@ function ResultView({
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            Handwritten Solutions
+            Student Answer PDF
           </button>
           <button
             onClick={() => handlePdfButton("webassign")}
@@ -674,12 +692,12 @@ function ResultView({
                 : "bg-slate-100 text-slate-600 hover:bg-slate-200"
             }`}
           >
-            WebAssign Questions
+            Questions PDF
           </button>
         </div>
       </header>
 
-      {/* ── Content ──────────────────────────────────────────────────────── */}
+      {/* Content */}
       {pdfVisible ? (
         <div ref={containerRef} className="flex flex-1 min-h-0 select-none">
           <div
@@ -708,8 +726,8 @@ function ResultView({
               fetchPdf={fetchActivePdf}
               label={
                 activeFile === "handwritten"
-                  ? (submission.handwritten_filename ?? "Handwritten Solutions")
-                  : (submission.webassign_filename ?? "WebAssign Questions")
+                  ? (submission.handwritten_filename ?? "Student Answer PDF")
+                  : (submission.webassign_filename ?? "Questions PDF")
               }
             />
           </div>
@@ -730,22 +748,10 @@ function GradingBasisPanel({ basis }: { basis: SAEGradingBasis }) {
         Grading Basis
       </p>
       <div className="mt-2 grid gap-2 text-sm text-slate-700 md:grid-cols-4">
-        <p>
-          <span className="font-medium text-slate-900">Understanding:</span>{" "}
-          {basis.understanding_level}
-        </p>
-        <p>
-          <span className="font-medium text-slate-900">Error:</span>{" "}
-          {basis.error_severity}
-        </p>
-        <p>
-          <span className="font-medium text-slate-900">Completeness:</span>{" "}
-          {basis.work_completeness}
-        </p>
-        <p>
-          <span className="font-medium text-slate-900">Recommended:</span>{" "}
-          {basis.recommended_credit_percent}%
-        </p>
+        <p><span className="font-medium text-slate-900">Understanding:</span> {basis.understanding_level}</p>
+        <p><span className="font-medium text-slate-900">Error:</span> {basis.error_severity}</p>
+        <p><span className="font-medium text-slate-900">Completeness:</span> {basis.work_completeness}</p>
+        <p><span className="font-medium text-slate-900">Recommended:</span> {basis.recommended_credit_percent}%</p>
       </div>
     </div>
   );

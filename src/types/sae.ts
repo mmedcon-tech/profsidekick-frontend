@@ -8,6 +8,9 @@ export interface SAEAssessmentRow {
   name: string;
   description: string | null;
   is_active: boolean;
+  grading_prompt_template_id: string | null;
+  grading_prompt_snapshot: string | null;
+  avatar_id: string | null;
   created_at: string;
 }
 
@@ -70,6 +73,25 @@ export interface SAESubmissionResultPublisher extends SAESubmissionResult {
 /** Returned by GET /api/sae/publisher/students/{id} — now includes all submissions. */
 export interface SAEStudentDetail extends SAEStudentRow {
   submissions: SAESubmissionResultPublisher[];
+  grading_prompt_snapshot: string | null;
+}
+
+/**
+ * One active assessment enrolment for the authenticated student.
+ * Returned as an array by GET /api/sae/student/enrollments.
+ * All fields are guaranteed non-null unlike SAEStudentMe.
+ */
+export interface SAEStudentEnrollment {
+  id: string;
+  student_number: number;
+  student_code: string;
+  display_name: string;
+  is_activated: boolean;
+  submission_count: number;
+  country_of_origin: string | null;
+  curriculum: string | null;
+  assessment_id: string;
+  assessment_name: string | null;
 }
 
 /**
@@ -87,6 +109,8 @@ export interface SAEStudentMe {
   submission_count?: number;
   country_of_origin?: string | null;
   curriculum?: string | null;
+  assessment_id?: string;
+  assessment_name?: string | null;
 }
 
 export interface SAERegenerateResponse {

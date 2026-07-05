@@ -10,6 +10,8 @@ import {
   regenerateStudentAccess,
 } from "@/lib/sae-api";
 import type { SAEAssessmentRow, SAEStudentRow } from "@/types/sae";
+import { avatarApi, publisherPromptApi, type PromptTemplateResponse } from "@/lib/avatarApi";
+import type { AvatarSummary } from "@/types/avatar";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
@@ -190,6 +192,10 @@ export default function PublisherSAEPage() {
   const [showNewAssessment, setShowNewAssessment] = useState(false);
   const [newAssessmentName, setNewAssessmentName] = useState("");
   const [newAssessmentDesc, setNewAssessmentDesc] = useState("");
+  const [newAssessmentPromptId, setNewAssessmentPromptId] = useState<string>("");
+  const [newAssessmentAvatarId, setNewAssessmentAvatarId] = useState<string>("");
+  const [gradingPrompts, setGradingPrompts] = useState<PromptTemplateResponse[]>([]);
+  const [avatarList, setAvatarList] = useState<AvatarSummary[]>([]);
   const [creatingAssessment, setCreatingAssessment] = useState(false);
 
   // Scroll log to bottom on new entries
@@ -290,7 +296,7 @@ export default function PublisherSAEPage() {
     let sseResponse: Response | null = null;
     try {
       sseResponse = await fetch(
-        `${API}/api/sae/publisher/students/${soStudent.id}/grade/events/${requestId}`,
+        `${API}/api/autograder/grade/events/${requestId}`,
         { headers: authHeaders() }
       );
       if (!sseResponse.ok || !sseResponse.body) {
@@ -341,9 +347,11 @@ export default function PublisherSAEPage() {
     formData.append("webassign_pdf", waFile);
     formData.append("request_id", requestId);
 
+    const targetStudentId = soStudent.id;
+
     try {
       const resp = await fetch(
-        `${API}/api/sae/publisher/students/${soStudent.id}/submit`,
+        `${API}/api/sae/publisher/students/${targetStudentId}/submit`,
         { method: "POST", headers: authHeaders(), body: formData }
       );
 
@@ -351,11 +359,9 @@ export default function PublisherSAEPage() {
 
       if (!resp.ok) throw new Error(await resp.text());
 
-      setGradingPhase("done");
-      toast(`Submission for ${soStudent.display_name} graded successfully.`);
       setShowSubmitModal(false);
       resetSubmitModal();
-      loadStudents(search || undefined);
+      router.push(`/publisher/sae/students/${targetStudentId}`);
     } catch (err) {
       await sseLoop;
       if (gradingPhase !== "error") {
@@ -373,21 +379,20 @@ export default function PublisherSAEPage() {
   // Fallback: plain POST when SSE connection itself fails
   async function submitWithoutSSE(requestId: string) {
     setGradingPhase("grading");
+    const targetStudentId = soStudent!.id;
     const formData = new FormData();
     formData.append("student_answer", hwFile!);
     formData.append("webassign_pdf", waFile!);
     formData.append("request_id", requestId);
     try {
       const resp = await fetch(
-        `${API}/api/sae/publisher/students/${soStudent!.id}/submit`,
+        `${API}/api/sae/publisher/students/${targetStudentId}/submit`,
         { method: "POST", headers: authHeaders(), body: formData }
       );
       if (!resp.ok) throw new Error(await resp.text());
-      setGradingPhase("done");
-      toast(`Submission for ${soStudent!.display_name} saved.`);
       setShowSubmitModal(false);
       resetSubmitModal();
-      loadStudents(search || undefined);
+      router.push(`/publisher/sae/students/${targetStudentId}`);
     } catch (err) {
       setGradingPhase("error");
       setSubmitError(err instanceof Error ? err.message : "Submission failed.");
@@ -421,6 +426,16 @@ export default function PublisherSAEPage() {
   // ── Assessments & student list ────────────────────────────────────────────
 
   useEffect(() => { loadAssessments(); loadStudents(); }, []);
+
+  useEffect(() => {
+    if (!showNewAssessment) return;
+    publisherPromptApi.listTemplates('grading.assessment')
+      .then(setGradingPrompts)
+      .catch(() => setGradingPrompts([]));
+    avatarApi.list()
+      .then((res) => setAvatarList(res.avatars))
+      .catch(() => setAvatarList([]));
+  }, [showNewAssessment]);
 
   async function loadAssessments() {
     try {
@@ -469,17 +484,28 @@ export default function PublisherSAEPage() {
     }
   }
 
+  function resetNewAssessmentModal() {
+    setShowNewAssessment(false);
+    setNewAssessmentName("");
+    setNewAssessmentDesc("");
+    setNewAssessmentPromptId("");
+    setNewAssessmentAvatarId("");
+  }
+
   async function handleCreateAssessment(e: React.FormEvent) {
     e.preventDefault();
     if (!newAssessmentName.trim()) return;
     setCreatingAssessment(true);
     try {
-      const a = await createAssessment(newAssessmentName.trim(), newAssessmentDesc.trim() || undefined);
+      const a = await createAssessment(
+        newAssessmentName.trim(),
+        newAssessmentDesc.trim() || undefined,
+        newAssessmentPromptId || null,
+        newAssessmentAvatarId || null,
+      );
       setAssessments((prev) => [a, ...prev]);
       setSelectedAssessmentId(a.id);
-      setShowNewAssessment(false);
-      setNewAssessmentName("");
-      setNewAssessmentDesc("");
+      resetNewAssessmentModal();
       toast(`Assessment "${a.name}" created.`);
     } catch (err: unknown) {
       toast(err instanceof Error ? err.message : "Failed to create assessment.", "error");
@@ -521,7 +547,7 @@ export default function PublisherSAEPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <div className="max-w-6xl mx-auto space-y-6">
 
       {/* Toast stack */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
@@ -534,26 +560,23 @@ export default function PublisherSAEPage() {
         ))}
       </div>
 
-      <div className="mx-auto max-w-6xl px-6 py-10">
-
-        {/* Page header */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-blue-600">Publisher Dashboard</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">Self Assessment Exam</h1>
-            <p className="mt-1 text-sm text-slate-500">Manage pre-generated student slots and their submissions.</p>
-          </div>
-          <button
-            onClick={() => setShowGenerate(true)}
-            disabled={!selectedAssessmentId}
-            title={!selectedAssessmentId ? "Select or create an assessment first" : undefined}
-            className="shrink-0 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            + Generate Students
-          </button>
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Assessments</h1>
+          <p className="mt-1 text-sm text-slate-500">Manage pre-generated student slots and their submissions.</p>
         </div>
+        <button
+          onClick={() => setShowGenerate(true)}
+          disabled={!selectedAssessmentId}
+          title={!selectedAssessmentId ? "Select or create an assessment first" : undefined}
+          className="shrink-0 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          + Generate Students
+        </button>
+      </div>
 
-        {/* New batch banner */}
+      {/* New batch banner */}
         {newBatch && newBatch.length > 0 && (
           <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
             <div className="flex items-center justify-between mb-3">
@@ -683,7 +706,6 @@ export default function PublisherSAEPage() {
         <p className="mt-3 text-xs text-slate-400">
           {students.length} student{students.length !== 1 ? "s" : ""} shown
         </p>
-      </div>
 
       {/* ── Generate modal ─────────────────────────────────────────────────── */}
       {showGenerate && (
@@ -792,14 +814,14 @@ export default function PublisherSAEPage() {
                 </p>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Handwritten Exam PDF</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Student Answer PDF</label>
                   <input type="file" accept=".pdf" onChange={(e) => setHwFile(e.target.files?.[0] ?? null)}
                     className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">WebAssign PDF</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Questions PDF</label>
                   <input type="file" accept=".pdf" onChange={(e) => setWaFile(e.target.files?.[0] ?? null)}
                     className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium"
                   />
@@ -893,7 +915,7 @@ export default function PublisherSAEPage() {
       {showNewAssessment && (
         <Modal
           title="New Assessment"
-          onClose={() => { setShowNewAssessment(false); setNewAssessmentName(""); setNewAssessmentDesc(""); }}
+          onClose={resetNewAssessmentModal}
         >
           <form onSubmit={handleCreateAssessment} className="space-y-4">
             <div>
@@ -917,6 +939,49 @@ export default function PublisherSAEPage() {
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Linked avatar (optional)</label>
+              <select
+                value={newAssessmentAvatarId}
+                onChange={(e) => setNewAssessmentAvatarId(e.target.value)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+              >
+                <option value="">No avatar</option>
+                {avatarList.map((av) => (
+                  <option key={av.id} value={av.id}>{av.name}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-400">
+                Linking an avatar snapshots its grading prompt at creation. You can change this later from the avatar&apos;s page.
+              </p>
+            </div>
+            {!newAssessmentAvatarId && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Grading prompt override (optional)</label>
+                <select
+                  value={newAssessmentPromptId}
+                  onChange={(e) => setNewAssessmentPromptId(e.target.value)}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">System default</option>
+                  {gradingPrompts.filter((p) => p.is_system).length > 0 && (
+                    <optgroup label="System Templates">
+                      {gradingPrompts.filter((p) => p.is_system).map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {gradingPrompts.filter((p) => !p.is_system).length > 0 && (
+                    <optgroup label="My Prompts">
+                      {gradingPrompts.filter((p) => !p.is_system).map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <p className="mt-1 text-xs text-slate-400">The selected prompt is snapshotted at creation — all students in this assessment are graded against the same frozen rubric.</p>
+              </div>
+            )}
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
@@ -927,7 +992,7 @@ export default function PublisherSAEPage() {
               </button>
               <button
                 type="button"
-                onClick={() => { setShowNewAssessment(false); setNewAssessmentName(""); setNewAssessmentDesc(""); }}
+                onClick={resetNewAssessmentModal}
                 className="flex-1 rounded-md border border-slate-300 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
               >
                 Cancel
@@ -936,7 +1001,7 @@ export default function PublisherSAEPage() {
           </form>
         </Modal>
       )}
-    </main>
+    </div>
   );
 }
 

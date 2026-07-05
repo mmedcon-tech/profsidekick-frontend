@@ -18,7 +18,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { templateApi, ApiError } from '@/lib/avatarApi';
+import { templateApi, adminPromptApi, ApiError, type PromptTemplateResponse } from '@/lib/avatarApi';
 import type {
   AvatarTemplateDetailResponse,
   AvatarTemplateRoleResponse,
@@ -288,6 +288,91 @@ function PromptBlock({
   );
 }
 
+function GradingPromptBlock() {
+  const [tmpl,    setTmpl]    = useState<PromptTemplateResponse | null>(null);
+  const [body,    setBody]    = useState('');
+  const [open,    setOpen]    = useState(true);
+  const [saving,  setSaving]  = useState(false);
+  const [error,   setError]   = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    adminPromptApi.list('grading.assessment', true).then((rows) => {
+      const sys = rows.find((r) => r.is_system) ?? rows[0] ?? null;
+      setTmpl(sys);
+      setBody(sys?.body ?? '');
+    }).catch(() => {});
+  }, []);
+
+  const handleSave = async () => {
+    if (!tmpl) return;
+    setSaving(true); setError(null);
+    try {
+      const updated = await adminPromptApi.update(tmpl.id, {
+        name: tmpl.name,
+        use_case: tmpl.use_case,
+        body: body.trim(),
+        description: tmpl.description ?? undefined,
+      });
+      setTmpl(updated);
+      setSuccess(`Grading prompt saved (v${updated.version})`);
+      setTimeout(() => setSuccess(null), 4000);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+      <button
+        onClick={() => setOpen((p) => !p)}
+        className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 dark:bg-gray-900 rounded-xl transition-colors"
+      >
+        <div className="flex-1 min-w-0 pr-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-gray-900 dark:text-gray-100">Grading Prompt</p>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">
+              grading.assessment
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Used by the autograder when no assessment-level override is set. Editing bumps the version.
+          </p>
+        </div>
+        {open ? <ChevronUp size={16} className="text-gray-400 flex-shrink-0" /> : <ChevronDown size={16} className="text-gray-400 flex-shrink-0" />}
+      </button>
+      {open && (
+        <div className="px-5 pb-5 border-t border-gray-100 dark:border-gray-800 space-y-3">
+          {error   && <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs">{error}</div>}
+          {success && <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs">{success}</div>}
+          {!tmpl ? (
+            <p className="mt-4 text-sm text-gray-400">Loading grading prompt…</p>
+          ) : (
+            <>
+              <textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={12}
+                placeholder="Write the grading system prompt here…"
+                className="w-full mt-4 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm font-mono resize-y"
+              />
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-300 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium text-sm"
+              >
+                <Save size={15} /> {saving ? 'Saving…' : 'Save Grading Prompt'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PromptsTab({ template, onReload }: {
   template: AvatarTemplateDetailResponse;
   onReload: () => void;
@@ -396,6 +481,9 @@ function PromptsTab({ template, onReload }: {
         rows={6}
         placeholder="Analyze the following document and extract key concepts, learning objectives, and assessment criteria..."
       />
+
+      {/* Grading Prompt — saved to prompt_templates table, independent of avatar template versions */}
+      <GradingPromptBlock />
 
       {/* Change notes */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">

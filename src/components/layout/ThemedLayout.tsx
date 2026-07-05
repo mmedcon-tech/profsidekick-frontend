@@ -23,6 +23,9 @@ function getTitle(pathname: string): string {
   if (pathname.includes("/templates")) return "Avatar Templates"
   if (pathname.includes("/models")) return "3D Model Catalog"
   if (pathname.includes("/users")) return "User Management"
+  // SAE: subscriber exam page gets its own title; all other SAE pages = "Assessments"
+  if (pathname === "/sae/exam") return "My Assessments"
+  if (pathname.includes("/sae")) return "Assessments"
   return "MyOS"
 }
 
@@ -30,7 +33,12 @@ function ThemedLayoutInner({ children }: { children: React.ReactNode }) {
   const { isLoading } = useAuth()
   const pathname = usePathname()
   const title = getTitle(pathname)
-  const isFullScreen = pathname.includes("/run") || pathname.includes("/chat")
+  // Full-screen routes: no content padding so split-pane views fill available height
+  const isFullScreen =
+    pathname.includes("/run") ||
+    pathname.includes("/chat") ||
+    pathname === "/sae/exam" ||
+    pathname.includes("/sae/students/")
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   if (isLoading) {

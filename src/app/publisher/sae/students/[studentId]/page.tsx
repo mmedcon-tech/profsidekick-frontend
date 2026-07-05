@@ -89,6 +89,7 @@ function FeedbackPanel({
   );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [promptExpanded, setPromptExpanded] = useState(false);
 
   // Reset edit state when the displayed submission changes
   useEffect(() => {
@@ -255,6 +256,28 @@ function FeedbackPanel({
                 <li key={i}>{r}</li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {detail.grading_prompt_snapshot && (
+          <div className="rounded-lg border border-slate-200 bg-slate-50">
+            <button
+              type="button"
+              onClick={() => setPromptExpanded((v) => !v)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Grading Prompt Used
+              </p>
+              <span className="text-xs text-slate-400">{promptExpanded ? "▲ hide" : "▼ show"}</span>
+            </button>
+            {promptExpanded && (
+              <div className="border-t border-slate-200 px-4 pb-4 pt-3">
+                <pre className="whitespace-pre-wrap text-xs text-slate-700 font-mono leading-relaxed max-h-64 overflow-y-auto">
+                  {detail.grading_prompt_snapshot}
+                </pre>
+              </div>
+            )}
           </div>
         )}
 
@@ -539,7 +562,7 @@ export default function PublisherStudentReviewPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-full items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 rounded-full border-2 border-slate-300 border-t-blue-600 animate-spin" />
           <p className="text-sm text-slate-500">Loading submission…</p>
@@ -550,7 +573,7 @@ export default function PublisherStudentReviewPage() {
 
   if (loadError || !detail) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50 p-6 text-center">
+      <div className="flex h-full items-center justify-center bg-slate-50 p-6 text-center">
         <div>
           <p className="text-base font-semibold text-slate-800">
             Could not load submission
@@ -571,7 +594,7 @@ export default function PublisherStudentReviewPage() {
   const showMultiSelector = submissions.length > 1;
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col h-full bg-white overflow-hidden">
 
       {/* ── Top bar ───────────────────────────────────────────────────────── */}
       <header className="shrink-0 flex items-center px-4 h-12 bg-white border-b border-slate-200 gap-3">
@@ -606,7 +629,7 @@ export default function PublisherStudentReviewPage() {
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              Handwritten Solutions
+              Student Answer PDF
             </button>
             <button
               onClick={() => handlePdfButton("webassign")}
@@ -616,7 +639,7 @@ export default function PublisherStudentReviewPage() {
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              WebAssign Questions
+              Questions PDF
             </button>
           </div>
         )}
@@ -679,8 +702,8 @@ export default function PublisherStudentReviewPage() {
               fetchPdf={fetchActivePdf}
               label={
                 activeFile === "handwritten"
-                  ? (selectedSub?.handwritten_filename ?? "Handwritten Solutions")
-                  : (selectedSub?.webassign_filename ?? "WebAssign Questions")
+                  ? (selectedSub?.handwritten_filename ?? "Student Answer PDF")
+                  : (selectedSub?.webassign_filename ?? "Questions PDF")
               }
             />
           </div>

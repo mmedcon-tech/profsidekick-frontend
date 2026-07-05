@@ -289,6 +289,16 @@ export default function CourseDetailPage() {
             </button>
           </div>
         )}
+
+        {!isPublisher && course.allow_subscriber_sessions && (
+          <button
+            onClick={handleCreateSession}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            New Session
+          </button>
+        )}
       </div>
 
       {/* Subscriber eligibility warnings */}

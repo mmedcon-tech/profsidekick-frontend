@@ -398,20 +398,6 @@ export interface CodeRedeemResult {
   programs_enrolled: string[]
 }
 
-export const subscriptionApi = {
-  subscribe: (avatarId: string) =>
-    req<any>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'POST'),
-  unsubscribe: (avatarId: string) =>
-    req<void>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'DELETE'),
-  checkStatus: (avatarId: string) =>
-    req<{ subscribed: boolean; subscription: any }>(
-      `/api/subscriber/avatars/${avatarId}/subscription-status`,
-    ),
-  list: () => req<{ subscriptions: any[]; total: number }>('/api/subscriber/avatars'),
-  redeemCode: (code: string) =>
-    req<CodeRedeemResult>('/api/avatar-access-codes/redeem', 'POST', { code }),
-};
-
 // ─── Subscriptions ───────────────────────────────────────────────────────────
 
 export const subscriptionApi = {
@@ -421,12 +407,114 @@ export const subscriptionApi = {
   unsubscribe: (avatarId: string) =>
     req<void>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'DELETE'),
 
-  status: (avatarId: string) =>
+  checkStatus: (avatarId: string) =>
     req<SubscriptionStatusResponse>(`/api/subscriber/avatars/${avatarId}/subscription-status`),
 
   list: () =>
     req<SubscriptionListResponse>('/api/subscriber/avatars'),
+
+  redeemCode: (code: string) =>
+    req<CodeRedeemResult>('/api/avatar-access-codes/redeem', 'POST', { code }),
 };
+
+// ─── Prompt Templates ────────────────────────────────────────────────────────
+
+export interface PromptTemplateResponse {
+  id: string
+  name: string
+  description: string | null
+  use_case: string
+  body: string
+  is_system: boolean
+  is_active: boolean
+  version: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PromptTemplateCreate {
+  name: string
+  use_case: string
+  body: string
+  description?: string
+}
+
+export interface PromptTemplateUpdate {
+  name?: string
+  description?: string
+  use_case?: string
+  body?: string
+}
+
+export interface AvatarPromptConfigResponse {
+  id: string
+  avatar_id: string
+  prompt_template_id: string | null
+  use_case: string
+  is_enabled: boolean
+  override_body: string | null
+  override_name: string | null
+  pinned_version: number | null
+  is_custom: boolean
+  created_at: string
+  updated_at: string
+  is_stale: boolean | null
+}
+
+export interface AvatarPromptConfigUpsert {
+  prompt_template_id?: string | null
+  is_enabled: boolean
+  override_body?: string | null
+  override_name?: string | null
+  is_custom: boolean
+}
+
+export const adminPromptApi = {
+  list: (useCase?: string, activeOnly = false) => {
+    const params = new URLSearchParams()
+    if (useCase) params.set('use_case', useCase)
+    if (activeOnly) params.set('active_only', 'true')
+    const qs = params.toString()
+    return req<PromptTemplateResponse[]>(`/api/admin/prompt-templates${qs ? `?${qs}` : ''}`)
+  },
+  get: (id: string) =>
+    req<PromptTemplateResponse>(`/api/admin/prompt-templates/${id}`),
+  create: (data: PromptTemplateCreate) =>
+    req<PromptTemplateResponse>('/api/admin/prompt-templates', 'POST', data),
+  update: (id: string, data: PromptTemplateUpdate) =>
+    req<PromptTemplateResponse>(`/api/admin/prompt-templates/${id}`, 'PUT', data),
+  deactivate: (id: string) =>
+    req<void>(`/api/admin/prompt-templates/${id}`, 'DELETE'),
+}
+
+export const publisherPromptApi = {
+  listTemplates: (useCase?: string) => {
+    const qs = useCase ? `?use_case=${encodeURIComponent(useCase)}` : ''
+    return req<PromptTemplateResponse[]>(`/api/publisher/prompt-templates${qs}`)
+  },
+  create: (data: PromptTemplateCreate) =>
+    req<PromptTemplateResponse>('/api/publisher/prompt-templates', 'POST', data),
+  update: (id: string, data: PromptTemplateUpdate) =>
+    req<PromptTemplateResponse>(`/api/publisher/prompt-templates/${id}`, 'PUT', data),
+  deactivate: (id: string) =>
+    req<void>(`/api/publisher/prompt-templates/${id}`, 'DELETE'),
+  listUseCases: () =>
+    req<string[]>('/api/prompt-use-cases'),
+  listConfigs: (avatarId: string) =>
+    req<AvatarPromptConfigResponse[]>(`/api/avatars/${avatarId}/prompt-configs`),
+  upsertConfig: (avatarId: string, useCase: string, data: AvatarPromptConfigUpsert) =>
+    req<AvatarPromptConfigResponse>(
+      `/api/avatars/${avatarId}/prompt-configs/${encodeURIComponent(useCase)}`,
+      'PUT',
+      data,
+    ),
+  deleteConfig: (avatarId: string, useCase: string) =>
+    req<void>(
+      `/api/avatars/${avatarId}/prompt-configs/${encodeURIComponent(useCase)}`,
+      'DELETE',
+    ),
+}
 
 // ─── Admin ───────────────────────────────────────────────────────────────────
 

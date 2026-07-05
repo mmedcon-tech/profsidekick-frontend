@@ -171,6 +171,9 @@ export default function AutograderSubmitPage() {
   const [createdCode, setCreatedCode] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
 
+  // Avatar override (optional — enables per-avatar grading prompt)
+  const [avatarId, setAvatarId] = useState("");
+
   // Step 2 — files
   const [handwrittenFile, setHandwrittenFile] = useState<File | null>(null);
   const [webassignFile, setWebassignFile] = useState<File | null>(null);
@@ -350,6 +353,7 @@ export default function AutograderSubmitPage() {
     formData.append("request_id", requestId);
     formData.append("student_answer", handwrittenFile);
     formData.append("webassign_pdf", webassignFile);
+    if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
 
     try {
       const resp = await fetch(`${API}/api/autograder/grade`, {
@@ -389,6 +393,7 @@ export default function AutograderSubmitPage() {
     formData.append("request_id", requestId);
     formData.append("student_answer", handwrittenFile!);
     formData.append("webassign_pdf", webassignFile!);
+    if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
     try {
       const resp = await fetch(`${API}/api/autograder/grade`, {
         method: "POST",
@@ -585,6 +590,30 @@ export default function AutograderSubmitPage() {
             </div>
           )}
         </div>
+
+        {/* ── Optional: Avatar ID ── */}
+        {resolved && (
+          <div className="mt-4 rounded-xl border bg-white p-6 shadow-sm">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Avatar Override <span className="normal-case font-normal text-slate-400 ml-1">(optional)</span>
+            </h2>
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Avatar ID
+              </label>
+              <input
+                value={avatarId}
+                onChange={(e) => setAvatarId(e.target.value)}
+                placeholder="Paste avatar UUID to use its configured grading prompt"
+                disabled={isGrading}
+                className="w-full rounded-md border border-slate-300 p-2.5 text-sm font-mono disabled:opacity-50"
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Leave blank to use the platform default grading prompt.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ── Step 2: Files ── */}
         {resolved && (

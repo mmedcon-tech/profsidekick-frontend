@@ -2,14 +2,13 @@
 
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
-import { tr } from "@/lib/v2/i18n"
 import { useCourses } from "@/hooks/useCourses"
 import { useSubscriberAnalytics } from "@/hooks/useSubscriberAnalytics"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import {
   GraduationCap, Clock3, Award, TrendingUp,
-  ArrowRight, ArrowLeft, Play, ChevronRight, Info,
+  ArrowRight, Play, ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -87,16 +86,19 @@ function MiniCourseCard({
 }: {
   course: {
     id: string
-    name: { en: string; ar: string }
-    department: { en: string; ar: string }
+    name: string
+    department: string
     status: string
     progress: number
-    sessions: unknown[]
+    sessionCount: number
   }
   onOpen: (id: string) => void
 }) {
-  const lang = "en" as "en" | "ar"
   const statusKey = (course.status ?? "not-started") as keyof typeof STATUS_STYLES
+  const statusLabel =
+    statusKey === "in-progress" ? "In Progress"
+    : statusKey === "completed" ? "Completed"
+    : "Not Started"
 
   return (
     <div
@@ -104,16 +106,16 @@ function MiniCourseCard({
       onClick={() => onOpen(course.id)}
       role="button"
       tabIndex={0}
-      aria-label={`Open ${course.name[lang]}`}
+      aria-label={`Open ${course.name}`}
       onKeyDown={(e) => e.key === "Enter" && onOpen(course.id)}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {course.name[lang]}
+            {course.name}
           </p>
           <p className="mt-0.5 truncate text-xs text-gray-400 dark:text-gray-500">
-            {course.department[lang]}
+            {course.department}
           </p>
         </div>
         <span
@@ -122,13 +124,13 @@ function MiniCourseCard({
             STATUS_STYLES[statusKey] ?? STATUS_STYLES["not-started"]
           )}
         >
-          {statusKey === "in-progress" ? "In Progress" : statusKey === "completed" ? "Completed" : "Not Started"}
+          {statusLabel}
         </span>
       </div>
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
-          <span>{tr("progress", lang)}</span>
+          <span>Progress</span>
           <span>{course.progress ?? 0}%</span>
         </div>
         <Progress value={course.progress ?? 0} className="h-1.5" />
@@ -136,7 +138,7 @@ function MiniCourseCard({
 
       <div className="flex items-center justify-between">
         <span className="text-xs text-gray-400 dark:text-gray-500">
-          {course.sessions.length} {tr("sessions", lang)}
+          {course.sessionCount} {course.sessionCount === 1 ? "session" : "sessions"}
         </span>
         <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600 transition-transform group-hover:translate-x-0.5" />
       </div>
@@ -149,9 +151,6 @@ function MiniCourseCard({
 export default function SubscriberDashboardPage() {
   const { user } = useAuth()
   const router = useRouter()
-  const lang = "en" as "en" | "ar"
-  const dir  = "ltr" as "ltr" | "rtl"
-  const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight
 
   const { data: analytics, loading: loadingAnalytics } = useSubscriberAnalytics()
   const { courses: apiCourses, loading: loadingCourses } = useCourses()
@@ -160,21 +159,20 @@ export default function SubscriberDashboardPage() {
 
   const onOpenCourse = (id: string) => router.push(`/subscriber/courses/${id}`)
 
-  // Map API courses to UI structure — no dummy data
   const visibleCourses = apiCourses.map((c) => {
-    const progressData = analytics?.course_progress?.find((p: any) => p.course_id === c.course_id)
-    const progress = progressData ? progressData.completion_pct : 0
+    const progressData = analytics?.course_progress?.find((p) => p.course_id === c.course_id)
+    const progress = progressData ? Math.round(progressData.completion_pct) : 0
     let status = "not-started"
     if (progress > 0 && progress < 100) status = "in-progress"
-    if (progress === 100) status = "completed"
+    if (progress >= 100) status = "completed"
 
     return {
       id: c.course_id,
-      name:       { en: c.name || "Unknown", ar: c.name || "Unknown" },
-      department: { en: c.department || "General", ar: c.department || "General" },
+      name: c.name || "Unknown",
+      department: c.department || "General",
       status,
       progress,
-      sessions: [] as unknown[],
+      sessionCount: 0,
     }
   })
 
@@ -184,7 +182,6 @@ export default function SubscriberDashboardPage() {
     ? Math.round(visibleCourses.reduce((s, c) => s + (c.progress ?? 0), 0) / visibleCourses.length)
     : 0
 
-  const totalSessionsCompleted = analytics?.total_sessions_completed ?? 0
   const hoursSpent = Math.round((analytics?.total_time_spent_sec ?? 0) / 3600)
   const recentRuns = analytics?.recent_assessments ?? []
 
@@ -194,7 +191,7 @@ export default function SubscriberDashboardPage() {
       {/* Welcome header */}
       <div className="flex flex-col gap-1">
         <p className="text-xs font-medium uppercase tracking-widest text-gray-400 dark:text-gray-500">
-          {tr("welcomeBack", lang)}, {user?.firstName}
+          Welcome back, {user?.firstName}
         </p>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
           My Learning
@@ -212,23 +209,23 @@ export default function SubscriberDashboardPage() {
           <>
             <StatCard
               icon={TrendingUp}
-              label={tr("overallProgress", lang)}
+              label="Overall Progress"
               value={`${overall}%`}
               accent
             />
             <StatCard
               icon={GraduationCap}
-              label={tr("coursesEnrolled", lang)}
+              label="Courses Enrolled"
               value={`${visibleCourses.length}`}
             />
             <StatCard
               icon={Clock3}
-              label={tr("hoursThisMonth", lang)}
+              label="Hours This Month"
               value={hoursSpent > 0 ? `${hoursSpent}h` : "—"}
             />
             <StatCard
               icon={Award}
-              label={tr("certificatesEarned", lang)}
+              label="Certificates"
               value={`${completed.length}`}
             />
           </>
@@ -247,14 +244,14 @@ export default function SubscriberDashboardPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
-              {tr("continueLearning", lang)}
+              Continue Learning
             </h2>
             <button
               onClick={() => router.push("/subscriber/courses")}
               className="flex items-center gap-1 rounded text-xs text-blue-600 dark:text-blue-400 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="View all courses"
             >
-              {tr("viewAll", lang)} <Arrow className="h-3 w-3" />
+              View All <ArrowRight className="h-3 w-3" />
             </button>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -273,7 +270,7 @@ export default function SubscriberDashboardPage() {
             className="mt-4"
             onClick={() => router.push("/subscriber/marketplace")}
           >
-            Browse Marketplace <Arrow className="ml-1.5 h-4 w-4" />
+            Browse Marketplace <ArrowRight className="ml-1.5 h-4 w-4" />
           </Button>
         </div>
       ) : null}
@@ -282,7 +279,7 @@ export default function SubscriberDashboardPage() {
       {!isLoading && recentRuns.length > 0 && (
         <section>
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
-            {tr("sessionHistory", lang)}
+            Session History
           </h2>
           <div className="space-y-3">
             {recentRuns.map((run: any, idx: number) => (
@@ -297,9 +294,7 @@ export default function SubscriberDashboardPage() {
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {run.session_name}
                   </p>
-                  <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-                    {tr("completed", lang)}
-                  </p>
+                  <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Completed</p>
                 </div>
                 {run.score != null && (
                   <span className="shrink-0 rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
@@ -312,10 +307,10 @@ export default function SubscriberDashboardPage() {
         </section>
       )}
 
-      {/* Sessions completed count — only if > 0 */}
-      {!isLoading && totalSessionsCompleted > 0 && (
+      {/* Sessions completed count */}
+      {!isLoading && (analytics?.total_sessions_completed ?? 0) > 0 && (
         <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-          {totalSessionsCompleted} sessions completed in total
+          {analytics!.total_sessions_completed} sessions completed in total
         </p>
       )}
     </div>

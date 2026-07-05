@@ -22,6 +22,7 @@ import {
   Cpu,
   LogOut,
   Store,
+  ClipboardCheck,
 } from "lucide-react"
 
 interface NavItem {
@@ -37,6 +38,7 @@ const subscriberNav: NavItem[] = [
   { href: "/subscriber/analytics", labelKey: "analytics", icon: BarChart3 },
   { href: "/subscriber/billing", labelKey: "billing", icon: CreditCard },
   { href: "/subscriber/profile", labelKey: "profile", icon: User },
+  { href: "/sae/exam", labelKey: "saeExam", icon: ClipboardCheck },
 ]
 
 const publisherNav: NavItem[] = [
@@ -45,6 +47,7 @@ const publisherNav: NavItem[] = [
   { href: "/publisher/programs", labelKey: "programs", icon: Building2 },
   { href: "/publisher/courses", labelKey: "courses", icon: BookOpen },
   { href: "/publisher/analytics", labelKey: "analytics", icon: BarChart3 },
+  { href: "/publisher/sae", labelKey: "saeAssessments", icon: ClipboardCheck },
 ]
 
 const adminNav: NavItem[] = [
@@ -53,6 +56,7 @@ const adminNav: NavItem[] = [
   { href: "/admin/models", labelKey: "models", icon: Cpu },
   { href: "/admin/users", labelKey: "users", icon: Users },
   { href: "/admin/analytics", labelKey: "analytics", icon: BarChart3 },
+  { href: "/admin/sae", labelKey: "saeAssessments", icon: ClipboardCheck },
 ]
 
 const navByRole = { subscriber: subscriberNav, publisher: publisherNav, admin: adminNav }

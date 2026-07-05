@@ -81,6 +81,7 @@ export default function SAESetupPage() {
   const [curriculumOther, setCurriculumOther] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [existingSession, setExistingSession] = useState<string | null>(null);
+  const [isExistingAccount, setIsExistingAccount] = useState(false);
 
   const isOtherCurriculum = curriculum === "Other";
   const effectiveCurriculum = isOtherCurriculum ? curriculumOther.trim() : curriculum;
@@ -123,8 +124,8 @@ export default function SAESetupPage() {
       return;
     }
 
-    // Country and curriculum only required on first use
-    if (isFirstUse) {
+    // Country and curriculum required only on first use when creating a new account
+    if (isFirstUse && !isExistingAccount) {
       if (!country) {
         setFieldError("Please select your country of origin.");
         return;
@@ -210,6 +211,7 @@ export default function SAESetupPage() {
   const tokenInfo = pageState.kind === "form" ? pageState.tokenInfo : null;
   const isSubmitting = pageState.kind === "submitting";
   const isFirstUse = tokenInfo?.is_first_use ?? true;
+  const showEducationFields = isFirstUse && !isExistingAccount;
 
   const inputCls =
     "w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm " +
@@ -239,7 +241,11 @@ export default function SAESetupPage() {
             Self Assessment Exam
           </p>
           <h1 className="text-2xl font-bold text-slate-900">
-            {isFirstUse ? "Account Setup" : "Update Credentials"}
+            {!isFirstUse
+              ? "Update Credentials"
+              : isExistingAccount
+              ? "Log In to Your Account"
+              : "Account Setup"}
           </h1>
           {tokenInfo && (
             <p className="mt-2 text-sm text-slate-600">
@@ -249,9 +255,11 @@ export default function SAESetupPage() {
             </p>
           )}
           <p className="mt-1 text-xs text-slate-500">
-            {isFirstUse
-              ? "Choose a username and password — you will use these to log in for all future sessions. No real name is required."
-              : "Choose a new username and password. Your previous submissions are preserved."}
+            {!isFirstUse
+              ? "Choose a new username and password. Your previous submissions are preserved."
+              : isExistingAccount
+              ? "Log in with your existing account to gain access to this assessment."
+              : "Choose a username and password — you will use these to log in for all future sessions. No real name is required."}
           </p>
         </div>
 
@@ -299,8 +307,8 @@ export default function SAESetupPage() {
               />
             </div>
 
-            {/* ── Educational background — first use only ── */}
-            {isFirstUse && (
+            {/* ── Educational background — first use, new account only ── */}
+            {showEducationFields && (
               <>
                 <div className="relative my-1">
                   <div className="absolute inset-0 flex items-center">
@@ -387,31 +395,53 @@ export default function SAESetupPage() {
                 !username ||
                 !password ||
                 !confirm ||
-                (isFirstUse && (!country || !curriculum || (isOtherCurriculum && !curriculumOther.trim())))
+                (showEducationFields && (!country || !curriculum || (isOtherCurriculum && !curriculumOther.trim())))
               }
               className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white
                          hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60
                          transition-colors"
             >
               {isSubmitting
-                ? (isFirstUse ? "Setting up account…" : "Updating credentials…")
-                : (isFirstUse ? "Create Account & Enter Exam" : "Update Credentials & Continue")}
+                ? (!isFirstUse ? "Updating credentials…" : isExistingAccount ? "Logging in…" : "Setting up account…")
+                : (!isFirstUse ? "Update Credentials & Continue" : isExistingAccount ? "Log In & Enter Exam" : "Create Account & Enter Exam")}
             </button>
           </form>
 
           <p className="mt-4 text-xs text-slate-400 text-center">
-            {isFirstUse
-              ? "This link is valid for one more use after setup."
-              : "Your previous submissions and grades are preserved."}
+            {!isFirstUse
+              ? "Your previous submissions and grades are preserved."
+              : "This link is valid for one more use after setup."}
           </p>
         </div>
 
-        <p className="mt-4 text-center text-xs text-slate-400">
-          Already set up?{" "}
-          <a href="/login" className="text-blue-600 hover:underline">
-            Log in
-          </a>
-        </p>
+        {/* Toggle between new-account and existing-account modes (first use only) */}
+        {isFirstUse && (
+          <p className="mt-4 text-center text-xs text-slate-500">
+            {isExistingAccount ? (
+              <>
+                New student?{" "}
+                <button
+                  type="button"
+                  onClick={() => { setIsExistingAccount(false); setFieldError(""); }}
+                  className="text-blue-600 hover:underline"
+                >
+                  Create an account instead
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => { setIsExistingAccount(true); setFieldError(""); }}
+                  className="text-blue-600 hover:underline"
+                >
+                  Log in to gain access
+                </button>
+              </>
+            )}
+          </p>
+        )}
       </div>
     </main>
   );
