@@ -2,12 +2,14 @@ import { playElevenLabsSpeech } from '@/lib/playElevenLabsAudio';
 import { playOpenAiTtsSpeech } from '@/lib/openaiTtsSpeech';
 import type { SpeechDispatch } from '@/lib/speechDispatch';
 import type { VoiceProvider } from '@/types/types';
+import type { VisemeTimeline } from '@/lib/visemeTypes';
 
 export type VoiceFallbackReason = 'platform_unavailable';
 
 export interface SynthesizeResult {
   stop: () => void;
   audio: HTMLAudioElement;
+  timeline: VisemeTimeline;
   /** The provider that actually produced audio — always bill/report this,
    * never `dispatch.provider`, since a fallback can change it mid-call. */
   providerUsed: VoiceProvider;
@@ -32,31 +34,31 @@ export async function synthesizeAssistantSpeech(
   onSpeakingChange: (speaking: boolean) => void,
 ): Promise<SynthesizeResult> {
   if (dispatch.provider === 'openai') {
-    const { stop, audio } = await playOpenAiTtsSpeech({
+    const { stop, audio, timeline } = await playOpenAiTtsSpeech({
       text,
       voiceId: dispatch.voiceId,
       gender: dispatch.gender,
       onSpeakingChange,
     });
-    return { stop, audio, providerUsed: 'openai' };
+    return { stop, audio, timeline, providerUsed: 'openai' };
   }
 
   try {
-    const { stop, audio } = await playElevenLabsSpeech({
+    const { stop, audio, timeline } = await playElevenLabsSpeech({
       text,
       gender: dispatch.gender,
       voiceProfile: dispatch.voiceProfile,
       voiceId: dispatch.voiceId,
       onSpeakingChange,
     });
-    return { stop, audio, providerUsed: 'elevenlabs' };
+    return { stop, audio, timeline, providerUsed: 'elevenlabs' };
   } catch (err) {
     console.warn('ElevenLabs synthesis failed — falling back to OpenAI TTS:', err);
-    const { stop, audio } = await playOpenAiTtsSpeech({
+    const { stop, audio, timeline } = await playOpenAiTtsSpeech({
       text,
       gender: dispatch.gender,
       onSpeakingChange,
     });
-    return { stop, audio, providerUsed: 'openai', fallbackReason: 'platform_unavailable' };
+    return { stop, audio, timeline, providerUsed: 'openai', fallbackReason: 'platform_unavailable' };
   }
 }

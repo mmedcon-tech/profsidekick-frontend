@@ -2,12 +2,12 @@
 
 import React from 'react';
 import TeachingSessionAvatar from '@/components/avatar/TeachingSessionAvatar';
-import GlbAvatar from '@/components/avatar/GlbAvatar';
 import {
   getEffectiveRenderType,
   shouldUseHeyGenVideo,
 } from '@/lib/heygenConfig';
 import type { SessionAvatarConfig } from '@/types/types';
+import type { VisemeTimeline } from '@/lib/visemeTypes';
 
 interface SessionAvatarRendererProps {
   config: SessionAvatarConfig;
@@ -17,6 +17,8 @@ interface SessionAvatarRendererProps {
   isUserSpeaking: boolean;
   heygenConnected?: boolean;
   heygenVideoRef?: React.RefObject<HTMLVideoElement | null>;
+  visemeTimeline?: VisemeTimeline | null;
+  speechClock?: () => number;
 }
 
 export default function SessionAvatarRenderer({
@@ -27,6 +29,8 @@ export default function SessionAvatarRenderer({
   isUserSpeaking,
   heygenConnected = false,
   heygenVideoRef,
+  visemeTimeline,
+  speechClock,
 }: SessionAvatarRendererProps): React.ReactElement {
   const effectiveType = getEffectiveRenderType(config);
   const displayConfig: SessionAvatarConfig = {
@@ -60,14 +64,18 @@ export default function SessionAvatarRenderer({
             isConnected={isConnected}
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
+            visemeTimeline={visemeTimeline}
+            speechClock={speechClock}
           />
         ) : displayConfig.renderType === '3d' && displayConfig.modelUrl ? (
-          <GlbAvatar
-            modelUrl={displayConfig.modelUrl}
+          <TeachingSessionAvatar
+            config={displayConfig}
             audioElement={audioElement}
             isConnected={isConnected}
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
+            visemeTimeline={visemeTimeline}
+            speechClock={speechClock}
           />
         ) : (
           <TeachingSessionAvatar
@@ -76,6 +84,8 @@ export default function SessionAvatarRenderer({
             isConnected={isConnected}
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
+            visemeTimeline={visemeTimeline}
+            speechClock={speechClock}
           />
         )}
       </div>

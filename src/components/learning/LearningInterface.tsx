@@ -25,6 +25,7 @@ import { classifyTurn } from "@/lib/turnClassifier";
 import { synthesizeAssistantSpeech } from "@/lib/voiceSynthesis";
 import { resolveSpeechDispatch } from "@/lib/speechDispatch";
 import { logVoiceUsage } from "@/lib/voiceUsage";
+import type { VisemeTimeline } from "@/lib/visemeTypes";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
@@ -115,6 +116,8 @@ export default function LearningInterface({
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
   const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [avatarAudioElement, setAvatarAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [avatarVisemeTimeline, setAvatarVisemeTimeline] = useState<VisemeTimeline | null>(null);
   const [aiLeadEnabled] = useState(true);
 
   // Dual voice pipeline — session-wide usage/billing state
@@ -189,6 +192,11 @@ export default function LearningInterface({
     addStructuredTurn(turn);
     void persistTranscriptTurn({ role, text });
   }, [addStructuredTurn, getRubricTerms, persistTranscriptTurn]);
+
+  const avatarSpeechClock = useCallback(
+    () => avatarAudioElement?.currentTime ?? 0,
+    [avatarAudioElement],
+  );
 
   const sendClientEvent = (eventObj: any, eventNameSuffix = "") => {
     if (dcRef.current && dcRef.current.readyState === "open") {
@@ -371,6 +379,8 @@ export default function LearningInterface({
   const stopElevenLabsSpeech = useCallback(() => {
     elevenLabsStopRef.current?.();
     elevenLabsStopRef.current = null;
+    setAvatarAudioElement(null);
+    setAvatarVisemeTimeline(null);
   }, []);
 
   const speakAssistantText = useCallback(async (text: string) => {
@@ -402,7 +412,7 @@ export default function LearningInterface({
       // account), never the subscriber's own credit balance. `providerUsed`
       // (not `dispatch.provider`) must drive billing/notifications below,
       // since a fallback can change it mid-call.
-      const { stop, audio, providerUsed, fallbackReason } = await synthesizeAssistantSpeech(
+      const { stop, audio, timeline, providerUsed, fallbackReason } = await synthesizeAssistantSpeech(
         clean,
         dispatch,
         setIsAISpeaking,
@@ -410,6 +420,8 @@ export default function LearningInterface({
       elevenLabsStopRef.current = stop;
       elevenLabsAudioRef.current = audio;
       audio.muted = !isAudioEnabled;
+      setAvatarAudioElement(audio);
+      setAvatarVisemeTimeline(timeline);
       setActiveVoiceProvider(providerUsed);
 
       if (fallbackReason === 'platform_unavailable' && voiceProviderOverride !== providerUsed) {
@@ -1460,12 +1472,14 @@ export default function LearningInterface({
             <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent shadow-xl pointer-events-none">
               <SessionAvatarRenderer
                 config={sessionAvatar}
-                audioElement={outputAudioElement}
+                audioElement={avatarAudioElement ?? outputAudioElement}
                 isConnected={sessionStatus === "CONNECTED"}
                 isAISpeaking={isAISpeaking}
                 isUserSpeaking={isUserSpeaking}
                 heygenConnected={sessionStatus === "CONNECTED" && !isConnecting}
                 heygenVideoRef={heygenVideoRef}
+                visemeTimeline={avatarVisemeTimeline}
+                speechClock={avatarSpeechClock}
               />
               {sessionStatus === "CONNECTING" && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm z-20">
