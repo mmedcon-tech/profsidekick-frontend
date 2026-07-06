@@ -165,6 +165,10 @@ export default function LearningInterface({
   // ElevenLabs synthesises the assistant's speech (§ subscriber session runtime).
   const elevenLabsStopRef = useRef<(() => void) | null>(null);
   const elevenLabsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const assistantResponseInFlightRef = useRef(false);
+  const currentAssistantResponseIdRef = useRef<string | null>(null);
+  const interruptedAssistantResponseIdRef = useRef<string | null>(null);
+  const ignoreInterruptedAssistantDoneRef = useRef(false);
   // Session-level avatar ID: backend may override DEFAULT via ephemeral response
   const heygenAvatarIdRef = useRef(DEFAULT_HEYGEN_AVATAR_ID);
   const GUARD_PHRASES = ["stop", "pause", "end session", "wait"]; // Guard phrases to allow intentional interruptions
@@ -231,6 +235,17 @@ export default function LearningInterface({
         }, 1000);
       }
     }
+  };
+
+  const sendResponseCreate = (
+    eventNameSuffix = "",
+    response?: Record<string, unknown>,
+  ) => {
+    assistantResponseInFlightRef.current = true;
+    sendClientEvent(
+      response ? { type: "response.create", response } : { type: "response.create" },
+      eventNameSuffix,
+    );
   };
 
   const handleServerEventRef = useHandleServerEvent({
@@ -382,6 +397,19 @@ export default function LearningInterface({
     setAvatarAudioElement(null);
     setAvatarVisemeTimeline(null);
   }, []);
+
+  const interruptTtsPlayback = useCallback((reason: string) => {
+    const interruptedResponseId = currentAssistantResponseIdRef.current;
+    const shouldIgnoreInterruptedDone = assistantResponseInFlightRef.current;
+
+    stopElevenLabsSpeech();
+
+    if (shouldIgnoreInterruptedDone) {
+      interruptedAssistantResponseIdRef.current = interruptedResponseId;
+      ignoreInterruptedAssistantDoneRef.current = !interruptedResponseId;
+      sendClientEvent({ type: "response.cancel" }, `${reason}.cancel_response`);
+    }
+  }, [stopElevenLabsSpeech]);
 
   const speakAssistantText = useCallback(async (text: string) => {
     const clean = text.trim();
@@ -834,7 +862,7 @@ export default function LearningInterface({
         ],
       },
     });
-    sendClientEvent({ type: "response.create" });
+    sendResponseCreate();
   };
 
   const toggleAudio = () => {
@@ -873,6 +901,7 @@ export default function LearningInterface({
     const clean = textInput.trim();
     if (!clean || sessionStatus !== "CONNECTED") return;
 
+    interruptTtsPlayback("text_input.interrupt_tts");
     setTextInput("");
     setShowStartPrompt(false);
     setIsTranscriptVisible(true);
@@ -892,7 +921,7 @@ export default function LearningInterface({
         ],
       },
     }, "text_input.user_message");
-    sendClientEvent({ type: "response.create" }, "text_input.response");
+    sendResponseCreate("text_input.response");
   };
 
   const nextSlide = () => {
@@ -988,13 +1017,7 @@ export default function LearningInterface({
     if (isAISpeaking) {
       console.log('🛑 AI is speaking, forcing interruption for slide change');
 
-      // Stop the ElevenLabs speech playback immediately
-      stopElevenLabsSpeech();
-
-      // First, cancel the current response
-      sendClientEvent({
-        type: "response.cancel"
-      }, `slide.${source}.cancel_response`);
+      interruptTtsPlayback(`slide.${source}`);
 
       // Then clear the output audio buffer to stop playback immediately
       // This is the key step that actually stops the audio from continuing
@@ -1032,16 +1055,9 @@ export default function LearningInterface({
     sendClientEvent(slideChangeMessage, `slide.${source}`);
 
     // Trigger immediate response to the slide change
-    const triggerResponse = {
-      type: "response.create",
-      response: {
-        modalities: ["text"]
-      }
-    };
-
     // Small delay to ensure the message is processed before triggering response
     setTimeout(() => {
-      sendClientEvent(triggerResponse, `slide.${source}.trigger_response`);
+      sendResponseCreate(`slide.${source}.trigger_response`, { modalities: ["text"] });
     }, 100);
   };
 
@@ -1186,9 +1202,18 @@ export default function LearningInterface({
       const serverEvent = JSON.parse(e.data);
       console.log("🔄 Processing server event:", serverEvent.type, serverEvent);
 
+      if (serverEvent.type === "response.created") {
+        assistantResponseInFlightRef.current = true;
+        currentAssistantResponseIdRef.current =
+          (serverEvent.response as { id?: string } | undefined)?.id ?? null;
+      }
+
       // --- Track voice activity ---
       if (serverEvent.type === "input_audio_buffer.speech_started") {
         setIsUserSpeaking(true);
+        if (!isMicMuted) {
+          interruptTtsPlayback("speech_started.interrupt_tts");
+        }
       } else if (serverEvent.type === "input_audio_buffer.speech_stopped") {
         setIsUserSpeaking(false);
       }
@@ -1219,6 +1244,23 @@ export default function LearningInterface({
       // --- Handle tool calls for slide navigation ---
       // Fix 1+3: send the real function result back to the Realtime API and do NOT forward
       // tool-call events to handleServerEventRef (prevents duplicate processing and dummy results).
+      if (serverEvent.type === "response.done") {
+        const responseId =
+          (serverEvent.response as { id?: string } | undefined)?.id ?? null;
+        const isInterruptedDone =
+          (responseId && responseId === interruptedAssistantResponseIdRef.current) ||
+          (!responseId && ignoreInterruptedAssistantDoneRef.current);
+
+        assistantResponseInFlightRef.current = false;
+        currentAssistantResponseIdRef.current = null;
+
+        if (isInterruptedDone) {
+          interruptedAssistantResponseIdRef.current = null;
+          ignoreInterruptedAssistantDoneRef.current = false;
+          return;
+        }
+      }
+
       if (serverEvent.type === "response.done" && serverEvent.response?.output) {
         const toolCallItems = serverEvent.response.output.filter(
           (item: any) => item.type === "function_call" && item.name
@@ -1240,7 +1282,7 @@ export default function LearningInterface({
                     output: JSON.stringify({ success: false, message: "No active session run", data: [] }),
                   },
                 });
-                sendClientEvent({ type: "response.create" });
+                sendResponseCreate();
                 return;
               }
               // Live RAG retrieval (§11.5 searchKnowledge) — searches slide content,
@@ -1269,7 +1311,7 @@ export default function LearningInterface({
                       output: JSON.stringify(functionResult),
                     },
                   });
-                  sendClientEvent({ type: "response.create" });
+                  sendResponseCreate();
                 })
                 .catch(err => {
                   sendClientEvent({
@@ -1280,7 +1322,7 @@ export default function LearningInterface({
                       output: JSON.stringify({ success: false, message: "Error searching knowledge base" }),
                     },
                   });
-                  sendClientEvent({ type: "response.create" });
+                  sendResponseCreate();
                 });
               return; // Early return because we handle sending output asynchronously
             }
@@ -1372,7 +1414,7 @@ export default function LearningInterface({
             });
           });
           // One response.create after all outputs are submitted
-          sendClientEvent({ type: "response.create" });
+          sendResponseCreate();
           // Tool calls fully handled — do not forward to handleServerEventRef
           return;
         }
