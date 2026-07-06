@@ -112,6 +112,7 @@ export function useSpeechPreview(avatarName: string): SpeechPreviewState {
           text: SPEECH_PREVIEW_TEXT,
           gender,
           voiceProfile,
+          withTimestamps: true,
           onSpeakingChange: (speaking) => {
             setActive(speaking);
             if (!speaking) {

@@ -30,6 +30,8 @@ export interface PlayElevenLabsSpeechOptions {
   voiceProfile?: ElevenLabsVoiceProfile;
   /** Explicit ElevenLabs voice id (e.g. from the dual voice pipeline's resolved session voice). */
   voiceId?: string;
+  /** Timestamp alignment is useful for previews but slower than plain audio. */
+  withTimestamps?: boolean;
   onSpeakingChange?: (speaking: boolean) => void;
 }
 
@@ -72,11 +74,12 @@ export async function synthesizeElevenLabsSpeech(
   gender: ElevenLabsVoiceGender,
   voiceProfile: ElevenLabsVoiceProfile = 'adult',
   voiceId?: string,
+  withTimestamps = false,
 ): Promise<{ audioBuffer: ArrayBuffer; timeline: VisemeTimeline | null }> {
   const response = await fetch('/api/tts/elevenlabs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, gender, voiceProfile, voiceId, withTimestamps: true }),
+    body: JSON.stringify({ text, gender, voiceProfile, voiceId, withTimestamps }),
   });
 
   if (!response.ok) {
@@ -113,6 +116,7 @@ export async function playElevenLabsSpeech({
   gender,
   voiceProfile = 'adult',
   voiceId,
+  withTimestamps = false,
   onSpeakingChange,
 }: PlayElevenLabsSpeechOptions): Promise<PlayElevenLabsSpeechResult> {
   const { audioBuffer, timeline: syncedTimeline } = await synthesizeElevenLabsSpeech(
@@ -120,6 +124,7 @@ export async function playElevenLabsSpeech({
     gender,
     voiceProfile,
     voiceId,
+    withTimestamps,
   );
   const blob = new Blob([audioBuffer], { type: 'audio/mpeg' });
   const objectUrl = URL.createObjectURL(blob);

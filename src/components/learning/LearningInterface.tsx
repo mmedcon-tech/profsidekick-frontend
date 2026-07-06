@@ -28,6 +28,7 @@ import { logVoiceUsage } from "@/lib/voiceUsage";
 import type { VisemeTimeline } from "@/lib/visemeTypes";
 import {
   fetchSessionEphemeral,
+  shouldUseRealtimeVoicePipeline,
   shouldUseHeyGenVideo,
 } from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
@@ -52,6 +53,56 @@ const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
   renderType: "static",
   avatarName: "Assistant",
 };
+
+type RealtimeResponseModality = "text" | "audio";
+
+const TTS_FIRST_CHUNK_MIN_CHARS = 90;
+const TTS_NEXT_CHUNK_MIN_CHARS = 160;
+const TTS_MAX_CHUNK_CHARS = 280;
+
+function findTtsChunkBoundary(text: string, startIndex: number, force = false): number {
+  const remaining = text.length - startIndex;
+  if (remaining <= 0) return startIndex;
+  if (force) return text.length;
+
+  const minChars = startIndex === 0 ? TTS_FIRST_CHUNK_MIN_CHARS : TTS_NEXT_CHUNK_MIN_CHARS;
+  if (remaining < minChars) return startIndex;
+
+  const minIndex = startIndex + minChars;
+  const maxIndex = Math.min(text.length, startIndex + TTS_MAX_CHUNK_CHARS);
+  const naturalBreak = text.slice(minIndex, maxIndex).search(/[.!?]\s+/);
+  if (naturalBreak >= 0) {
+    return minIndex + naturalBreak + 1;
+  }
+
+  const softBreak = text.slice(minIndex, maxIndex).search(/[,;:]\s+/);
+  if (softBreak >= 0) {
+    return minIndex + softBreak + 1;
+  }
+
+  if (remaining >= TTS_MAX_CHUNK_CHARS) {
+    const window = text.slice(startIndex, maxIndex);
+    const lastSpace = window.lastIndexOf(' ');
+    return lastSpace > minChars ? startIndex + lastSpace : maxIndex;
+  }
+
+  return startIndex;
+}
+
+function waitForAudioSettled(audio: HTMLAudioElement): Promise<void> {
+  if (audio.ended || audio.paused) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = (): void => {
+      audio.removeEventListener('ended', done);
+      audio.removeEventListener('error', done);
+      audio.removeEventListener('pause', done);
+      resolve();
+    };
+    audio.addEventListener('ended', done, { once: true });
+    audio.addEventListener('error', done, { once: true });
+    audio.addEventListener('pause', done, { once: true });
+  });
+}
 
 export interface TranscriptItem {
   role: "user" | "assistant";
@@ -138,6 +189,10 @@ export default function LearningInterface({
   const sessionStartBalanceRef = useRef<number | null>(null);
   const lowBalanceWarnedRef = useRef(false);
   const pendingEndMetadataRef = useRef<Record<string, unknown> | undefined>(undefined);
+  const useRealtimeVoice = shouldUseRealtimeVoicePipeline();
+  const responseModalities: RealtimeResponseModality[] = useRealtimeVoice
+    ? ["text", "audio"]
+    : ["text"];
 
   const slideCount = classSession.slides.length;
 
@@ -165,6 +220,12 @@ export default function LearningInterface({
   // ElevenLabs synthesises the assistant's speech (§ subscriber session runtime).
   const elevenLabsStopRef = useRef<(() => void) | null>(null);
   const elevenLabsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const assistantTtsQueueRef = useRef<string[]>([]);
+  const assistantTtsPlayingRef = useRef(false);
+  const assistantTtsTurnRef = useRef(0);
+  const assistantTtsResponseActiveRef = useRef(false);
+  const assistantTtsTextBufferRef = useRef('');
+  const assistantTtsFlushIndexRef = useRef(0);
   // Session-level avatar ID: backend may override DEFAULT via ephemeral response
   const heygenAvatarIdRef = useRef(DEFAULT_HEYGEN_AVATAR_ID);
   const GUARD_PHRASES = ["stop", "pause", "end session", "wait"]; // Guard phrases to allow intentional interruptions
@@ -197,6 +258,13 @@ export default function LearningInterface({
     () => avatarAudioElement?.currentTime ?? 0,
     [avatarAudioElement],
   );
+
+  const createResponseEvent = () => ({
+    type: "response.create",
+    response: {
+      modalities: responseModalities,
+    },
+  });
 
   const sendClientEvent = (eventObj: any, eventNameSuffix = "") => {
     if (dcRef.current && dcRef.current.readyState === "open") {
@@ -377,15 +445,29 @@ export default function LearningInterface({
   // playback.
 
   const stopElevenLabsSpeech = useCallback(() => {
+    assistantTtsTurnRef.current += 1;
+    assistantTtsQueueRef.current = [];
+    assistantTtsPlayingRef.current = false;
+    assistantTtsResponseActiveRef.current = false;
+    assistantTtsTextBufferRef.current = '';
+    assistantTtsFlushIndexRef.current = 0;
     elevenLabsStopRef.current?.();
     elevenLabsStopRef.current = null;
     setAvatarAudioElement(null);
     setAvatarVisemeTimeline(null);
   }, []);
 
-  const speakAssistantText = useCallback(async (text: string) => {
+  const speakAssistantText = useCallback(async (
+    text: string,
+    options: { interrupt?: boolean; turnId?: number } = {},
+  ): Promise<HTMLAudioElement | null> => {
     const clean = text.trim();
-    if (!clean) return;
+    if (!clean) return null;
+
+    if (options.interrupt !== false) {
+      stopElevenLabsSpeech();
+    }
+    const turnId = options.turnId ?? assistantTtsTurnRef.current;
 
     // Feed the completed text to HeyGen so it can lip-sync/repeat it visually.
     if (heygenAvatarRef.current) {
@@ -417,6 +499,10 @@ export default function LearningInterface({
         dispatch,
         setIsAISpeaking,
       );
+      if (turnId !== assistantTtsTurnRef.current) {
+        stop();
+        return null;
+      }
       elevenLabsStopRef.current = stop;
       elevenLabsAudioRef.current = audio;
       audio.muted = !isAudioEnabled;
@@ -491,8 +577,10 @@ export default function LearningInterface({
           }
         }
       }
+      return audio;
     } catch (err) {
       console.error('Speech synthesis failed:', err);
+      return null;
     }
   }, [
     isAudioEnabled,
@@ -502,6 +590,52 @@ export default function LearningInterface({
     token,
     voiceProviderOverride,
   ]);
+
+  const processAssistantTtsQueue = useCallback(async (turnId: number) => {
+    if (assistantTtsPlayingRef.current) return;
+    assistantTtsPlayingRef.current = true;
+
+    while (
+      turnId === assistantTtsTurnRef.current &&
+      assistantTtsQueueRef.current.length > 0
+    ) {
+      const nextChunk = assistantTtsQueueRef.current.shift();
+      if (!nextChunk) continue;
+
+      const audio = await speakAssistantText(nextChunk, {
+        interrupt: false,
+        turnId,
+      });
+      if (!audio || turnId !== assistantTtsTurnRef.current) continue;
+      await waitForAudioSettled(audio);
+    }
+
+    if (turnId === assistantTtsTurnRef.current) {
+      assistantTtsPlayingRef.current = false;
+    }
+  }, [speakAssistantText]);
+
+  const enqueueAssistantTtsChunk = useCallback((chunk: string) => {
+    const clean = chunk.trim();
+    if (!clean || useRealtimeVoice) return;
+
+    const turnId = assistantTtsTurnRef.current;
+    assistantTtsQueueRef.current.push(clean);
+    void processAssistantTtsQueue(turnId);
+  }, [processAssistantTtsQueue, useRealtimeVoice]);
+
+  const flushAssistantTtsBuffer = useCallback((force = false) => {
+    if (useRealtimeVoice) return;
+
+    const text = assistantTtsTextBufferRef.current;
+    const start = assistantTtsFlushIndexRef.current;
+    const boundary = findTtsChunkBoundary(text, start, force);
+    if (boundary <= start) return;
+
+    const chunk = text.slice(start, boundary);
+    assistantTtsFlushIndexRef.current = boundary;
+    enqueueAssistantTtsChunk(chunk);
+  }, [enqueueAssistantTtsChunk, useRealtimeVoice]);
 
   // ── Shared WebRTC / media cleanup ─────────────────────────────────────────
   // Single idempotent function used by both user-disconnect and React cleanup.
@@ -636,8 +770,9 @@ export default function LearningInterface({
           audioElementRef.current = document.createElement("audio");
         }
         audioElementRef.current.autoplay = true;
-        // Permanently mute the OpenAI Realtime audio track since we use ElevenLabs for the voice
-        audioElementRef.current.muted = true;
+        // Default pipeline mutes Realtime audio and speaks completed text via TTS.
+        // Temporary low-latency mode lets OpenAI Realtime speak directly.
+        audioElementRef.current.muted = useRealtimeVoice ? !isAudioEnabled : true;
         setOutputAudioElement(audioElementRef.current);
 
         const { pc, dc, mediaStream } = await createRealtimeConnection(
@@ -779,9 +914,9 @@ export default function LearningInterface({
     const sessionUpdate = {
       type: "session.update",
       session: {
-        // Text-only output: OpenAI Realtime handles transcription + text generation,
-        // ElevenLabs synthesises the assistant's speech (see speakAssistantText).
-        modalities: ["text"],
+        // Default output is text-only so the dual TTS pipeline can synthesize
+        // completed turns. The env-flagged low-latency path lets Realtime speak.
+        modalities: responseModalities,
         tool_choice: "auto",
         tools: [
           ...buildSlideNavigationTools(),
@@ -834,13 +969,14 @@ export default function LearningInterface({
         ],
       },
     });
-    sendClientEvent({ type: "response.create" });
+    sendClientEvent(createResponseEvent());
   };
 
   const toggleAudio = () => {
     setIsAudioEnabled(!isAudioEnabled);
     if (audioElementRef.current) {
-      audioElementRef.current.muted = isAudioEnabled; // Note: isAudioEnabled is the current state, so we want the opposite
+      // isAudioEnabled is the current state, so this sets the next muted value.
+      audioElementRef.current.muted = useRealtimeVoice ? isAudioEnabled : true;
     }
     if (elevenLabsAudioRef.current) {
       elevenLabsAudioRef.current.muted = isAudioEnabled; // same flipped-closure logic as above
@@ -892,7 +1028,7 @@ export default function LearningInterface({
         ],
       },
     }, "text_input.user_message");
-    sendClientEvent({ type: "response.create" }, "text_input.response");
+    sendClientEvent(createResponseEvent(), "text_input.response");
   };
 
   const nextSlide = () => {
@@ -1032,12 +1168,7 @@ export default function LearningInterface({
     sendClientEvent(slideChangeMessage, `slide.${source}`);
 
     // Trigger immediate response to the slide change
-    const triggerResponse = {
-      type: "response.create",
-      response: {
-        modalities: ["text"]
-      }
-    };
+    const triggerResponse = createResponseEvent();
 
     // Small delay to ensure the message is processed before triggering response
     setTimeout(() => {
@@ -1198,6 +1329,22 @@ export default function LearningInterface({
         setIsAISpeaking(false);
       }
 
+      if (
+        !useRealtimeVoice &&
+        typeof serverEvent.delta === "string" &&
+        (
+          serverEvent.type === "response.text.delta" ||
+          serverEvent.type === "response.output_text.delta"
+        )
+      ) {
+        if (!assistantTtsResponseActiveRef.current) {
+          stopElevenLabsSpeech();
+          assistantTtsResponseActiveRef.current = true;
+        }
+        assistantTtsTextBufferRef.current += serverEvent.delta;
+        flushAssistantTtsBuffer(false);
+      }
+
       // --- Assistant turn text → ElevenLabs speech + HeyGen lip-sync ---
       // OpenAI Realtime runs in text-only mode (modalities: ["text"]); the
       // completed assistant turn is extracted from response.done below.
@@ -1240,7 +1387,7 @@ export default function LearningInterface({
                     output: JSON.stringify({ success: false, message: "No active session run", data: [] }),
                   },
                 });
-                sendClientEvent({ type: "response.create" });
+                sendClientEvent(createResponseEvent());
                 return;
               }
               // Live RAG retrieval (§11.5 searchKnowledge) — searches slide content,
@@ -1269,7 +1416,7 @@ export default function LearningInterface({
                       output: JSON.stringify(functionResult),
                     },
                   });
-                  sendClientEvent({ type: "response.create" });
+                  sendClientEvent(createResponseEvent());
                 })
                 .catch(err => {
                   sendClientEvent({
@@ -1280,7 +1427,7 @@ export default function LearningInterface({
                       output: JSON.stringify({ success: false, message: "Error searching knowledge base" }),
                     },
                   });
-                  sendClientEvent({ type: "response.create" });
+                  sendClientEvent(createResponseEvent());
                 });
               return; // Early return because we handle sending output asynchronously
             }
@@ -1372,7 +1519,7 @@ export default function LearningInterface({
             });
           });
           // One response.create after all outputs are submitted
-          sendClientEvent({ type: "response.create" });
+          sendClientEvent(createResponseEvent());
           // Tool calls fully handled — do not forward to handleServerEventRef
           return;
         }
@@ -1391,8 +1538,18 @@ export default function LearningInterface({
             .trim();
           if (combinedText) {
             setTranscript((prev) => [...prev, { role: "assistant", text: combinedText }]);
-            handleTurnComplete("assistant", combinedText);
-            speakAssistantText(combinedText);
+            if (!useRealtimeVoice) {
+              if (!assistantTtsResponseActiveRef.current) {
+                stopElevenLabsSpeech();
+                assistantTtsResponseActiveRef.current = true;
+              }
+              if (combinedText.length > assistantTtsTextBufferRef.current.length) {
+                assistantTtsTextBufferRef.current = combinedText;
+              }
+              handleTurnComplete("assistant", combinedText);
+              flushAssistantTtsBuffer(true);
+              assistantTtsResponseActiveRef.current = false;
+            }
           }
         }
       }

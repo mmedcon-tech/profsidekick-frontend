@@ -14,6 +14,10 @@ export {
   shouldUseHeyGenVideo,
 } from '@/lib/heygenConfig';
 
+export function shouldUseRealtimeVoicePipeline(): boolean {
+  return process.env.NEXT_PUBLIC_SESSION_REALTIME_VOICE?.toLowerCase() === 'true';
+}
+
 export async function fetchSessionEphemeral(
   sessionId: string,
   sessionRunId: string,
