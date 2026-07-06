@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCourses } from '@/hooks/useCourses';
-import { BookOpen, Search, Users, Plus, GraduationCap } from 'lucide-react';
+import { BookOpen, Search, Users, Plus, GraduationCap, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +36,7 @@ const emptyForm = (): CreateCourseForm => ({
 export default function UnifiedDashboard({ programId }: { programId?: string } = {}) {
   const router = useRouter();
   const { user } = useAuth();
-  const { courses, loading, error, refetch, createCourse } = useCourses(programId);
+  const { courses, loading, error, refetch, createCourse, deleteCourse } = useCourses(programId);
   const [searchQuery, setSearchQuery] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CreateCourseForm>(emptyForm());
@@ -53,6 +53,16 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
 
   const handleCourseClick = (courseId: string) => {
     router.push(`/courses/${courseId}`);
+  };
+
+  const handleDeleteCourse = async (e: React.MouseEvent, courseId: string) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this course? This cannot be undone.')) return;
+    try {
+      await deleteCourse(courseId);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete course');
+    }
   };
 
   const set = (patch: Partial<CreateCourseForm>) => setForm(f => ({ ...f, ...patch }));
@@ -230,6 +240,15 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
                         <div className="w-2 h-2 bg-green-500 rounded-full" title="Public course"></div>
                       )}
                       <GraduationCap className="w-5 h-5 text-gray-400 group-hover:text-primary/90 dark:text-primary/40 transition-colors flex-shrink-0" />
+                      {isPublisher && (
+                        <button
+                          onClick={(e) => handleDeleteCourse(e, course.course_id)}
+                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded opacity-0 group-hover:opacity-100 transition-all"
+                          title="Delete course"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
