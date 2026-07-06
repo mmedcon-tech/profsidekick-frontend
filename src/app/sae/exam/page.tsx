@@ -3,19 +3,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  fetchMyDraftFile,
   fetchMyFile,
   getMyProfile,
   getMySubmission,
-  submitExam,
+  gradeDraftSubmission,
+  transcribeExam,
 } from "@/lib/sae-api";
 import SAEPdfViewer from "@/components/sae/SAEPdfViewer";
-import type { SAEStudentMe, SAESubmissionResult, SAEGradingQuestion, SAEGradingBasis } from "@/types/sae";
+import type { SAEStudentMe, SAESubmissionResult, SAEGradingQuestion, SAEGradingBasis, SAETranscribeResponse } from "@/types/sae";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 type PageState =
   | { kind: "loading" }
   | { kind: "unauthorized"; reason: string }
   | { kind: "ready"; profile: SAEStudentMe }
   | { kind: "already_submitted"; profile: SAEStudentMe; submission: SAESubmissionResult }
+  | { kind: "transcribing"; profile: SAEStudentMe }
+  | { kind: "preview"; profile: SAEStudentMe; draft: SAETranscribeResponse }
   | { kind: "submitting"; profile: SAEStudentMe }
   | { kind: "result"; profile: SAEStudentMe; submission: SAESubmissionResult };
 
@@ -79,13 +86,13 @@ export default function SAEExamPage() {
     if (!handwrittenFile || !webassignFile) return;
 
     const profile = (pageState as { profile: SAEStudentMe }).profile;
-    setPageState({ kind: "submitting", profile });
+    setPageState({ kind: "transcribing", profile });
 
     try {
-      const submission = await submitExam(handwrittenFile, webassignFile);
-      setPageState({ kind: "result", profile, submission });
+      const draft = await transcribeExam(handwrittenFile, webassignFile);
+      setPageState({ kind: "preview", profile, draft });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Submission failed.";
+      const msg = err instanceof Error ? err.message : "Transcription failed.";
       setSubmitError(msg);
       setPageState({ kind: "ready", profile });
     }
@@ -115,15 +122,48 @@ export default function SAEExamPage() {
     return <ResultView profile={profile} submission={submission} />;
   }
 
-  if (pageState.kind === "submitting") {
+  if (pageState.kind === "transcribing" || pageState.kind === "submitting") {
+    const isTranscribing = pageState.kind === "transcribing";
+
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
-          <p className="text-slate-700 font-medium">Grading your exam…</p>
-          <p className="mt-1 text-xs text-slate-500">This may take up to 30 seconds.</p>
+          <p className="text-slate-700 font-medium">
+            {isTranscribing ? "Transcribing your exam…" : "Grading your exam…"}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {isTranscribing
+              ? "This may take a little longer while we prepare the preview."
+              : "This may take up to 30 seconds."}
+          </p>
         </div>
       </main>
+    );
+  }
+
+  if (pageState.kind === "preview") {
+  return (
+      <TranscriptPreviewView
+        profile={pageState.profile}
+        draft={pageState.draft}
+        onBack={() => setPageState({ kind: "ready", profile: pageState.profile })}
+        onSubmitForGrading={async () => {
+          const profile = pageState.profile;
+          setSubmitError("");
+          setPageState({ kind: "submitting", profile });
+
+          try {
+            const submission = await gradeDraftSubmission();
+            setPageState({ kind: "result", profile, submission });
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Grading failed.";
+            setSubmitError(msg);
+            setPageState({ kind: "preview", profile, draft: pageState.draft });
+          }
+        }}
+        submitError={submitError}
+      />
     );
   }
 
@@ -198,6 +238,133 @@ export default function SAEExamPage() {
 
           <p className="text-center text-xs text-slate-400">Once submitted, your work is final.</p>
         </form>
+      </div>
+    </main>
+  );
+}
+
+function TranscriptPreviewView({
+  profile,
+  draft,
+  onBack,
+  onSubmitForGrading,
+  submitError,
+}: {
+  profile: SAEStudentMe;
+  draft: SAETranscribeResponse;
+  onBack: () => void;
+  onSubmitForGrading: () => Promise<void>;
+  submitError: string;
+}) {
+  const [activeFile, setActiveFile] = useState<"handwritten" | "webassign">("handwritten");
+
+  const activeTranscript =
+    activeFile === "handwritten"
+      ? draft.transcript.handwritten
+      : draft.transcript.webassign;
+
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <header className="flex h-12 items-center gap-3 border-b border-slate-200 bg-white px-4">
+        <p className="shrink-0 text-xs font-medium uppercase tracking-wider text-blue-600">
+          Self Assessment Exam
+        </p>
+        <span className="text-slate-300">|</span>
+        <div className="min-w-0 flex-1">
+          <span className="truncate text-sm font-semibold text-slate-800">
+            {profile.display_name}
+          </span>
+          <span className="ml-2 font-mono text-xs text-slate-500">
+            {profile.student_code}
+          </span>
+        </div>
+
+        <button
+          onClick={onBack}
+          className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-200"
+        >
+          Back
+        </button>
+        <button
+          onClick={onSubmitForGrading}
+          className="rounded-md bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+        >
+          Submit for Grading
+        </button>
+      </header>
+
+      {submitError && (
+        <div className="mx-4 mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {submitError}
+        </div>
+      )}
+
+      <div className="grid h-[calc(100vh-3rem)] grid-cols-1 gap-0 lg:grid-cols-2">
+        <section className="flex min-h-0 flex-col border-r border-slate-200 bg-white">
+          <div className="flex items-center gap-2 border-b border-slate-200 p-3">
+            <button
+              onClick={() => setActiveFile("handwritten")}
+              className={`rounded-md px-3 py-1 text-xs font-medium ${
+                activeFile === "handwritten"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              Handwritten Solutions
+            </button>
+            <button
+              onClick={() => setActiveFile("webassign")}
+              className={`rounded-md px-3 py-1 text-xs font-medium ${
+                activeFile === "webassign"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              WebAssign Questions
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1">
+            <SAEPdfViewer
+              key={activeFile}
+              fetchPdf={() => fetchMyDraftFile(activeFile)}
+              label={
+                activeFile === "handwritten"
+                  ? "Draft Handwritten Solutions"
+                  : "Draft WebAssign Questions"
+              }
+            />
+          </div>
+        </section>
+
+        <section className="min-h-0 overflow-y-auto bg-slate-50 p-6">
+          <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
+            Transcript Preview
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">
+            {activeFile === "handwritten"
+              ? "Handwritten Transcript"
+              : "WebAssign Transcript"}
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Review the AI transcription. For this demo, grading still uses the original uploaded PDFs.
+          </p>
+
+          {activeTranscript?.error && (
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              Transcription error: {activeTranscript.error}
+            </div>
+          )}
+
+          <div className="mt-4 max-h-[70vh] overflow-auto rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-800 shadow-sm">
+            <ReactMarkdown
+              remarkPlugins={[remarkMath]}
+              rehypePlugins={[rehypeKatex]}
+            >
+              {activeTranscript?.latex || "No transcript returned."}
+            </ReactMarkdown>
+          </div>
+        </section>
       </div>
     </main>
   );

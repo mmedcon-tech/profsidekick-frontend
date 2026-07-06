@@ -53,6 +53,22 @@ export interface SAESubmissionResultPublisher extends SAESubmissionResult {
   last_edited_at: string | null;
 }
 
+export interface SAETranscriptPart {
+  model?: string;
+  latex?: string;
+  error?: string;
+}
+
+export interface SAETranscribeResponse {
+  draft_id: string;
+  student_code: string;
+  display_name: string;
+  transcript: {
+    handwritten?: SAETranscriptPart;
+    webassign?: SAETranscriptPart;
+  };
+}
+
 export interface SAEStudentDetail extends SAEStudentRow {
   submission: SAESubmissionResultPublisher | null;
 }

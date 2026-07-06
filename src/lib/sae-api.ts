@@ -15,6 +15,7 @@ import type {
   SAESubmissionResult,
   SAESubmissionResultPublisher,
   SAETokenValidationResponse,
+  SAETranscribeResponse,
 } from "@/types/sae";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
@@ -173,6 +174,53 @@ export async function getMySubmission(): Promise<SAESubmissionResult> {
     headers: authHeaders(),
   });
   return handleResponse<SAESubmissionResult>(res);
+}
+
+export async function transcribeExam(
+  handwrittenFile: File,
+  webassignFile: File
+): Promise<SAETranscribeResponse> {
+  const form = new FormData();
+  form.append("student_answer", handwrittenFile);
+  form.append("webassign_pdf", webassignFile);
+
+  const res = await fetch(`${API}/api/sae/student/transcribe`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: form,
+  });
+
+  return handleResponse<SAETranscribeResponse>(res);
+}
+
+export async function gradeDraftSubmission(): Promise<SAESubmissionResult> {
+  const res = await fetch(`${API}/api/sae/student/grade-draft`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+
+  return handleResponse<SAESubmissionResult>(res);
+}
+
+export async function fetchMyDraftFile(
+  fileType: "handwritten" | "webassign"
+): Promise<ArrayBuffer> {
+  const res = await fetch(`${API}/api/sae/student/draft/files/${fileType}`, {
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      detail = body.detail ?? body.message ?? detail;
+    } catch {
+      // ignore
+    }
+    throw new Error(detail);
+  }
+
+  return res.arrayBuffer();
 }
 
 export async function submitExam(
