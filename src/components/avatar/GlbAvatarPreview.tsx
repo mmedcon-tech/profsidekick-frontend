@@ -80,7 +80,11 @@ function useAvatarAnimation(
       ? 0.35 + 0.25 * Math.sin(idlePhase.current * 9)
       : hasVisemeWeights
         ? 0
-        : amplitude;
+        : amplitude > 0.03
+          ? amplitude
+          : forceSpeaking
+            ? 0.18 + 0.2 * Math.abs(Math.sin(speakingPhase.current * 10.5))
+            : amplitude;
 
     const isSpeaking = visemeWeights
       ? Object.values(visemeWeights).some((v) => v > 0.06)

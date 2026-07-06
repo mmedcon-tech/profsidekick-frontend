@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAiLeadSystemPrompt,
+  buildLearnerSlideChangeMessage,
   buildSessionKickoffMessage,
   buildSlideNavigationTools,
   buildSlideToolResultData,
@@ -42,6 +43,7 @@ describe('buildAiLeadSystemPrompt', () => {
       sessionMode: 'teaching',
       currentSlideIndex: 0,
     });
+    expect(prompt).toMatch(/press Next or Previous/i);
     expect(prompt).toMatch(/call nextSlide\(\)/i);
     expect(prompt).toMatch(/Introduction/);
     expect(prompt).toMatch(/CURRENT POSITION/i);
@@ -75,6 +77,16 @@ describe('parsePublisherInstructions', () => {
     });
     expect(parsePublisherInstructions(raw)).toContain('clinical examples');
     expect(parsePublisherInstructions(raw)).toContain('concise');
+  });
+});
+
+describe('buildLearnerSlideChangeMessage', () => {
+  it('tells the avatar to teach the new slide after learner presses Next', () => {
+    const message = buildLearnerSlideChangeMessage(1, slides, 'next');
+    expect(message).toMatch(/pressed Next/i);
+    expect(message).toMatch(/Core Concepts/);
+    expect(message).toMatch(/Key ideas/);
+    expect(message).toMatch(/teach this aloud now/i);
   });
 });
 

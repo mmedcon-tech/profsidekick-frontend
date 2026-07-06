@@ -60,8 +60,10 @@ export default function TeachingSessionAvatar({
 
   if (useGlbPreview && glbUrl) {
     const lipSync = libraryEntry?.lipSync
-      ? { ...libraryEntry.lipSync, mouthOpenGain: 0.68 }
-      : { mouthOpenGain: 0.68, morphTargets: [], jawBones: [] };
+      ? { ...libraryEntry.lipSync, mouthOpenGain: 0.78 }
+      : { mouthOpenGain: 0.85, jawBones: ['jaw', 'Jaw', 'mixamorig:Jaw', 'Jawbone'] };
+
+    const isSpeaking = isConnected && (isAISpeaking || amplitude > 0.035);
 
     return (
       <div className="flex h-full w-full flex-col overflow-hidden bg-gray-900">
@@ -69,6 +71,7 @@ export default function TeachingSessionAvatar({
           glbUrl={glbUrl}
           lipSyncHints={lipSync}
           amplitude={amplitude}
+          isSpeaking={isSpeaking}
           showControls={false}
           framing="full"
           coverHeightFraction={0.36}

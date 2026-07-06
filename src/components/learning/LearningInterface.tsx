@@ -25,10 +25,7 @@ import {
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
 import {
-  navigateNextSlide,
-  navigatePreviousSlide,
   navigateToIndex,
-  navigateToSlideNumber,
   type SlideNavigationResult,
   type SlideNavigationSource,
 } from "@/lib/slideNavigation";
@@ -37,6 +34,7 @@ import {
   buildSessionKickoffMessage,
   buildSlideNavigationTools,
   parsePublisherInstructions,
+  type LearnerSlideChangeAction,
   type SessionMode,
 } from "@/lib/sessionSlideControl";
 import {
@@ -52,6 +50,8 @@ import {
 import { pickRealtimeVoiceForAvatar } from "@/lib/realtimeVoice";
 import { getDefaultChatbotAvatar } from "@/lib/avatarLibrary";
 import { useRealtimeTeachingLipSync } from "@/hooks/useRealtimeTeachingLipSync";
+import { notifyLearnerSlideChangeToRealtime } from "@/lib/learnerSlideRealtimeNotify";
+import { toast } from "sonner";
 
 const defaultTeachingAvatar = getDefaultChatbotAvatar();
 const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
@@ -141,6 +141,7 @@ export default function LearningInterface({
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const awaitingSessionConfigRef = useRef(false);
   const slideToolHandledThisTurnRef = useRef(false);
+  const isAISpeakingRef = useRef(false);
   const handledRealtimeToolCallIdsRef = useRef(new Set<string>());
   const performAiSlideAdvanceRef = useRef<(targetIndex: number) => SlideNavigationResult>(
     () => ({
@@ -158,11 +159,18 @@ export default function LearningInterface({
     } | null) | null
   >(null);
   const handleRealtimeSlideToolRef = useRef(onSlideToolRef.current);
+  const sendClientEventRef = useRef<(eventObj: Record<string, unknown>, suffix?: string) => void>(
+    () => undefined,
+  );
 
   const lipSyncAmplitude = useRealtimeTeachingLipSync(
     outputAudioElement,
     sessionStatus === "CONNECTED",
   );
+
+  useEffect(() => {
+    isAISpeakingRef.current = isAISpeaking;
+  }, [isAISpeaking]);
 
   // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
@@ -241,6 +249,8 @@ export default function LearningInterface({
       }
     }
   };
+
+  sendClientEventRef.current = sendClientEvent;
 
   const handleServerEventRef = useHandleServerEvent({
     setSessionStatus,
@@ -1050,21 +1060,11 @@ export default function LearningInterface({
   };
 
   const nextSlide = () => {
-    const result = navigateNextSlide(currentSlideRef.current, slideCount);
-    if (!result.success) return;
-
-    currentSlideRef.current = result.currentIndex;
-    setCurrentSlide(result.currentIndex);
-    notifyAIOfSlideChange(result.currentIndex, result.previousIndex, "manual_navigation");
+    applySlideNavigation(currentSlideRef.current + 1, "manual_navigation");
   };
 
   const previousSlide = () => {
-    const result = navigatePreviousSlide(currentSlideRef.current, slideCount);
-    if (!result.success) return;
-
-    currentSlideRef.current = result.currentIndex;
-    setCurrentSlide(result.currentIndex);
-    notifyAIOfSlideChange(result.currentIndex, result.previousIndex, "manual_navigation");
+    applySlideNavigation(currentSlideRef.current - 1, "manual_navigation");
   };
 
   const handleEndSessionClick = () => {
@@ -1118,67 +1118,49 @@ export default function LearningInterface({
     }));
   };
 
-  // Helper function to notify AI about programmatic slide changes
-  const notifyAIOfSlideChange = (newSlide: number, previousSlide: number, source: string = "programmatic") => {
-    console.log(`📤 Notifying AI of ${source} slide change to slide ${newSlide + 1} - interrupting if speaking`);
+  const notifyLearnerManualSlideChange = useCallback(
+    (slideIndex: number, action: LearnerSlideChangeAction) => {
+      const slide = classSession.slides[slideIndex];
+      const title = slide?.title ?? `Slide ${slideIndex + 1}`;
 
-    // Step 1: If AI is speaking, force interrupt the current response
-    if (isAISpeaking) {
-      console.log('🛑 AI is speaking, forcing interruption for slide change');
-
-      // First, cancel the current response
-      sendClientEvent({
-        type: "response.cancel"
-      }, `slide.${source}.cancel_response`);
-
-      // Then clear the output audio buffer to stop playback immediately
-      // This is the key step that actually stops the audio from continuing
-      sendClientEvent({
-        type: "output_audio_buffer.clear"
-      }, `slide.${source}.clear_audio_buffer`);
-
-      // Small delay to ensure interruption is processed
-      setTimeout(() => {
-        sendSlideChangeNotification(newSlide, previousSlide, source);
-      }, 50);
-    } else {
-      // AI is not speaking, send notification immediately
-      sendSlideChangeNotification(newSlide, previousSlide, source);
-    }
-  };
-
-  // Helper function to send the actual slide change notification
-  const sendSlideChangeNotification = (newSlide: number, previousSlide: number, source: string) => {
-    // Send as user message to simulate speech input
-    const slideChangeMessage = {
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: `Stop, I just changed to slide ${newSlide + 1}, "${classSession.slides[newSlide]?.title || 'Unknown'}". Acknowledge naturally and continue with the lesson.`
-          }
-        ]
+      if (dcRef.current?.readyState !== "open") {
+        toast.info(`Moved to "${title}". Start the session so the tutor can teach this slide.`);
+        return;
       }
-    };
 
-    sendClientEvent(slideChangeMessage, `slide.${source}`);
+      const mode: SessionMode =
+        sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? "teaching";
+      const publisherInstructions = parsePublisherInstructions(
+        classSession.classDetails.assistant_parameters?.instructions,
+      );
 
-    // Trigger immediate response to the slide change
-    const triggerResponse = {
-      type: "response.create",
-      response: {
-        modalities: ["text", "audio"]
-      }
-    };
+      notifyLearnerSlideChangeToRealtime({
+        send: (event, suffix) => sendClientEventRef.current(event, suffix),
+        slides: classSession.slides,
+        slideIndex,
+        action,
+        sessionMode: mode,
+        publisherInstructions,
+      });
 
-    // Small delay to ensure the message is processed before triggering response
-    setTimeout(() => {
-      sendClientEvent(triggerResponse, `slide.${source}.trigger_response`);
-    }, 100);
-  };
+      setTranscript((prev) => [
+        ...prev,
+        { role: "user", text: `[You moved to slide ${slideIndex + 1}: ${title}]` },
+      ]);
+      toast.success(`Teaching slide ${slideIndex + 1}: ${title}`);
+      console.log(`📤 Learner slide change → teaching slide ${slideIndex + 1}`);
+    },
+    [
+      classSession.slides,
+      classSession.classDetails.assistant_parameters?.instructions,
+      sessionModeProp,
+    ],
+  );
+
+  const notifyLearnerManualSlideChangeRef = useRef(notifyLearnerManualSlideChange);
+  useEffect(() => {
+    notifyLearnerManualSlideChangeRef.current = notifyLearnerManualSlideChange;
+  }, [notifyLearnerManualSlideChange]);
 
   const pushSlideContextUpdate = useCallback((slideIndex: number) => {
     const mode: SessionMode =
@@ -1215,7 +1197,14 @@ export default function LearningInterface({
     setCurrentSlide(result.currentIndex);
 
     if (source !== "ai_tool") {
-      notifyAIOfSlideChange(result.currentIndex, result.previousIndex, source);
+      setShowStartPrompt(false);
+      const action: LearnerSlideChangeAction =
+        source === "manual_navigation"
+          ? targetIndex > previousIndex
+            ? "next"
+            : "previous"
+          : "jump";
+      notifyLearnerManualSlideChangeRef.current(result.currentIndex, action);
     }
 
     return result;
@@ -1350,7 +1339,7 @@ export default function LearningInterface({
       // Notify AI if we're starting on a different slide (delayed to ensure connection is ready)
       if (correctSlide !== 0) {
         setTimeout(() => {
-          notifyAIOfSlideChange(correctSlide, previousSlide, "resume_session");
+          notifyLearnerManualSlideChangeRef.current(correctSlide, "jump");
         }, 2000); // Give time for AI connection to be established
       }
     }
@@ -1841,7 +1830,41 @@ export default function LearningInterface({
           )}
 
           {/* Slide content area */}
-          <div className="flex flex-1 items-center justify-center overflow-auto p-4 md:p-8">
+          <div className="relative flex flex-1 items-center justify-center overflow-auto p-4 md:p-8">
+            {/* Slide counter badge */}
+            <div className="absolute top-4 right-4 z-20 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur-sm">
+              Slide {currentSlide + 1} of {slideCount}
+            </div>
+
+            {/* Floating manual navigation — always visible on the slide */}
+            <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2">
+              <p className="rounded-full bg-card/90 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm">
+                Tap <span className="text-foreground">Next</span> when the tutor says &quot;next slide&quot;
+              </p>
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/95 p-2 shadow-xl backdrop-blur-md">
+                <button
+                  type="button"
+                  onClick={previousSlide}
+                  disabled={currentSlide === 0}
+                  aria-label="Previous slide"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                  <span className="hidden sm:inline">Previous</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={nextSlide}
+                  disabled={currentSlide === slideCount - 1}
+                  aria-label="Next slide"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
             <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
               {currentSlideData?.imagePath ? (
                 <img
@@ -1865,31 +1888,36 @@ export default function LearningInterface({
           </div>
 
           {/* Slide Navigation Bar */}
-          <div className="flex shrink-0 items-center justify-between border-t border-border bg-card/80 backdrop-blur-md px-4 py-3 md:px-6">
+          <div className="flex shrink-0 items-center justify-between border-t border-border bg-card px-4 py-3 md:px-6">
             <button
+              type="button"
               onClick={previousSlide}
               disabled={currentSlide === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex min-h-[44px] items-center gap-1.5 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ChevronLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Previous</span>
+              <ChevronLeft className="h-5 w-5" />
+              <span>Previous</span>
             </button>
 
             <div className="flex flex-col items-center">
               <span className="text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
+              <span className="mt-0.5 text-xs text-muted-foreground">
+                {currentSlide + 1} / {slideCount}
+              </span>
               {aiLeadEnabled && (
                 <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
-                  AI leading session
+                  AI leading · use Next when ready
                 </span>
               )}
-              <div className="flex items-center gap-1.5 mt-1">
+              <div className="mt-1 flex items-center gap-1.5">
                 {Array.from({ length: slideCount }).map((_, i) => (
                   <button
                     key={i}
+                    type="button"
                     onClick={() => goToSlideByIndex(i)}
                     className={cn(
                       "rounded-full transition-all duration-300",
-                      i === currentSlide ? "h-1.5 w-5 bg-primary" : "h-1.5 w-1.5 bg-border hover:bg-muted-foreground"
+                      i === currentSlide ? "h-2 w-6 bg-primary" : "h-2 w-2 bg-border hover:bg-muted-foreground"
                     )}
                     aria-label={`Go to slide ${i + 1}`}
                   />
@@ -1898,12 +1926,13 @@ export default function LearningInterface({
             </div>
 
             <button
+              type="button"
               onClick={nextSlide}
               disabled={currentSlide === slideCount - 1}
-              className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <span className="hidden sm:inline">Next</span>
-              <ChevronRight className="h-4 w-4" />
+              <span>Next</span>
+              <ChevronRight className="h-5 w-5" />
             </button>
           </div>
         </div>

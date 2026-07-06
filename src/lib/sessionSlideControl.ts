@@ -91,16 +91,15 @@ export function buildAiLeadSystemPrompt({
     })
     .join('\n');
 
-  const teachingLead = `You are leading an interactive teaching session. The learner sees ONE slide on screen at a time. YOU must change what they see using your navigation tools.
+  const teachingLead = `You are leading an interactive teaching session. The learner sees ONE slide on screen at a time.
 
 SLIDE NAVIGATION RULES (critical — violations break the UI):
 - You may ONLY teach content for the CURRENT on-screen slide (${currentLabel}).
 - Do NOT summarize or teach future slides while still on the current slide.
-- After you finish teaching the current slide aloud, you MUST call nextSlide() as your last action before stopping.
-- Saying "next slide" out loud does NOT change the screen — only calling nextSlide() does.
+- The learner can press Next or Previous on screen to change slides at any time. When that happens, you will receive a message — immediately stop what you were teaching and begin teaching ONLY the new current slide from the start.
+- After you finish teaching the current slide aloud, you MAY call nextSlide() to advance automatically — but the learner may also press Next themselves.
+- Saying "next slide" out loud does NOT change the screen — only the nextSlide() tool or the learner's Next button does.
 - NEVER call nextSlide() while you are still explaining the current slide.
-- The on-screen slide only changes when you call nextSlide() — the learner sees a mismatch if you call it too early.
-- Do NOT wait for the learner to say "next slide".
 - If the learner interrupts with a question, answer it, then resume or call nextSlide() when ready.
 - Use previousSlide() or goToSlide(n) when revisiting earlier material.
 - The on-screen slide must always match what you are teaching.
@@ -145,7 +144,34 @@ export function buildSessionKickoffMessage(
     return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Greet the learner, explain the examination format, and begin questioning based on the current slide.`;
   }
 
-  return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner briefly, teach ONLY this slide's content, then call nextSlide() before moving on. Repeat: teach one slide → call nextSlide() → teach the next. Never discuss slide ${currentSlideIndex + 2} or later until you have called nextSlide().`;
+  return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner briefly, teach ONLY this slide's content, then either call nextSlide() or wait for the learner to press Next. Repeat: teach one slide at a time. Never discuss slide ${currentSlideIndex + 2} or later until the current slide has been covered and the screen has advanced.`;
+}
+
+export type LearnerSlideChangeAction = 'next' | 'previous' | 'jump';
+
+/** Message sent to the realtime session when the learner changes slides manually. */
+export function buildLearnerSlideChangeMessage(
+  slideIndex: number,
+  slides: SlideData[],
+  action: LearnerSlideChangeAction,
+): string {
+  const slide = slides[slideIndex];
+  const title = slide?.title ?? `Slide ${slideIndex + 1}`;
+  const content = slide?.content?.trim().slice(0, 500) || 'No extracted content for this slide.';
+  const actionLabel =
+    action === 'next'
+      ? 'pressed Next'
+      : action === 'previous'
+        ? 'pressed Previous'
+        : 'jumped to this slide';
+
+  return [
+    `The learner ${actionLabel} and is now on slide ${slideIndex + 1} of ${slides.length}: "${title}".`,
+    `STOP teaching the previous slide immediately.`,
+    `CURRENT SLIDE CONTENT (your ONLY source — teach this aloud now, from the beginning):`,
+    content,
+    `Respond out loud now: briefly acknowledge the slide change, then teach this slide.`,
+  ].join('\n');
 }
 
 /** Extract publisher-editable instructions from the stored JSON/string format. */

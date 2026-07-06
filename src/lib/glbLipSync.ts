@@ -66,12 +66,36 @@ function isMeshWithMorphs(obj: Object3D): obj is Mesh {
   return 'morphTargetDictionary' in obj && 'morphTargetInfluences' in obj;
 }
 
+const LIP_SYNC_MORPH_PATTERN = /mouth|jaw|viseme|lip|vrc\.v_|^aa$|^oh$|^ee$|^pp$/i;
+const LIP_SYNC_MORPH_EXCLUDE = /eye|brow|blink|lid|squint|nose|cheek/i;
+
+export function discoverLipSyncMorphBindings(root: Object3D): MorphBinding[] {
+  const bindings: MorphBinding[] = [];
+  const seen = new Set<string>();
+
+  root.traverse((child) => {
+    if (!isMeshWithMorphs(child) || !child.morphTargetDictionary) return;
+
+    for (const [name, index] of Object.entries(child.morphTargetDictionary)) {
+      const key = `${child.uuid}:${name}`;
+      if (seen.has(key)) continue;
+      if (!LIP_SYNC_MORPH_PATTERN.test(name) || LIP_SYNC_MORPH_EXCLUDE.test(name)) continue;
+      seen.add(key);
+      bindings.push({ mesh: child, index, name });
+    }
+  });
+
+  return bindings;
+}
+
 export function findMorphBindings(
   root: Object3D,
-  candidates: string[] = DEFAULT_MORPH_NAMES,
+  candidates?: string[],
 ): MorphBinding[] {
+  const resolvedCandidates =
+    candidates && candidates.length > 0 ? candidates : DEFAULT_MORPH_NAMES;
   const bindings: MorphBinding[] = [];
-  const wanted = new Set(candidates.map((name) => name.toLowerCase()));
+  const wanted = new Set(resolvedCandidates.map((name) => name.toLowerCase()));
 
   root.traverse((child) => {
     if (!isMeshWithMorphs(child) || !child.morphTargetDictionary || !child.morphTargetInfluences) {
@@ -119,15 +143,20 @@ function pickBinding(
 }
 
 function buildRigCache(root: Object3D, hints: LipSyncHints): LipSyncRigCache {
-  const morphBindings = findMorphBindings(root, hints.morphTargets);
-  const jawBindings = findJawBindings(root, hints.jawBones);
+  let morphBindings = findMorphBindings(root, hints.morphTargets);
+  if (morphBindings.length === 0) {
+    morphBindings = discoverLipSyncMorphBindings(root);
+  }
+
+  const jawBindings = findJawBindings(root, hints.jawBones?.length ? hints.jawBones : undefined);
   const cache: LipSyncRigCache = {
     morphBindings,
     jawBindings,
-    mouthOpen: pickBinding(morphBindings, /^mouthopen$/i),
-    jawOpen: pickBinding(morphBindings, /^jawopen$/i),
-    visemeAa: pickBinding(morphBindings, /viseme_aa/i),
-    visemeO: pickBinding(morphBindings, /viseme_o/i),
+    mouthOpen: pickBinding(morphBindings, /mouth.?open|mouthopen|mouth_open/i)
+      ?? pickBinding(morphBindings, /open/i),
+    jawOpen: pickBinding(morphBindings, /jaw.?open|jawopen|jaw_open/i),
+    visemeAa: pickBinding(morphBindings, /viseme_aa|^aa$/i),
+    visemeO: pickBinding(morphBindings, /viseme_o|^oh$/i),
     mouthSmile: pickBinding(morphBindings, /mouthsmile/i),
   };
   rigCache.set(root, cache);
@@ -186,7 +215,7 @@ export function applyLipSyncAmplitude(
   const shaped = smoothed > 0.035 ? 0.04 + smoothed * 0.48 : 0;
   const openValue = Math.min(0.62, shaped * gain);
 
-  const primaryOpen = rig.mouthOpen ?? rig.jawOpen;
+  const primaryOpen = rig.mouthOpen ?? rig.jawOpen ?? rig.morphBindings[0];
   if (primaryOpen) {
     setMorphInfluence(primaryOpen, openValue);
   }

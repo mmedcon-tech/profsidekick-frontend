@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Bone, Group, Mesh, BoxGeometry, MeshStandardMaterial } from 'three';
 import {
   applyLipSyncAmplitude,
+  discoverLipSyncMorphBindings,
   findJawBindings,
   resetLipSyncState,
   smoothLipSyncAmplitude,
@@ -85,6 +86,18 @@ describe('applyLipSyncAmplitude', () => {
     expect(gained.mesh.morphTargetInfluences?.[0]).toBeGreaterThan(
       base.mesh.morphTargetInfluences?.[0] ?? 0,
     );
+  });
+
+  it('discovers mouth morphs when explicit hints are empty', () => {
+    const root = new Group();
+    const mesh = new Mesh(new BoxGeometry(1, 1, 1), new MeshStandardMaterial());
+    mesh.morphTargetDictionary = { Mouth_Open: 0, eyeBlinkLeft: 1 };
+    mesh.morphTargetInfluences = [0, 0];
+    root.add(mesh);
+
+    const discovered = discoverLipSyncMorphBindings(root);
+    expect(discovered.map((binding) => binding.name)).toContain('Mouth_Open');
+    expect(discovered.map((binding) => binding.name)).not.toContain('eyeBlinkLeft');
   });
 
   it('keeps the mouth fully closed during silence', () => {
