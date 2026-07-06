@@ -53,7 +53,7 @@ describe('applyLipSyncAmplitude', () => {
     applyLipSyncAmplitude(root, 1, { morphTargets: ['jawOpen'] }, 1 / 30);
     applyLipSyncAmplitude(root, 1, { morphTargets: ['jawOpen'] }, 1 / 30);
 
-    expect(mesh.morphTargetInfluences?.[0]).toBeGreaterThan(0.4);
+    expect(mesh.morphTargetInfluences?.[0]).toBeGreaterThan(0.15);
     expect(root.rotation.x).toBe(beforeX);
   });
 

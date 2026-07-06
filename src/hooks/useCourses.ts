@@ -85,7 +85,7 @@ export function useCourses(programId?: string): UseCoursesReturn {
         ? `/api/courses?program_id=${programId}`
         : '/api/courses';
 
-      const response = await fetch(config.getApiUrl(endpoint), {
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -94,8 +94,8 @@ export function useCourses(programId?: string): UseCoursesReturn {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch courses`);
+        const errorData = await response.json().catch(() => ({})) as { message?: string; detail?: string };
+        throw new Error(errorData.detail || errorData.message || `HTTP ${response.status}: Failed to fetch courses`);
       }
 
       const data = await response.json();
@@ -114,7 +114,7 @@ export function useCourses(programId?: string): UseCoursesReturn {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(config.getApiUrl('/api/courses'), {
+    const response = await fetch('/api/courses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -124,8 +124,8 @@ export function useCourses(programId?: string): UseCoursesReturn {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to create course');
+      const errorData = await response.json().catch(() => ({})) as { message?: string; detail?: string };
+      throw new Error(errorData.detail || errorData.message || 'Failed to create course');
     }
 
     const newCourse = await response.json();

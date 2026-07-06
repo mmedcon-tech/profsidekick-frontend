@@ -31,7 +31,7 @@ export function useAudioAmplitude(
         const ctx = new AudioCtx();
         const analyser = ctx.createAnalyser();
         analyser.fftSize = 512;
-        analyser.smoothingTimeConstant = 0.55;
+        analyser.smoothingTimeConstant = 0.42;
 
         const source = ctx.createMediaElementSource(audioElement);
         source.connect(analyser);

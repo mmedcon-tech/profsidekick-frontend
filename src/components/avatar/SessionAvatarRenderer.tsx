@@ -19,6 +19,7 @@ interface SessionAvatarRendererProps {
   isUserSpeaking: boolean;
   heygenConnected?: boolean;
   heygenVideoRef?: React.RefObject<HTMLVideoElement | null>;
+  lipSyncAmplitude?: number;
 }
 
 export default function SessionAvatarRenderer({
@@ -29,6 +30,7 @@ export default function SessionAvatarRenderer({
   isUserSpeaking,
   heygenConnected = false,
   heygenVideoRef,
+  lipSyncAmplitude,
 }: SessionAvatarRendererProps): React.ReactElement {
   const effectiveType = getEffectiveRenderType(config);
   const displayConfig: SessionAvatarConfig = {
@@ -64,6 +66,7 @@ export default function SessionAvatarRenderer({
             isConnected={isConnected}
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
+            lipSyncAmplitude={lipSyncAmplitude}
           />
         ) : displayConfig.renderType === '3d' && displayConfig.modelUrl ? (
           <GlbAvatar
@@ -80,6 +83,7 @@ export default function SessionAvatarRenderer({
             isConnected={isConnected}
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
+            lipSyncAmplitude={lipSyncAmplitude}
           />
         )}
       </div>

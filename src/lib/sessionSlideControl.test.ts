@@ -31,7 +31,7 @@ describe('buildSlideNavigationTools', () => {
   it('registers proactive slide navigation tools', () => {
     const tools = buildSlideNavigationTools();
     expect(tools.map((t) => t.name)).toEqual(['nextSlide', 'previousSlide', 'goToSlide']);
-    expect(tools[0].description).toMatch(/proactively/i);
+    expect(tools[0].description).toMatch(/finished teaching the current slide/i);
   });
 });
 
@@ -45,6 +45,8 @@ describe('buildAiLeadSystemPrompt', () => {
     expect(prompt).toMatch(/call nextSlide\(\)/i);
     expect(prompt).toMatch(/Introduction/);
     expect(prompt).toMatch(/CURRENT POSITION/i);
+    expect(prompt).toMatch(/Welcome to the course/);
+    expect(prompt).not.toMatch(/Key ideas go here/);
   });
 
   it('uses a lighter navigation policy in examination mode', () => {

@@ -177,13 +177,8 @@ export default function ClassCreation() {
     });
   };
 
-  const SUPPORTED_MIME_TYPES = [
-    "application/pdf",
-    "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
-  const SUPPORTED_FORMAT_LABEL = "PDF, PPTX, or DOCX";
+  const SUPPORTED_MIME_TYPES = ["application/pdf"];
+  const SUPPORTED_FORMAT_LABEL = "PDF";
 
   const handleFileSelect = (file: File) => {
     if (!SUPPORTED_MIME_TYPES.includes(file.type)) { setError(`Please upload a ${SUPPORTED_FORMAT_LABEL} file`); return; }
@@ -276,8 +271,11 @@ export default function ClassCreation() {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || result.message || "Failed to create session");
+      const result = await response.json() as { message?: string; detail?: string; error?: string };
+      if (!response.ok) {
+        const detail = result.message || result.detail || result.error || "Failed to create session";
+        throw new Error(typeof detail === "string" ? detail : "Failed to create session");
+      }
       router.push(`/courses/${selectedCourseId}/sessions/${result.sessionId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred while creating the session");
@@ -587,7 +585,7 @@ export default function ClassCreation() {
                 onDragLeave={handleDragLeave}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <input ref={fileInputRef} type="file" accept=".pdf,.ppt,.pptx,.docx" onChange={handleFileInputChange} className="hidden" />
+                <input ref={fileInputRef} type="file" accept=".pdf,application/pdf" onChange={handleFileInputChange} className="hidden" />
                 {selectedFile ? (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-primary">
@@ -600,7 +598,7 @@ export default function ClassCreation() {
                 ) : (
                   <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">Drag & drop or click to browse (up to 50MB)</p>
-                    <p className="text-xs text-muted-foreground/60">Supported: PDF, PowerPoint (PPTX), Word (DOCX)</p>
+                    <p className="text-xs text-muted-foreground/60">Supported: PDF only (export PowerPoint or Word as PDF first)</p>
                   </div>
                 )}
               </div>
@@ -619,7 +617,7 @@ export default function ClassCreation() {
                   }`}
                   onClick={() => solutionFileInputRef.current?.click()}
                 >
-                  <input ref={solutionFileInputRef} type="file" accept=".pdf,.ppt,.pptx,.docx" onChange={handleSolutionFileInputChange} className="hidden" />
+                  <input ref={solutionFileInputRef} type="file" accept=".pdf,application/pdf" onChange={handleSolutionFileInputChange} className="hidden" />
                   {selectedSolutionFile ? (
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-primary">
@@ -636,7 +634,7 @@ export default function ClassCreation() {
                   ) : (
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Click to upload solution file (optional)</p>
-                      <p className="text-xs text-muted-foreground/60">Supported: PDF, PPTX, DOCX</p>
+                      <p className="text-xs text-muted-foreground/60">Supported: PDF only</p>
                     </div>
                   )}
                 </div>

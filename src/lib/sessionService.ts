@@ -25,6 +25,13 @@ export async function fetchSessionEphemeral(
   const url = new URL(config.getApiUrl('/api/session/ephemeral'));
   url.searchParams.set('session_id', sessionId);
   url.searchParams.set('session_run_id', sessionRunId);
+  const libraryId =
+    options.fallbackAvatar?.glbLibraryId ??
+    options.fallbackAvatar?.modelUrl ??
+    null;
+  if (libraryId) {
+    url.searchParams.set('glb_library_id', libraryId);
+  }
 
   const headers: HeadersInit = {};
   if (options.token) {
@@ -41,7 +48,10 @@ export async function fetchSessionEphemeral(
 
   const data = (await response.json()) as EphemeralTokenResponse;
   const openaiToken =
-    data.openai_token ?? data.client_secret?.value ?? '';
+    data.openai_token ??
+    data.client_secret?.value ??
+    (data as { value?: string }).value ??
+    '';
 
   if (!openaiToken) {
     throw new Error('Ephemeral response missing OpenAI token');

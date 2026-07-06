@@ -19,7 +19,7 @@ export function buildSlideNavigationTools(): Array<{
       type: 'function',
       name: 'nextSlide',
       description:
-        'Advance to the next slide after you finish teaching the current one. Call this proactively while leading the learner through the deck — do not wait for them to ask.',
+        'Advance the on-screen slide to the next one. Call this ONLY after you have completely finished teaching the current slide aloud — never call it mid-sentence or while still explaining the current slide. The slide will not change until you call this tool.',
       parameters: {
         type: 'object',
         properties: {},
@@ -77,25 +77,40 @@ export function buildAiLeadSystemPrompt({
     ? `Slide ${currentSlideIndex + 1} of ${total}: "${current.title}"`
     : `Slide ${currentSlideIndex + 1} of ${total}`;
 
+  const currentSlide = slides[currentSlideIndex];
+  const currentDetail = currentSlide
+    ? currentSlide.content?.trim().slice(0, 600) || 'No extracted content'
+    : 'No extracted content';
+
   const deckOutline = slides
     .map((slide, index) => {
-      const snippet = slide.content?.trim().slice(0, 280) || 'No extracted content';
-      return `${index + 1}. ${slide.title}\n   ${snippet}`;
+      if (index === currentSlideIndex) {
+        return `→ ${index + 1}. ${slide.title} (CURRENT — on screen now)`;
+      }
+      return `${index + 1}. ${slide.title} (locked — call nextSlide() before teaching this)`;
     })
     .join('\n');
 
-  const teachingLead = `You are leading an interactive teaching session. The learner sees the slide deck on screen and YOU control which slide is shown using your navigation tools.
+  const teachingLead = `You are leading an interactive teaching session. The learner sees ONE slide on screen at a time. YOU must change what they see using your navigation tools.
 
-SLIDE NAVIGATION RULES (critical):
-- Teach one slide at a time. Explain the key ideas on the CURRENT slide, then call nextSlide() to advance.
-- Do NOT wait for the learner to say "next slide". Advance automatically once you have covered the current slide.
-- If the learner interrupts with a question, answer it, then resume teaching or call nextSlide() when ready.
+SLIDE NAVIGATION RULES (critical — violations break the UI):
+- You may ONLY teach content for the CURRENT on-screen slide (${currentLabel}).
+- Do NOT summarize or teach future slides while still on the current slide.
+- After you finish teaching the current slide aloud, you MUST call nextSlide() as your last action before stopping.
+- Saying "next slide" out loud does NOT change the screen — only calling nextSlide() does.
+- NEVER call nextSlide() while you are still explaining the current slide.
+- The on-screen slide only changes when you call nextSlide() — the learner sees a mismatch if you call it too early.
+- Do NOT wait for the learner to say "next slide".
+- If the learner interrupts with a question, answer it, then resume or call nextSlide() when ready.
 - Use previousSlide() or goToSlide(n) when revisiting earlier material.
-- Stay synchronized with the on-screen slide at all times.
+- The on-screen slide must always match what you are teaching.
 
 CURRENT POSITION: ${currentLabel}
 
-DECK OUTLINE:
+CURRENT SLIDE CONTENT (only source you may teach right now):
+${currentDetail}
+
+DECK OUTLINE (titles only — details unlock after nextSlide()):
 ${deckOutline}`;
 
   const examinationLead = `You are conducting an oral examination. Use slide navigation tools to reference specific slides when asking questions, but do not lecture or teach through the deck sequentially unless the learner asks for clarification.
@@ -130,7 +145,7 @@ export function buildSessionKickoffMessage(
     return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Greet the learner, explain the examination format, and begin questioning based on the current slide.`;
   }
 
-  return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner, introduce the topic, teach this slide, then call nextSlide() and continue through the deck automatically.`;
+  return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner briefly, teach ONLY this slide's content, then call nextSlide() before moving on. Repeat: teach one slide → call nextSlide() → teach the next. Never discuss slide ${currentSlideIndex + 2} or later until you have called nextSlide().`;
 }
 
 /** Extract publisher-editable instructions from the stored JSON/string format. */

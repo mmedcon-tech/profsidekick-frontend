@@ -183,8 +183,8 @@ export function applyLipSyncAmplitude(
 
   // Once we're clearly speaking, lift the opening so even quiet syllables read as
   // mouth movement; the curve keeps closed mouths fully closed during silence.
-  const shaped = smoothed > 0.02 ? 0.18 + smoothed * 0.82 : 0;
-  const openValue = Math.min(1, shaped * gain);
+  const shaped = smoothed > 0.035 ? 0.04 + smoothed * 0.48 : 0;
+  const openValue = Math.min(0.62, shaped * gain);
 
   const primaryOpen = rig.mouthOpen ?? rig.jawOpen;
   if (primaryOpen) {

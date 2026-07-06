@@ -29,20 +29,37 @@ import {
   navigatePreviousSlide,
   navigateToIndex,
   navigateToSlideNumber,
+  type SlideNavigationResult,
   type SlideNavigationSource,
 } from "@/lib/slideNavigation";
 import {
   buildAiLeadSystemPrompt,
   buildSessionKickoffMessage,
   buildSlideNavigationTools,
-  buildSlideToolResultData,
   parsePublisherInstructions,
   type SessionMode,
 } from "@/lib/sessionSlideControl";
+import {
+  detectSlideAdvanceFromSpeech,
+  extractRealtimeToolCalls,
+} from "@/lib/slideAdvanceFromSpeech";
+import {
+  buildRealtimeSlideToolResponse,
+  isRealtimeSlideTool,
+  resolveSlideToolTarget,
+  type RealtimeSlideToolName,
+} from "@/lib/realtimeSlideTools";
+import { pickRealtimeVoiceForAvatar } from "@/lib/realtimeVoice";
+import { getDefaultChatbotAvatar } from "@/lib/avatarLibrary";
+import { useRealtimeTeachingLipSync } from "@/hooks/useRealtimeTeachingLipSync";
 
+const defaultTeachingAvatar = getDefaultChatbotAvatar();
 const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
-  renderType: "static",
-  avatarName: "Assistant",
+  renderType: "glb",
+  avatarName: defaultTeachingAvatar.name,
+  glbLibraryId: defaultTeachingAvatar.id,
+  modelUrl: defaultTeachingAvatar.glbPath,
+  imageUrl: defaultTeachingAvatar.thumbnailPath,
 };
 
 export interface TranscriptItem {
@@ -122,6 +139,30 @@ export default function LearningInterface({
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const awaitingSessionConfigRef = useRef(false);
+  const slideToolHandledThisTurnRef = useRef(false);
+  const handledRealtimeToolCallIdsRef = useRef(new Set<string>());
+  const performAiSlideAdvanceRef = useRef<(targetIndex: number) => SlideNavigationResult>(
+    () => ({
+      success: false,
+      previousIndex: 0,
+      currentIndex: 0,
+      message: "Not ready",
+    }),
+  );
+  const onSlideToolRef = useRef<
+    ((toolName: RealtimeSlideToolName, args: Record<string, unknown>) => {
+      success: boolean;
+      message: string;
+      data: object;
+    } | null) | null
+  >(null);
+  const handleRealtimeSlideToolRef = useRef(onSlideToolRef.current);
+
+  const lipSyncAmplitude = useRealtimeTeachingLipSync(
+    outputAudioElement,
+    sessionStatus === "CONNECTED",
+  );
 
   // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
@@ -209,6 +250,7 @@ export default function LearningInterface({
     setSelectedAgentName: () => { },
     setIsOutputAudioBufferActive: () => { },
     onTurnComplete: handleTurnComplete,
+    onSlideToolRef,
   });
 
   const loadSessionEphemeral = useCallback(async () => {
@@ -219,7 +261,10 @@ export default function LearningInterface({
       const bundle = await fetchSessionEphemeral(
         classSession.sessionId,
         sessionRunId,
-        { token, fallbackAvatar: avatarConfig ?? sessionAvatar },
+        {
+          token,
+          fallbackAvatar: avatarConfig ?? sessionAvatarRef.current ?? DEFAULT_SESSION_AVATAR,
+        },
       );
       setSessionAvatar(bundle.avatar);
       sessionAvatarRef.current = bundle.avatar;
@@ -862,6 +907,32 @@ export default function LearningInterface({
     console.log('✅ Successfully disconnected from realtime - all audio capture and processing stopped');
   };
 
+  const sendSessionKickoff = () => {
+    const mode: SessionMode =
+      sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? 'teaching';
+    const slideIndex = currentSlideRef.current;
+    const kickoffSlide = classSession.slides[slideIndex];
+
+    sendClientEvent({
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "system",
+        content: [
+          {
+            type: "input_text",
+            text: buildSessionKickoffMessage(
+              slideIndex,
+              kickoffSlide?.title ?? `Slide ${slideIndex + 1}`,
+              mode,
+            ),
+          },
+        ],
+      },
+    });
+    sendClientEvent({ type: "response.create" });
+  };
+
   const initializeSession = () => {
     const mode: SessionMode =
       sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? 'teaching';
@@ -876,6 +947,11 @@ export default function LearningInterface({
       type: "session.update",
       session: {
         tool_choice: "auto",
+        audio: {
+          output: {
+            voice: pickRealtimeVoiceForAvatar(sessionAvatarRef.current),
+          },
+        },
         tools: [
           ...buildSlideNavigationTools(),
           {
@@ -909,25 +985,13 @@ export default function LearningInterface({
     const success = sendClientEvent(sessionUpdate);
     console.log("Session initialization sent successfully:", success);
 
-    const kickoffSlide = classSession.slides[slideIndex];
-    sendClientEvent({
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "system",
-        content: [
-          {
-            type: "input_text",
-            text: buildSessionKickoffMessage(
-              slideIndex,
-              kickoffSlide?.title ?? `Slide ${slideIndex + 1}`,
-              mode,
-            ),
-          },
-        ],
-      },
-    });
-    sendClientEvent({ type: "response.create" });
+    awaitingSessionConfigRef.current = true;
+    window.setTimeout(() => {
+      if (awaitingSessionConfigRef.current) {
+        awaitingSessionConfigRef.current = false;
+        sendSessionKickoff();
+      }
+    }, 700);
   };
 
   const toggleAudio = () => {
@@ -1116,6 +1180,26 @@ export default function LearningInterface({
     }, 100);
   };
 
+  const pushSlideContextUpdate = useCallback((slideIndex: number) => {
+    const mode: SessionMode =
+      sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? 'teaching';
+    const publisherInstructions = parsePublisherInstructions(
+      classSession.classDetails.assistant_parameters?.instructions,
+    );
+
+    sendClientEvent({
+      type: "session.update",
+      session: {
+        instructions: buildAiLeadSystemPrompt({
+          slides: classSession.slides,
+          sessionMode: mode,
+          currentSlideIndex: slideIndex,
+          publisherInstructions,
+        }),
+      },
+    }, "slide.context_update");
+  }, [classSession.classDetails.assistant_parameters?.instructions, classSession.slides, sessionModeProp]);
+
   const applySlideNavigation = useCallback((
     targetIndex: number,
     source: SlideNavigationSource,
@@ -1136,6 +1220,54 @@ export default function LearningInterface({
 
     return result;
   }, [slideCount]);
+
+  const performAiSlideAdvance = useCallback(
+    (targetIndex: number): SlideNavigationResult => {
+      const result = applySlideNavigation(targetIndex, "ai_tool");
+      if (result.success) {
+        slideToolHandledThisTurnRef.current = true;
+        pushSlideContextUpdate(result.currentIndex);
+        console.log(`📽️ Slide advanced to ${result.currentIndex + 1}`);
+      }
+      return result;
+    },
+    [applySlideNavigation, pushSlideContextUpdate],
+  );
+
+  const handleRealtimeSlideTool = useCallback(
+    (toolName: RealtimeSlideToolName, args: Record<string, unknown>) => {
+      if (!aiLeadEnabled) {
+        return {
+          success: false,
+          message: "Learner has slide control",
+          data: {},
+        };
+      }
+
+      const target = resolveSlideToolTarget(
+        toolName,
+        args,
+        currentSlideRef.current,
+        slideCount,
+      );
+      if (target === null) return null;
+
+      const result = performAiSlideAdvance(target);
+      return buildRealtimeSlideToolResponse(
+        toolName,
+        result,
+        classSession.slides,
+        target,
+      );
+    },
+    [aiLeadEnabled, classSession.slides, performAiSlideAdvance, slideCount],
+  );
+
+  useEffect(() => {
+    performAiSlideAdvanceRef.current = performAiSlideAdvance;
+    onSlideToolRef.current = handleRealtimeSlideTool;
+    handleRealtimeSlideToolRef.current = handleRealtimeSlideTool;
+  }, [performAiSlideAdvance, handleRealtimeSlideTool]);
 
   const goToSlideByIndex = (targetIndex: number) => {
     applySlideNavigation(targetIndex, "dot_navigation");
@@ -1257,6 +1389,11 @@ export default function LearningInterface({
       const serverEvent = JSON.parse(e.data);
       console.log("🔄 Processing server event:", serverEvent.type, serverEvent);
 
+      if (serverEvent.type === "session.updated" && awaitingSessionConfigRef.current) {
+        awaitingSessionConfigRef.current = false;
+        sendSessionKickoff();
+      }
+
       // --- Track voice activity ---
       if (serverEvent.type === "input_audio_buffer.speech_started") {
         setIsUserSpeaking(true);
@@ -1264,6 +1401,7 @@ export default function LearningInterface({
         setIsUserSpeaking(false);
       }
       if (serverEvent.type === "output_audio_buffer.started") {
+        slideToolHandledThisTurnRef.current = false;
         setIsAISpeaking(true);
       } else if (serverEvent.type === "output_audio_buffer.stopped") {
         setIsAISpeaking(false);
@@ -1280,6 +1418,18 @@ export default function LearningInterface({
           heygenAvatarRef.current
             .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
             .catch(() => { });
+        }
+
+        if (!slideToolHandledThisTurnRef.current && aiLeadEnabled) {
+          const target = detectSlideAdvanceFromSpeech(
+            serverEvent.transcript,
+            currentSlideRef.current,
+            slideCount,
+          );
+          if (target !== null) {
+            console.log(`📽️ Verbal slide advance detected → slide ${target + 1}`);
+            performAiSlideAdvanceRef.current(target);
+          }
         }
       }
 
@@ -1298,152 +1448,100 @@ export default function LearningInterface({
       }
 
       // --- Handle tool calls for slide navigation ---
-      // Fix 1+3: send the real function result back to the Realtime API and do NOT forward
-      // tool-call events to handleServerEventRef (prevents duplicate processing and dummy results).
-      if (serverEvent.type === "response.done" && serverEvent.response?.output) {
-        const toolCallItems = serverEvent.response.output.filter(
-          (item: any) => item.type === "function_call" && item.name
-        );
+      const toolCallItems = extractRealtimeToolCalls(serverEvent);
 
-        if (toolCallItems.length > 0) {
-          toolCallItems.forEach((outputItem: any) => {
-            const args = outputItem.arguments ? JSON.parse(outputItem.arguments) : {};
-            let functionResult: { success: boolean; message: string; data: object } = { success: false, message: "", data: {} };
+      if (toolCallItems.length > 0) {
+        let pendingAsync = 0;
+        let submittedToolOutputs = 0;
 
-            if (outputItem.name === "searchKnowledgeBase") {
-              const query = args.query;
-              // Fetch RAG context asynchronously
-              fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ query, course_id: undefined })
-              })
-                .then(res => res.json())
-                .then(data => {
-                  const chunks = data.results || [];
-                  const functionResult = {
-                    success: true,
-                    message: `Found ${chunks.length} chunks of knowledge`,
-                    data: chunks
-                  };
-                  sendClientEvent({
-                    type: "conversation.item.create",
-                    item: {
-                      type: "function_call_output",
-                      call_id: outputItem.call_id,
-                      output: JSON.stringify(functionResult),
-                    },
-                  });
-                  sendClientEvent({ type: "response.create" });
-                })
-                .catch(err => {
-                  sendClientEvent({
-                    type: "conversation.item.create",
-                    item: {
-                      type: "function_call_output",
-                      call_id: outputItem.call_id,
-                      output: JSON.stringify({ success: false, message: "Error searching knowledge base" }),
-                    },
-                  });
-                  sendClientEvent({ type: "response.create" });
-                });
-              return; // Early return because we handle sending output asynchronously
+        toolCallItems.forEach((outputItem) => {
+          const callId = outputItem.call_id;
+          if (callId) {
+            if (handledRealtimeToolCallIdsRef.current.has(callId)) {
+              return;
             }
+            handledRealtimeToolCallIdsRef.current.add(callId);
+          }
 
-            if (outputItem.name === "nextSlide") {
-              if (!aiLeadEnabled) {
-                functionResult = {
-                  success: false,
-                  message: "Learner has slide control",
-                  data: {},
-                };
-              } else {
-                const result = navigateNextSlide(currentSlideRef.current, slideCount);
-                if (result.success) {
-                  currentSlideRef.current = result.currentIndex;
-                  setCurrentSlide(result.currentIndex);
-                }
-                functionResult = {
-                  success: result.success,
-                  message: result.message,
-                  data: buildSlideToolResultData(
-                    classSession.slides,
-                    result.currentIndex,
-                    result.previousIndex,
-                  ),
-                };
-              }
-            } else if (outputItem.name === "previousSlide") {
-              if (!aiLeadEnabled) {
-                functionResult = {
-                  success: false,
-                  message: "Learner has slide control",
-                  data: {},
-                };
-              } else {
-                const result = navigatePreviousSlide(currentSlideRef.current, slideCount);
-                if (result.success) {
-                  currentSlideRef.current = result.currentIndex;
-                  setCurrentSlide(result.currentIndex);
-                }
-                functionResult = {
-                  success: result.success,
-                  message: result.message,
-                  data: buildSlideToolResultData(
-                    classSession.slides,
-                    result.currentIndex,
-                    result.previousIndex,
-                  ),
-                };
-              }
-            } else if (outputItem.name === "goToSlide" && args.slideNumber !== undefined) {
-              if (!aiLeadEnabled) {
-                functionResult = {
-                  success: false,
-                  message: "Learner has slide control",
-                  data: {},
-                };
-              } else {
-                const slideNumber = Number(args.slideNumber);
-                const result = navigateToSlideNumber(
-                  currentSlideRef.current,
-                  slideNumber,
-                  slideCount,
-                );
-                if (result.success) {
-                  currentSlideRef.current = result.currentIndex;
-                  setCurrentSlide(result.currentIndex);
-                }
-                functionResult = {
-                  success: result.success,
-                  message: result.message,
-                  data: buildSlideToolResultData(
-                    classSession.slides,
-                    result.currentIndex,
-                    result.previousIndex,
-                  ),
-                };
-              }
-            }
+          let args: Record<string, unknown> = {};
+          try {
+            args = outputItem.arguments ? JSON.parse(outputItem.arguments) : {};
+          } catch {
+            args = {};
+          }
 
-            console.log(`📤 Function Response:`, functionResult);
-            sendClientEvent({
-              type: "conversation.item.create",
-              item: {
-                type: "function_call_output",
-                call_id: outputItem.call_id,
-                output: JSON.stringify(functionResult),
+          if (outputItem.name === "searchKnowledgeBase") {
+            pendingAsync += 1;
+            const query = args.query;
+            fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
               },
-            });
+              body: JSON.stringify({ query, course_id: undefined }),
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                sendClientEvent({
+                  type: "conversation.item.create",
+                  item: {
+                    type: "function_call_output",
+                    call_id: outputItem.call_id,
+                    output: JSON.stringify({
+                      success: true,
+                      message: `Found ${(data.results || []).length} chunks of knowledge`,
+                      data: data.results || [],
+                    }),
+                  },
+                });
+              })
+              .catch(() => {
+                sendClientEvent({
+                  type: "conversation.item.create",
+                  item: {
+                    type: "function_call_output",
+                    call_id: outputItem.call_id,
+                    output: JSON.stringify({
+                      success: false,
+                      message: "Error searching knowledge base",
+                    }),
+                  },
+                });
+              })
+              .finally(() => {
+                pendingAsync -= 1;
+                if (pendingAsync === 0) {
+                  sendClientEvent({ type: "response.create" });
+                }
+              });
+            return;
+          }
+
+          const functionResult = outputItem.name && isRealtimeSlideTool(outputItem.name)
+            ? handleRealtimeSlideToolRef.current?.(outputItem.name, args)
+            : null;
+
+          if (!functionResult) {
+            return;
+          }
+
+          submittedToolOutputs += 1;
+          console.log(`📤 Function Response:`, functionResult);
+          sendClientEvent({
+            type: "conversation.item.create",
+            item: {
+              type: "function_call_output",
+              call_id: outputItem.call_id,
+              output: JSON.stringify(functionResult),
+            },
           });
-          // One response.create after all outputs are submitted
+        });
+
+        if (pendingAsync === 0 && submittedToolOutputs > 0) {
           sendClientEvent({ type: "response.create" });
-          // Tool calls fully handled — do not forward to handleServerEventRef
-          return;
         }
+        return;
       }
 
       // Pass to the default handler for non-tool-call events
@@ -1554,6 +1652,7 @@ export default function LearningInterface({
                 isConnected={sessionStatus === "CONNECTED"}
                 isAISpeaking={isAISpeaking}
                 isUserSpeaking={isUserSpeaking}
+                lipSyncAmplitude={lipSyncAmplitude}
                 heygenConnected={sessionStatus === "CONNECTED" && !isConnecting}
                 heygenVideoRef={heygenVideoRef}
               />

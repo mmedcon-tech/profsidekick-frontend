@@ -55,10 +55,12 @@ function useAvatarAnimation(
   amplitude: number,
   lipSyncHints?: LipSyncHints,
   visemeRef?: React.RefObject<VisemeMorphWeights | null>,
+  forceSpeaking = false,
 ): void {
   const idlePhase = useRef(0);
   const blinkPhase = useRef(0);
   const speakingBlend = useRef(0);
+  const speakingPhase = useRef(0);
 
   useFrame((_, delta) => {
     const group = groupRef.current;
@@ -66,14 +68,19 @@ function useAvatarAnimation(
 
     idlePhase.current += delta;
     blinkPhase.current += delta;
+    speakingPhase.current += delta;
 
     const forceTalk =
       typeof window !== 'undefined' &&
       (window as { __AVATAR_FORCE_TALK?: boolean }).__AVATAR_FORCE_TALK === true;
     const visemeWeights = visemeRef?.current;
+    const hasVisemeWeights =
+      visemeWeights && Object.values(visemeWeights).some((v) => v > 0.04);
     const effectiveAmplitude = forceTalk
-      ? 0.5 + 0.45 * Math.sin(idlePhase.current * 9)
-      : amplitude;
+      ? 0.35 + 0.25 * Math.sin(idlePhase.current * 9)
+      : hasVisemeWeights
+        ? 0
+        : amplitude;
 
     const isSpeaking = visemeWeights
       ? Object.values(visemeWeights).some((v) => v > 0.06)
@@ -108,10 +115,11 @@ function BustModel({
   visemeRef,
   fitMargin,
   modelScale,
-}: Omit<GlbModelProps, 'framing' | 'coverHeightFraction'>): React.ReactElement {
+  isSpeaking = false,
+}: Omit<GlbModelProps, 'framing' | 'coverHeightFraction'> & { isSpeaking?: boolean }): React.ReactElement {
   const groupRef = useRef<Group>(null);
   const model = useClonedPosedModel(url);
-  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints, visemeRef);
+  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints, visemeRef, isSpeaking);
 
   return (
     <Bounds fit clip margin={fitMargin} maxDuration={0.35}>
@@ -137,11 +145,12 @@ function FullModel({
   fitMargin,
   modelScale,
   coverHeightFraction,
-}: Omit<GlbModelProps, 'framing'>): React.ReactElement {
+  isSpeaking = false,
+}: Omit<GlbModelProps, 'framing'> & { isSpeaking?: boolean }): React.ReactElement {
   const groupRef = useRef<Group>(null);
   const innerRef = useRef<Group>(null);
   const model = useClonedPosedModel(url);
-  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints, visemeRef);
+  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints, visemeRef, isSpeaking);
 
   const camera = useThree((state) => state.camera);
   const controls = useThree((state) => state.controls) as
@@ -212,6 +221,8 @@ export interface GlbAvatarPreviewProps {
   coverHeightFraction?: number;
   /** Optional thumbnail shown while the GLB streams/decodes (first paint only). */
   posterSrc?: string;
+  /** Drive mouth movement when audio amplitude analysis is unavailable. */
+  isSpeaking?: boolean;
 }
 
 /**
@@ -236,6 +247,7 @@ export default function GlbAvatarPreview({
   modelScale = 1.15,
   coverHeightFraction = 0.74,
   posterSrc,
+  isSpeaking = false,
 }: GlbAvatarPreviewProps): React.ReactElement {
   const cameraY = framing === 'bust' ? 1.45 : 1.05;
   const targetY = framing === 'bust' ? 1.35 : 0.95;
@@ -284,6 +296,7 @@ export default function GlbAvatarPreview({
               visemeRef={visemeRef}
               fitMargin={fitMargin}
               modelScale={modelScale}
+              isSpeaking={isSpeaking}
             />
           ) : (
             <FullModel
@@ -294,6 +307,7 @@ export default function GlbAvatarPreview({
               fitMargin={fitMargin}
               modelScale={modelScale}
               coverHeightFraction={coverHeightFraction}
+              isSpeaking={isSpeaking}
             />
           )}
           <ContactShadows

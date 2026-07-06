@@ -17,6 +17,7 @@ interface TeachingSessionAvatarProps {
   isConnected: boolean;
   isAISpeaking: boolean;
   isUserSpeaking: boolean;
+  lipSyncAmplitude?: number;
 }
 
 export default function TeachingSessionAvatar({
@@ -25,14 +26,19 @@ export default function TeachingSessionAvatar({
   isConnected,
   isAISpeaking,
   isUserSpeaking,
+  lipSyncAmplitude,
 }: TeachingSessionAvatarProps): React.ReactElement {
   const widgetState = deriveAvatarWidgetState({
     isConnected,
     isAISpeaking,
     isUserSpeaking,
   });
-  const isSpeakingActive = widgetState === 'speaking' && isConnected;
-  const amplitude = useAudioAmplitude(audioElement, isSpeakingActive);
+  const isSpeakingActive = isConnected && (lipSyncAmplitude !== undefined || isAISpeaking);
+  const measuredAmplitude = useAudioAmplitude(
+    lipSyncAmplitude === undefined ? audioElement : null,
+    lipSyncAmplitude === undefined && isSpeakingActive,
+  );
+  const amplitude = lipSyncAmplitude ?? measuredAmplitude;
   const talkingHeads = useTalkingHeadsAvatar(config, isConnected);
 
   const libraryEntry = config.glbLibraryId
@@ -49,21 +55,31 @@ export default function TeachingSessionAvatar({
       ? '/images/avatar-male.png'
       : '/images/avatar-female.png');
 
-  if (config.renderType === '3d' && glbUrl) {
+  const useGlbPreview =
+    (config.renderType === '3d' || config.renderType === 'glb') && Boolean(glbUrl);
+
+  if (useGlbPreview && glbUrl) {
+    const lipSync = libraryEntry?.lipSync
+      ? { ...libraryEntry.lipSync, mouthOpenGain: 0.68 }
+      : { mouthOpenGain: 0.68, morphTargets: [], jawBones: [] };
+
     return (
-      <div className="flex h-full w-full flex-col bg-gray-900">
+      <div className="flex h-full w-full flex-col overflow-hidden bg-gray-900">
         <GlbAvatarPreview
           glbUrl={glbUrl}
-          lipSyncHints={libraryEntry?.lipSync}
+          lipSyncHints={lipSync}
           amplitude={amplitude}
           showControls={false}
-          framing="bust"
+          framing="full"
+          coverHeightFraction={0.36}
+          fitMargin={0.92}
+          modelScale={libraryEntry?.previewModelScale ?? 1.35}
         />
       </div>
     );
   }
 
-  if (config.renderType === '3d') {
+  if (config.renderType === '3d' || config.renderType === 'glb') {
     return (
       <div className="flex h-full w-full flex-col bg-gray-900">
         <PortraitAvatarStage
