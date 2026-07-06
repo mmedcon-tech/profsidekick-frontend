@@ -10,7 +10,7 @@ export function pickOpenAiTtsVoice(gender: SpeechVoiceGender): string {
   return OPENAI_VOICES[gender];
 }
 
-export const OPENAI_TTS_MODEL = 'tts-1';
+export const OPENAI_TTS_MODEL = 'tts-1-hd';
 
 export interface OpenAiSpeechRequest {
   text: string;
