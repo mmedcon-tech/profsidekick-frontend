@@ -34,12 +34,16 @@ export function toBackendRole(role: string | null | undefined): string | null | 
 }
 
 /** Return a shallow copy of an auth payload with its nested `user.role` normalized for the frontend. */
-export function normalizeAuthUserRole<T extends { user?: { role?: string } | null }>(data: T): T {
-  if (data && data.user && typeof data.user === 'object' && 'role' in data.user) {
-    return {
-      ...data,
-      user: { ...data.user, role: toFrontendRole(data.user.role) },
-    };
+export function normalizeAuthUserRole<T>(data: T): T {
+  if (data && typeof data === 'object' && 'user' in data) {
+    const payload = data as { user?: { role?: string } | null };
+    const user = payload.user;
+    if (user && typeof user === 'object' && 'role' in user) {
+      return {
+        ...data,
+        user: { ...user, role: toFrontendRole(user.role) },
+      };
+    }
   }
   return data;
 }

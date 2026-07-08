@@ -25,8 +25,37 @@ describe('POST /api/assistant/chat', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns 503 when OPENAI_API_KEY is missing', async () => {
+  it('proxies to backend when OPENAI_API_KEY is missing locally', async () => {
     delete process.env.OPENAI_API_KEY;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ reply: 'Economics is the study of scarcity.' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    );
+
+    const request = new NextRequest('http://localhost/api/assistant/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message: 'What is economics?' }),
+    });
+    const response = await POST(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.reply).toBe('Economics is the study of scarcity.');
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:8000/api/assistant/chat',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('returns 503 when no local key and backend is unavailable', async () => {
+    delete process.env.OPENAI_API_KEY;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(null));
+
     const request = new NextRequest('http://localhost/api/assistant/chat', {
       method: 'POST',
       body: JSON.stringify({ message: 'Hi' }),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type MutableRefObject } from "react";
 import {
   ServerEvent,
   SessionStatus,
@@ -9,6 +9,10 @@ import {
 } from "@/types/types";
 import { useTranscript } from "@/contexts/TranscriptContext";
 import { useEvent } from "@/contexts/EventContext";
+import {
+  isRealtimeSlideTool,
+  type RealtimeSlideToolName,
+} from "@/lib/realtimeSlideTools";
 // import { runGuardrailClassifier } from "@/lib/callOai";
 
 export interface UseHandleServerEventParams {
@@ -20,6 +24,15 @@ export interface UseHandleServerEventParams {
   shouldForceResponse?: boolean;
   setIsOutputAudioBufferActive: (active: boolean) => void;
   onTurnComplete?: (role: "assistant" | "user", text: string) => void;
+  /** When set, slide navigation tools update the UI instead of using agent toolLogic stubs. */
+  onSlideToolRef?: MutableRefObject<
+    | ((toolName: RealtimeSlideToolName, args: Record<string, unknown>) => {
+        success: boolean;
+        message: string;
+        data: object;
+      } | null)
+    | null
+  >;
 }
 
 export function useHandleServerEvent({
@@ -30,6 +43,7 @@ export function useHandleServerEvent({
   setSelectedAgentName,
   setIsOutputAudioBufferActive,
   onTurnComplete,
+  onSlideToolRef,
 }: UseHandleServerEventParams) {
   const {
     transcriptItems,
@@ -80,6 +94,29 @@ export function useHandleServerEvent({
     );
 
     addTranscriptBreadcrumb(`function call: ${functionCallParams.name}`, args);
+
+    if (
+      onSlideToolRef?.current &&
+      isRealtimeSlideTool(functionCallParams.name)
+    ) {
+      const functionResult = onSlideToolRef.current(functionCallParams.name, args);
+      if (functionResult) {
+        addTranscriptBreadcrumb(
+          `function call result: ${functionCallParams.name}`,
+          functionResult,
+        );
+        sendClientEvent({
+          type: "conversation.item.create",
+          item: {
+            type: "function_call_output",
+            call_id: functionCallParams.call_id,
+            output: JSON.stringify(functionResult),
+          },
+        });
+        sendClientEvent({ type: "response.create" });
+        return;
+      }
+    }
 
     if (currentAgent?.toolLogic?.[functionCallParams.name]) {
       const fn = currentAgent.toolLogic[functionCallParams.name];
@@ -203,6 +240,9 @@ export function useHandleServerEvent({
         break;
       }
 
+      // GA gpt-realtime models emit "response.output_audio_transcript.delta";
+      // older preview models used "response.audio_transcript.delta".
+      case "response.output_audio_transcript.delta":
       case "response.audio_transcript.delta": {
         const itemId = serverEvent.item_id;
         const deltaText = serverEvent.delta || "";
@@ -222,6 +262,22 @@ export function useHandleServerEvent({
           // if (wordCount > 0 && wordCount % 5 === 0) {
           //   processGuardrail(itemId, newAccumulated);
           // }
+        }
+        break;
+      }
+
+      case "response.function_call_arguments.done": {
+        const toolEvent = serverEvent as ServerEvent & {
+          name?: string;
+          call_id?: string;
+          arguments?: string;
+        };
+        if (toolEvent.name && toolEvent.call_id) {
+          handleFunctionCall({
+            name: toolEvent.name,
+            call_id: toolEvent.call_id,
+            arguments: toolEvent.arguments || "{}",
+          });
         }
         break;
       }

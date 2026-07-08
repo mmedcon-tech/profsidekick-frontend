@@ -1,9 +1,11 @@
 import manifest from '../../public/avatars/manifest.json';
+import type { ElevenLabsVoiceProfile } from '@/lib/elevenLabsSpeech';
 
 export interface AvatarLibraryLipSyncHints {
   morphTargets: string[];
   blinkTargets?: string[];
   jawBones: string[];
+  mouthOpenGain?: number;
 }
 
 export interface AvatarLibraryEntry {
@@ -21,6 +23,7 @@ export interface AvatarLibraryEntry {
   previewFraming?: 'bust' | 'full';
   previewFitMargin?: number;
   previewModelScale?: number;
+  voiceProfile?: ElevenLabsVoiceProfile;
   lipSync: AvatarLibraryLipSyncHints;
 }
 
@@ -44,6 +47,11 @@ export function getAvatarLibraryEntryByName(name: string): AvatarLibraryEntry | 
   return library.avatars.find(
     (entry) => entry.name.toLowerCase() === name.toLowerCase(),
   );
+}
+
+export function getAvatarVoiceProfile(entry: AvatarLibraryEntry): ElevenLabsVoiceProfile {
+  if (entry.voiceProfile) return entry.voiceProfile;
+  return entry.tags.includes('kids') ? 'kids' : 'adult';
 }
 
 export function resolveGlbUrl(modelUrl?: string | null, libraryId?: string | null): string {

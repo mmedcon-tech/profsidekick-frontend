@@ -3,9 +3,15 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls } from '@react-three/drei';
+import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import * as THREE from 'three';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
+import { applyNaturalArmPose } from '@/lib/glbArmPose';
+import { normalizeAvatarMeshes } from '@/lib/glbMaterialFix';
+import { normalizeAvatarHeight } from '@/lib/glbNormalize';
+import { applyBlink, applyLipSyncAmplitude, type LipSyncHints } from '@/lib/glbLipSync';
+import { getAvatarLibrary } from '@/lib/avatarLibrary';
 
 interface GlbModelProps {
   url: string;
@@ -13,28 +19,43 @@ interface GlbModelProps {
   isSpeaking: boolean;
 }
 
+function resolveLipSyncHints(url: string): LipSyncHints | undefined {
+  const entry = getAvatarLibrary().avatars.find((avatar) => url.endsWith(avatar.glbPath));
+  return entry?.lipSync;
+}
+
 function Model({ url, amplitude, isSpeaking }: GlbModelProps) {
-  const { scene, nodes, animations } = useGLTF(url);
+  const { scene } = useGLTF(url);
   const modelRef = useRef<THREE.Group>(null);
-  
+  const blinkPhase = useRef(0);
+
+  const lipSyncHints = React.useMemo(() => resolveLipSyncHints(url), [url]);
+
+  const model = React.useMemo(() => {
+    const clone = cloneSkeleton(scene);
+    applyNaturalArmPose(clone);
+    normalizeAvatarMeshes(clone);
+    normalizeAvatarHeight(clone);
+    return clone;
+  }, [scene]);
+
   useFrame((state, delta) => {
-    if (modelRef.current) {
-      // Gentle floating animation
-      modelRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.05 - 1;
-      
-      // Pulse scale slightly when speaking
-      if (isSpeaking) {
-        const targetScale = 1 + (amplitude * 0.1);
-        modelRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
-      } else {
-        modelRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-      }
-    }
+    if (!modelRef.current) return;
+
+    // Gentle, slow vertical bob — never scaled by audio, so the body never vibrates.
+    modelRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.04 - 1;
+
+    applyLipSyncAmplitude(model, isSpeaking ? amplitude : 0, lipSyncHints, delta);
+
+    blinkPhase.current += delta;
+    const blinkCycle = blinkPhase.current % 4.2;
+    const blinkAmount = blinkCycle > 3.9 ? (blinkCycle - 3.9) / 0.3 : 0;
+    applyBlink(model, Math.min(1, blinkAmount * 3), lipSyncHints);
   });
 
   return (
     <group ref={modelRef} dispose={null}>
-      <primitive object={scene} />
+      <primitive object={model} />
     </group>
   );
 }
@@ -66,8 +87,8 @@ export default function GlbAvatar({
   );
 
   return (
-    <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-gray-900 rounded-xl overflow-hidden relative">
-      <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+    <div className="relative flex h-full min-h-0 w-full items-center justify-center overflow-hidden bg-sidebar">
+      <Canvas camera={{ position: [0, 0.25, 1.9], fov: 32 }}>
         <ambientLight intensity={0.8} />
         <directionalLight position={[10, 10, 5]} intensity={1.2} />
         <directionalLight position={[-5, 5, -5]} intensity={0.4} />
@@ -75,7 +96,13 @@ export default function GlbAvatar({
         <React.Suspense fallback={null}>
           <Model url={modelUrl} amplitude={amplitude} isSpeaking={widgetState === 'speaking'} />
         </React.Suspense>
-        <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI / 2 + 0.1} minPolarAngle={Math.PI / 2 - 0.1} />
+        <OrbitControls
+          enableZoom={false}
+          enablePan={false}
+          target={[0, 0.25, 0]}
+          maxPolarAngle={Math.PI / 2 + 0.1}
+          minPolarAngle={Math.PI / 2 - 0.1}
+        />
       </Canvas>
       
       {widgetState === 'speaking' && (

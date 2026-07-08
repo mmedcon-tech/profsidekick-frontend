@@ -1,40 +1,117 @@
 import { describe, expect, it } from 'vitest';
-import { Object3D, Mesh } from 'three';
-import { applyBlink, applyLipSyncAmplitude, findMorphBindings } from './glbLipSync';
+import { Bone, Group, Mesh, BoxGeometry, MeshStandardMaterial } from 'three';
+import {
+  applyLipSyncAmplitude,
+  discoverLipSyncMorphBindings,
+  findJawBindings,
+  resetLipSyncState,
+  smoothLipSyncAmplitude,
+} from './glbLipSync';
 
-describe('glbLipSync', () => {
-  it('drives morph target influence from amplitude', () => {
-    const mesh = new Mesh();
-    mesh.morphTargetDictionary = { mouthOpen: 0 };
+describe('findJawBindings', () => {
+  it('does not treat head or neck bones as jaw hinges', () => {
+    const root = new Group();
+    const head = new Bone();
+    head.name = 'Head';
+    const jaw = new Bone();
+    jaw.name = 'jaw';
+    root.add(head, jaw);
+
+    const bindings = findJawBindings(root, ['Head', 'head', 'jaw', 'Jaw']);
+    expect(bindings.map((binding) => binding.boneName)).toEqual(['jaw']);
+  });
+});
+
+describe('smoothLipSyncAmplitude', () => {
+  it('opens quickly and releases more slowly', () => {
+    const root = new Group();
+    resetLipSyncState(root);
+
+    const opened = smoothLipSyncAmplitude(root, 1, 1 / 60);
+    expect(opened).toBeGreaterThan(0.2);
+
+    const held = smoothLipSyncAmplitude(root, 1, 1 / 60);
+    expect(held).toBeGreaterThan(opened);
+
+    const closing = smoothLipSyncAmplitude(root, 0, 1 / 60);
+    expect(closing).toBeLessThan(held);
+    expect(closing).toBeGreaterThan(0);
+  });
+});
+
+describe('applyLipSyncAmplitude', () => {
+  it('drives jawOpen morph targets without rotating the model root', () => {
+    const root = new Group();
+    const mesh = new Mesh(
+      new BoxGeometry(1, 1, 1),
+      new MeshStandardMaterial(),
+    );
+    mesh.morphTargetDictionary = { jawOpen: 0 };
     mesh.morphTargetInfluences = [0];
-    const root = new Object3D();
     root.add(mesh);
 
-    applyLipSyncAmplitude(root, 0.5, { morphTargets: ['mouthOpen'] });
+    const beforeX = root.rotation.x;
+    applyLipSyncAmplitude(root, 1, { morphTargets: ['jawOpen'] }, 1 / 30);
+    applyLipSyncAmplitude(root, 1, { morphTargets: ['jawOpen'] }, 1 / 30);
 
-    expect(mesh.morphTargetInfluences?.[0]).toBeCloseTo(0.45);
+    expect(mesh.morphTargetInfluences?.[0]).toBeGreaterThan(0.15);
+    expect(root.rotation.x).toBe(beforeX);
   });
 
-  it('applies blink morph targets', () => {
-    const mesh = new Mesh();
-    mesh.morphTargetDictionary = { eyeBlinkLeft: 0 };
-    mesh.morphTargetInfluences = [0];
-    const root = new Object3D();
-    root.add(mesh);
+  it('amplifies mouth opening via mouthOpenGain for stylised rigs', () => {
+    function buildRig(): { root: Group; mesh: Mesh } {
+      const root = new Group();
+      const mesh = new Mesh(new BoxGeometry(1, 1, 1), new MeshStandardMaterial());
+      mesh.morphTargetDictionary = { jawOpen: 0 };
+      mesh.morphTargetInfluences = [0];
+      root.add(mesh);
+      return { root, mesh };
+    }
 
-    applyBlink(root, 0.8, { blinkTargets: ['eyeBlinkLeft'] });
-    expect(mesh.morphTargetInfluences?.[0]).toBeCloseTo(0.8);
+    const base = buildRig();
+    const gained = buildRig();
+    resetLipSyncState(base.root);
+    resetLipSyncState(gained.root);
+
+    for (let i = 0; i < 3; i += 1) {
+      applyLipSyncAmplitude(base.root, 0.4, { morphTargets: ['jawOpen'] }, 1 / 30);
+      applyLipSyncAmplitude(
+        gained.root,
+        0.4,
+        { morphTargets: ['jawOpen'], mouthOpenGain: 1.6 },
+        1 / 30,
+      );
+    }
+
+    expect(gained.mesh.morphTargetInfluences?.[0]).toBeGreaterThan(
+      base.mesh.morphTargetInfluences?.[0] ?? 0,
+    );
   });
 
-  it('finds morph bindings by candidate name', () => {
-    const mesh = new Mesh();
-    mesh.morphTargetDictionary = { jawOpen: 1 };
+  it('discovers mouth morphs when explicit hints are empty', () => {
+    const root = new Group();
+    const mesh = new Mesh(new BoxGeometry(1, 1, 1), new MeshStandardMaterial());
+    mesh.morphTargetDictionary = { Mouth_Open: 0, eyeBlinkLeft: 1 };
     mesh.morphTargetInfluences = [0, 0];
-    const root = new Object3D();
     root.add(mesh);
 
-    const bindings = findMorphBindings(root, ['jawOpen']);
-    expect(bindings).toHaveLength(1);
-    expect(bindings[0]?.index).toBe(1);
+    const discovered = discoverLipSyncMorphBindings(root);
+    expect(discovered.map((binding) => binding.name)).toContain('Mouth_Open');
+    expect(discovered.map((binding) => binding.name)).not.toContain('eyeBlinkLeft');
+  });
+
+  it('keeps the mouth fully closed during silence', () => {
+    const root = new Group();
+    const mesh = new Mesh(new BoxGeometry(1, 1, 1), new MeshStandardMaterial());
+    mesh.morphTargetDictionary = { jawOpen: 0 };
+    mesh.morphTargetInfluences = [0.5];
+    root.add(mesh);
+    resetLipSyncState(root);
+
+    for (let i = 0; i < 30; i += 1) {
+      applyLipSyncAmplitude(root, 0, { morphTargets: ['jawOpen'] }, 1 / 30);
+    }
+
+    expect(mesh.morphTargetInfluences?.[0]).toBeCloseTo(0, 2);
   });
 });

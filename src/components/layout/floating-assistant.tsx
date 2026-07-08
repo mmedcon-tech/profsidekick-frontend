@@ -171,8 +171,17 @@ export function FloatingAssistant() {
     return () => window.removeEventListener("toggle-assistant", handleToggle)
   }, [])
 
-  const { speaking, listening, interim, speak, stopSpeaking, startListening, stopListening } =
-    useSpeech(lang, avatar.voice)
+  const {
+    speaking,
+    listening,
+    interim,
+    speak,
+    stopSpeaking,
+    startListening,
+    stopListening,
+    visemeTimeline,
+    getSpeechTime,
+  } = useSpeech(lang, avatar.voice)
 
   const assistantName = lang === "ar" ? "مساعد MyOS" : "MyOS Assistant"
   const userName = user ? `${user.firstName} ${user.lastName}` : ""
@@ -199,30 +208,66 @@ export function FloatingAssistant() {
     }
   }, [assistantOpen, mode, stopSpeaking, stopListening])
 
-  function reply(text: string) {
-    setTyping(true)
-    setTimeout(() => {
-      // Role-aware navigation: resolve the intent to a real route the current
-      // user can access, then navigate there. Falls back to a normal answer.
-      const dest = resolveNavDestination(user?.role, text)
-      let answer: string
-      if (dest) {
-        router.push(dest.route)
-        answer =
-          lang === "ar"
-            ? `جاري الانتقال إلى ${dest.label.ar}...`
-            : `Navigating to ${dest.label.en}...`
-      } else {
-        answer = getReply(text, lang, userName)
-      }
+  // Emit an assistant message (and speak it while in call mode).
+  function emitAssistant(answer: string) {
+    setMessages((m) => [...m, { id: uid(), role: "assistant", text: answer }])
+    setTyping(false)
+    if (mode === "call" && !mutedRef.current) {
+      setCaption(answer)
+      speak(answer)
+    }
+  }
 
-      setMessages((m) => [...m, { id: uid(), role: "assistant", text: answer }])
-      setTyping(false)
-      if (mode === "call" && !mutedRef.current) {
-        setCaption(answer)
-        speak(answer)
+  async function reply(text: string) {
+    setTyping(true)
+
+    // Role-aware navigation first: resolve the intent to a real route the current
+    // user can access, then navigate there immediately.
+    const dest = resolveNavDestination(user?.role, text)
+    if (dest) {
+      router.push(dest.route)
+      emitAssistant(
+        lang === "ar"
+          ? `جاري الانتقال إلى ${dest.label.ar}...`
+          : `Navigating to ${dest.label.en}...`,
+      )
+      return
+    }
+
+    // Everything else goes to the real AI assistant for a genuine answer.
+    try {
+      const history = messages
+        .slice(-8)
+        .map((m) => ({ role: m.role, text: m.text }))
+      const systemPrompt =
+        lang === "ar"
+          ? `أنت ${assistantName}، مساعد تعليمي ودود على منصة MyOS (ProfSidekick)${userName ? ` تساعد ${userName}` : ""}. أجب عن أسئلة المستخدم بوضوح واختصار، ويمكنك إرشاده للتنقل في المنصة (الدورات، لوحة التحكم، السوق، التحليلات).`
+          : `You are ${assistantName}, a friendly AI learning assistant on the MyOS (ProfSidekick) platform${userName ? `, helping ${userName}` : ""}. Answer the user's questions clearly and concisely. You can also guide them around the platform (courses, dashboard, marketplace, analytics). Keep replies short and conversational.`
+
+      const res = await fetch("/api/assistant/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history, systemPrompt }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.reply) {
+        throw new Error(data?.error || data?.detail || "Assistant unavailable")
       }
-    }, 800)
+      emitAssistant(data.reply)
+    } catch (err) {
+      const detail = err instanceof Error ? err.message.toLowerCase() : ""
+      const quotaExceeded = detail.includes("quota")
+      if (quotaExceeded) {
+        emitAssistant(
+          lang === "ar"
+            ? "تم إعداد مفتاح OpenAI، لكن لا يوجد رصيد متاح. أضف رصيدًا في حساب OpenAI."
+            : "OpenAI is configured but has no available quota. Add billing/credits to the OpenAI account.",
+        )
+      } else {
+        // Network/config error — fall back to the lightweight canned reply.
+        emitAssistant(getReply(text, lang, userName))
+      }
+    }
   }
 
   function navigateTo(dest: NavDestination) {
@@ -365,7 +410,13 @@ export function FloatingAssistant() {
             /* Call mode — 3D avatar fills the whole surface, controls overlay on top */
             <div className="relative flex flex-1 flex-col overflow-hidden bg-sidebar/95 text-sidebar-foreground">
               {/* Full-bleed avatar (pointer-events-none, so controls/drag pass through) */}
-              <ChatbotAvatar3D fill speaking={speaking} avatar={avatar} />
+              <ChatbotAvatar3D
+                fill
+                speaking={speaking}
+                avatar={avatar}
+                visemeTimeline={visemeTimeline}
+                speechClock={getSpeechTime}
+              />
 
               {/* Status pill */}
               <div className="relative z-10 flex justify-center px-5 pt-4">

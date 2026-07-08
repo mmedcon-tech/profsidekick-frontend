@@ -106,12 +106,13 @@ export default function AvatarDetailPage() {
       {/* Header card (V2 Design) */}
       <div className="flex flex-col sm:flex-row sm:items-start gap-5 bg-card rounded-xl border border-border p-6 shadow-sm">
         <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border bg-muted flex items-center justify-center">
-          {avatar.template_image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatar.template_image_url} alt={avatar.name} className="object-cover w-full h-full" />
-          ) : (
-            <span className="text-2xl font-bold text-muted-foreground uppercase">{avatar.name.charAt(0)}</span>
-          )}
+          <AvatarIcon
+            imageUrl={avatar.template_image_url}
+            name={avatar.name}
+            size={80}
+            rounded="lg"
+            className="w-full h-full"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">

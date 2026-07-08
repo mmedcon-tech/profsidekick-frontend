@@ -69,7 +69,8 @@ export async function createRealtimeConnection(
   EPHEMERAL_KEY: string,
   audioElement: RefObject<HTMLAudioElement | null>,
   codec: string,
-  model: string = DEFAULT_REALTIME_MODEL
+  model: string = DEFAULT_REALTIME_MODEL,
+  inputAudioEnabled: boolean = true,
 ): Promise<{ pc: RTCPeerConnection; dc: RTCDataChannel; mediaStream: MediaStream }> {
   // Check WebRTC support first
   const supportCheck = checkWebRTCSupport();
@@ -88,7 +89,11 @@ export async function createRealtimeConnection(
 
   // Add local audio track for microphone input in the browser
   const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  pc.addTrack(mediaStream.getTracks()[0]);
+  const [audioTrack] = mediaStream.getAudioTracks();
+  if (audioTrack) {
+    audioTrack.enabled = inputAudioEnabled;
+    pc.addTrack(audioTrack);
+  }
 
   // Set codec preferences based on selected codec from the query parameter.
   const capabilities = RTCRtpSender.getCapabilities("audio");

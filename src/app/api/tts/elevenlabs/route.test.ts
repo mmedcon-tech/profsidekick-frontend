@@ -25,6 +25,8 @@ describe('POST /api/tts/elevenlabs', () => {
 
   it('returns 503 when ELEVENLABS_API_KEY is missing', async () => {
     delete process.env.ELEVENLABS_API_KEY;
+    // Backend proxy unavailable so the handler falls through to direct synthesis.
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 404 }));
     const request = new NextRequest('http://localhost/api/tts/elevenlabs', {
       method: 'POST',
       body: JSON.stringify({ text: 'Hello', gender: 'male' }),

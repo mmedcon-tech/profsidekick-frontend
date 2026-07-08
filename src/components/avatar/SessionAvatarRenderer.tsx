@@ -4,12 +4,11 @@ import React from 'react';
 import TeachingSessionAvatar from '@/components/avatar/TeachingSessionAvatar';
 import GlbAvatar from '@/components/avatar/GlbAvatar';
 import {
-  getAvatarModeLabel,
   getEffectiveRenderType,
-  isHeyGenEnabled,
   shouldUseHeyGenVideo,
 } from '@/lib/heygenConfig';
 import type { SessionAvatarConfig } from '@/types/types';
+import type { VisemeTimeline } from '@/lib/visemeTypes';
 
 interface SessionAvatarRendererProps {
   config: SessionAvatarConfig;
@@ -19,6 +18,11 @@ interface SessionAvatarRendererProps {
   isUserSpeaking: boolean;
   heygenConnected?: boolean;
   heygenVideoRef?: React.RefObject<HTMLVideoElement | null>;
+  lipSyncAmplitude?: number;
+  /** Per-character viseme timeline, when a provider supplies one — see TeachingSessionAvatar. */
+  visemeTimeline?: VisemeTimeline | null;
+  /** Returns elapsed seconds within the current utterance (audio currentTime). */
+  speechClock?: () => number;
 }
 
 export default function SessionAvatarRenderer({
@@ -29,6 +33,9 @@ export default function SessionAvatarRenderer({
   isUserSpeaking,
   heygenConnected = false,
   heygenVideoRef,
+  lipSyncAmplitude,
+  visemeTimeline,
+  speechClock,
 }: SessionAvatarRendererProps): React.ReactElement {
   const effectiveType = getEffectiveRenderType(config);
   const displayConfig: SessionAvatarConfig = {
@@ -36,12 +43,10 @@ export default function SessionAvatarRenderer({
     renderType: effectiveType,
   };
   const useHeyGen = shouldUseHeyGenVideo(config);
-  const heygenPaused =
-    config.renderType === 'heygen' && !isHeyGenEnabled();
 
   return (
-    <div className="relative flex h-full w-full flex-col bg-gray-900">
-      <div className="flex flex-1 items-center justify-center pt-10">
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-sidebar">
+      <div className="flex min-h-0 flex-1 items-stretch justify-center">
         {useHeyGen && heygenVideoRef ? (
           <>
             <video
@@ -51,9 +56,9 @@ export default function SessionAvatarRenderer({
               className="h-full w-full object-cover"
             />
             {!heygenConnected && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-900">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-sidebar">
                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/50 dark:border-primary/50 border-t-transparent" />
-                <span className="text-[11px] text-gray-500">Connecting HeyGen…</span>
+                <span className="text-[11px] text-sidebar-foreground/70">Connecting HeyGen...</span>
               </div>
             )}
           </>
@@ -64,6 +69,9 @@ export default function SessionAvatarRenderer({
             isConnected={isConnected}
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
+            lipSyncAmplitude={lipSyncAmplitude}
+            visemeTimeline={visemeTimeline}
+            speechClock={speechClock}
           />
         ) : displayConfig.renderType === '3d' && displayConfig.modelUrl ? (
           <GlbAvatar
@@ -80,6 +88,9 @@ export default function SessionAvatarRenderer({
             isConnected={isConnected}
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
+            lipSyncAmplitude={lipSyncAmplitude}
+            visemeTimeline={visemeTimeline}
+            speechClock={speechClock}
           />
         )}
       </div>

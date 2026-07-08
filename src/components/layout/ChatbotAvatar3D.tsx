@@ -3,8 +3,13 @@
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useSimulatedAmplitude } from '@/hooks/useSimulatedAmplitude';
+import { useVisemePlayback } from '@/hooks/useVisemePlayback';
 import { getDefaultChatbotAvatar } from '@/lib/avatarLibrary';
 import type { LipSyncHints } from '@/lib/glbLipSync';
+import type { VisemeTimeline } from '@/lib/visemeTypes';
+
+/** Stable no-op clock so the viseme hook has a constant identity when idle. */
+const NOOP_CLOCK = (): number => 0;
 
 const GlbAvatarPreview = dynamic(() => import('@/components/avatar/GlbAvatarPreview'), {
   ssr: false,
@@ -32,6 +37,14 @@ interface ChatbotAvatar3DProps {
   fill?: boolean;
   /** Avatar to render. Defaults to the platform default chatbot avatar. */
   avatar?: ChatbotAvatarConfig;
+  /**
+   * Per-character viseme timeline for the current utterance. When provided, the
+   * mouth is driven by real phoneme shapes synced to the audio (via `speechClock`)
+   * instead of a generic open/close amplitude.
+   */
+  visemeTimeline?: VisemeTimeline | null;
+  /** Returns elapsed seconds within the current utterance (audio currentTime). */
+  speechClock?: () => number;
 }
 
 function defaultConfig(): ChatbotAvatarConfig {
@@ -88,15 +101,28 @@ export function ChatbotAvatar3D({
   speaking = false,
   fill = false,
   avatar,
+  visemeTimeline = null,
+  speechClock,
 }: ChatbotAvatar3DProps): React.ReactElement {
   const cfg = avatar ?? defaultConfig();
-  const amplitude = useSimulatedAmplitude(speaking);
+
+  // Real viseme-driven lip-sync when a timeline is available; otherwise fall
+  // back to the generic open/close amplitude (e.g. before audio resolves).
+  const hasVisemes = !!visemeTimeline && visemeTimeline.keyframes.length > 0;
+  const visemeRef = useVisemePlayback(
+    speechClock ?? NOOP_CLOCK,
+    visemeTimeline,
+    speaking && hasVisemes,
+    cfg.lipSync,
+  );
+  const amplitude = useSimulatedAmplitude(speaking && !hasVisemes);
 
   const preview = (
     <GlbAvatarPreview
       glbUrl={cfg.glbUrl}
       amplitude={amplitude}
       lipSyncHints={cfg.lipSync}
+      visemeRef={visemeRef}
       posterSrc={cfg.posterSrc}
       showControls={false}
       framing={cfg.framing ?? 'bust'}

@@ -139,7 +139,7 @@ export default function MarketplacePage() {
       )}
 
       <div>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-start sm:gap-6">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">All Published Avatars</h2>
           <div className="relative w-full max-w-xs">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

@@ -4,8 +4,14 @@ import { useSimulatedAmplitude } from './useSimulatedAmplitude';
 
 describe('useSimulatedAmplitude', () => {
   beforeEach(() => {
+    // Fire the callback only on the first frame; the hook re-schedules inside its
+    // own tick, so invoking unconditionally would recurse infinitely.
+    let fired = false;
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
-      cb(0);
+      if (!fired) {
+        fired = true;
+        cb(0);
+      }
       return 1;
     });
     vi.stubGlobal('cancelAnimationFrame', vi.fn());

@@ -74,8 +74,8 @@ export default function MarketplaceAvatarPreviewModal({
           </button>
         </div>
 
-        <div className="min-h-[520px]">
-          <AvatarShowcase entry={showcaseEntry} className="min-h-[520px]" defaultTab="portrait" />
+        <div className="h-[520px]">
+          <AvatarShowcase entry={showcaseEntry} className="h-full" defaultTab="portrait" />
         </div>
       </div>
     </div>

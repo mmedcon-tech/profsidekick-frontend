@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send } from "lucide-react";
+import TranscriptPanel from "@/components/learning/TranscriptPanel";
 import StreamingAvatar, {
   AvatarQuality,
   StreamingEvents,
@@ -20,28 +21,57 @@ import { classifyTurn } from "@/lib/turnClassifier";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
-  isHeyGenEnabled,
 } from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
 import {
-  navigateNextSlide,
-  navigatePreviousSlide,
   navigateToIndex,
-  navigateToSlideNumber,
-  toSlideToolPayload,
+  type SlideNavigationResult,
   type SlideNavigationSource,
 } from "@/lib/slideNavigation";
+import {
+  buildAiLeadSystemPrompt,
+  buildSessionKickoffMessage,
+  buildSlideNavigationTools,
+  parsePublisherInstructions,
+  type LearnerSlideChangeAction,
+  type SessionMode,
+} from "@/lib/sessionSlideControl";
+import {
+  detectSlideAdvanceFromSpeech,
+  extractRealtimeToolCalls,
+} from "@/lib/slideAdvanceFromSpeech";
+import {
+  buildRealtimeSlideToolResponse,
+  isRealtimeSlideTool,
+  resolveSlideToolTarget,
+  type RealtimeSlideToolName,
+} from "@/lib/realtimeSlideTools";
+import { pickRealtimeVoiceForAvatar } from "@/lib/realtimeVoice";
+import { getDefaultChatbotAvatar } from "@/lib/avatarLibrary";
+import { useRealtimeTeachingLipSync } from "@/hooks/useRealtimeTeachingLipSync";
+import { notifyLearnerSlideChangeToRealtime } from "@/lib/learnerSlideRealtimeNotify";
+import { toast } from "sonner";
 
+const defaultTeachingAvatar = getDefaultChatbotAvatar();
 const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
-  renderType: "static",
-  avatarName: "Assistant",
+  renderType: "glb",
+  avatarName: defaultTeachingAvatar.name,
+  glbLibraryId: defaultTeachingAvatar.id,
+  modelUrl: defaultTeachingAvatar.glbPath,
+  imageUrl: defaultTeachingAvatar.thumbnailPath,
 };
 
 export interface TranscriptItem {
+  id: string;
   role: "user" | "assistant";
   text: string;
 }
+
+const createTranscriptId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const DEFAULT_HEYGEN_AVATAR_ID =
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
@@ -59,6 +89,7 @@ interface LearningInterfaceProps {
   startingSlide?: number;
   avatarConfig?: SessionAvatarConfig;
   isSharedLink?: boolean;
+  sessionMode?: SessionMode;
 }
 
 export default function LearningInterface({
@@ -68,13 +99,15 @@ export default function LearningInterface({
   startingSlide,
   avatarConfig,
   isSharedLink = false,
+  sessionMode: sessionModeProp,
 }: LearningInterfaceProps) {
   // Always start with slide 0 for SSR consistency
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<"DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR">("DISCONNECTED");
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isMicMuted, setIsMicMuted] = useState(true);
+  const [textInput, setTextInput] = useState("");
   const [, setDataChannel] = useState<RTCDataChannel | null>(null);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
@@ -111,7 +144,38 @@ export default function LearningInterface({
   const isIntentionallyDisconnectedRef = useRef(false);
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const awaitingSessionConfigRef = useRef(false);
+  const slideToolHandledThisTurnRef = useRef(false);
+  const isAISpeakingRef = useRef(false);
+  const handledRealtimeToolCallIdsRef = useRef(new Set<string>());
+  const performAiSlideAdvanceRef = useRef<(targetIndex: number) => SlideNavigationResult>(
+    () => ({
+      success: false,
+      previousIndex: 0,
+      currentIndex: 0,
+      message: "Not ready",
+    }),
+  );
+  const onSlideToolRef = useRef<
+    ((toolName: RealtimeSlideToolName, args: Record<string, unknown>) => {
+      success: boolean;
+      message: string;
+      data: object;
+    } | null) | null
+  >(null);
+  const handleRealtimeSlideToolRef = useRef(onSlideToolRef.current);
+  const sendClientEventRef = useRef<(eventObj: Record<string, unknown>, suffix?: string) => void>(
+    () => undefined,
+  );
+
+  const lipSyncAmplitude = useRealtimeTeachingLipSync(
+    outputAudioElement,
+    sessionStatus === "CONNECTED",
+  );
+
+  useEffect(() => {
+    isAISpeakingRef.current = isAISpeaking;
+  }, [isAISpeaking]);
 
   // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
@@ -191,6 +255,8 @@ export default function LearningInterface({
     }
   };
 
+  sendClientEventRef.current = sendClientEvent;
+
   const handleServerEventRef = useHandleServerEvent({
     setSessionStatus,
     selectedAgentName: "teachingAssistant",
@@ -199,6 +265,7 @@ export default function LearningInterface({
     setSelectedAgentName: () => { },
     setIsOutputAudioBufferActive: () => { },
     onTurnComplete: handleTurnComplete,
+    onSlideToolRef,
   });
 
   const loadSessionEphemeral = useCallback(async () => {
@@ -209,7 +276,10 @@ export default function LearningInterface({
       const bundle = await fetchSessionEphemeral(
         classSession.sessionId,
         sessionRunId,
-        { token, fallbackAvatar: avatarConfig ?? sessionAvatar },
+        {
+          token,
+          fallbackAvatar: avatarConfig ?? sessionAvatarRef.current ?? DEFAULT_SESSION_AVATAR,
+        },
       );
       setSessionAvatar(bundle.avatar);
       sessionAvatarRef.current = bundle.avatar;
@@ -395,7 +465,8 @@ export default function LearningInterface({
           EPHEMERAL_KEY,
           audioElementRef,
           "opus",
-          realtimeModel
+          realtimeModel,
+          !isMicMuted,
         );
 
         console.log(`🔗 Created new peer connection and data channel [${connectionId}] -> [${dataChannelId}] - Lock: ${connectionLockRef.current}`);
@@ -404,6 +475,9 @@ export default function LearningInterface({
         pcRef.current = pc;
         dcRef.current = dc;
         mediaStreamRef.current = mediaStream;
+        mediaStream.getAudioTracks().forEach((track) => {
+          track.enabled = !isMicMuted;
+        });
 
         dc.addEventListener("open", () => {
           logClientEvent({}, "data_channel.open");
@@ -848,81 +922,12 @@ export default function LearningInterface({
     console.log('✅ Successfully disconnected from realtime - all audio capture and processing stopped');
   };
 
-  const initializeSession = () => {
-    // if (sessionStatus !== "CONNECTED") {
-    //   console.log("⚠️ Cannot initialize session - not connected");
-    //   return;
-    // }
+  const sendSessionKickoff = () => {
+    const mode: SessionMode =
+      sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? 'teaching';
+    const slideIndex = currentSlideRef.current;
+    const kickoffSlide = classSession.slides[slideIndex];
 
-    console.log("🔧 Initializing session with slide navigation tools...");
-
-    const sessionUpdate = {
-      type: "session.update",
-      session: {
-        tools: [
-          {
-            type: "function",
-            name: "nextSlide",
-            description: "Move to the next slide in the presentation",
-            parameters: {
-              type: "object",
-              properties: {},
-              required: [],
-              additionalProperties: false,
-            },
-          },
-          {
-            type: "function",
-            name: "previousSlide",
-            description: "Move to the previous slide in the presentation",
-            parameters: {
-              type: "object",
-              properties: {},
-              required: [],
-              additionalProperties: false,
-            },
-          },
-          {
-            type: "function",
-            name: "goToSlide",
-            description: "Jump to a specific slide number",
-            parameters: {
-              type: "object",
-              properties: {
-                slideNumber: {
-                  type: "number",
-                  description: "The slide number to navigate to (1-indexed)",
-                },
-              },
-              required: ["slideNumber"],
-              additionalProperties: false,
-            },
-          },
-          {
-            type: "function",
-            name: "searchKnowledgeBase",
-            description: "Search the course materials and session slides for answers to the user's questions.",
-            parameters: {
-              type: "object",
-              properties: {
-                query: {
-                  type: "string",
-                  description: "The search query to look up in the knowledge base."
-                }
-              },
-              required: ["query"],
-              additionalProperties: false,
-            },
-          },
-        ],
-      },
-    };
-
-    console.log("📤 Sending session initialization:", sessionUpdate);
-    const success = sendClientEvent(sessionUpdate);
-    console.log("Session initialization sent successfully:", success);
-
-    // Auto-start the session by having the system command the AI to introduce itself
     sendClientEvent({
       type: "conversation.item.create",
       item: {
@@ -931,12 +936,77 @@ export default function LearningInterface({
         content: [
           {
             type: "input_text",
-            text: "You are leading this teaching session. Proactively teach through the slides and use nextSlide, previousSlide, and goToSlide to control slide navigation as you explain the material. Welcome the learner, introduce the topic, and begin on the current slide."
-          }
-        ]
-      }
+            text: buildSessionKickoffMessage(
+              slideIndex,
+              kickoffSlide?.title ?? `Slide ${slideIndex + 1}`,
+              mode,
+            ),
+          },
+        ],
+      },
     });
     sendClientEvent({ type: "response.create" });
+  };
+
+  const initializeSession = () => {
+    const mode: SessionMode =
+      sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? 'teaching';
+    const slideIndex = currentSlideRef.current;
+    const publisherInstructions = parsePublisherInstructions(
+      classSession.classDetails.assistant_parameters?.instructions,
+    );
+
+    console.log("🔧 Initializing session with AI-led slide navigation...", { mode, slideIndex });
+
+    const sessionUpdate = {
+      type: "session.update",
+      session: {
+        tool_choice: "auto",
+        audio: {
+          output: {
+            voice: pickRealtimeVoiceForAvatar(sessionAvatarRef.current),
+          },
+        },
+        tools: [
+          ...buildSlideNavigationTools(),
+          {
+            type: "function",
+            name: "searchKnowledgeBase",
+            description:
+              "Search the course materials and session slides for answers to the learner's questions.",
+            parameters: {
+              type: "object",
+              properties: {
+                query: {
+                  type: "string",
+                  description: "The search query to look up in the knowledge base.",
+                },
+              },
+              required: ["query"],
+              additionalProperties: false,
+            },
+          },
+        ],
+        instructions: buildAiLeadSystemPrompt({
+          slides: classSession.slides,
+          sessionMode: mode,
+          currentSlideIndex: slideIndex,
+          publisherInstructions,
+        }),
+      },
+    };
+
+    console.log("📤 Sending session initialization:", sessionUpdate);
+    const success = sendClientEvent(sessionUpdate);
+    console.log("Session initialization sent successfully:", success);
+
+    awaitingSessionConfigRef.current = true;
+    window.setTimeout(() => {
+      if (awaitingSessionConfigRef.current) {
+        awaitingSessionConfigRef.current = false;
+        sendSessionKickoff();
+      }
+    }, 700);
   };
 
   const toggleAudio = () => {
@@ -967,22 +1037,39 @@ export default function LearningInterface({
     }
   };
 
-  const nextSlide = () => {
-    const result = navigateNextSlide(currentSlideRef.current, slideCount);
-    if (!result.success) return;
+  const submitTextMessage = (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    const clean = textInput.trim();
+    if (!clean || sessionStatus !== "CONNECTED") return;
 
-    currentSlideRef.current = result.currentIndex;
-    setCurrentSlide(result.currentIndex);
-    notifyAIOfSlideChange(result.currentIndex, result.previousIndex, "manual_navigation");
+    setTextInput("");
+    setShowStartPrompt(false);
+    setIsTranscriptVisible(true);
+    setTranscript((prev) => [...prev, { id: createTranscriptId(), role: "user", text: clean }]);
+    handleTurnComplete("user", clean);
+
+    sendClientEvent({
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: clean,
+          },
+        ],
+      },
+    }, "text_input.user_message");
+    sendClientEvent({ type: "response.create" }, "text_input.response");
+  };
+
+  const nextSlide = () => {
+    applySlideNavigation(currentSlideRef.current + 1, "manual_navigation");
   };
 
   const previousSlide = () => {
-    const result = navigatePreviousSlide(currentSlideRef.current, slideCount);
-    if (!result.success) return;
-
-    currentSlideRef.current = result.currentIndex;
-    setCurrentSlide(result.currentIndex);
-    notifyAIOfSlideChange(result.currentIndex, result.previousIndex, "manual_navigation");
+    applySlideNavigation(currentSlideRef.current - 1, "manual_navigation");
   };
 
   const handleEndSessionClick = () => {
@@ -1036,67 +1123,73 @@ export default function LearningInterface({
     }));
   };
 
-  // Helper function to notify AI about programmatic slide changes
-  const notifyAIOfSlideChange = (newSlide: number, previousSlide: number, source: string = "programmatic") => {
-    console.log(`📤 Notifying AI of ${source} slide change to slide ${newSlide + 1} - interrupting if speaking`);
+  const notifyLearnerManualSlideChange = useCallback(
+    (slideIndex: number, action: LearnerSlideChangeAction) => {
+      const slide = classSession.slides[slideIndex];
+      const title = slide?.title ?? `Slide ${slideIndex + 1}`;
 
-    // Step 1: If AI is speaking, force interrupt the current response
-    if (isAISpeaking) {
-      console.log('🛑 AI is speaking, forcing interruption for slide change');
-
-      // First, cancel the current response
-      sendClientEvent({
-        type: "response.cancel"
-      }, `slide.${source}.cancel_response`);
-
-      // Then clear the output audio buffer to stop playback immediately
-      // This is the key step that actually stops the audio from continuing
-      sendClientEvent({
-        type: "output_audio_buffer.clear"
-      }, `slide.${source}.clear_audio_buffer`);
-
-      // Small delay to ensure interruption is processed
-      setTimeout(() => {
-        sendSlideChangeNotification(newSlide, previousSlide, source);
-      }, 50);
-    } else {
-      // AI is not speaking, send notification immediately
-      sendSlideChangeNotification(newSlide, previousSlide, source);
-    }
-  };
-
-  // Helper function to send the actual slide change notification
-  const sendSlideChangeNotification = (newSlide: number, previousSlide: number, source: string) => {
-    // Send as user message to simulate speech input
-    const slideChangeMessage = {
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: `Stop, I just changed to slide ${newSlide + 1}, "${classSession.slides[newSlide]?.title || 'Unknown'}". Acknowledge naturally and continue with the lesson.`
-          }
-        ]
+      if (dcRef.current?.readyState !== "open") {
+        toast.info(`Moved to "${title}". Start the session so the tutor can teach this slide.`);
+        return;
       }
-    };
 
-    sendClientEvent(slideChangeMessage, `slide.${source}`);
+      const mode: SessionMode =
+        sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? "teaching";
+      const publisherInstructions = parsePublisherInstructions(
+        classSession.classDetails.assistant_parameters?.instructions,
+      );
 
-    // Trigger immediate response to the slide change
-    const triggerResponse = {
-      type: "response.create",
-      response: {
-        modalities: ["text", "audio"]
-      }
-    };
+      notifyLearnerSlideChangeToRealtime({
+        send: (event, suffix) => sendClientEventRef.current(event, suffix),
+        slides: classSession.slides,
+        slideIndex,
+        action,
+        sessionMode: mode,
+        publisherInstructions,
+      });
 
-    // Small delay to ensure the message is processed before triggering response
-    setTimeout(() => {
-      sendClientEvent(triggerResponse, `slide.${source}.trigger_response`);
-    }, 100);
-  };
+      setTranscript((prev) => [
+        ...prev,
+        {
+          id: createTranscriptId(),
+          role: "user",
+          text: `[You moved to slide ${slideIndex + 1}: ${title}]`,
+        },
+      ]);
+      toast.success(`Teaching slide ${slideIndex + 1}: ${title}`);
+      console.log(`📤 Learner slide change → teaching slide ${slideIndex + 1}`);
+    },
+    [
+      classSession.slides,
+      classSession.classDetails.assistant_parameters?.instructions,
+      sessionModeProp,
+    ],
+  );
+
+  const notifyLearnerManualSlideChangeRef = useRef(notifyLearnerManualSlideChange);
+  useEffect(() => {
+    notifyLearnerManualSlideChangeRef.current = notifyLearnerManualSlideChange;
+  }, [notifyLearnerManualSlideChange]);
+
+  const pushSlideContextUpdate = useCallback((slideIndex: number) => {
+    const mode: SessionMode =
+      sessionModeProp ?? sessionAvatarRef.current.sessionMode ?? 'teaching';
+    const publisherInstructions = parsePublisherInstructions(
+      classSession.classDetails.assistant_parameters?.instructions,
+    );
+
+    sendClientEvent({
+      type: "session.update",
+      session: {
+        instructions: buildAiLeadSystemPrompt({
+          slides: classSession.slides,
+          sessionMode: mode,
+          currentSlideIndex: slideIndex,
+          publisherInstructions,
+        }),
+      },
+    }, "slide.context_update");
+  }, [classSession.classDetails.assistant_parameters?.instructions, classSession.slides, sessionModeProp]);
 
   const applySlideNavigation = useCallback((
     targetIndex: number,
@@ -1113,15 +1206,75 @@ export default function LearningInterface({
     setCurrentSlide(result.currentIndex);
 
     if (source !== "ai_tool") {
-      notifyAIOfSlideChange(result.currentIndex, result.previousIndex, source);
+      setShowStartPrompt(false);
+      const action: LearnerSlideChangeAction =
+        source === "manual_navigation"
+          ? targetIndex > previousIndex
+            ? "next"
+            : "previous"
+          : "jump";
+      notifyLearnerManualSlideChangeRef.current(result.currentIndex, action);
     }
 
     return result;
   }, [slideCount]);
 
+  const performAiSlideAdvance = useCallback(
+    (targetIndex: number): SlideNavigationResult => {
+      const result = applySlideNavigation(targetIndex, "ai_tool");
+      if (result.success) {
+        slideToolHandledThisTurnRef.current = true;
+        pushSlideContextUpdate(result.currentIndex);
+        console.log(`📽️ Slide advanced to ${result.currentIndex + 1}`);
+      }
+      return result;
+    },
+    [applySlideNavigation, pushSlideContextUpdate],
+  );
+
+  const handleRealtimeSlideTool = useCallback(
+    (toolName: RealtimeSlideToolName, args: Record<string, unknown>) => {
+      if (!aiLeadEnabled) {
+        return {
+          success: false,
+          message: "Learner has slide control",
+          data: {},
+        };
+      }
+
+      const target = resolveSlideToolTarget(
+        toolName,
+        args,
+        currentSlideRef.current,
+        slideCount,
+      );
+      if (target === null) return null;
+
+      const result = performAiSlideAdvance(target);
+      return buildRealtimeSlideToolResponse(
+        toolName,
+        result,
+        classSession.slides,
+        target,
+      );
+    },
+    [aiLeadEnabled, classSession.slides, performAiSlideAdvance, slideCount],
+  );
+
+  useEffect(() => {
+    performAiSlideAdvanceRef.current = performAiSlideAdvance;
+    onSlideToolRef.current = handleRealtimeSlideTool;
+    handleRealtimeSlideToolRef.current = handleRealtimeSlideTool;
+  }, [performAiSlideAdvance, handleRealtimeSlideTool]);
+
   const goToSlideByIndex = (targetIndex: number) => {
     applySlideNavigation(targetIndex, "dot_navigation");
   };
+
+  // Reset transcript content when a new session run starts
+  useEffect(() => {
+    setTranscript([]);
+  }, [sessionRunId]);
 
   // Check WebRTC support on mount
   useEffect(() => {
@@ -1200,7 +1353,7 @@ export default function LearningInterface({
       // Notify AI if we're starting on a different slide (delayed to ensure connection is ready)
       if (correctSlide !== 0) {
         setTimeout(() => {
-          notifyAIOfSlideChange(correctSlide, previousSlide, "resume_session");
+          notifyLearnerManualSlideChangeRef.current(correctSlide, "jump");
         }, 2000); // Give time for AI connection to be established
       }
     }
@@ -1239,6 +1392,11 @@ export default function LearningInterface({
       const serverEvent = JSON.parse(e.data);
       console.log("🔄 Processing server event:", serverEvent.type, serverEvent);
 
+      if (serverEvent.type === "session.updated" && awaitingSessionConfigRef.current) {
+        awaitingSessionConfigRef.current = false;
+        sendSessionKickoff();
+      }
+
       // --- Track voice activity ---
       if (serverEvent.type === "input_audio_buffer.speech_started") {
         setIsUserSpeaking(true);
@@ -1246,22 +1404,42 @@ export default function LearningInterface({
         setIsUserSpeaking(false);
       }
       if (serverEvent.type === "output_audio_buffer.started") {
+        slideToolHandledThisTurnRef.current = false;
         setIsAISpeaking(true);
       } else if (serverEvent.type === "output_audio_buffer.stopped") {
         setIsAISpeaking(false);
       }
 
       // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
-      // response.audio_transcript.done fires when a full assistant turn completes
+      // Fires when a full assistant turn completes. GA gpt-realtime models emit
+      // "response.output_audio_transcript.done"; older preview models used
+      // "response.audio_transcript.done" — accept both so this keeps working
+      // across model generations.
       if (
-        serverEvent.type === "response.audio_transcript.done" &&
+        (serverEvent.type === "response.output_audio_transcript.done" ||
+          serverEvent.type === "response.audio_transcript.done") &&
         serverEvent.transcript
       ) {
-        setTranscript((prev) => [...prev, { role: "assistant", text: serverEvent.transcript }]);
+        setTranscript((prev) => [
+          ...prev,
+          { id: createTranscriptId(), role: "assistant", text: serverEvent.transcript },
+        ]);
         if (heygenAvatarRef.current) {
           heygenAvatarRef.current
             .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
             .catch(() => { });
+        }
+
+        if (!slideToolHandledThisTurnRef.current && aiLeadEnabled) {
+          const target = detectSlideAdvanceFromSpeech(
+            serverEvent.transcript,
+            currentSlideRef.current,
+            slideCount,
+          );
+          if (target !== null) {
+            console.log(`📽️ Verbal slide advance detected → slide ${target + 1}`);
+            performAiSlideAdvanceRef.current(target);
+          }
         }
       }
 
@@ -1270,7 +1448,10 @@ export default function LearningInterface({
       if (serverEvent.type === "conversation.item.input_audio_transcription.completed") {
         const recognizedText = serverEvent.transcript || "";
         if (recognizedText) {
-          setTranscript((prev) => [...prev, { role: "user", text: recognizedText }]);
+          setTranscript((prev) => [
+            ...prev,
+            { id: createTranscriptId(), role: "user", text: recognizedText },
+          ]);
           clearTimeout((window as any)._speechHandleTimer);
           (window as any)._speechHandleTimer = setTimeout(() => {
             // confidence and duration are not available on this event; pass safe defaults
@@ -1280,140 +1461,100 @@ export default function LearningInterface({
       }
 
       // --- Handle tool calls for slide navigation ---
-      // Fix 1+3: send the real function result back to the Realtime API and do NOT forward
-      // tool-call events to handleServerEventRef (prevents duplicate processing and dummy results).
-      if (serverEvent.type === "response.done" && serverEvent.response?.output) {
-        const toolCallItems = serverEvent.response.output.filter(
-          (item: any) => item.type === "function_call" && item.name
-        );
+      const toolCallItems = extractRealtimeToolCalls(serverEvent);
 
-        if (toolCallItems.length > 0) {
-          toolCallItems.forEach((outputItem: any) => {
-            const args = outputItem.arguments ? JSON.parse(outputItem.arguments) : {};
-            let functionResult: { success: boolean; message: string; data: object } = { success: false, message: "", data: {} };
+      if (toolCallItems.length > 0) {
+        let pendingAsync = 0;
+        let submittedToolOutputs = 0;
 
-            if (outputItem.name === "searchKnowledgeBase") {
-              const query = args.query;
-              // Fetch RAG context asynchronously
-              fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ query, course_id: undefined })
-              })
-                .then(res => res.json())
-                .then(data => {
-                  const chunks = data.results || [];
-                  const functionResult = {
-                    success: true,
-                    message: `Found ${chunks.length} chunks of knowledge`,
-                    data: chunks
-                  };
-                  sendClientEvent({
-                    type: "conversation.item.create",
-                    item: {
-                      type: "function_call_output",
-                      call_id: outputItem.call_id,
-                      output: JSON.stringify(functionResult),
-                    },
-                  });
-                  sendClientEvent({ type: "response.create" });
-                })
-                .catch(err => {
-                  sendClientEvent({
-                    type: "conversation.item.create",
-                    item: {
-                      type: "function_call_output",
-                      call_id: outputItem.call_id,
-                      output: JSON.stringify({ success: false, message: "Error searching knowledge base" }),
-                    },
-                  });
-                  sendClientEvent({ type: "response.create" });
-                });
-              return; // Early return because we handle sending output asynchronously
+        toolCallItems.forEach((outputItem) => {
+          const callId = outputItem.call_id;
+          if (callId) {
+            if (handledRealtimeToolCallIdsRef.current.has(callId)) {
+              return;
             }
+            handledRealtimeToolCallIdsRef.current.add(callId);
+          }
 
-            if (outputItem.name === "nextSlide") {
-              if (!aiLeadEnabled) {
-                functionResult = {
-                  success: false,
-                  message: "Learner has slide control",
-                  data: {},
-                };
-              } else {
-                const result = navigateNextSlide(currentSlideRef.current, slideCount);
-                if (result.success) {
-                  currentSlideRef.current = result.currentIndex;
-                  setCurrentSlide(result.currentIndex);
-                }
-                functionResult = {
-                  success: result.success,
-                  message: result.message,
-                  data: toSlideToolPayload(result),
-                };
-              }
-            } else if (outputItem.name === "previousSlide") {
-              if (!aiLeadEnabled) {
-                functionResult = {
-                  success: false,
-                  message: "Learner has slide control",
-                  data: {},
-                };
-              } else {
-                const result = navigatePreviousSlide(currentSlideRef.current, slideCount);
-                if (result.success) {
-                  currentSlideRef.current = result.currentIndex;
-                  setCurrentSlide(result.currentIndex);
-                }
-                functionResult = {
-                  success: result.success,
-                  message: result.message,
-                  data: toSlideToolPayload(result),
-                };
-              }
-            } else if (outputItem.name === "goToSlide" && args.slideNumber !== undefined) {
-              if (!aiLeadEnabled) {
-                functionResult = {
-                  success: false,
-                  message: "Learner has slide control",
-                  data: {},
-                };
-              } else {
-                const slideNumber = Number(args.slideNumber);
-                const result = navigateToSlideNumber(
-                  currentSlideRef.current,
-                  slideNumber,
-                  slideCount,
-                );
-                if (result.success) {
-                  currentSlideRef.current = result.currentIndex;
-                  setCurrentSlide(result.currentIndex);
-                }
-                functionResult = {
-                  success: result.success,
-                  message: result.message,
-                  data: toSlideToolPayload(result),
-                };
-              }
-            }
+          let args: Record<string, unknown> = {};
+          try {
+            args = outputItem.arguments ? JSON.parse(outputItem.arguments) : {};
+          } catch {
+            args = {};
+          }
 
-            console.log(`📤 Function Response:`, functionResult);
-            sendClientEvent({
-              type: "conversation.item.create",
-              item: {
-                type: "function_call_output",
-                call_id: outputItem.call_id,
-                output: JSON.stringify(functionResult),
+          if (outputItem.name === "searchKnowledgeBase") {
+            pendingAsync += 1;
+            const query = args.query;
+            fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
               },
-            });
+              body: JSON.stringify({ query, course_id: undefined }),
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                sendClientEvent({
+                  type: "conversation.item.create",
+                  item: {
+                    type: "function_call_output",
+                    call_id: outputItem.call_id,
+                    output: JSON.stringify({
+                      success: true,
+                      message: `Found ${(data.results || []).length} chunks of knowledge`,
+                      data: data.results || [],
+                    }),
+                  },
+                });
+              })
+              .catch(() => {
+                sendClientEvent({
+                  type: "conversation.item.create",
+                  item: {
+                    type: "function_call_output",
+                    call_id: outputItem.call_id,
+                    output: JSON.stringify({
+                      success: false,
+                      message: "Error searching knowledge base",
+                    }),
+                  },
+                });
+              })
+              .finally(() => {
+                pendingAsync -= 1;
+                if (pendingAsync === 0) {
+                  sendClientEvent({ type: "response.create" });
+                }
+              });
+            return;
+          }
+
+          const functionResult = outputItem.name && isRealtimeSlideTool(outputItem.name)
+            ? handleRealtimeSlideToolRef.current?.(outputItem.name, args)
+            : null;
+
+          if (!functionResult) {
+            return;
+          }
+
+          submittedToolOutputs += 1;
+          console.log(`📤 Function Response:`, functionResult);
+          sendClientEvent({
+            type: "conversation.item.create",
+            item: {
+              type: "function_call_output",
+              call_id: outputItem.call_id,
+              output: JSON.stringify(functionResult),
+            },
           });
-          // One response.create after all outputs are submitted
+        });
+
+        if (pendingAsync === 0 && submittedToolOutputs > 0) {
           sendClientEvent({ type: "response.create" });
-          // Tool calls fully handled — do not forward to handleServerEventRef
-          return;
         }
+        return;
       }
 
       // Pass to the default handler for non-tool-call events
@@ -1435,15 +1576,11 @@ export default function LearningInterface({
 
   // Track slide changes for analytics/resuming
   useEffect(() => {
-    if (isHydrated && currentSlide !== 0) {
+    if (isHydrated && sessionRunId) {
       console.log(`📄 Slide changed to ${currentSlide + 1}: "${classSession.slides[currentSlide]?.title || 'Unknown'}"`);
-
-      // Store in sessionStorage for persistence across page reloads
-      if (sessionRunId) {
-        sessionStorage.setItem(`session_${sessionRunId}_currentSlide`, currentSlide.toString());
-      }
+      sessionStorage.setItem(`session_${sessionRunId}_currentSlide`, currentSlide.toString());
     }
-  }, [currentSlide, isHydrated]);
+  }, [currentSlide, isHydrated, sessionRunId, classSession.slides]);
 
   const currentSlideData = classSession.slides[currentSlide];
 
@@ -1478,53 +1615,45 @@ export default function LearningInterface({
   // --------------------------------------------------------------
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background font-sans text-foreground">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-background font-sans text-foreground">
       {/* ── Header ── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-10 shadow-sm relative">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 md:px-6 z-10 shadow-sm relative">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <MessageSquare className="h-4 w-4" />
           </div>
-          <div>
-            <h1 className="text-sm font-semibold text-foreground leading-none">
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-semibold text-foreground leading-none">
               {classSession.classDetails.className}
             </h1>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="truncate text-xs text-muted-foreground mt-1">
               {classSession.classDetails.courseName} — {classSession.classDetails.courseCode}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <span className="hidden sm:flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
             AI Tutor Session
           </span>
-          <button
-            onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
-            className={cn(
-              "p-2 rounded-full transition-colors ml-2",
-              isTranscriptVisible ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-            title="Toggle Transcript"
-          >
-            <MessageSquare size={18} />
-          </button>
         </div>
       </header>
 
+
       {/* ── Main Layout ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
         {/* ── Left Sidebar: Avatar & Controls ── */}
-        <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-sidebar md:w-[320px]">
+        <div className="flex h-[46vh] min-h-[260px] w-full shrink-0 flex-col overflow-hidden border-b border-sidebar-border bg-sidebar md:h-auto md:w-[280px] md:border-b-0 md:border-r lg:w-[320px]">
           {/* Avatar Video Area */}
-          <div className="relative flex-1 bg-black/5 p-4 flex flex-col justify-center items-center">
-            <div className="relative h-64 w-64 overflow-hidden rounded-2xl shadow-xl border-4 border-sidebar bg-gray-900 pointer-events-none">
+          <div className="relative flex min-h-0 flex-1 flex-col items-center gap-2 bg-sidebar p-3">
+            <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent shadow-xl pointer-events-none">
               <SessionAvatarRenderer
                 config={sessionAvatar}
                 audioElement={outputAudioElement}
                 isConnected={sessionStatus === "CONNECTED"}
                 isAISpeaking={isAISpeaking}
                 isUserSpeaking={isUserSpeaking}
+                lipSyncAmplitude={lipSyncAmplitude}
                 heygenConnected={sessionStatus === "CONNECTED" && !isConnecting}
                 heygenVideoRef={heygenVideoRef}
               />
@@ -1539,7 +1668,7 @@ export default function LearningInterface({
             </div>
 
             {/* Status indicator */}
-            <div className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-sidebar-accent/50">
+            <div className="flex shrink-0 items-center gap-2 rounded-full bg-sidebar-accent px-3 py-1.5">
               <span className={cn(
                 "h-2 w-2 rounded-full",
                 sessionStatus === "CONNECTED" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" :
@@ -1553,7 +1682,7 @@ export default function LearningInterface({
           </div>
 
           {/* Controls */}
-          <div className="flex shrink-0 flex-col gap-3 p-4 bg-sidebar border-t border-border/50">
+          <div className="flex shrink-0 flex-col gap-3 border-t border-sidebar-border bg-sidebar p-4">
             {/* Voice Activity equalizers (visual only for now) */}
             <div className="flex items-center justify-between rounded-xl border border-border bg-background p-3">
               <div className="flex items-center gap-2">
@@ -1580,14 +1709,14 @@ export default function LearningInterface({
                     <div
                       key={i}
                       className={cn(
-                        "w-1 rounded-full bg-primary/50/60 transition-all duration-75",
+                        "w-1 rounded-full bg-primary/60 transition-all duration-75",
                         isAISpeaking ? "animate-[eq_0.5s_ease-in-out_infinite]" : "h-1"
                       )}
                       style={{ animationDelay: `${i * 0.1}s` }}
                     />
                   ))}
                 </div>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/50/10 text-primary">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Volume2 className="h-3.5 w-3.5" />
                 </div>
               </div>
@@ -1615,7 +1744,45 @@ export default function LearningInterface({
                 {isAudioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                 {isAudioEnabled ? "Sound On" : "Sound Off"}
               </button>
+              <button
+                onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
+                className={cn(
+                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
+                  isTranscriptVisible ? "bg-primary/15 text-primary border-primary/30" : "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80"
+                )}
+                aria-pressed={isTranscriptVisible}
+                aria-label={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
+                title={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
+              >
+                <MessageSquare className={cn("h-4 w-4", isTranscriptVisible && "fill-primary/20")} />
+                {isTranscriptVisible ? "Transcript On" : "Transcript"}
+              </button>
             </div>
+
+            {/* Text input alongside voice */}
+            <form onSubmit={submitTextMessage} className="flex gap-2">
+              <input
+                type="text"
+                value={textInput}
+                onChange={(event) => setTextInput(event.target.value)}
+                disabled={sessionStatus !== "CONNECTED"}
+                placeholder={
+                  sessionStatus === "CONNECTED"
+                    ? "Type your question..."
+                    : "Connect to type a question"
+                }
+                className="min-h-[44px] min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Type a message to the AI tutor"
+              />
+              <button
+                type="submit"
+                disabled={sessionStatus !== "CONNECTED" || !textInput.trim()}
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-primary px-3 text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Send typed message"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </form>
 
             {/* Session Action Button */}
             {sessionStatus === "CONNECTED" ? (
@@ -1642,20 +1809,20 @@ export default function LearningInterface({
         </div>
 
         {/* ── Center: Slides ── */}
-        <div className="flex flex-1 flex-col overflow-hidden bg-muted/10 relative">
+        <div className="relative flex min-h-[50vh] flex-1 flex-col overflow-hidden bg-muted/10 md:min-h-0">
 
           {/* Start Conversation Prompt overlay */}
           {showStartPrompt && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="absolute top-4 left-1/2 z-40 w-[92vw] max-w-sm -translate-x-1/2 animate-in fade-in slide-in-from-top-4 duration-500 sm:top-6 sm:w-auto">
               <div className={cn(
-                "px-6 py-4 rounded-2xl shadow-xl flex items-center gap-4 border backdrop-blur-md transition-all duration-300",
+                "px-4 py-3 sm:px-6 sm:py-4 rounded-2xl shadow-xl flex items-center gap-3 sm:gap-4 border backdrop-blur-md transition-all duration-300",
                 sessionStatus === "CONNECTED"
-                  ? "bg-primary/50/90 text-white border-primary/40 shadow-primary/50/20"
+                  ? "bg-primary/90 text-primary-foreground border-primary/40 shadow-primary/20"
                   : "bg-amber-500/90 text-white border-amber-400 shadow-amber-500/20"
               )}>
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
                   {sessionStatus === "CONNECTED" ? (
-                    <Mic size={20} className="text-white animate-pulse" />
+                    <Mic size={20} className="text-primary-foreground animate-pulse" />
                   ) : (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   )}
@@ -1664,7 +1831,9 @@ export default function LearningInterface({
                   {sessionStatus === "CONNECTED" ? (
                     <>
                       <p className="font-bold text-sm">Ready to start!</p>
-                      <p className="text-xs text-primary/5 mt-0.5">Say something to begin the conversation</p>
+                      <p className="text-xs text-primary-foreground/80 mt-0.5">
+                        Type a message, or turn on your mic when you want to speak.
+                      </p>
                     </>
                   ) : (
                     <>
@@ -1686,13 +1855,13 @@ export default function LearningInterface({
           )}
 
           {/* Slide content area */}
-          <div className="flex flex-1 items-center justify-center overflow-auto p-4 md:p-8">
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 md:p-6">
             <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
               {currentSlideData?.imagePath ? (
                 <img
                   src={getCorrectImageUrl(currentSlideData.imagePath)}
                   alt={currentSlideData?.title}
-                  className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-lg ring-1 ring-border/50 bg-card"
+                  className="max-h-full max-w-full object-contain rounded-xl bg-card shadow-lg ring-1 ring-border/50"
                   onError={(e) => {
                     console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
                   }}
@@ -1710,31 +1879,36 @@ export default function LearningInterface({
           </div>
 
           {/* Slide Navigation Bar */}
-          <div className="flex shrink-0 items-center justify-between border-t border-border bg-card/80 backdrop-blur-md px-4 py-3 md:px-6">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border bg-card px-2 py-3 sm:px-4 md:px-6">
             <button
+              type="button"
               onClick={previousSlide}
               disabled={currentSlide === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-5 w-5" />
               <span className="hidden sm:inline">Previous</span>
             </button>
 
-            <div className="flex flex-col items-center">
-              <span className="text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
+            <div className="flex min-w-0 max-w-[45vw] flex-col items-center sm:max-w-none">
+              <span className="w-full truncate text-center text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
+              <span className="mt-0.5 text-xs text-muted-foreground">
+                {currentSlide + 1} / {slideCount}
+              </span>
               {aiLeadEnabled && (
-                <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
-                  AI leading session
+                <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-wide text-primary sm:block">
+                  AI leading · use Next when ready
                 </span>
               )}
-              <div className="flex items-center gap-1.5 mt-1">
+              <div className="mt-1 flex max-w-full flex-wrap items-center justify-center gap-1.5">
                 {Array.from({ length: slideCount }).map((_, i) => (
                   <button
                     key={i}
+                    type="button"
                     onClick={() => goToSlideByIndex(i)}
                     className={cn(
                       "rounded-full transition-all duration-300",
-                      i === currentSlide ? "h-1.5 w-5 bg-primary" : "h-1.5 w-1.5 bg-border hover:bg-muted-foreground"
+                      i === currentSlide ? "h-2 w-6 bg-primary" : "h-2 w-2 bg-border hover:bg-muted-foreground"
                     )}
                     aria-label={`Go to slide ${i + 1}`}
                   />
@@ -1743,76 +1917,26 @@ export default function LearningInterface({
             </div>
 
             <button
+              type="button"
               onClick={nextSlide}
               disabled={currentSlide === slideCount - 1}
-              className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-sm font-medium text-foreground bg-secondary hover:bg-secondary/80 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
             >
               <span className="hidden sm:inline">Next</span>
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-5 w-5" />
             </button>
           </div>
+
+
         </div>
 
         {/* ── Right Sidebar: Transcript ── */}
-        {isTranscriptVisible && (
-          <div className="flex w-72 shrink-0 flex-col border-l border-border bg-card md:w-80 transition-all duration-300 ease-in-out">
-            <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Transcript
-              </h3>
-              <button
-                onClick={() => setTranscript([])}
-                className="text-[10px] uppercase font-bold tracking-wider text-primary hover:text-primary/80 transition-colors px-2 py-1 bg-primary/10 rounded"
-              >
-                Clear
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              {transcript.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-3 opacity-60">
-                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground max-w-[200px]">
-                    Transcript will appear here once the session starts.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {transcript.map((msg, idx) => (
-                    <div key={idx} className={cn(
-                      "flex gap-3",
-                      msg.role === "user" && "flex-row-reverse"
-                    )}>
-                      <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full shadow-sm">
-                        {msg.role === "assistant" ? (
-                          <div className="flex h-full w-full items-center justify-center bg-primary/10 text-[10px] font-bold text-primary/90">
-                            AI
-                          </div>
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-primary text-[10px] font-bold text-primary-foreground">
-                            ME
-                          </div>
-                        )}
-                      </div>
-                      <div className="max-w-[80%] flex flex-col gap-1">
-                        <div className={cn(
-                          "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm",
-                          msg.role === "assistant"
-                            ? "rounded-tl-sm bg-secondary text-secondary-foreground"
-                            : "rounded-tr-sm bg-primary text-primary-foreground"
-                        )}>
-                          {msg.text}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={transcriptEndRef} />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <TranscriptPanel
+          messages={transcript}
+          isVisible={isTranscriptVisible}
+          onClose={() => setIsTranscriptVisible(false)}
+          onClear={() => setTranscript([])}
+        />
       </div>
 
       {/* ── Feedback Modal ── */}
