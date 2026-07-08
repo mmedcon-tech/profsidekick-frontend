@@ -271,7 +271,7 @@ export default function ClassCreation() {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      const result = await response.json() as { message?: string; detail?: string; error?: string };
+      const result = await response.json() as { message?: string; detail?: string; error?: string; sessionId?: string };
       if (!response.ok) {
         const detail = result.message || result.detail || result.error || "Failed to create session";
         throw new Error(typeof detail === "string" ? detail : "Failed to create session");
