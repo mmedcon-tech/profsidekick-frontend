@@ -240,6 +240,9 @@ export function useHandleServerEvent({
         break;
       }
 
+      // GA gpt-realtime models emit "response.output_audio_transcript.delta";
+      // older preview models used "response.audio_transcript.delta".
+      case "response.output_audio_transcript.delta":
       case "response.audio_transcript.delta": {
         const itemId = serverEvent.item_id;
         const deltaText = serverEvent.delta || "";

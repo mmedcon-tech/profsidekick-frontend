@@ -8,6 +8,7 @@ import {
   shouldUseHeyGenVideo,
 } from '@/lib/heygenConfig';
 import type { SessionAvatarConfig } from '@/types/types';
+import type { VisemeTimeline } from '@/lib/visemeTypes';
 
 interface SessionAvatarRendererProps {
   config: SessionAvatarConfig;
@@ -18,6 +19,10 @@ interface SessionAvatarRendererProps {
   heygenConnected?: boolean;
   heygenVideoRef?: React.RefObject<HTMLVideoElement | null>;
   lipSyncAmplitude?: number;
+  /** Per-character viseme timeline, when a provider supplies one — see TeachingSessionAvatar. */
+  visemeTimeline?: VisemeTimeline | null;
+  /** Returns elapsed seconds within the current utterance (audio currentTime). */
+  speechClock?: () => number;
 }
 
 export default function SessionAvatarRenderer({
@@ -29,6 +34,8 @@ export default function SessionAvatarRenderer({
   heygenConnected = false,
   heygenVideoRef,
   lipSyncAmplitude,
+  visemeTimeline,
+  speechClock,
 }: SessionAvatarRendererProps): React.ReactElement {
   const effectiveType = getEffectiveRenderType(config);
   const displayConfig: SessionAvatarConfig = {
@@ -63,6 +70,8 @@ export default function SessionAvatarRenderer({
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
             lipSyncAmplitude={lipSyncAmplitude}
+            visemeTimeline={visemeTimeline}
+            speechClock={speechClock}
           />
         ) : displayConfig.renderType === '3d' && displayConfig.modelUrl ? (
           <GlbAvatar
@@ -80,6 +89,8 @@ export default function SessionAvatarRenderer({
             isAISpeaking={isAISpeaking}
             isUserSpeaking={isUserSpeaking}
             lipSyncAmplitude={lipSyncAmplitude}
+            visemeTimeline={visemeTimeline}
+            speechClock={speechClock}
           />
         )}
       </div>

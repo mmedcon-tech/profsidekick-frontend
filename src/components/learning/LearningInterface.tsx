@@ -1411,9 +1411,13 @@ export default function LearningInterface({
       }
 
       // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
-      // response.audio_transcript.done fires when a full assistant turn completes
+      // Fires when a full assistant turn completes. GA gpt-realtime models emit
+      // "response.output_audio_transcript.done"; older preview models used
+      // "response.audio_transcript.done" — accept both so this keeps working
+      // across model generations.
       if (
-        serverEvent.type === "response.audio_transcript.done" &&
+        (serverEvent.type === "response.output_audio_transcript.done" ||
+          serverEvent.type === "response.audio_transcript.done") &&
         serverEvent.transcript
       ) {
         setTranscript((prev) => [
@@ -1613,21 +1617,21 @@ export default function LearningInterface({
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-background font-sans text-foreground">
       {/* ── Header ── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-10 shadow-sm relative">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 md:px-6 z-10 shadow-sm relative">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <MessageSquare className="h-4 w-4" />
           </div>
-          <div>
-            <h1 className="text-sm font-semibold text-foreground leading-none">
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-semibold text-foreground leading-none">
               {classSession.classDetails.className}
             </h1>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="truncate text-xs text-muted-foreground mt-1">
               {classSession.classDetails.courseName} — {classSession.classDetails.courseCode}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <span className="hidden sm:flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
             AI Tutor Session
@@ -1637,9 +1641,9 @@ export default function LearningInterface({
 
 
       {/* ── Main Layout ── */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
         {/* ── Left Sidebar: Avatar & Controls ── */}
-        <div className="flex w-[280px] shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar md:w-[320px]">
+        <div className="flex h-[46vh] min-h-[260px] w-full shrink-0 flex-col overflow-hidden border-b border-sidebar-border bg-sidebar md:h-auto md:w-[280px] md:border-b-0 md:border-r lg:w-[320px]">
           {/* Avatar Video Area */}
           <div className="relative flex min-h-0 flex-1 flex-col items-center gap-2 bg-sidebar p-3">
             <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent shadow-xl pointer-events-none">
@@ -1805,13 +1809,13 @@ export default function LearningInterface({
         </div>
 
         {/* ── Center: Slides ── */}
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/10">
+        <div className="relative flex min-h-[50vh] flex-1 flex-col overflow-hidden bg-muted/10 md:min-h-0">
 
           {/* Start Conversation Prompt overlay */}
           {showStartPrompt && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="absolute top-4 left-1/2 z-40 w-[92vw] max-w-sm -translate-x-1/2 animate-in fade-in slide-in-from-top-4 duration-500 sm:top-6 sm:w-auto">
               <div className={cn(
-                "px-6 py-4 rounded-2xl shadow-xl flex items-center gap-4 border backdrop-blur-md transition-all duration-300",
+                "px-4 py-3 sm:px-6 sm:py-4 rounded-2xl shadow-xl flex items-center gap-3 sm:gap-4 border backdrop-blur-md transition-all duration-300",
                 sessionStatus === "CONNECTED"
                   ? "bg-primary/90 text-primary-foreground border-primary/40 shadow-primary/20"
                   : "bg-amber-500/90 text-white border-amber-400 shadow-amber-500/20"
@@ -1851,44 +1855,6 @@ export default function LearningInterface({
           )}
 
           {/* Slide content area */}
-          <div className="relative flex flex-1 items-center justify-center overflow-auto p-4 md:p-8">
-            {/* Slide counter badge */}
-            <div className="absolute top-4 right-4 z-20 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur-sm">
-              Slide {currentSlide + 1} of {slideCount}
-            </div>
-
-            {/* Floating manual navigation — always visible on the slide */}
-            {/* <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2">
-              <p className="rounded-full bg-card/90 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm">
-                Tap <span className="text-foreground">Next</span> when the tutor says &quot;next slide&quot;
-              </p>
-              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/95 p-2 shadow-xl backdrop-blur-md">
-                <button
-                  type="button"
-                  onClick={previousSlide}
-                  disabled={currentSlide === 0}
-                  aria-label="Previous slide"
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                  <span className="hidden sm:inline">Previous</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={nextSlide}
-                  disabled={currentSlide === slideCount - 1}
-                  aria-label="Next slide"
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div> */}
-          </div>
-
-
-          {/* Slide content area */}
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 md:p-6">
             <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
               {currentSlideData?.imagePath ? (
@@ -1913,28 +1879,28 @@ export default function LearningInterface({
           </div>
 
           {/* Slide Navigation Bar */}
-          <div className="flex shrink-0 items-center justify-between border-t border-border bg-card px-4 py-3 md:px-6">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border bg-card px-2 py-3 sm:px-4 md:px-6">
             <button
               type="button"
               onClick={previousSlide}
               disabled={currentSlide === 0}
-              className="flex min-h-[44px] items-center gap-1.5 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
             >
               <ChevronLeft className="h-5 w-5" />
-              <span>Previous</span>
+              <span className="hidden sm:inline">Previous</span>
             </button>
 
-            <div className="flex flex-col items-center">
-              <span className="text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
+            <div className="flex min-w-0 max-w-[45vw] flex-col items-center sm:max-w-none">
+              <span className="w-full truncate text-center text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
               <span className="mt-0.5 text-xs text-muted-foreground">
                 {currentSlide + 1} / {slideCount}
               </span>
               {aiLeadEnabled && (
-                <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-wide text-primary sm:block">
                   AI leading · use Next when ready
                 </span>
               )}
-              <div className="mt-1 flex items-center gap-1.5">
+              <div className="mt-1 flex max-w-full flex-wrap items-center justify-center gap-1.5">
                 {Array.from({ length: slideCount }).map((_, i) => (
                   <button
                     key={i}
@@ -1954,9 +1920,9 @@ export default function LearningInterface({
               type="button"
               onClick={nextSlide}
               disabled={currentSlide === slideCount - 1}
-              className="flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
             >
-              <span>Next</span>
+              <span className="hidden sm:inline">Next</span>
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>

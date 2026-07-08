@@ -1269,9 +1269,13 @@ export default function TeachingInterface({
       }
 
       // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
-      // response.audio_transcript.done fires when a full assistant turn completes
+      // Fires when a full assistant turn completes. GA gpt-realtime models emit
+      // "response.output_audio_transcript.done"; older preview models used
+      // "response.audio_transcript.done" — accept both so this keeps working
+      // across model generations.
       if (
-        serverEvent.type === "response.audio_transcript.done" &&
+        (serverEvent.type === "response.output_audio_transcript.done" ||
+          serverEvent.type === "response.audio_transcript.done") &&
         serverEvent.transcript &&
         heygenAvatarRef.current
       ) {
