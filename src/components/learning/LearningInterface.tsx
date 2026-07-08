@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send } from "lucide-react";
+import TranscriptPanel from "@/components/learning/TranscriptPanel";
 import StreamingAvatar, {
   AvatarQuality,
   StreamingEvents,
@@ -62,9 +63,15 @@ const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
 };
 
 export interface TranscriptItem {
+  id: string;
   role: "user" | "assistant";
   text: string;
 }
+
+const createTranscriptId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const DEFAULT_HEYGEN_AVATAR_ID =
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
@@ -137,7 +144,6 @@ export default function LearningInterface({
   const isIntentionallyDisconnectedRef = useRef(false);
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
   const awaitingSessionConfigRef = useRef(false);
   const slideToolHandledThisTurnRef = useRef(false);
   const isAISpeakingRef = useRef(false);
@@ -1039,7 +1045,7 @@ export default function LearningInterface({
     setTextInput("");
     setShowStartPrompt(false);
     setIsTranscriptVisible(true);
-    setTranscript((prev) => [...prev, { role: "user", text: clean }]);
+    setTranscript((prev) => [...prev, { id: createTranscriptId(), role: "user", text: clean }]);
     handleTurnComplete("user", clean);
 
     sendClientEvent({
@@ -1144,7 +1150,11 @@ export default function LearningInterface({
 
       setTranscript((prev) => [
         ...prev,
-        { role: "user", text: `[You moved to slide ${slideIndex + 1}: ${title}]` },
+        {
+          id: createTranscriptId(),
+          role: "user",
+          text: `[You moved to slide ${slideIndex + 1}: ${title}]`,
+        },
       ]);
       toast.success(`Teaching slide ${slideIndex + 1}: ${title}`);
       console.log(`📤 Learner slide change → teaching slide ${slideIndex + 1}`);
@@ -1260,6 +1270,11 @@ export default function LearningInterface({
   const goToSlideByIndex = (targetIndex: number) => {
     applySlideNavigation(targetIndex, "dot_navigation");
   };
+
+  // Reset transcript content when a new session run starts
+  useEffect(() => {
+    setTranscript([]);
+  }, [sessionRunId]);
 
   // Check WebRTC support on mount
   useEffect(() => {
@@ -1401,7 +1416,10 @@ export default function LearningInterface({
         serverEvent.type === "response.audio_transcript.done" &&
         serverEvent.transcript
       ) {
-        setTranscript((prev) => [...prev, { role: "assistant", text: serverEvent.transcript }]);
+        setTranscript((prev) => [
+          ...prev,
+          { id: createTranscriptId(), role: "assistant", text: serverEvent.transcript },
+        ]);
         if (heygenAvatarRef.current) {
           heygenAvatarRef.current
             .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
@@ -1426,7 +1444,10 @@ export default function LearningInterface({
       if (serverEvent.type === "conversation.item.input_audio_transcription.completed") {
         const recognizedText = serverEvent.transcript || "";
         if (recognizedText) {
-          setTranscript((prev) => [...prev, { role: "user", text: recognizedText }]);
+          setTranscript((prev) => [
+            ...prev,
+            { id: createTranscriptId(), role: "user", text: recognizedText },
+          ]);
           clearTimeout((window as any)._speechHandleTimer);
           (window as any)._speechHandleTimer = setTimeout(() => {
             // confidence and duration are not available on this event; pass safe defaults
@@ -1611,19 +1632,6 @@ export default function LearningInterface({
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
             AI Tutor Session
           </span>
-          <button
-            onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
-            className={cn(
-              "ml-2 flex min-h-[44px] items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors",
-              isTranscriptVisible ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-            aria-pressed={isTranscriptVisible}
-            aria-label={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
-            title={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
-          >
-            <MessageSquare size={18} />
-            <span className="hidden sm:inline">{isTranscriptVisible ? "Hide Transcript" : "Transcript"}</span>
-          </button>
         </div>
       </header>
 
@@ -1731,6 +1739,19 @@ export default function LearningInterface({
               >
                 {isAudioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                 {isAudioEnabled ? "Sound On" : "Sound Off"}
+              </button>
+              <button
+                onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
+                className={cn(
+                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
+                  isTranscriptVisible ? "bg-primary/15 text-primary border-primary/30" : "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80"
+                )}
+                aria-pressed={isTranscriptVisible}
+                aria-label={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
+                title={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
+              >
+                <MessageSquare className={cn("h-4 w-4", isTranscriptVisible && "fill-primary/20")} />
+                {isTranscriptVisible ? "Transcript On" : "Transcript"}
               </button>
             </div>
 
@@ -1944,75 +1965,12 @@ export default function LearningInterface({
         </div>
 
         {/* ── Right Sidebar: Transcript ── */}
-        {isTranscriptVisible && (
-          <div className="flex w-72 shrink-0 flex-col border-l border-border bg-card md:w-80 transition-all duration-300 ease-in-out">
-            <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Transcript
-              </h3>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setTranscript([])}
-                  className="text-[10px] uppercase font-bold tracking-wider text-primary hover:text-primary/80 transition-colors px-2 py-1 bg-primary/10 rounded"
-                >
-                  Clear
-                </button>
-                <button
-                  onClick={() => setIsTranscriptVisible(false)}
-                  className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  aria-label="Close transcript"
-                  title="Close transcript"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              {transcript.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-3 opacity-60">
-                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground max-w-[200px]">
-                    Transcript will appear here once the session starts.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {transcript.map((msg, idx) => (
-                    <div key={idx} className={cn(
-                      "flex gap-3",
-                      msg.role === "user" && "flex-row-reverse"
-                    )}>
-                      <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full shadow-sm">
-                        {msg.role === "assistant" ? (
-                          <div className="flex h-full w-full items-center justify-center bg-primary/10 text-[10px] font-bold text-primary/90">
-                            AI
-                          </div>
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-primary text-[10px] font-bold text-primary-foreground">
-                            ME
-                          </div>
-                        )}
-                      </div>
-                      <div className="max-w-[80%] flex flex-col gap-1">
-                        <div className={cn(
-                          "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm",
-                          msg.role === "assistant"
-                            ? "rounded-tl-sm bg-secondary text-secondary-foreground"
-                            : "rounded-tr-sm bg-primary text-primary-foreground"
-                        )}>
-                          {msg.text}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={transcriptEndRef} />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <TranscriptPanel
+          messages={transcript}
+          isVisible={isTranscriptVisible}
+          onClose={() => setIsTranscriptVisible(false)}
+          onClear={() => setTranscript([])}
+        />
       </div>
 
       {/* ── Feedback Modal ── */}
