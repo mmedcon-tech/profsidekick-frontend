@@ -2,7 +2,6 @@
 
 import React from 'react';
 import TeachingSessionAvatar from '@/components/avatar/TeachingSessionAvatar';
-import GlbAvatar from '@/components/avatar/GlbAvatar';
 import {
   getEffectiveRenderType,
   shouldUseHeyGenVideo,
@@ -62,26 +61,11 @@ export default function SessionAvatarRenderer({
               </div>
             )}
           </>
-        ) : displayConfig.renderType === 'glb' ? (
-          <TeachingSessionAvatar
-            config={displayConfig}
-            audioElement={audioElement}
-            isConnected={isConnected}
-            isAISpeaking={isAISpeaking}
-            isUserSpeaking={isUserSpeaking}
-            lipSyncAmplitude={lipSyncAmplitude}
-            visemeTimeline={visemeTimeline}
-            speechClock={speechClock}
-          />
-        ) : displayConfig.renderType === '3d' && displayConfig.modelUrl ? (
-          <GlbAvatar
-            modelUrl={displayConfig.modelUrl}
-            audioElement={audioElement}
-            isConnected={isConnected}
-            isAISpeaking={isAISpeaking}
-            isUserSpeaking={isUserSpeaking}
-          />
         ) : (
+          // Every non-HeyGen config (glb, 3d, static, talkingheads) routes through
+          // TeachingSessionAvatar so GLB configs always get the same GlbAvatarPreview
+          // lip-sync pipeline, regardless of whether the model came from the avatar
+          // library (glbLibraryId) or a raw modelUrl.
           <TeachingSessionAvatar
             config={displayConfig}
             audioElement={audioElement}

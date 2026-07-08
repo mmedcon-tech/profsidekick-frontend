@@ -76,7 +76,12 @@ export default function TeachingSessionAvatar({
   );
 
   const isDirectGlbUrl = config.glbLibraryId?.endsWith('.glb');
-  const glbUrl = isDirectGlbUrl ? config.glbLibraryId : libraryEntry?.glbPath;
+  // Fall back to a raw modelUrl (e.g. a publisher-uploaded model with no
+  // matching avatar-library entry) so every GLB config renders through the
+  // same GlbAvatarPreview pipeline — and therefore gets the same lip sync.
+  const glbUrl =
+    (isDirectGlbUrl ? config.glbLibraryId : libraryEntry?.glbPath) ??
+    (config.modelUrl?.endsWith('.glb') ? config.modelUrl : undefined);
 
   const imageUrl =
     config.imageUrl ??
