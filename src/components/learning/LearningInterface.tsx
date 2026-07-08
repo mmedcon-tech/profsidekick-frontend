@@ -18,6 +18,7 @@ import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext"
 import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
 import { classifyTurn } from "@/lib/turnClassifier";
+import type { VisemeTimeline } from "@/lib/visemeTypes";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
@@ -130,6 +131,8 @@ export default function LearningInterface({
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   const [isTranscriptVisible, setIsTranscriptVisible] = useState(false);
   const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [avatarAudioElement, setAvatarAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [avatarVisemeTimeline, setAvatarVisemeTimeline] = useState<VisemeTimeline | null>(null);
   const [aiLeadEnabled] = useState(true);
 
   const slideCount = classSession.slides.length;
@@ -208,6 +211,11 @@ export default function LearningInterface({
     addStructuredTurn(turn);
     void persistTranscriptTurn({ role, text });
   }, [addStructuredTurn, getRubricTerms, persistTranscriptTurn]);
+
+  const avatarSpeechClock = useCallback(
+    () => avatarAudioElement?.currentTime ?? 0,
+    [avatarAudioElement],
+  );
 
   const sendClientEvent = (eventObj: any, eventNameSuffix = "") => {
     if (dcRef.current && dcRef.current.readyState === "open") {
@@ -396,6 +404,216 @@ export default function LearningInterface({
       heygenAvatarRef.current = null;
     }
   }, []);
+
+  // ── Dual voice pipeline (TTS) ──────────────────────────────────────────────
+  // OpenAI Realtime is configured for text-only output (transcription + text
+  // generation). Completed assistant turns are synthesised here via the
+  // backend-resolved provider (ElevenLabs or OpenAI TTS — see
+  // resolveSpeechDispatch) and fed to HeyGen (when active) for lip-synced
+  // playback.
+
+  const stopElevenLabsSpeech = useCallback(() => {
+    elevenLabsStopRef.current?.();
+    elevenLabsStopRef.current = null;
+    setAvatarAudioElement(null);
+    setAvatarVisemeTimeline(null);
+  }, []);
+
+  const speakAssistantText = useCallback(async (text: string) => {
+    const clean = text.trim();
+    if (!clean) return;
+
+    // Feed the completed text to HeyGen so it can lip-sync/repeat it visually.
+    if (heygenAvatarRef.current) {
+      heygenAvatarRef.current
+        .speak({ text: clean, taskType: TaskType.REPEAT })
+        .catch(() => { });
+    }
+
+    stopElevenLabsSpeech();
+
+    try {
+      // Dual voice pipeline — dispatch to the backend-resolved provider/voice
+      // (subscriber override > publisher default) instead of guessing gender
+      // from the 3-D avatar's library entry. `voiceProviderOverride` skips
+      // straight to the fallback provider once one has already been forced
+      // this session (avoids retrying a known-broken ElevenLabs on every turn).
+      const dispatch = resolveSpeechDispatch(
+        sessionAvatarRef.current,
+        voiceProviderOverride ?? undefined,
+      );
+
+      // synthesizeAssistantSpeech automatically retries via OpenAI TTS if
+      // ElevenLabs fails — any such failure is a platform-side issue (shared
+      // account), never the subscriber's own credit balance. `providerUsed`
+      // (not `dispatch.provider`) must drive billing/notifications below,
+      // since a fallback can change it mid-call.
+      const { stop, audio, timeline, providerUsed, fallbackReason } = await synthesizeAssistantSpeech(
+        clean,
+        dispatch,
+        setIsAISpeaking,
+      );
+      elevenLabsStopRef.current = stop;
+      elevenLabsAudioRef.current = audio;
+      audio.muted = !isAudioEnabled;
+      setAvatarAudioElement(audio);
+      setAvatarVisemeTimeline(timeline);
+      setActiveVoiceProvider(providerUsed);
+
+      if (fallbackReason === 'platform_unavailable' && voiceProviderOverride !== providerUsed) {
+        setVoiceProviderOverride(providerUsed);
+        setVoiceFallbackReason('platform_unavailable');
+        toast.warning(
+          'The premium voice service is temporarily unavailable. Your session is continuing with a standard voice.',
+          { id: 'voice-fallback-platform' },
+        );
+      }
+
+      // Meter the synthesized characters for usage-based billing, using the
+      // provider that actually spoke — never the originally dispatched one —
+      // so a platform-side fallback is never billed at the wrong rate.
+      if (sessionRunId) {
+        const usage = await logVoiceUsage(
+          classSession.sessionId,
+          sessionRunId,
+          providerUsed,
+          clean.length,
+          token,
+        );
+
+        if (usage.insufficientCredits) {
+          // This 402 comes from OUR OWN billing endpoint — it is always the
+          // subscriber's own balance, never the platform's ElevenLabs
+          // account (that failure mode is handled above, before billing is
+          // even attempted).
+          if (providerUsed === 'elevenlabs' && voiceProviderOverride !== 'openai') {
+            setVoiceProviderOverride('openai');
+            setVoiceFallbackReason('user_low_credits');
+            toast.info('Switching to a lower-cost voice — your credits are running low.', {
+              id: 'voice-fallback-credits',
+            });
+          } else {
+            toast.error('Out of credits for voice responses. Add credits to continue hearing replies.', {
+              id: 'voice-out-of-credits',
+            });
+          }
+        } else if (usage.ok) {
+          const creditsCharged = usage.creditsCharged ?? 0;
+          setVoiceUsageByProvider((prev) => {
+            const existing = prev[providerUsed] ?? { characters: 0, credits: 0 };
+            return {
+              ...prev,
+              [providerUsed]: {
+                characters: existing.characters + clean.length,
+                credits: existing.credits + creditsCharged,
+              },
+            };
+          });
+
+          if (typeof usage.newBalance === 'number') {
+            setVoiceBalance(usage.newBalance);
+            if (sessionStartBalanceRef.current === null) {
+              sessionStartBalanceRef.current = usage.newBalance + creditsCharged;
+            }
+            const startingBalance = sessionStartBalanceRef.current;
+            if (
+              !lowBalanceWarnedRef.current &&
+              startingBalance > 0 &&
+              usage.newBalance < startingBalance * 0.2
+            ) {
+              lowBalanceWarnedRef.current = true;
+              toast.warning('Your credit balance is running low.', { id: 'voice-low-balance' });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Speech synthesis failed:', err);
+    }
+  }, [
+    isAudioEnabled,
+    stopElevenLabsSpeech,
+    sessionRunId,
+    classSession.sessionId,
+    token,
+    voiceProviderOverride,
+  ]);
+
+  // ── Shared WebRTC / media cleanup ─────────────────────────────────────────
+  // Single idempotent function used by both user-disconnect and React cleanup.
+  // Eliminates ~150 lines of duplication across the old disconnect functions.
+  const cleanupRealtimeResources = useCallback(() => {
+    // Stop HeyGen visual layer
+    stopHeyGen();
+    // Stop ElevenLabs speech
+    stopElevenLabsSpeech();
+
+    // Mark disconnected to block auto-reconnection and queued messages
+    isIntentionallyDisconnectedRef.current = true;
+    connectionLockRef.current = false;
+    messageHandlerRef.current = null;
+
+    // Reset UI state
+    setIsUserSpeaking(false);
+    setIsAISpeaking(false);
+
+    // Stop media stream tracks (microphone)
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => {
+        track.enabled = false;
+        track.stop();
+      });
+      mediaStreamRef.current = null;
+    }
+
+    // Tear down peer connection and data channel
+    if (pcRef.current) {
+      pcRef.current.getSenders().forEach((sender) => {
+        if (sender.track) {
+          sender.track.enabled = false;
+          sender.track.stop();
+          try { pcRef.current!.removeTrack(sender); } catch { /* already removed */ }
+        }
+      });
+      pcRef.current.getTransceivers().forEach((t) => {
+        if (t.direction !== 'inactive') {
+          try { t.stop(); } catch { /* already stopped */ }
+        }
+      });
+      pcRef.current.getReceivers().forEach((r) => {
+        if (r.track) r.track.stop();
+      });
+    }
+
+    // Data channel cleanup
+    if (dcRef.current) {
+      const dc = dcRef.current;
+      if ((dc as any)._messageHandler) {
+        dc.removeEventListener('message', (dc as any)._messageHandler);
+      }
+      dcRef.current = null;
+      dc.close();
+      dc.onmessage = null;
+      dc.onopen = null;
+      dc.onclose = null;
+      dc.onerror = null;
+    }
+
+    // Close peer connection
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+
+    // Stop audio playback
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current.srcObject = null;
+    }
+
+    setDataChannel(null);
+    hasConnectedRef.current = false;
+  }, [stopHeyGen, stopElevenLabsSpeech]);
 
   // ── OpenAI Realtime connection ───────────────────────────────────────────────
 
@@ -1645,13 +1863,15 @@ export default function LearningInterface({
             <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent shadow-xl pointer-events-none">
               <SessionAvatarRenderer
                 config={sessionAvatar}
-                audioElement={outputAudioElement}
+                audioElement={avatarAudioElement ?? outputAudioElement}
                 isConnected={sessionStatus === "CONNECTED"}
                 isAISpeaking={isAISpeaking}
                 isUserSpeaking={isUserSpeaking}
                 lipSyncAmplitude={lipSyncAmplitude}
                 heygenConnected={sessionStatus === "CONNECTED" && !isConnecting}
                 heygenVideoRef={heygenVideoRef}
+                visemeTimeline={avatarVisemeTimeline}
+                speechClock={avatarSpeechClock}
               />
               {sessionStatus === "CONNECTING" && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80 backdrop-blur-sm z-20">
