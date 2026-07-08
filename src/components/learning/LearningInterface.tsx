@@ -1837,7 +1837,7 @@ export default function LearningInterface({
             </div>
 
             {/* Floating manual navigation — always visible on the slide */}
-            <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2">
+            {/* <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2">
               <p className="rounded-full bg-card/90 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm">
                 Tap <span className="text-foreground">Next</span> when the tutor says &quot;next slide&quot;
               </p>
@@ -1863,8 +1863,10 @@ export default function LearningInterface({
                   <ChevronRight className="h-5 w-5" />
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
+
+
           {/* Slide content area */}
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 md:p-6">
             <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
@@ -1937,6 +1939,8 @@ export default function LearningInterface({
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
+
+
         </div>
 
         {/* ── Right Sidebar: Transcript ── */}
