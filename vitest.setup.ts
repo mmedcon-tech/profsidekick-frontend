@@ -6,3 +6,9 @@ import '@testing-library/jest-dom';
 if (!process.env.NEXT_PUBLIC_BACKEND_URL) {
   process.env.NEXT_PUBLIC_BACKEND_URL = 'http://localhost:8000';
 }
+
+// jsdom does not implement scrollIntoView — stub it so components that
+// auto-scroll (e.g. chat/transcript panels) don't throw in tests.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
