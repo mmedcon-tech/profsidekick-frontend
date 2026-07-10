@@ -4,12 +4,17 @@ import React from 'react';
 import StaticAvatarWidget from '@/components/avatar/StaticAvatarWidget';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
 import { useTalkingHeadsAvatar } from '@/hooks/useTalkingHeadsAvatar';
+import { useVisemePlayback } from '@/hooks/useVisemePlayback';
 import { deriveAvatarWidgetState } from '@/lib/avatarStateMachine';
 import type { SessionAvatarConfig } from '@/types/types';
+import type { VisemeTimeline } from '@/lib/visemeTypes';
 
 import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
 import GlbAvatarPreview from '@/components/avatar/GlbAvatarPreview';
 import { getAvatarLibraryEntry, resolvePortraitPresentation } from '@/lib/avatarLibrary';
+
+/** Stable no-op clock so the viseme hook has a constant identity when no timeline is playing. */
+const NOOP_CLOCK = (): number => 0;
 
 interface TeachingSessionAvatarProps {
   config: SessionAvatarConfig;
@@ -18,6 +23,15 @@ interface TeachingSessionAvatarProps {
   isAISpeaking: boolean;
   isUserSpeaking: boolean;
   lipSyncAmplitude?: number;
+  /**
+   * Per-character viseme timeline for the current utterance, when a provider
+   * supplies one (e.g. ElevenLabs character timestamps). When present, the
+   * mouth is driven by real phoneme shapes synced to `speechClock` instead of
+   * the generic amplitude envelope — same mechanism as ChatbotAvatar3D.
+   */
+  visemeTimeline?: VisemeTimeline | null;
+  /** Returns elapsed seconds within the current utterance (audio currentTime). */
+  speechClock?: () => number;
 }
 
 export default function TeachingSessionAvatar({
@@ -27,6 +41,8 @@ export default function TeachingSessionAvatar({
   isAISpeaking,
   isUserSpeaking,
   lipSyncAmplitude,
+  visemeTimeline = null,
+  speechClock,
 }: TeachingSessionAvatarProps): React.ReactElement {
   const widgetState = deriveAvatarWidgetState({
     isConnected,
@@ -45,8 +61,27 @@ export default function TeachingSessionAvatar({
     ? getAvatarLibraryEntry(config.glbLibraryId)
     : undefined;
 
+  const lipSync = libraryEntry?.lipSync
+    ? { ...libraryEntry.lipSync, mouthOpenGain: 0.78 }
+    : { mouthOpenGain: 0.85, jawBones: ['jaw', 'Jaw', 'mixamorig:Jaw', 'Jawbone'] };
+
+  // Real viseme-driven lip-sync when a timeline is available; otherwise the
+  // GLB preview falls back to the generic amplitude envelope below.
+  const hasVisemes = !!visemeTimeline && visemeTimeline.keyframes.length > 0;
+  const visemeRef = useVisemePlayback(
+    speechClock ?? NOOP_CLOCK,
+    visemeTimeline,
+    isConnected && hasVisemes && (isAISpeaking || amplitude > 0.035),
+    lipSync,
+  );
+
   const isDirectGlbUrl = config.glbLibraryId?.endsWith('.glb');
-  const glbUrl = isDirectGlbUrl ? config.glbLibraryId : libraryEntry?.glbPath;
+  // Fall back to a raw modelUrl (e.g. a publisher-uploaded model with no
+  // matching avatar-library entry) so every GLB config renders through the
+  // same GlbAvatarPreview pipeline — and therefore gets the same lip sync.
+  const glbUrl =
+    (isDirectGlbUrl ? config.glbLibraryId : libraryEntry?.glbPath) ??
+    (config.modelUrl?.endsWith('.glb') ? config.modelUrl : undefined);
 
   const imageUrl =
     config.imageUrl ??
@@ -61,24 +96,21 @@ export default function TeachingSessionAvatar({
     (config.renderType === '3d' || config.renderType === 'glb') && Boolean(glbUrl);
 
   if (useGlbPreview && glbUrl) {
-    const lipSync = libraryEntry?.lipSync
-      ? { ...libraryEntry.lipSync, mouthOpenGain: 0.78 }
-      : { mouthOpenGain: 0.85, jawBones: ['jaw', 'Jaw', 'mixamorig:Jaw', 'Jawbone'] };
-
     const isSpeaking = isConnected && (isAISpeaking || amplitude > 0.035);
 
     return (
-      <div className="flex h-full w-full flex-col overflow-hidden bg-gray-900">
+      <div className="flex h-full min-h-0 w-full flex-col bg-sidebar">
         <GlbAvatarPreview
           glbUrl={glbUrl}
           lipSyncHints={lipSync}
           amplitude={amplitude}
+          visemeRef={visemeRef}
           isSpeaking={isSpeaking}
           showControls={false}
           framing="full"
-          coverHeightFraction={libraryEntry?.previewCoverHeightFraction ?? 0.36}
-          fitMargin={libraryEntry?.previewFitMargin ?? 0.92}
-          modelScale={libraryEntry?.previewModelScale ?? 1.35}
+          coverHeightFraction={libraryEntry?.previewCoverHeightFraction ?? 0.62}
+          fitMargin={libraryEntry?.previewFitMargin ?? 1.08}
+          modelScale={libraryEntry?.previewModelScale ?? 1.2}
         />
       </div>
     );
@@ -86,7 +118,7 @@ export default function TeachingSessionAvatar({
 
   if (config.renderType === '3d' || config.renderType === 'glb') {
     return (
-      <div className="flex h-full w-full flex-col bg-gray-900">
+      <div className="flex h-full min-h-0 w-full flex-col bg-sidebar">
         <PortraitAvatarStage
           imageUrl={imageUrl}
           avatarName={config.avatarName}
@@ -100,7 +132,7 @@ export default function TeachingSessionAvatar({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-gray-900 gap-2">
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-center gap-2 bg-sidebar">
       <StaticAvatarWidget
         imageUrl={imageUrl}
         avatarName={config.avatarName}

@@ -128,7 +128,7 @@ export default function CourseDetailPage() {
     if (isPublisher) {
       router.push(`/publisher/sessions/${sessionId}/chat`);
     } else {
-      router.push(`/sessions/${sessionId}/run`);
+      router.push(`/sessions/${sessionId}/run?courseId=${courseId}`);
     }
   };
 

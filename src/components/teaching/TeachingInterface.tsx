@@ -18,7 +18,6 @@ import { classifyTurn } from "@/lib/turnClassifier";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
-  isHeyGenEnabled,
 } from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
@@ -1270,9 +1269,13 @@ export default function TeachingInterface({
       }
 
       // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
-      // response.audio_transcript.done fires when a full assistant turn completes
+      // Fires when a full assistant turn completes. GA gpt-realtime models emit
+      // "response.output_audio_transcript.done"; older preview models used
+      // "response.audio_transcript.done" — accept both so this keeps working
+      // across model generations.
       if (
-        serverEvent.type === "response.audio_transcript.done" &&
+        (serverEvent.type === "response.output_audio_transcript.done" ||
+          serverEvent.type === "response.audio_transcript.done") &&
         serverEvent.transcript &&
         heygenAvatarRef.current
       ) {
@@ -1427,27 +1430,27 @@ export default function TeachingInterface({
   // --------------------------------------------------------------
 
   return (
-    <div className="h-screen bg-gray-100 dark:bg-gray-800 flex relative">
+    <div className="relative flex h-full min-h-0 overflow-hidden bg-background text-foreground">
       {/* Start Conversation Prompt - Floating notification */}
       {showStartPrompt && (
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
           <div className={`${
             sessionStatus === "CONNECTED"
-              ? "bg-gradient-to-r from-primary/50 to-teal-500 shadow-primary/50/30"
+              ? "bg-primary shadow-primary/30"
               : "bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/30"
-          } text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all duration-300`}>
-            <div className="w-10 h-10 bg-white dark:bg-gray-800/20 rounded-full flex items-center justify-center animate-pulse">
+          } text-primary-foreground px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all duration-300`}>
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
               {sessionStatus === "CONNECTED" ? (
-                <Mic size={20} className="text-white" />
+                <Mic size={20} className="text-primary-foreground" />
               ) : (
-                <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               )}
             </div>
             <div>
               {sessionStatus === "CONNECTED" ? (
                 <>
                   <p className="font-semibold text-base">👋 Ready to start!</p>
-                  <p className="text-sm text-primary/5">Say something to begin the conversation</p>
+                  <p className="text-sm text-primary-foreground/80">Say something to begin the conversation</p>
                 </>
               ) : (
                 <>
@@ -1470,9 +1473,9 @@ export default function TeachingInterface({
       )}
 
       {/* Left Side - Slide Viewer (70%) */}
-      <div className="w-[80%] bg-white dark:bg-gray-800 flex flex-col">
+      <div className="flex min-h-0 w-[80%] flex-col bg-background">
         {/* Header */}
-        <div className="bg-primary dark:bg-primary/90 text-white p-4 flex justify-between items-center">
+        <div className="flex items-center justify-between bg-primary p-4 text-primary-foreground">
           <div className="flex items-center gap-4">
             <img 
               src="/images/logo.png" 
@@ -1485,7 +1488,7 @@ export default function TeachingInterface({
             />
             <div>
               <h1 className="text-xl font-semibold">{classSession.classDetails.className}</h1>
-              <p className="text-primary/10 text-sm">
+              <p className="text-sm text-primary-foreground/80">
                 {classSession.classDetails.courseName} • {classSession.classDetails.courseCode}
               </p>
             </div>
@@ -1499,14 +1502,14 @@ export default function TeachingInterface({
         </div>
 
         {/* Slide Content */}
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="w-full max-w-7xl relative">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-6">
+          <div className="relative flex h-full w-full max-w-7xl items-center justify-center">
             {currentSlideData?.imagePath ? (
               <>
                 <img
                   src={getCorrectImageUrl(currentSlideData.imagePath)}
                   alt={currentSlideData?.title}
-                  className="w-full h-auto rounded-lg shadow-lg transition-all duration-300"
+                  className="max-h-full max-w-full rounded-lg object-contain shadow-lg transition-all duration-300"
                   onError={(e) => {
                     console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
                     console.error('Error details:', e);
@@ -1517,9 +1520,9 @@ export default function TeachingInterface({
                 />
               </>
             ) : (
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
-                <p className="text-gray-500 dark:text-gray-400">No slide image available</p>
-                <div className="mt-4 text-xs text-gray-400">
+              <div className="rounded-lg bg-card p-8 text-center text-card-foreground">
+                <p className="text-muted-foreground">No slide image available</p>
+                <div className="mt-4 text-xs text-muted-foreground">
                   Debug: {JSON.stringify(currentSlideData, null, 2)}
                 </div>
               </div>
@@ -1528,11 +1531,11 @@ export default function TeachingInterface({
         </div>
 
         {/* Slide Navigation */}
-        <div className="bg-gray-50 dark:bg-gray-900 p-4 border-t flex justify-between items-center">
+        <div className="flex shrink-0 items-center justify-between border-t border-border bg-card p-4">
           <button
             onClick={previousSlide}
             disabled={currentSlide === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition-colors"
+            className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
           >
             <ChevronLeft size={20} />
             Previous
@@ -1540,7 +1543,7 @@ export default function TeachingInterface({
           
           <div className="text-center">
             <p className="text-lg font-medium">{currentSlideData?.title}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Slide {currentSlide + 1} of {classSession.totalSlides}
             </p>
           </div>
@@ -1548,7 +1551,7 @@ export default function TeachingInterface({
           <button
             onClick={nextSlide}
             disabled={currentSlide === classSession.slides.length - 1}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50 hover:bg-gray-300 transition-colors"
+            className="flex items-center gap-2 rounded-lg bg-secondary px-4 py-2 text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
           >
             Next
             <ChevronRight size={20} />
@@ -1557,22 +1560,22 @@ export default function TeachingInterface({
       </div>
 
       {/* Right Side - Voice Assistant Panel (20%) */}
-      <div className="w-[20%] bg-gradient-to-b from-slate-50 to-white border-l border-slate-200 flex flex-col">
+      <div className="flex min-h-0 w-[20%] flex-col border-l border-border bg-card text-card-foreground">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200/50">
+        <div className="border-b border-border p-4">
           <div className="flex items-center gap-3">
             {/* <div className="w-8 h-8 bg-gradient-to-br from-primary/50 to-purple-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">🤖</span>
             </div> */}
             <div>
-              <h3 className="font-semibold text-slate-900 text-sm">ProfSidekick</h3>
+              <h3 className="text-sm font-semibold text-card-foreground">ProfSidekick</h3>
               <div className="flex items-center gap-1.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${
                   sessionStatus === "CONNECTED" ? "bg-primary/50" : 
                   sessionStatus === "CONNECTING" ? "bg-amber-500" : 
-                  sessionStatus === "ERROR" ? "bg-red-500" : "bg-slate-400"
+                  sessionStatus === "ERROR" ? "bg-destructive" : "bg-muted-foreground"
                 }`}></div>
-                <span className="text-xs text-slate-500 capitalize font-medium">
+                <span className="text-xs font-medium capitalize text-muted-foreground">
                   {sessionStatus.toLowerCase()}
                 </span>
               </div>
@@ -1581,11 +1584,11 @@ export default function TeachingInterface({
         </div>
 
         {/* Guard Phrase Info */}
-        <div className="px-4 py-3 bg-primary/5 border-b border-primary/20">
+        <div className="border-b border-border bg-primary/10 px-4 py-3">
           <p className="text-xs text-primary font-semibold mb-1">
             Voice Commands
           </p>
-          <p className="text-xs text-primary/95 leading-relaxed">
+          <p className="text-xs text-primary leading-relaxed">
             To pause/end the session, say:{" "}
             <span className="font-semibold text-primary">“stop”</span>,{" "}
             <span className="font-semibold text-primary">“pause”</span>,{" "}
@@ -1595,7 +1598,7 @@ export default function TeachingInterface({
         </div>
 
         {/* Avatar visual — HeyGen video or audio-driven static / talkingheads animation */}
-        <div className="relative bg-gray-900 flex-shrink-0" style={{ aspectRatio: '9/16' }}>
+        <div className="relative min-h-0 flex-1 bg-sidebar" style={{ minHeight: 220 }}>
           <SessionAvatarRenderer
             config={sessionAvatar}
             audioElement={outputAudioElement}
@@ -1621,13 +1624,13 @@ export default function TeachingInterface({
         </div>
 
         {/* Voice status strip */}
-        <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-200/50 bg-slate-50 flex-shrink-0">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted px-3 py-2">
           {/* AI indicator */}
           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-            isAISpeaking ? 'bg-primary/5 dark:bg-primary/200 animate-pulse' :
-            sessionStatus === 'CONNECTED' ? 'bg-primary/50' : 'bg-slate-300'
+            isAISpeaking ? 'bg-primary animate-pulse' :
+            sessionStatus === 'CONNECTED' ? 'bg-primary' : 'bg-muted-foreground'
           }`} />
-          <span className="text-[11px] text-slate-500 truncate flex-1">
+          <span className="flex-1 truncate text-[11px] text-muted-foreground">
             {sessionStatus !== 'CONNECTED' ? 'Disconnected' :
              isAISpeaking ? 'AI speaking…' :
              isUserSpeaking ? 'You speaking…' : 'Listening'}
@@ -1640,38 +1643,38 @@ export default function TeachingInterface({
 
         {/* Session Notes Panel */}
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-4 py-2.5 border-b border-slate-200/50">
+          <div className="border-b border-border px-4 py-2.5">
             <div className="flex items-center gap-1.5">
-              <MessageSquare size={12} className="text-slate-400" />
-              <span className="text-xs font-medium text-slate-600">Session Notes</span>
+              <MessageSquare size={12} className="text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Session Notes</span>
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {!currentQuestion && !latestResponse && keyConcepts.length === 0 && !rollingNotes && (
               <div className="text-center py-8">
-                <MessageSquare size={22} className="text-slate-300 mx-auto mb-2" />
-                <p className="text-xs text-slate-400">Session notes will appear here as the conversation progresses.</p>
+                <MessageSquare size={22} className="mx-auto mb-2 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Session notes will appear here as the conversation progresses.</p>
               </div>
             )}
             {currentQuestion && (
-              <div className="bg-primary/5 dark:bg-primary/20 border border-primary/20 dark:border-primary/90 rounded-lg p-3">
-                <p className="text-xs font-semibold text-primary/90 dark:text-primary/40 mb-1 uppercase tracking-wide">Current Question</p>
-                <p className="text-xs text-primary dark:text-primary/10 leading-relaxed">{currentQuestion}</p>
+              <div className="rounded-lg border border-primary/20 bg-primary/10 p-3">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">Current Question</p>
+                <p className="text-xs leading-relaxed text-foreground">{currentQuestion}</p>
               </div>
             )}
             {latestResponse && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Student Response</p>
-                <p className="text-xs text-slate-800 leading-relaxed">{latestResponse}</p>
+              <div className="rounded-lg border border-border bg-muted p-3">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Student Response</p>
+                <p className="text-xs leading-relaxed text-foreground">{latestResponse}</p>
               </div>
             )}
             {keyConcepts.length > 0 && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+              <div className="rounded-lg border border-primary/20 bg-primary/10 p-3">
                 <p className="text-xs font-semibold text-primary mb-2 uppercase tracking-wide">Key Concepts</p>
                 <div className="flex flex-wrap gap-1">
                   {keyConcepts.map((c) => (
-                    <span key={c} className="px-1.5 py-0.5 bg-primary/10 text-primary/95 text-xs font-medium rounded">
+                    <span key={c} className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
                       {c}
                     </span>
                   ))}
@@ -1679,23 +1682,23 @@ export default function TeachingInterface({
               </div>
             )}
             {rollingNotes && (
-              <div className="bg-white dark:bg-gray-800 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Session Notes</p>
-                <pre className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-sans">{rollingNotes}</pre>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Session Notes</p>
+                <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-card-foreground">{rollingNotes}</pre>
               </div>
             )}
           </div>
         </div>
 
         {/* Controls */}
-        <div className="p-4 space-y-3 border-t border-slate-200/50">
+        <div className="shrink-0 space-y-3 border-t border-border p-4">
           {/* Audio Control */}
           <button
             onClick={toggleAudio}
             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
               isAudioEnabled 
-                ? "bg-primary/5 dark:bg-primary/200 text-white shadow-lg shadow-primary/50/25 hover:bg-primary dark:bg-primary/90 hover:shadow-xl hover:shadow-primary/50/30" 
-                : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30" 
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
             }`}
           >
             {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
@@ -1708,10 +1711,10 @@ export default function TeachingInterface({
             disabled={sessionStatus !== "CONNECTED"}
             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
               sessionStatus !== "CONNECTED"
-                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
                 : isMicMuted 
-                  ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30" 
-                  : "bg-green-500 text-white shadow-lg shadow-green-500/25 hover:bg-green-600 hover:shadow-xl hover:shadow-green-500/30"
+                  ? "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/25 hover:bg-destructive/90 hover:shadow-xl hover:shadow-destructive/30" 
+                  : "bg-green-600 text-white shadow-lg shadow-green-600/25 hover:bg-green-700 hover:shadow-xl hover:shadow-green-600/30"
             }`}
           >
             {isMicMuted ? <MicOff size={16} /> : <Mic size={16} />}
@@ -1723,8 +1726,8 @@ export default function TeachingInterface({
             onClick={sessionStatus === "CONNECTED" ? disconnectFromRealtime : connectToRealtime}
             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
               sessionStatus === "CONNECTED" 
-                ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30" 
-                : "bg-primary/50 text-white shadow-lg shadow-primary/50/25 hover:bg-primary hover:shadow-xl hover:shadow-primary/50/30"
+                ? "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/25 hover:bg-destructive/90 hover:shadow-xl hover:shadow-destructive/30" 
+                : "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/30"
             }`}
           >
             {sessionStatus === "CONNECTED" ? <PhoneOff size={16} /> : <Phone size={16} />}
@@ -1736,13 +1739,13 @@ export default function TeachingInterface({
       {/* Feedback Modal */}
       {showFeedbackModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Session Feedback</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">Help us improve by sharing your experience with this teaching session.</p>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card p-8 text-card-foreground mx-4">
+            <h2 className="mb-6 text-2xl font-bold text-card-foreground">Session Feedback</h2>
+            <p className="mb-6 text-muted-foreground">Help us improve by sharing your experience with this teaching session.</p>
             
             {/* Rating */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Overall Rating</label>
+              <label className="mb-2 block text-sm font-medium text-foreground">Overall Rating</label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -1755,7 +1758,7 @@ export default function TeachingInterface({
                     ★
                   </button>
                 ))}
-                <span className="ml-3 text-sm text-gray-600 dark:text-gray-400">
+                <span className="ml-3 text-sm text-muted-foreground">
                   {feedbackData.rating}/5 stars
                 </span>
               </div>
@@ -1763,7 +1766,7 @@ export default function TeachingInterface({
 
             {/* General Feedback */}
             <div className="mb-6">
-              <label htmlFor="feedback" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="feedback" className="mb-2 block text-sm font-medium text-foreground">
                 General Feedback
               </label>
               <textarea
@@ -1771,14 +1774,14 @@ export default function TeachingInterface({
                 value={feedbackData.feedback}
                 onChange={(e) => handleFeedbackChange('feedback', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/50"
                 placeholder="How was your overall experience with the AI teaching assistant?"
               />
             </div>
 
             {/* Issues Encountered */}
             <div className="mb-6">
-              <label htmlFor="issues" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="issues" className="mb-2 block text-sm font-medium text-foreground">
                 Issues Encountered (For Debugging)
               </label>
               <textarea
@@ -1786,14 +1789,14 @@ export default function TeachingInterface({
                 value={feedbackData.issues}
                 onChange={(e) => handleFeedbackChange('issues', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/50"
                 placeholder="Did you encounter any technical issues, bugs, or unexpected behavior?"
               />
             </div>
 
             {/* Suggestions */}
             <div className="mb-8">
-              <label htmlFor="suggestions" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="suggestions" className="mb-2 block text-sm font-medium text-foreground">
                 Suggestions for Improvement
               </label>
               <textarea
@@ -1801,7 +1804,7 @@ export default function TeachingInterface({
                 value={feedbackData.suggestions}
                 onChange={(e) => handleFeedbackChange('suggestions', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/50"
                 placeholder="What features or improvements would make this better?"
               />
             </div>
@@ -1810,13 +1813,13 @@ export default function TeachingInterface({
             <div className="flex gap-4 justify-end">
               <button
                 onClick={handleSkipFeedback}
-                className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:text-gray-200 transition-colors"
+                className="px-6 py-2 text-muted-foreground transition-colors hover:text-foreground"
               >
                 Skip Feedback
               </button>
               <button
                 onClick={handleFeedbackSubmit}
-                className="bg-primary dark:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:ring-offset-2 transition-colors"
+                className="rounded-lg bg-primary px-6 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:ring-2 focus:ring-primary/50 focus:ring-offset-2"
               >
                 Submit & End Session
               </button>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send } from "lucide-react";
+import TranscriptPanel from "@/components/learning/TranscriptPanel";
 import StreamingAvatar, {
   AvatarQuality,
   StreamingEvents,
@@ -20,7 +21,6 @@ import { classifyTurn } from "@/lib/turnClassifier";
 import {
   fetchSessionEphemeral,
   shouldUseHeyGenVideo,
-  isHeyGenEnabled,
 } from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
@@ -63,9 +63,15 @@ const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
 };
 
 export interface TranscriptItem {
+  id: string;
   role: "user" | "assistant";
   text: string;
 }
+
+const createTranscriptId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const DEFAULT_HEYGEN_AVATAR_ID =
   process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
@@ -138,7 +144,6 @@ export default function LearningInterface({
   const isIntentionallyDisconnectedRef = useRef(false);
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
-  const transcriptEndRef = useRef<HTMLDivElement>(null);
   const awaitingSessionConfigRef = useRef(false);
   const slideToolHandledThisTurnRef = useRef(false);
   const isAISpeakingRef = useRef(false);
@@ -1040,7 +1045,7 @@ export default function LearningInterface({
     setTextInput("");
     setShowStartPrompt(false);
     setIsTranscriptVisible(true);
-    setTranscript((prev) => [...prev, { role: "user", text: clean }]);
+    setTranscript((prev) => [...prev, { id: createTranscriptId(), role: "user", text: clean }]);
     handleTurnComplete("user", clean);
 
     sendClientEvent({
@@ -1145,7 +1150,11 @@ export default function LearningInterface({
 
       setTranscript((prev) => [
         ...prev,
-        { role: "user", text: `[You moved to slide ${slideIndex + 1}: ${title}]` },
+        {
+          id: createTranscriptId(),
+          role: "user",
+          text: `[You moved to slide ${slideIndex + 1}: ${title}]`,
+        },
       ]);
       toast.success(`Teaching slide ${slideIndex + 1}: ${title}`);
       console.log(`📤 Learner slide change → teaching slide ${slideIndex + 1}`);
@@ -1261,6 +1270,11 @@ export default function LearningInterface({
   const goToSlideByIndex = (targetIndex: number) => {
     applySlideNavigation(targetIndex, "dot_navigation");
   };
+
+  // Reset transcript content when a new session run starts
+  useEffect(() => {
+    setTranscript([]);
+  }, [sessionRunId]);
 
   // Check WebRTC support on mount
   useEffect(() => {
@@ -1397,12 +1411,19 @@ export default function LearningInterface({
       }
 
       // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
-      // response.audio_transcript.done fires when a full assistant turn completes
+      // Fires when a full assistant turn completes. GA gpt-realtime models emit
+      // "response.output_audio_transcript.done"; older preview models used
+      // "response.audio_transcript.done" — accept both so this keeps working
+      // across model generations.
       if (
-        serverEvent.type === "response.audio_transcript.done" &&
+        (serverEvent.type === "response.output_audio_transcript.done" ||
+          serverEvent.type === "response.audio_transcript.done") &&
         serverEvent.transcript
       ) {
-        setTranscript((prev) => [...prev, { role: "assistant", text: serverEvent.transcript }]);
+        setTranscript((prev) => [
+          ...prev,
+          { id: createTranscriptId(), role: "assistant", text: serverEvent.transcript },
+        ]);
         if (heygenAvatarRef.current) {
           heygenAvatarRef.current
             .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
@@ -1427,7 +1448,10 @@ export default function LearningInterface({
       if (serverEvent.type === "conversation.item.input_audio_transcription.completed") {
         const recognizedText = serverEvent.transcript || "";
         if (recognizedText) {
-          setTranscript((prev) => [...prev, { role: "user", text: recognizedText }]);
+          setTranscript((prev) => [
+            ...prev,
+            { id: createTranscriptId(), role: "user", text: recognizedText },
+          ]);
           clearTimeout((window as any)._speechHandleTimer);
           (window as any)._speechHandleTimer = setTimeout(() => {
             // confidence and duration are not available on this event; pass safe defaults
@@ -1591,50 +1615,38 @@ export default function LearningInterface({
   // --------------------------------------------------------------
 
   return (
-    <div className="flex h-screen w-full flex-col bg-background font-sans text-foreground">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-background font-sans text-foreground">
       {/* ── Header ── */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 md:px-6 z-10 shadow-sm relative">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 md:px-6 z-10 shadow-sm relative">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <MessageSquare className="h-4 w-4" />
           </div>
-          <div>
-            <h1 className="text-sm font-semibold text-foreground leading-none">
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-semibold text-foreground leading-none">
               {classSession.classDetails.className}
             </h1>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="truncate text-xs text-muted-foreground mt-1">
               {classSession.classDetails.courseName} — {classSession.classDetails.courseCode}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <span className="hidden sm:flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
             AI Tutor Session
           </span>
-          <button
-            onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
-            className={cn(
-              "ml-2 flex min-h-[44px] items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition-colors",
-              isTranscriptVisible ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-            aria-pressed={isTranscriptVisible}
-            aria-label={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
-            title={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
-          >
-            <MessageSquare size={18} />
-            <span className="hidden sm:inline">{isTranscriptVisible ? "Hide Transcript" : "Transcript"}</span>
-          </button>
         </div>
       </header>
 
+
       {/* ── Main Layout ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
         {/* ── Left Sidebar: Avatar & Controls ── */}
-        <div className="flex w-[280px] shrink-0 flex-col border-r border-border bg-sidebar md:w-[320px]">
+        <div className="flex h-[46vh] min-h-[260px] w-full shrink-0 flex-col overflow-hidden border-b border-sidebar-border bg-sidebar md:h-auto md:w-[280px] md:border-b-0 md:border-r lg:w-[320px]">
           {/* Avatar Video Area */}
-          <div className="relative flex-1 bg-black/5 p-4 flex flex-col justify-center items-center">
-            <div className="relative h-64 w-64 overflow-hidden rounded-2xl shadow-xl border-4 border-sidebar bg-gray-900 pointer-events-none">
+          <div className="relative flex min-h-0 flex-1 flex-col items-center gap-2 bg-sidebar p-3">
+            <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent shadow-xl pointer-events-none">
               <SessionAvatarRenderer
                 config={sessionAvatar}
                 audioElement={outputAudioElement}
@@ -1656,7 +1668,7 @@ export default function LearningInterface({
             </div>
 
             {/* Status indicator */}
-            <div className="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-sidebar-accent/50">
+            <div className="flex shrink-0 items-center gap-2 rounded-full bg-sidebar-accent px-3 py-1.5">
               <span className={cn(
                 "h-2 w-2 rounded-full",
                 sessionStatus === "CONNECTED" ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" :
@@ -1670,7 +1682,7 @@ export default function LearningInterface({
           </div>
 
           {/* Controls */}
-          <div className="flex shrink-0 flex-col gap-3 p-4 bg-sidebar border-t border-border/50">
+          <div className="flex shrink-0 flex-col gap-3 border-t border-sidebar-border bg-sidebar p-4">
             {/* Voice Activity equalizers (visual only for now) */}
             <div className="flex items-center justify-between rounded-xl border border-border bg-background p-3">
               <div className="flex items-center gap-2">
@@ -1697,14 +1709,14 @@ export default function LearningInterface({
                     <div
                       key={i}
                       className={cn(
-                        "w-1 rounded-full bg-primary/50/60 transition-all duration-75",
+                        "w-1 rounded-full bg-primary/60 transition-all duration-75",
                         isAISpeaking ? "animate-[eq_0.5s_ease-in-out_infinite]" : "h-1"
                       )}
                       style={{ animationDelay: `${i * 0.1}s` }}
                     />
                   ))}
                 </div>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/50/10 text-primary">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Volume2 className="h-3.5 w-3.5" />
                 </div>
               </div>
@@ -1731,6 +1743,19 @@ export default function LearningInterface({
               >
                 {isAudioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
                 {isAudioEnabled ? "Sound On" : "Sound Off"}
+              </button>
+              <button
+                onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
+                className={cn(
+                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
+                  isTranscriptVisible ? "bg-primary/15 text-primary border-primary/30" : "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80"
+                )}
+                aria-pressed={isTranscriptVisible}
+                aria-label={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
+                title={isTranscriptVisible ? "Hide transcript" : "Show transcript"}
+              >
+                <MessageSquare className={cn("h-4 w-4", isTranscriptVisible && "fill-primary/20")} />
+                {isTranscriptVisible ? "Transcript On" : "Transcript"}
               </button>
             </div>
 
@@ -1784,20 +1809,20 @@ export default function LearningInterface({
         </div>
 
         {/* ── Center: Slides ── */}
-        <div className="flex flex-1 flex-col overflow-hidden bg-muted/10 relative">
+        <div className="relative flex min-h-[50vh] flex-1 flex-col overflow-hidden bg-muted/10 md:min-h-0">
 
           {/* Start Conversation Prompt overlay */}
           {showStartPrompt && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="absolute top-4 left-1/2 z-40 w-[92vw] max-w-sm -translate-x-1/2 animate-in fade-in slide-in-from-top-4 duration-500 sm:top-6 sm:w-auto">
               <div className={cn(
-                "px-6 py-4 rounded-2xl shadow-xl flex items-center gap-4 border backdrop-blur-md transition-all duration-300",
+                "px-4 py-3 sm:px-6 sm:py-4 rounded-2xl shadow-xl flex items-center gap-3 sm:gap-4 border backdrop-blur-md transition-all duration-300",
                 sessionStatus === "CONNECTED"
-                  ? "bg-primary/50/90 text-white border-primary/40 shadow-primary/50/20"
+                  ? "bg-primary/90 text-primary-foreground border-primary/40 shadow-primary/20"
                   : "bg-amber-500/90 text-white border-amber-400 shadow-amber-500/20"
               )}>
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
                   {sessionStatus === "CONNECTED" ? (
-                    <Mic size={20} className="text-white animate-pulse" />
+                    <Mic size={20} className="text-primary-foreground animate-pulse" />
                   ) : (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   )}
@@ -1806,7 +1831,7 @@ export default function LearningInterface({
                   {sessionStatus === "CONNECTED" ? (
                     <>
                       <p className="font-bold text-sm">Ready to start!</p>
-                      <p className="text-xs text-primary/5 mt-0.5">
+                      <p className="text-xs text-primary-foreground/80 mt-0.5">
                         Type a message, or turn on your mic when you want to speak.
                       </p>
                     </>
@@ -1830,47 +1855,13 @@ export default function LearningInterface({
           )}
 
           {/* Slide content area */}
-          <div className="relative flex flex-1 items-center justify-center overflow-auto p-4 md:p-8">
-            {/* Slide counter badge */}
-            <div className="absolute top-4 right-4 z-20 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur-sm">
-              Slide {currentSlide + 1} of {slideCount}
-            </div>
-
-            {/* Floating manual navigation — always visible on the slide */}
-            <div className="absolute bottom-6 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-2">
-              <p className="rounded-full bg-card/90 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm backdrop-blur-sm">
-                Tap <span className="text-foreground">Next</span> when the tutor says &quot;next slide&quot;
-              </p>
-              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card/95 p-2 shadow-xl backdrop-blur-md">
-                <button
-                  type="button"
-                  onClick={previousSlide}
-                  disabled={currentSlide === 0}
-                  aria-label="Previous slide"
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                  <span className="hidden sm:inline">Previous</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={nextSlide}
-                  disabled={currentSlide === slideCount - 1}
-                  aria-label="Next slide"
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 md:p-6">
             <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
               {currentSlideData?.imagePath ? (
                 <img
                   src={getCorrectImageUrl(currentSlideData.imagePath)}
                   alt={currentSlideData?.title}
-                  className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-lg ring-1 ring-border/50 bg-card"
+                  className="max-h-full max-w-full object-contain rounded-xl bg-card shadow-lg ring-1 ring-border/50"
                   onError={(e) => {
                     console.error('Failed to load slide image:', getCorrectImageUrl(currentSlideData.imagePath));
                   }}
@@ -1888,28 +1879,28 @@ export default function LearningInterface({
           </div>
 
           {/* Slide Navigation Bar */}
-          <div className="flex shrink-0 items-center justify-between border-t border-border bg-card px-4 py-3 md:px-6">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border bg-card px-2 py-3 sm:px-4 md:px-6">
             <button
               type="button"
               onClick={previousSlide}
               disabled={currentSlide === 0}
-              className="flex min-h-[44px] items-center gap-1.5 rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg bg-secondary px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
             >
               <ChevronLeft className="h-5 w-5" />
-              <span>Previous</span>
+              <span className="hidden sm:inline">Previous</span>
             </button>
 
-            <div className="flex flex-col items-center">
-              <span className="text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
+            <div className="flex min-w-0 max-w-[45vw] flex-col items-center sm:max-w-none">
+              <span className="w-full truncate text-center text-sm font-semibold text-foreground">{currentSlideData?.title || `Slide ${currentSlide + 1}`}</span>
               <span className="mt-0.5 text-xs text-muted-foreground">
                 {currentSlide + 1} / {slideCount}
               </span>
               {aiLeadEnabled && (
-                <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                <span className="mt-0.5 hidden text-[10px] font-medium uppercase tracking-wide text-primary sm:block">
                   AI leading · use Next when ready
                 </span>
               )}
-              <div className="mt-1 flex items-center gap-1.5">
+              <div className="mt-1 flex max-w-full flex-wrap items-center justify-center gap-1.5">
                 {Array.from({ length: slideCount }).map((_, i) => (
                   <button
                     key={i}
@@ -1929,84 +1920,23 @@ export default function LearningInterface({
               type="button"
               onClick={nextSlide}
               disabled={currentSlide === slideCount - 1}
-              className="flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
             >
-              <span>Next</span>
+              <span className="hidden sm:inline">Next</span>
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
+
+
         </div>
 
         {/* ── Right Sidebar: Transcript ── */}
-        {isTranscriptVisible && (
-          <div className="flex w-72 shrink-0 flex-col border-l border-border bg-card md:w-80 transition-all duration-300 ease-in-out">
-            <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5" />
-                Transcript
-              </h3>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setTranscript([])}
-                  className="text-[10px] uppercase font-bold tracking-wider text-primary hover:text-primary/80 transition-colors px-2 py-1 bg-primary/10 rounded"
-                >
-                  Clear
-                </button>
-                <button
-                  onClick={() => setIsTranscriptVisible(false)}
-                  className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  aria-label="Close transcript"
-                  title="Close transcript"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              {transcript.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-3 opacity-60">
-                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground max-w-[200px]">
-                    Transcript will appear here once the session starts.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {transcript.map((msg, idx) => (
-                    <div key={idx} className={cn(
-                      "flex gap-3",
-                      msg.role === "user" && "flex-row-reverse"
-                    )}>
-                      <div className="h-7 w-7 shrink-0 overflow-hidden rounded-full shadow-sm">
-                        {msg.role === "assistant" ? (
-                          <div className="flex h-full w-full items-center justify-center bg-primary/10 text-[10px] font-bold text-primary/90">
-                            AI
-                          </div>
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-primary text-[10px] font-bold text-primary-foreground">
-                            ME
-                          </div>
-                        )}
-                      </div>
-                      <div className="max-w-[80%] flex flex-col gap-1">
-                        <div className={cn(
-                          "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm",
-                          msg.role === "assistant"
-                            ? "rounded-tl-sm bg-secondary text-secondary-foreground"
-                            : "rounded-tr-sm bg-primary text-primary-foreground"
-                        )}>
-                          {msg.text}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={transcriptEndRef} />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <TranscriptPanel
+          messages={transcript}
+          isVisible={isTranscriptVisible}
+          onClose={() => setIsTranscriptVisible(false)}
+          onClear={() => setTranscript([])}
+        />
       </div>
 
       {/* ── Feedback Modal ── */}
