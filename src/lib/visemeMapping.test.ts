@@ -61,8 +61,9 @@ describe('visemeToMorphWeights', () => {
 });
 
 describe('inferLipSyncRigStyle', () => {
-  it('detects arkit vs roblox from morph target hints', () => {
+  it('detects arkit vs roblox vs simple from morph target hints', () => {
     expect(inferLipSyncRigStyle(['viseme_aa', 'mouthOpen'])).toBe('arkit');
     expect(inferLipSyncRigStyle(['jawOpen', 'mouthPucker'])).toBe('roblox');
+    expect(inferLipSyncRigStyle(['mouthOpen', 'mouthFunnel', 'mouthClose'])).toBe('simple');
   });
 });

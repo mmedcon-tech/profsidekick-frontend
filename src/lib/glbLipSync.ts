@@ -216,8 +216,14 @@ export function applyLipSyncAmplitude(
   const openValue = Math.min(0.62, shaped * gain);
 
   const primaryOpen = rig.mouthOpen ?? rig.jawOpen ?? rig.morphBindings[0];
+  const mouthClose = pickBinding(rig.morphBindings, /mouth.?close|mouthclose/i);
+
   if (primaryOpen) {
     setMorphInfluence(primaryOpen, openValue);
+  }
+
+  if (mouthClose) {
+    setMorphInfluence(mouthClose, Math.max(0, 0.65 - openValue * 1.1));
   }
 
   if (rig.jawOpen && rig.jawOpen !== primaryOpen) {

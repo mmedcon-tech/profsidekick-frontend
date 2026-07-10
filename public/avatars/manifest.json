@@ -1,6 +1,6 @@
 {
-  "version": 7,
-  "description": "Salama and Sultan are professional teaching avatars. Layla and Omar are Roblox-style kids avatars (kids-female.glb / kids-male.glb).",
+  "version": 8,
+  "description": "Salama (Emirati woman), Sultan (Emirati man), plus Layla and Omar kids avatars.",
   "avatars": [
     {
       "id": "avatar-1",
@@ -8,26 +8,20 @@
       "gender": "female",
       "languages": ["ar", "en"],
       "glbPath": "/avatars/avatar-1.glb",
-      "thumbnailPath": "/images/avatar-female.png",
-      "tagline": "Professional Arabic & English tutor",
-      "description": "Warm, articulate teaching persona — abaya & shayla portrait style for UAE learners.",
-      "tags": ["leadership", "professional", "glb"],
-      "source": "Avaturn realistic female rig (TalkingHead) · ARKit visemes",
-      "recommendedModelUrl": "https://www.cgtrader.com/search?keywords=arab-woman",
+      "thumbnailPath": "/images/salama-emirati-reference.png",
+      "tagline": "Emirati woman instructor · Arabic & English",
+      "description": "Professional UAE teaching persona in abaya and shayla — warm, articulate, and culturally grounded for leadership and cross-cultural learning.",
+      "tags": ["leadership", "professional", "glb", "emirati"],
+      "source": "Realistic Emirati woman rig (realistic-women.glb)",
       "previewFraming": "full",
-      "previewFitMargin": 1.02,
-      "previewModelScale": 1.18,
+      "previewFitMargin": 1.0,
+      "previewModelScale": 1.22,
+      "previewCoverHeightFraction": 0.36,
+      "portraitObjectPosition": "center 16%",
+      "portraitObjectFit": "cover",
       "lipSync": {
-        "morphTargets": [
-          "mouthOpen",
-          "jawOpen",
-          "viseme_aa",
-          "viseme_O",
-          "viseme_E",
-          "mouthSmile"
-        ],
-        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
-        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"]
+        "morphTargets": ["mouthOpen", "mouthFunnel", "mouthClose"],
+        "mouthOpenGain": 1.15
       }
     },
     {
@@ -36,15 +30,18 @@
       "gender": "male",
       "languages": ["ar", "en"],
       "glbPath": "/avatars/avatar-2.glb",
-      "thumbnailPath": "/images/avatar-male.png",
+      "thumbnailPath": "/images/sultan-emirati-reference.png",
       "tagline": "Emirati male instructor · Arabic & English",
-      "description": "Confident mentor with kandura & ghutra styling — approachable leadership and cross-cultural learning.",
-      "tags": ["leadership", "professional", "glb"],
-      "source": "AvatarSDK male rig (TalkingHead) · target look: RPM Emirati ghutra reference",
+      "description": "Confident mentor with kandura and ghutra styling — approachable leadership and cross-cultural learning.",
+      "tags": ["leadership", "professional", "glb", "emirati"],
+      "source": "RPM Emirati male rig · portrait aligned to 3D upper-body framing",
       "recommendedModelUrl": "https://sketchfab.com/3d-models/arab-man-rigged-0f87f4c0885346ad8f99ba5ccafd153e",
       "previewFraming": "full",
       "previewFitMargin": 1.0,
       "previewModelScale": 1.22,
+      "previewCoverHeightFraction": 0.36,
+      "portraitObjectPosition": "center 14%",
+      "portraitObjectFit": "cover",
       "lipSync": {
         "morphTargets": [
           "mouthOpen",

@@ -142,12 +142,34 @@ const ROBLOX_VISEME_SHAPES: Record<VisemeId, VisemeMorphWeights> = {
   RR: { jawOpen: 0.3, mouthFunnel: 0.2 },
 };
 
+const SIMPLE_VISEME_SHAPES: Record<VisemeId, VisemeMorphWeights> = {
+  sil: { mouthClose: 0.55, mouthOpen: 0.04 },
+  aa: { mouthOpen: 0.72, mouthFunnel: 0.08 },
+  E: { mouthOpen: 0.42, mouthFunnel: 0.05 },
+  I: { mouthOpen: 0.35, mouthFunnel: 0.04 },
+  O: { mouthOpen: 0.55, mouthFunnel: 0.62 },
+  U: { mouthOpen: 0.45, mouthFunnel: 0.78 },
+  PP: { mouthClose: 0.82, mouthOpen: 0.06 },
+  FF: { mouthOpen: 0.28, mouthFunnel: 0.35 },
+  TH: { mouthOpen: 0.32, mouthFunnel: 0.2 },
+  DD: { mouthOpen: 0.38, mouthFunnel: 0.1 },
+  SS: { mouthOpen: 0.22, mouthFunnel: 0.12 },
+  CH: { mouthOpen: 0.4, mouthFunnel: 0.28 },
+  nn: { mouthOpen: 0.2, mouthFunnel: 0.05 },
+  RR: { mouthOpen: 0.28, mouthFunnel: 0.15 },
+};
+
 export function visemeToMorphWeights(
   viseme: VisemeId,
   rigStyle: LipSyncRigStyle,
   mouthOpenGain = 1,
 ): VisemeMorphWeights {
-  const base = rigStyle === 'arkit' ? ARKIT_VISEME_SHAPES[viseme] : ROBLOX_VISEME_SHAPES[viseme];
+  const base =
+    rigStyle === 'arkit'
+      ? ARKIT_VISEME_SHAPES[viseme]
+      : rigStyle === 'simple'
+        ? SIMPLE_VISEME_SHAPES[viseme]
+        : ROBLOX_VISEME_SHAPES[viseme];
   if (mouthOpenGain === 1) return { ...base };
 
   const scaled: VisemeMorphWeights = {};
@@ -179,5 +201,8 @@ export function lerpMorphWeights(
 
 export function inferLipSyncRigStyle(morphTargets: string[] | undefined): LipSyncRigStyle {
   if (!morphTargets?.length) return 'arkit';
-  return morphTargets.some((name) => /viseme_/i.test(name)) ? 'arkit' : 'roblox';
+  const lower = morphTargets.map((name) => name.toLowerCase());
+  if (lower.some((name) => /viseme_/i.test(name))) return 'arkit';
+  if (lower.some((name) => /mouthopen|mouthfunnel|mouthclose/i.test(name))) return 'simple';
+  return 'roblox';
 }

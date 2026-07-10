@@ -18,7 +18,8 @@ import {
   applyLipSyncAmplitude,
   type LipSyncHints,
 } from '@/lib/glbLipSync';
-import { applyNaturalArmPose } from '@/lib/glbArmPose';
+import { applyNaturalArmPose, isTripoStyleRig } from '@/lib/glbArmPose';
+import { alignAvatarFacingCamera } from '@/lib/glbFacing';
 import { normalizeAvatarMeshes } from '@/lib/glbMaterialFix';
 import { normalizeAvatarHeight } from '@/lib/glbNormalize';
 import { computeSidewaysIdleRotation } from '@/lib/glbIdleMotion';
@@ -42,9 +43,12 @@ function useClonedPosedModel(url: string): Group {
   const { scene } = useGLTF(url);
   return useMemo(() => {
     const clone = cloneSkeleton(scene) as Group;
-    applyNaturalArmPose(clone);
     normalizeAvatarMeshes(clone);
     normalizeAvatarHeight(clone);
+    if (!isTripoStyleRig(clone)) {
+      applyNaturalArmPose(clone);
+    }
+    alignAvatarFacingCamera(clone);
     return clone;
   }, [scene]);
 }

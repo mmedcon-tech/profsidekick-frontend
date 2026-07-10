@@ -114,6 +114,11 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
+  // Lip-sync needs character timestamps — the backend proxy returns plain MPEG only.
+  if (body.withTimestamps) {
+    return synthesizeWithElevenLabs(body);
+  }
+
   const backendResponse = await proxyToBackend(request, body);
   if (backendResponse?.ok) {
     const audio = await backendResponse.arrayBuffer();

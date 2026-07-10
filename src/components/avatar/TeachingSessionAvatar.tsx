@@ -9,7 +9,7 @@ import type { SessionAvatarConfig } from '@/types/types';
 
 import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
 import GlbAvatarPreview from '@/components/avatar/GlbAvatarPreview';
-import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
+import { getAvatarLibraryEntry, resolvePortraitPresentation } from '@/lib/avatarLibrary';
 
 interface TeachingSessionAvatarProps {
   config: SessionAvatarConfig;
@@ -52,8 +52,10 @@ export default function TeachingSessionAvatar({
     config.imageUrl ??
     libraryEntry?.thumbnailPath ??
     (config.glbLibraryId === 'avatar-2' || (isDirectGlbUrl && config.glbLibraryId?.includes('male'))
-      ? '/images/avatar-male.png'
-      : '/images/avatar-female.png');
+      ? '/images/sultan-emirati-reference.png'
+      : '/images/salama-emirati-reference.png');
+
+  const portrait = libraryEntry ? resolvePortraitPresentation(libraryEntry) : undefined;
 
   const useGlbPreview =
     (config.renderType === '3d' || config.renderType === 'glb') && Boolean(glbUrl);
@@ -74,8 +76,8 @@ export default function TeachingSessionAvatar({
           isSpeaking={isSpeaking}
           showControls={false}
           framing="full"
-          coverHeightFraction={0.36}
-          fitMargin={0.92}
+          coverHeightFraction={libraryEntry?.previewCoverHeightFraction ?? 0.36}
+          fitMargin={libraryEntry?.previewFitMargin ?? 0.92}
           modelScale={libraryEntry?.previewModelScale ?? 1.35}
         />
       </div>
@@ -90,6 +92,8 @@ export default function TeachingSessionAvatar({
           avatarName={config.avatarName}
           widgetState={widgetState}
           amplitude={amplitude}
+          objectFit={portrait?.objectFit}
+          objectPosition={portrait?.objectPosition}
         />
       </div>
     );

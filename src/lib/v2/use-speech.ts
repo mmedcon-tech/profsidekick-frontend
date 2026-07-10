@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { playElevenLabsSpeech } from "@/lib/playElevenLabsAudio"
+import { playAvatarSpeech } from "@/lib/playAvatarSpeech"
 import { buildEstimatedTimeline } from "@/lib/visemeTimeline"
 import type { VisemeTimeline } from "@/lib/visemeTypes"
 import { resolveVoiceProfile, type VoiceProfile } from "@/lib/voiceProfiles"
@@ -213,7 +213,7 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
       // Prefer ElevenLabs for both languages: it returns per-character timing,
       // which is the only way to make the mouth shapes match the actual words.
       // The audio element's currentTime then drives the viseme clock exactly.
-      playElevenLabsSpeech({
+      playAvatarSpeech({
         text,
         gender,
         onSpeakingChange: (isSpeaking) => {
@@ -231,7 +231,7 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
           setVisemeTimeline(result.timeline)
         })
         .catch(() => {
-          // ElevenLabs unavailable (no key / quota / network) → browser TTS.
+          // ElevenLabs + OpenAI unavailable → browser TTS.
           speakWithBrowserTts(text, onDone)
         })
     },

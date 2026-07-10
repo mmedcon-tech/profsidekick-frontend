@@ -10,6 +10,9 @@ export type MarketplaceShowcaseEntry = Pick<
   | 'previewFraming'
   | 'previewFitMargin'
   | 'previewModelScale'
+  | 'previewCoverHeightFraction'
+  | 'portraitObjectPosition'
+  | 'portraitObjectFit'
 >;
 
 export function buildShowcaseEntryFromAvatar(
@@ -28,6 +31,9 @@ export function buildShowcaseEntryFromAvatar(
       previewFraming: libraryEntry.previewFraming,
       previewFitMargin: libraryEntry.previewFitMargin,
       previewModelScale: libraryEntry.previewModelScale,
+      previewCoverHeightFraction: libraryEntry.previewCoverHeightFraction,
+      portraitObjectPosition: libraryEntry.portraitObjectPosition,
+      portraitObjectFit: libraryEntry.portraitObjectFit,
     };
   }
 

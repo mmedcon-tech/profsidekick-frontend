@@ -6,7 +6,7 @@ import {
   getAvatarVoiceProfile,
 } from '@/lib/avatarLibrary';
 import { pickSpeechVoice, loadSpeechVoices } from '@/lib/speechVoice';
-import { playElevenLabsSpeech } from '@/lib/playElevenLabsAudio';
+import { playAvatarSpeech } from '@/lib/playAvatarSpeech';
 import { useAudioAmplitude } from '@/hooks/useAudioAmplitude';
 import { useSimulatedAmplitude } from '@/hooks/useSimulatedAmplitude';
 import { useVisemePlayback } from '@/hooks/useVisemePlayback';
@@ -108,7 +108,7 @@ export function useSpeechPreview(avatarName: string): SpeechPreviewState {
 
     if (prefersElevenLabs) {
       try {
-        const { stop: stopPlayback, audio, timeline } = await playElevenLabsSpeech({
+        const { stop: stopPlayback, audio, timeline } = await playAvatarSpeech({
           text: SPEECH_PREVIEW_TEXT,
           gender,
           voiceProfile,

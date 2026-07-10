@@ -15,7 +15,7 @@ export type VisemeId =
   | 'nn'
   | 'RR';
 
-export type LipSyncRigStyle = 'arkit' | 'roblox';
+export type LipSyncRigStyle = 'arkit' | 'roblox' | 'simple';
 
 export interface VisemeKeyframe {
   time: number;

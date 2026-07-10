@@ -23,6 +23,11 @@ export interface AvatarLibraryEntry {
   previewFraming?: 'bust' | 'full';
   previewFitMargin?: number;
   previewModelScale?: number;
+  /** Fraction of model height shown in 3D preview (upper-body crop). */
+  previewCoverHeightFraction?: number;
+  /** CSS object-position for the 2D portrait so the face lines up with the 3D crop. */
+  portraitObjectPosition?: string;
+  portraitObjectFit?: 'cover' | 'contain';
   voiceProfile?: ElevenLabsVoiceProfile;
   lipSync: AvatarLibraryLipSyncHints;
 }
@@ -61,6 +66,16 @@ export function resolveGlbUrl(modelUrl?: string | null, libraryId?: string | nul
     if (entry) return entry.glbPath;
   }
   return library.avatars[0]?.glbPath ?? '/avatars/avatar-1.glb';
+}
+
+export function resolvePortraitPresentation(entry: AvatarLibraryEntry): {
+  objectFit: 'cover' | 'contain';
+  objectPosition: string;
+} {
+  return {
+    objectFit: entry.portraitObjectFit ?? 'cover',
+    objectPosition: entry.portraitObjectPosition ?? 'center 20%',
+  };
 }
 
 /** Shared Emirati male avatar for the floating chatbot (issue #64). */

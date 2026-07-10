@@ -1,6 +1,6 @@
 import { Bone, Object3D, Quaternion, Vector3 } from 'three';
 
-/** Upper-arm bone names (case-insensitive), Mixamo / TalkingHead / RPM style. */
+/** Upper-arm bone names (case-insensitive), Mixamo / TalkingHead / RPM / Tripo style. */
 const LEFT_UPPER_ARM_NAMES = [
   'mixamorig:leftarm',
   'leftarm',
@@ -8,6 +8,8 @@ const LEFT_UPPER_ARM_NAMES = [
   'upperarm_l',
   'arm_l',
   'leftupperarm',
+  'lupperarm',
+  'l_upperarm',
 ];
 
 const RIGHT_UPPER_ARM_NAMES = [
@@ -17,6 +19,8 @@ const RIGHT_UPPER_ARM_NAMES = [
   'upperarm_r',
   'arm_r',
   'rightupperarm',
+  'rupperarm',
+  'r_upperarm',
 ];
 
 const LEFT_FOREARM_NAMES = [
@@ -25,6 +29,8 @@ const LEFT_FOREARM_NAMES = [
   'left_forearm',
   'lowerarm_l',
   'forearm_l',
+  'lforearm',
+  'l_forearm',
 ];
 
 const RIGHT_FOREARM_NAMES = [
@@ -33,9 +39,21 @@ const RIGHT_FOREARM_NAMES = [
   'right_forearm',
   'lowerarm_r',
   'forearm_r',
+  'rforearm',
+  'r_forearm',
 ];
 
 const POSE_APPLIED = Symbol('naturalArmPoseApplied');
+
+/** Tripo / MetaHuman exports use L_Upperarm + L_Clavicle — already A-posed; re-posing breaks skinning. */
+export function isTripoStyleRig(root: Object3D): boolean {
+  let tripoUpper = false;
+  root.traverse((node) => {
+    if (!isBone(node)) return;
+    if (normalizeBoneName(node.name) === 'lupperarm') tripoUpper = true;
+  });
+  return tripoUpper;
+}
 
 function normalizeBoneName(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -50,11 +68,34 @@ function isBone(node: Object3D): node is Bone {
   return (node as Bone).isBone === true;
 }
 
-function firstChildBone(bone: Bone): Bone | null {
-  for (const child of bone.children) {
-    if (isBone(child)) return child as Bone;
+/**
+ * Pick the bone segment to aim along — skips twist helpers and prefers the hand
+ * on forearm chains (Tripo rigs list twist bones before the hand).
+ */
+function limbAimTarget(bone: Bone): Bone | null {
+  const children = bone.children.filter(isBone) as Bone[];
+  if (children.length === 0) return null;
+
+  const hand = children.find(
+    (child) =>
+      /hand$/i.test(child.name) &&
+      !/thumb|index|middle|ring|pinky/i.test(child.name),
+  );
+  if (hand) return hand;
+
+  const nonTwist = children.filter((child) => !/twist/i.test(child.name));
+  const pool = nonTwist.length > 0 ? nonTwist : children;
+
+  let best: Bone | null = null;
+  let bestLen = -1;
+  for (const child of pool) {
+    const len = child.position.lengthSq();
+    if (len > bestLen) {
+      bestLen = len;
+      best = child;
+    }
   }
-  return null;
+  return best;
 }
 
 /**
@@ -124,21 +165,18 @@ export function applyNaturalArmPose(root: Object3D): void {
 
   const worldPos = new Vector3();
 
-  // Upper arms: aim down, leaning slightly outward + forward so they clear the torso.
   for (const bone of upperArms) {
-    const child = firstChildBone(bone);
+    const child = limbAimTarget(bone);
     if (!child) continue;
     bone.getWorldPosition(worldPos);
     const outwardSign = worldPos.x >= rootCenter.x ? 1 : -1;
     aimBoneAlong(bone, child, new Vector3(outwardSign * 0.18, -1, 0.08));
   }
 
-  // Re-aiming the upper arms moved the forearms; refresh world matrices first.
   root.updateWorldMatrix(true, true);
 
-  // Forearms: hang nearly straight down so hands rest beside the thighs.
   for (const bone of forearms) {
-    const child = firstChildBone(bone);
+    const child = limbAimTarget(bone);
     if (!child) continue;
     bone.getWorldPosition(worldPos);
     const outwardSign = worldPos.x >= rootCenter.x ? 1 : -1;

@@ -56,4 +56,37 @@ describe('POST /api/tts/elevenlabs', () => {
       }),
     );
   });
+
+  it('bypasses backend proxy when withTimestamps is requested', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          audio_base64: btoa('abc'),
+          normalized_alignment: {
+            characters: ['H'],
+            character_start_times_seconds: [0],
+            character_end_times_seconds: [0.2],
+          },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    const request = new NextRequest('http://localhost/api/tts/elevenlabs', {
+      method: 'POST',
+      body: JSON.stringify({
+        text: 'Hi',
+        gender: 'female',
+        withTimestamps: true,
+      }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/with-timestamps'),
+      expect.any(Object),
+    );
+  });
 });
