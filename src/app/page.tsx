@@ -18,37 +18,54 @@ export default function LandingPage() {
   // Redirect authenticated users to their role dashboard immediately
   useEffect(() => {
     let mounted = true;
+    const redirectTimer = window.setTimeout(() => {
+      if (!mounted || isLoading || !isAuthenticated || !user) return;
+      if (user.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else if (user.role === 'subscriber') {
+        router.replace('/subscriber/dashboard');
+      } else {
+        router.replace('/publisher/dashboard');
+      }
+    }, 6000);
 
     const performRedirect = async () => {
       if (isLoading || !isAuthenticated || !user) return;
       if (user.role === 'admin') {
         router.replace('/admin/dashboard');
-      } else if (user.role === 'subscriber') {
-        try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-          const res = await fetch(`${apiUrl}/api/courses`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const courses = await res.json();
-          if (mounted) {
-            if (Array.isArray(courses) && courses.length === 0) {
-              router.replace('/subscriber/marketplace');
-            } else {
-              router.replace('/subscriber/dashboard');
-            }
-          }
-        } catch (e) {
-          if (mounted) router.replace('/subscriber/dashboard');
-        }
-      } else {
+        return;
+      }
+      if (user.role === 'publisher') {
         router.replace('/publisher/dashboard');
+        return;
+      }
+      if (user.role !== 'subscriber') return;
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 4000);
+        const res = await fetch('/api/courses', {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+        window.clearTimeout(timeoutId);
+        const courses = await res.json();
+        if (!mounted) return;
+        if (Array.isArray(courses) && courses.length === 0) {
+          router.replace('/subscriber/marketplace');
+        } else {
+          router.replace('/subscriber/dashboard');
+        }
+      } catch {
+        if (mounted) router.replace('/subscriber/dashboard');
       }
     };
 
-    performRedirect();
+    void performRedirect();
 
     return () => {
       mounted = false;
+      window.clearTimeout(redirectTimer);
     };
   }, [isAuthenticated, isLoading, user, router, token]);
 

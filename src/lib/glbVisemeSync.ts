@@ -9,23 +9,29 @@ interface MorphBinding {
   name: string;
 }
 
-const morphBindingCache = new WeakMap<Object3D, Map<string, MorphBinding>>();
+const morphBindingCache = new WeakMap<Object3D, Map<string, MorphBinding[]>>();
 const smoothMorphState = new WeakMap<Object3D, Map<string, number>>();
 
-function getMorphBindingMap(root: Object3D, hints: LipSyncHints): Map<string, MorphBinding> {
+function getMorphBindingMap(root: Object3D, hints: LipSyncHints): Map<string, MorphBinding[]> {
   const cached = morphBindingCache.get(root);
   if (cached) return cached;
 
-  const map = new Map<string, MorphBinding>();
-  const allNames = new Set<string>();
+  const map = new Map<string, MorphBinding[]>();
+
+  const addBinding = (name: string, binding: MorphBinding): void => {
+    const key = name.toLowerCase();
+    const list = map.get(key) ?? [];
+    if (!list.some((b) => b.mesh === binding.mesh && b.index === binding.index)) {
+      list.push(binding);
+      map.set(key, list);
+    }
+  };
 
   for (const binding of findMorphBindings(root, hints.morphTargets)) {
-    map.set(binding.name.toLowerCase(), binding);
-    allNames.add(binding.name);
+    addBinding(binding.name, binding);
   }
 
-  // Also index every morph on meshes that carry lip-sync targets (ARKit rigs spread
-  // visemes across Head_Mesh / Teeth_Mesh).
+  // RPM / MetaHuman rigs duplicate visemes on Head + Teeth — drive every copy.
   root.traverse((child) => {
     const mesh = child as Mesh & {
       morphTargetDictionary?: Record<string, number>;
@@ -34,11 +40,8 @@ function getMorphBindingMap(root: Object3D, hints: LipSyncHints): Map<string, Mo
     if (!mesh.morphTargetDictionary || !mesh.morphTargetInfluences) return;
 
     for (const [name, index] of Object.entries(mesh.morphTargetDictionary)) {
-      const lower = name.toLowerCase();
-      if (map.has(lower)) continue;
-      if (/^viseme_|^mouth|^jaw/i.test(name)) {
-        map.set(lower, { mesh, index, name });
-      }
+      if (!/^viseme_|^mouth|^jaw/i.test(name)) continue;
+      addBinding(name, { mesh, index, name });
     }
   });
 
@@ -51,6 +54,8 @@ function smoothMorphValue(
   key: string,
   target: number,
   deltaSeconds: number,
+  attack = 28,
+  release = 14,
 ): number {
   let state = smoothMorphState.get(root);
   if (!state) {
@@ -58,8 +63,6 @@ function smoothMorphValue(
     smoothMorphState.set(root, state);
   }
   const current = state.get(key) ?? 0;
-  const attack = 28;
-  const release = 14;
   const rate = target > current ? attack : release;
   const step = 1 - Math.exp(-rate * Math.max(0, deltaSeconds));
   const next = current + (target - current) * step;
@@ -76,33 +79,62 @@ export function applyVisemeMorphWeights(
   weights: VisemeMorphWeights,
   hints: LipSyncHints = {},
   deltaSeconds = 1 / 60,
+  audioLevel = 0,
 ): number {
   const bindings = getMorphBindingMap(root, hints);
   const touched = new Set<string>();
+  const attack = hints.visemeAttack ?? 28;
+  const release = hints.visemeRelease ?? 14;
+  const intensity = hints.visemeIntensity ?? 1;
 
+  const scaled: VisemeMorphWeights = {};
   for (const [name, value] of Object.entries(weights)) {
-    const binding = bindings.get(name.toLowerCase());
-    if (!binding?.mesh.morphTargetInfluences) continue;
-    const smoothed = smoothMorphValue(root, name, value, deltaSeconds);
-    binding.mesh.morphTargetInfluences[binding.index] = smoothed;
+    scaled[name] = Math.min(1, value * intensity);
+  }
+
+  const isSimpleRig =
+    hints.morphTargets?.some((t) => /mouthopen/i.test(t)) &&
+    !hints.morphTargets?.some((t) => /viseme_/i.test(t));
+
+  if (isSimpleRig && audioLevel > 0.02) {
+    const baseOpen = scaled.mouthOpen ?? 0;
+    const baseClose = scaled.mouthClose ?? 0;
+    // Modulate vowels with loudness — never force the mouth open during closed visemes.
+    if (baseOpen > 0.15) {
+      scaled.mouthOpen = Math.min(1, baseOpen * (0.82 + audioLevel * 0.28));
+    } else {
+      scaled.mouthOpen = Math.min(baseOpen, baseOpen + audioLevel * 0.04);
+      scaled.mouthClose = Math.min(1, Math.max(baseClose, baseClose + audioLevel * 0.06));
+    }
+  }
+
+  for (const [name, value] of Object.entries(scaled)) {
+    const list = bindings.get(name.toLowerCase());
+    if (!list?.length) continue;
+    const smoothed = smoothMorphValue(root, name, value, deltaSeconds, attack, release);
+    for (const binding of list) {
+      if (!binding.mesh.morphTargetInfluences) continue;
+      binding.mesh.morphTargetInfluences[binding.index] = smoothed;
+    }
     touched.add(name.toLowerCase());
   }
 
-  // Ease untouched morphs back to rest.
-  for (const [name, binding] of bindings) {
+  for (const [name, list] of bindings) {
     if (touched.has(name)) continue;
-    if (!binding.mesh.morphTargetInfluences) continue;
-    const smoothed = smoothMorphValue(root, name, 0, deltaSeconds);
-    binding.mesh.morphTargetInfluences[binding.index] = smoothed;
+    const smoothed = smoothMorphValue(root, name, 0, deltaSeconds, attack, release);
+    for (const binding of list) {
+      if (!binding.mesh.morphTargetInfluences) continue;
+      binding.mesh.morphTargetInfluences[binding.index] = smoothed;
+    }
   }
 
-  const open =
-    weights.jawOpen ??
-    weights.mouthOpen ??
-    weights.viseme_aa ??
-    weights.viseme_O ??
-    0;
-  return open;
+  return (
+    scaled.jawOpen ??
+    scaled.mouthOpen ??
+    scaled.viseme_aa ??
+    scaled.viseme_O ??
+    0
+  );
 }
 
 /** @internal test helper */

@@ -23,6 +23,8 @@ export interface AssistantAvatar {
   framing: 'bust' | 'full';
   fitMargin: number;
   modelScale: number;
+  /** Upper-body crop for full framing (smaller = larger on screen). */
+  coverHeightFraction?: number;
   lipSync: AvatarLibraryLipSyncHints;
   voice: VoiceProfile;
   language: 'en' | 'ar';

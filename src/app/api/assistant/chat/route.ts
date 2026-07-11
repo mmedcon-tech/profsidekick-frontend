@@ -10,7 +10,12 @@ interface AssistantChatBody {
   message?: string;
   systemPrompt?: string;
   history?: ChatHistoryItem[];
+  /** Live call mode — shorter, faster replies. */
+  responseMode?: 'call' | 'chat';
 }
+
+const CALL_MODE_SUFFIX =
+  ' Reply in one or two short spoken sentences (under 35 words). No lists or markdown.';
 
 async function proxyToBackend(body: AssistantChatBody): Promise<Response | null> {
   try {
@@ -35,14 +40,16 @@ async function callOpenAI(
   body: AssistantChatBody,
   message: string,
 ): Promise<NextResponse> {
+  const isCall = body.responseMode === 'call';
+  const basePrompt =
+    body.systemPrompt?.trim() ||
+    'You are a helpful AI training assistant for ProfSidekick subscribers.';
   const messages = [
     {
       role: 'system' as const,
-      content:
-        body.systemPrompt?.trim() ||
-        'You are a helpful AI training assistant for ProfSidekick subscribers.',
+      content: isCall ? `${basePrompt}${CALL_MODE_SUFFIX}` : basePrompt,
     },
-    ...(body.history ?? []).slice(-8).map((item) => ({
+    ...(body.history ?? []).slice(isCall ? -4 : -8).map((item) => ({
       role: item.role,
       content: item.text,
     })),
@@ -58,8 +65,8 @@ async function callOpenAI(
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages,
-      max_tokens: 400,
-      temperature: 0.7,
+      max_tokens: isCall ? 90 : 400,
+      temperature: isCall ? 0.55 : 0.7,
     }),
   });
 

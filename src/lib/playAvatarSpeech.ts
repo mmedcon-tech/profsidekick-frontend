@@ -1,5 +1,6 @@
 'use client';
 
+import { attachAudioLevelMeter } from '@/lib/audioLevel';
 import { buildEstimatedTimeline } from '@/lib/visemeTimeline';
 import type { VisemeTimeline } from '@/lib/visemeTypes';
 import type {
@@ -14,12 +15,14 @@ export interface PlayAvatarSpeechOptions {
   gender: ElevenLabsVoiceGender;
   voiceProfile?: ElevenLabsVoiceProfile;
   onSpeakingChange?: (speaking: boolean) => void;
+  lowLatency?: boolean;
 }
 
 export interface PlayAvatarSpeechResult {
   stop: () => void;
   audio: HTMLAudioElement;
   timeline: VisemeTimeline;
+  getAudioLevel: () => number;
   /** Which engine produced the audio. */
   engine: 'elevenlabs' | 'openai' | 'browser';
 }
@@ -71,8 +74,11 @@ async function playBufferedSpeech(
     resolvedTimeline = buildEstimatedTimeline(text, duration);
   }
 
+  const meter = attachAudioLevelMeter(audio);
+
   const cleanup = (): void => {
     audio.pause();
+    meter.dispose();
     URL.revokeObjectURL(objectUrl);
     onSpeakingChange?.(false);
   };
@@ -86,6 +92,7 @@ async function playBufferedSpeech(
     stop: cleanup,
     audio,
     timeline: resolvedTimeline,
+    getAudioLevel: () => meter.getLevel(),
     engine: 'openai',
   };
 }
@@ -97,7 +104,7 @@ async function playBufferedSpeech(
 export async function playAvatarSpeech(
   options: PlayAvatarSpeechOptions,
 ): Promise<PlayAvatarSpeechResult> {
-  const { text, gender, voiceProfile = 'adult', onSpeakingChange } = options;
+  const { text, gender, voiceProfile = 'adult', onSpeakingChange, lowLatency = false } = options;
 
   try {
     const eleven = await playElevenLabsSpeech({
@@ -105,6 +112,7 @@ export async function playAvatarSpeech(
       gender,
       voiceProfile,
       onSpeakingChange,
+      lowLatency,
     });
     return { ...eleven, engine: 'elevenlabs' };
   } catch (elevenLabsError) {

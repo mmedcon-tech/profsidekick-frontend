@@ -23,6 +23,7 @@ export interface ChatbotAvatarConfig {
   framing?: 'bust' | 'full';
   fitMargin?: number;
   modelScale?: number;
+  coverHeightFraction?: number;
   lipSync?: LipSyncHints;
 }
 
@@ -43,6 +44,9 @@ interface ChatbotAvatar3DProps {
    * instead of a generic open/close amplitude.
    */
   visemeTimeline?: VisemeTimeline | null;
+  /** When true, jaw amplitude fallback is disabled so visemes are the sole driver. */
+  visemeDriven?: boolean;
+  getAudioLevel?: () => number;
   /** Returns elapsed seconds within the current utterance (audio currentTime). */
   speechClock?: () => number;
 }
@@ -103,19 +107,19 @@ export function ChatbotAvatar3D({
   avatar,
   visemeTimeline = null,
   speechClock,
+  getAudioLevel,
 }: ChatbotAvatar3DProps): React.ReactElement {
   const cfg = avatar ?? defaultConfig();
 
-  // Real viseme-driven lip-sync when a timeline is available; otherwise fall
-  // back to the generic open/close amplitude (e.g. before audio resolves).
   const hasVisemes = !!visemeTimeline && visemeTimeline.keyframes.length > 0;
+  const visemeDriven = speaking && hasVisemes;
   const visemeRef = useVisemePlayback(
     speechClock ?? NOOP_CLOCK,
     visemeTimeline,
-    speaking && hasVisemes,
+    visemeDriven,
     cfg.lipSync,
   );
-  const amplitude = useSimulatedAmplitude(speaking && !hasVisemes);
+  const amplitude = useSimulatedAmplitude(speaking && !visemeDriven);
 
   const preview = (
     <GlbAvatarPreview
@@ -128,6 +132,9 @@ export function ChatbotAvatar3D({
       framing={cfg.framing ?? 'bust'}
       fitMargin={cfg.fitMargin ?? 1.05}
       modelScale={cfg.modelScale ?? 1.15}
+      coverHeightFraction={cfg.coverHeightFraction ?? 0.74}
+      isVisemeDriven={visemeDriven}
+      getAudioLevel={getAudioLevel}
       className="h-full w-full"
     />
   );

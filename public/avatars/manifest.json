@@ -44,12 +44,24 @@
       "portraitObjectFit": "cover",
       "lipSync": {
         "morphTargets": [
-          "mouthOpen",
-          "jawOpen",
           "viseme_aa",
-          "viseme_O",
           "viseme_E",
-          "mouthSmile"
+          "viseme_I",
+          "viseme_O",
+          "viseme_U",
+          "viseme_PP",
+          "viseme_FF",
+          "viseme_TH",
+          "viseme_DD",
+          "viseme_SS",
+          "viseme_CH",
+          "viseme_nn",
+          "viseme_RR",
+          "viseme_sil",
+          "jawOpen",
+          "mouthOpen",
+          "mouthClose",
+          "mouthFunnel"
         ],
         "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
         "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"]

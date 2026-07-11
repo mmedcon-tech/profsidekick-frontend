@@ -144,7 +144,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const expiresAt = localStorage.getItem(AUTH_EXPIRES_AT_KEY);
       if (shouldProactivelyRefresh(expiresAt)) {
         try {
-          await refreshTokenRef.current();
+          const refreshController = new AbortController();
+          const refreshTimeout = setTimeout(() => refreshController.abort(), 5000);
+          const currentToken = localStorage.getItem(AUTH_TOKEN_KEY);
+          if (currentToken) {
+            const refreshResponse = await fetch('/api/auth/refresh', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${currentToken}`,
+                'Content-Type': 'application/json',
+              },
+              signal: refreshController.signal,
+            });
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              const { token: newToken, expiresAt: newExpiresAt } = refreshData;
+              if (newToken) {
+                setToken(newToken);
+                const storedUser = localStorage.getItem(AUTH_USER_KEY);
+                if (storedUser) {
+                  persistAuthSession({
+                    token: newToken,
+                    user: JSON.parse(storedUser),
+                    expiresAt: newExpiresAt ?? null,
+                  });
+                }
+              }
+            }
+          }
+          clearTimeout(refreshTimeout);
         } catch (error) {
           console.error('Proactive token refresh failed:', error);
         }

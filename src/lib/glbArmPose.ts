@@ -45,7 +45,7 @@ const RIGHT_FOREARM_NAMES = [
 
 const POSE_APPLIED = Symbol('naturalArmPoseApplied');
 
-/** Tripo / MetaHuman exports use L_Upperarm + L_Clavicle — already A-posed; re-posing breaks skinning. */
+/** Tripo / MetaHuman exports use L_Upperarm + L_Clavicle naming. */
 export function isTripoStyleRig(root: Object3D): boolean {
   let tripoUpper = false;
   root.traverse((node) => {
@@ -82,6 +82,11 @@ function limbAimTarget(bone: Bone): Bone | null {
       !/thumb|index|middle|ring|pinky/i.test(child.name),
   );
   if (hand) return hand;
+
+  const forearm = children.find(
+    (child) => /forearm/i.test(child.name) && !/twist/i.test(child.name),
+  );
+  if (forearm) return forearm;
 
   const nonTwist = children.filter((child) => !/twist/i.test(child.name));
   const pool = nonTwist.length > 0 ? nonTwist : children;

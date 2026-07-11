@@ -6,6 +6,13 @@ export interface AvatarLibraryLipSyncHints {
   blinkTargets?: string[];
   jawBones: string[];
   mouthOpenGain?: number;
+  /** Viseme morph attack rate — lower = slower mouth movement. Default 28. */
+  visemeAttack?: number;
+  /** Viseme morph release rate — lower = slower mouth close. Default 14. */
+  visemeRelease?: number;
+  /** Fraction of each keyframe held before blending to the next shape (0–1). */
+  visemeBlendHold?: number;
+  visemeIntensity?: number;
 }
 
 export interface AvatarLibraryEntry {

@@ -10,6 +10,11 @@ export interface LipSyncHints {
    * makes their speech actually readable. Defaults to 1.
    */
   mouthOpenGain?: number;
+  visemeAttack?: number;
+  visemeRelease?: number;
+  visemeBlendHold?: number;
+  /** Scales viseme morph target weights (0–1). Default 1. */
+  visemeIntensity?: number;
 }
 
 interface MorphBinding {
