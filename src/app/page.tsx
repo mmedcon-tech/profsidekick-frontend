@@ -8,50 +8,59 @@ import { BookOpen, Users, Zap, ArrowRight, CheckCircle, LogOut } from 'lucide-re
 export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, logout, user, token } = useAuth();
-  const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
+  // SAE-only: redirect to SAE pages for all roles
+  const dashboardUrl = user?.role === 'admin' ? '/admin/sae' : user?.role === 'publisher' ? '/publisher/sae' : '/sae/exam';
+  // OLD dashboard urls (commented out for reference):
+  // const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
 
   const handleLogout = async () => {
     await logout();
     router.push('/');
   };
 
-  // Redirect authenticated users to their role dashboard immediately.
-  // Subscribers with no enrolled courses go to marketplace instead.
+  // SAE-only: redirect all authenticated users straight to their SAE page
   useEffect(() => {
-    let mounted = true;
+    if (isLoading || !isAuthenticated || !user) return;
+    if (user.role === 'admin') {
+      router.replace('/admin/sae');
+    } else if (user.role === 'publisher') {
+      router.replace('/publisher/sae');
+    } else {
+      router.replace('/sae/exam');
+    }
+  }, [isAuthenticated, isLoading, user, router]);
 
-    const performRedirect = async () => {
-      if (isLoading || !isAuthenticated || !user) return;
-      if (user.role === 'admin') {
-        router.replace('/admin/dashboard');
-      } else if (user.role === 'subscriber') {
-        try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-          const res = await fetch(`${apiUrl}/api/courses`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const courses = await res.json();
-          if (mounted) {
-            if (Array.isArray(courses) && courses.length === 0) {
-              router.replace('/subscriber/marketplace');
-            } else {
-              router.replace('/subscriber/dashboard');
-            }
-          }
-        } catch (e) {
-          if (mounted) router.replace('/subscriber/dashboard');
-        }
-      } else {
-        router.replace('/publisher/dashboard');
-      }
-    };
-
-    performRedirect();
-
-    return () => {
-      mounted = false;
-    };
-  }, [isAuthenticated, isLoading, user, router, token]);
+  // OLD redirect logic (commented out for reference):
+  // useEffect(() => {
+  //   let mounted = true;
+  //   const performRedirect = async () => {
+  //     if (isLoading || !isAuthenticated || !user) return;
+  //     if (user.role === 'admin') {
+  //       router.replace('/admin/dashboard');
+  //     } else if (user.role === 'subscriber') {
+  //       try {
+  //         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  //         const res = await fetch(`${apiUrl}/api/courses`, {
+  //           headers: { Authorization: `Bearer ${token}` }
+  //         });
+  //         const courses = await res.json();
+  //         if (mounted) {
+  //           if (Array.isArray(courses) && courses.length === 0) {
+  //             router.replace('/subscriber/marketplace');
+  //           } else {
+  //             router.replace('/subscriber/dashboard');
+  //           }
+  //         }
+  //       } catch (e) {
+  //         if (mounted) router.replace('/subscriber/dashboard');
+  //       }
+  //     } else {
+  //       router.replace('/publisher/dashboard');
+  //     }
+  //   };
+  //   performRedirect();
+  //   return () => { mounted = false; };
+  // }, [isAuthenticated, isLoading, user, router, token]);
 
   // Show spinner while auth check runs OR while redirect is in flight
   if (isLoading || isAuthenticated) {

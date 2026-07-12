@@ -5,59 +5,78 @@ import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { tr } from "@/lib/v2/i18n"
 import { LogoV2 } from "./logo"
-import { ProgramSwitcher } from "./program-switcher"
+// import { ProgramSwitcher } from "./program-switcher" // SAE-only: program switcher not needed
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard,
+  // LayoutDashboard, // SAE-only: dashboard removed
   GraduationCap,
   BarChart3,
-  CreditCard,
+  // CreditCard,  // SAE-only: billing removed
   User,
   Bot,
-  BookOpen,
-  Building2,
-  Users,
+  // BookOpen,    // SAE-only: courses removed
+  // Building2,   // SAE-only: programs removed
+  Users,       // needed for admin user management
   ShieldCheck,
-  Layers,
-  Cpu,
+  // Layers,      // SAE-only: admin templates removed
+  // Cpu,         // SAE-only: admin models removed
   LogOut,
-  Store,
+  // Store,       // SAE-only: marketplace removed
   ClipboardCheck,
 } from "lucide-react"
 
 interface NavItem {
   href: string
   labelKey: string
-  icon: typeof LayoutDashboard
+  icon: typeof ClipboardCheck
 }
 
+// ── SAE-only nav (same 3 items for all roles, pointing to role-specific routes) ──
 const subscriberNav: NavItem[] = [
-  { href: "/subscriber/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-  { href: "/subscriber/courses", labelKey: "myCourses", icon: GraduationCap },
-  { href: "/subscriber/marketplace", labelKey: "marketplace", icon: Store },
-  { href: "/subscriber/analytics", labelKey: "analytics", icon: BarChart3 },
-  { href: "/subscriber/billing", labelKey: "billing", icon: CreditCard },
-  { href: "/subscriber/profile", labelKey: "profile", icon: User },
   { href: "/sae/exam", labelKey: "saeExam", icon: ClipboardCheck },
+  { href: "/subscriber/analytics", labelKey: "analytics", icon: BarChart3 },
+  { href: "/subscriber/profile", labelKey: "profile", icon: User },
 ]
 
 const publisherNav: NavItem[] = [
-  { href: "/publisher/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-  { href: "/publisher/avatars", labelKey: "myAvatars", icon: Bot },
-  { href: "/publisher/programs", labelKey: "programs", icon: Building2 },
-  { href: "/publisher/courses", labelKey: "courses", icon: BookOpen },
-  { href: "/publisher/analytics", labelKey: "analytics", icon: BarChart3 },
   { href: "/publisher/sae", labelKey: "saeAssessments", icon: ClipboardCheck },
+  { href: "/publisher/analytics", labelKey: "analytics", icon: BarChart3 },
+  { href: "/publisher/profile", labelKey: "profile", icon: User },
 ]
 
 const adminNav: NavItem[] = [
-  { href: "/admin/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-  { href: "/admin/templates", labelKey: "templates", icon: Layers },
-  { href: "/admin/models", labelKey: "models", icon: Cpu },
+  { href: "/admin/sae", labelKey: "saeAssessments", icon: ClipboardCheck },
   { href: "/admin/users", labelKey: "users", icon: Users },
   { href: "/admin/analytics", labelKey: "analytics", icon: BarChart3 },
-  { href: "/admin/sae", labelKey: "saeAssessments", icon: ClipboardCheck },
+  { href: "/admin/profile", labelKey: "profile", icon: User },
 ]
+
+// ── OLD full-featured navs (commented out for reference) ──
+// const subscriberNavFull: NavItem[] = [
+//   { href: "/subscriber/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+//   { href: "/subscriber/courses", labelKey: "myCourses", icon: GraduationCap },
+//   { href: "/subscriber/marketplace", labelKey: "marketplace", icon: Store },
+//   { href: "/subscriber/analytics", labelKey: "analytics", icon: BarChart3 },
+//   { href: "/subscriber/billing", labelKey: "billing", icon: CreditCard },
+//   { href: "/subscriber/profile", labelKey: "profile", icon: User },
+//   { href: "/sae/exam", labelKey: "saeExam", icon: ClipboardCheck },
+// ]
+// const publisherNavFull: NavItem[] = [
+//   { href: "/publisher/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+//   { href: "/publisher/avatars", labelKey: "myAvatars", icon: Bot },
+//   { href: "/publisher/programs", labelKey: "programs", icon: Building2 },
+//   { href: "/publisher/courses", labelKey: "courses", icon: BookOpen },
+//   { href: "/publisher/analytics", labelKey: "analytics", icon: BarChart3 },
+//   { href: "/publisher/sae", labelKey: "saeAssessments", icon: ClipboardCheck },
+// ]
+// const adminNavFull: NavItem[] = [
+//   { href: "/admin/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+//   { href: "/admin/templates", labelKey: "templates", icon: Layers },
+//   { href: "/admin/models", labelKey: "models", icon: Cpu },
+//   { href: "/admin/users", labelKey: "users", icon: Users },
+//   { href: "/admin/analytics", labelKey: "analytics", icon: BarChart3 },
+//   { href: "/admin/sae", labelKey: "saeAssessments", icon: ClipboardCheck },
+// ]
 
 const navByRole = { subscriber: subscriberNav, publisher: publisherNav, admin: adminNav }
 const roleIcon = { subscriber: GraduationCap, publisher: Bot, admin: ShieldCheck }
@@ -92,9 +111,10 @@ function NavContent({
       <div className="border-b border-sidebar-border p-4">
         <LogoV2 light brandName={brandName} />
       </div>
-      <div className="border-b border-sidebar-border px-4 py-3">
+      {/* SAE-only: ProgramSwitcher hidden; restore by un-commenting the import and this block */}
+      {/* <div className="border-b border-sidebar-border px-4 py-3">
         <ProgramSwitcher />
-      </div>
+      </div> */}
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-3" aria-label="Main navigation">
         {navItems.map((item) => {
           const Icon = item.icon

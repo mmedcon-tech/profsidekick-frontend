@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemedLayout } from '@/components/layout/ThemedLayout';
+import { GradingJobsProvider } from '@/contexts/GradingJobsContext';
 
 export default function PublisherLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -19,5 +20,9 @@ export default function PublisherLayout({ children }: { children: React.ReactNod
 
   if (isLoading || !isAuthenticated) return null;
 
-  return <ThemedLayout>{children}</ThemedLayout>;
+  return (
+    <ThemedLayout>
+      <GradingJobsProvider>{children}</GradingJobsProvider>
+    </ThemedLayout>
+  );
 }

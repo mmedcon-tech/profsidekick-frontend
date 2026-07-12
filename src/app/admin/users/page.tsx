@@ -25,6 +25,7 @@ export default function UsersView() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [changingRole, setChangingRole] = useState<string | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -51,6 +52,20 @@ export default function UsersView() {
       alert(e instanceof ApiError ? e.message : 'Delete failed')
     } finally {
       setDeleting(null)
+    }
+  }
+
+  const handleSetRole = async (u: UserRecord, newRole: string) => {
+    const label = newRole === 'publisher' ? 'Promote to Publisher' : 'Demote to Subscriber'
+    if (!confirm(`${label} for "${u.username}"?`)) return
+    setChangingRole(u.id)
+    try {
+      await adminUserApi.setRole(u.id, newRole)
+      setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, role: newRole } : x))
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : 'Role change failed')
+    } finally {
+      setChangingRole(null)
     }
   }
 
@@ -168,15 +183,43 @@ export default function UsersView() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(u)}
-                        disabled={deleting === u.id}
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Promote subscriber → publisher */}
+                        {u.role === 'subscriber' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSetRole(u, 'publisher')}
+                            disabled={changingRole === u.id}
+                            title="Promote to Publisher"
+                            className="text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700 px-2"
+                          >
+                            {changingRole === u.id ? '…' : '↑ Publisher'}
+                          </Button>
+                        )}
+                        {/* Demote publisher → subscriber */}
+                        {u.role === 'publisher' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSetRole(u, 'subscriber')}
+                            disabled={changingRole === u.id}
+                            title="Demote to Subscriber"
+                            className="text-xs text-amber-600 hover:bg-amber-50 hover:text-amber-700 px-2"
+                          >
+                            {changingRole === u.id ? '…' : '↓ Subscriber'}
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(u)}
+                          disabled={deleting === u.id}
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 )

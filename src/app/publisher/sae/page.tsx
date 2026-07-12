@@ -3,80 +3,43 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  authHeaders,
   createAssessment,
   createStudentBatch,
+  deleteStudent,
+  getDefaultGradingPrompt,
   listAssessments,
   listStudents,
   regenerateStudentAccess,
+  updateAssessmentPrompt,
 } from "@/lib/sae-api";
 import type { SAEAssessmentRow, SAEStudentRow } from "@/types/sae";
-import { avatarApi, publisherPromptApi, type PromptTemplateResponse } from "@/lib/avatarApi";
-import type { AvatarSummary } from "@/types/avatar";
+import { useGradingJobs } from "@/contexts/GradingJobsContext";
+import ActiveGradingJobs from "@/components/sae/ActiveGradingJobs";
+// SAE-only: avatar linking in assessments disabled — import kept for reference
+// import { avatarApi, publisherPromptApi, type PromptTemplateResponse } from "@/lib/avatarApi";
+// import type { AvatarSummary } from "@/types/avatar";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+
+const SAE_ASSESSMENT_KEY = "sae_selected_assessment_id";
+
+function readStoredAssessmentId(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(SAE_ASSESSMENT_KEY);
+}
+
+function writeStoredAssessmentId(id: string | null) {
+  if (typeof window === "undefined") return;
+  if (id) sessionStorage.setItem(SAE_ASSESSMENT_KEY, id);
+  else sessionStorage.removeItem(SAE_ASSESSMENT_KEY);
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Toast = { id: number; text: string; kind: "success" | "error" };
 
-type NodeStatus =
-  | { kind: "standby" }
-  | { kind: "running"; attempt: number; maxAttempts: number }
-  | { kind: "retrying"; attempt: number; maxAttempts: number; reason: string }
-  | { kind: "failed"; attemptsMade: number; reason: string }
-  | { kind: "success"; attempt: number };
-
-type ProviderNode = {
-  label: string;
-  providerKey: string;
-  status: NodeStatus;
-};
-
-type LogEntry = {
-  ts: string;
-  text: string;
-  level: "info" | "warn" | "error" | "success";
-};
-
-type GradingPhase = "idle" | "connecting" | "grading" | "done" | "error";
-
-// Order matches the backend fallback chain
-const INITIAL_NODES: ProviderNode[] = [
-  { label: "Vertex AI",    providerKey: "vertex/", status: { kind: "standby" } },
-  { label: "Gemini Pro",   providerKey: "/pro",    status: { kind: "standby" } },
-  { label: "OpenAI",       providerKey: "openai/", status: { kind: "standby" } },
-  { label: "Gemini Flash", providerKey: "/flash",  status: { kind: "standby" } },
-  { label: "Gemini Free",  providerKey: "/free",   status: { kind: "standby" } },
-];
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function matchNode(providerName: string | null | undefined, key: string): boolean {
-  if (!providerName) return false;
-  if (key.endsWith("/")) return providerName.startsWith(key);
-  return providerName.endsWith(key);
-}
-
-function nodeIndex(providerName: string | null | undefined, nodes: ProviderNode[]): number {
-  return nodes.findIndex((n) => matchNode(providerName, n.providerKey));
-}
-
-function nowHHMMSS(): string {
-  return new Date().toLocaleTimeString("en-US", { hour12: false });
-}
-
-function getToken(): string {
-  return typeof window !== "undefined" ? (localStorage.getItem("auth_token") ?? "") : "";
-}
-
-function authHeaders(): HeadersInit {
-  const token = getToken();
-  const instance = process.env.NEXT_PUBLIC_FRONTEND_INSTANCE ?? "main";
-  return {
-    "X-Frontend-Instance": instance,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
 
 function StatusBadge({ on, labelOn, labelOff }: { on: boolean; labelOn: string; labelOff: string }) {
   return (
@@ -87,71 +50,11 @@ function StatusBadge({ on, labelOn, labelOff }: { on: boolean; labelOn: string; 
   );
 }
 
-// ── Provider node card (SSE visual feedback) ──────────────────────────────────
-
-function ProviderNodeCard({ node }: { node: ProviderNode }) {
-  const s = node.status;
-
-  const ringColor =
-    s.kind === "running"   ? "border-blue-400"
-    : s.kind === "retrying" ? "border-orange-400"
-    : s.kind === "success"  ? "border-green-400"
-    : s.kind === "failed"   ? "border-red-400"
-    : "border-slate-200";
-
-  const bgColor =
-    s.kind === "running"   ? "bg-blue-50"
-    : s.kind === "retrying" ? "bg-orange-50"
-    : s.kind === "success"  ? "bg-green-50"
-    : s.kind === "failed"   ? "bg-red-50"
-    : "bg-white";
-
-  const dotColor =
-    s.kind === "running"   ? "bg-blue-500"
-    : s.kind === "retrying" ? "bg-orange-500"
-    : s.kind === "success"  ? "bg-green-500"
-    : s.kind === "failed"   ? "bg-red-500"
-    : "bg-slate-300";
-
-  const statusLabel =
-    s.kind === "standby"   ? "standby"
-    : s.kind === "running"  ? `attempt ${s.attempt}/${s.maxAttempts}`
-    : s.kind === "retrying" ? `retry ${s.attempt}/${s.maxAttempts}`
-    : s.kind === "success"  ? "✓ done"
-    : "✗ failed";
-
-  const statusColor =
-    s.kind === "running"   ? "text-blue-600"
-    : s.kind === "retrying" ? "text-orange-600"
-    : s.kind === "success"  ? "text-green-600"
-    : s.kind === "failed"   ? "text-red-600"
-    : "text-slate-400";
-
-  return (
-    <div className={`relative flex flex-col items-center rounded-xl border-2 p-3 transition-all duration-300 ${ringColor} ${bgColor}`}
-      style={{ minWidth: 100 }}>
-      {(s.kind === "running" || s.kind === "retrying") && (
-        <span className="absolute inset-0 rounded-xl animate-ping opacity-20"
-          style={{ background: s.kind === "retrying" ? "#f97316" : "#3b82f6" }} />
-      )}
-      <span className={`h-2 w-2 rounded-full mb-1.5 ${dotColor} ${
-        s.kind === "running" || s.kind === "retrying" ? "animate-pulse" : ""
-      }`} />
-      <span className="text-xs font-semibold text-slate-700 text-center leading-tight">{node.label}</span>
-      <span className={`mt-0.5 text-[10px] font-medium ${statusColor}`}>{statusLabel}</span>
-      {(s.kind === "retrying" || s.kind === "failed") && (
-        <span className="mt-0.5 text-[9px] text-slate-500 text-center line-clamp-2 max-w-[90px]">
-          {s.reason.split(":").slice(-1)[0].trim().slice(0, 50)}
-        </span>
-      )}
-    </div>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function PublisherSAEPage() {
   const router = useRouter();
+  const { trackJob } = useGradingJobs();
 
   const [students, setStudents] = useState<SAEStudentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,17 +71,12 @@ export default function PublisherSAEPage() {
   // New-batch result banner
   const [newBatch, setNewBatch] = useState<SAEStudentRow[] | null>(null);
 
-  // Submit-on-behalf modal + SSE state
+  // Submit-on-behalf modal state (SSE progress now lives in ActiveGradingJobs)
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [soStudent, setSoStudent] = useState<SAEStudentRow | null>(null);
   const [hwFile, setHwFile] = useState<File | null>(null);
   const [waFile, setWaFile] = useState<File | null>(null);
-  const [gradingPhase, setGradingPhase] = useState<GradingPhase>("idle");
-  const [submitError, setSubmitError] = useState("");
-  const [nodes, setNodes] = useState<ProviderNode[]>(INITIAL_NODES);
-  const [log, setLog] = useState<LogEntry[]>([]);
-  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
-  const logEndRef = useRef<HTMLDivElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Regenerate-access modal
   const [showRegenModal, setShowRegenModal] = useState(false);
@@ -186,22 +84,30 @@ export default function PublisherSAEPage() {
   const [regenerating, setRegenerating] = useState(false);
   const [regenUrl, setRegenUrl] = useState<string | null>(null);
 
+  // Delete student modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<SAEStudentRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   // Assessment management
   const [assessments, setAssessments] = useState<SAEAssessmentRow[]>([]);
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(null);
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(readStoredAssessmentId);
   const [showNewAssessment, setShowNewAssessment] = useState(false);
   const [newAssessmentName, setNewAssessmentName] = useState("");
   const [newAssessmentDesc, setNewAssessmentDesc] = useState("");
-  const [newAssessmentPromptId, setNewAssessmentPromptId] = useState<string>("");
-  const [newAssessmentAvatarId, setNewAssessmentAvatarId] = useState<string>("");
-  const [gradingPrompts, setGradingPrompts] = useState<PromptTemplateResponse[]>([]);
-  const [avatarList, setAvatarList] = useState<AvatarSummary[]>([]);
+  // SAE-only: avatar linking disabled; state kept commented for reference
+  // const [newAssessmentAvatarId, setNewAssessmentAvatarId] = useState<string>("");
+  // SAE-only: avatar list disabled
+  // const [avatarList, setAvatarList] = useState<AvatarSummary[]>([]);
   const [creatingAssessment, setCreatingAssessment] = useState(false);
 
-  // Scroll log to bottom on new entries
-  useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [log]);
+  // Edit Prompt modal
+  const [showEditPrompt, setShowEditPrompt] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState("");
+  const [savingPrompt, setSavingPrompt] = useState(false);
+  const [promptDirty, setPromptDirty] = useState(false);
+  const [promptError, setPromptError] = useState("");
+  const [loadingDefaultPrompt, setLoadingDefaultPrompt] = useState(false);
 
   function toast(text: string, kind: "success" | "error" = "success") {
     const id = ++toastCounter.current;
@@ -209,206 +115,60 @@ export default function PublisherSAEPage() {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
   }
 
-  function addLog(text: string, level: LogEntry["level"] = "info") {
-    setLog((prev) => [...prev, { ts: nowHHMMSS(), text, level }]);
-  }
-
-  function updateNode(providerName: string, updater: (prev: NodeStatus) => NodeStatus) {
-    setNodes((prev) =>
-      prev.map((n, i) =>
-        i === nodeIndex(providerName, prev) ? { ...n, status: updater(n.status) } : n
-      )
-    );
-  }
-
-  function handleSSEEvent(eventType: string, rawData: string) {
-    if (eventType === "heartbeat") return;
-    let ev: Record<string, unknown> = {};
-    try { ev = JSON.parse(rawData); } catch { return; }
-    const provider = ev.provider as string | undefined;
-
-    switch (eventType) {
-      case "files_ready":
-        addLog("Files received — starting grading pipeline.", "success");
-        break;
-      case "provider_started":
-        updateNode(provider!, () => ({
-          kind: "running",
-          attempt: ev.attempt as number,
-          maxAttempts: (ev.max_attempts as number) ?? 1,
-        }));
-        addLog(`${provider}: starting (attempt ${ev.attempt}/${(ev.max_attempts as number) ?? 1})…`, "info");
-        break;
-      case "provider_retry":
-        updateNode(provider!, () => ({
-          kind: "retrying",
-          attempt: ev.attempt as number,
-          maxAttempts: ev.max_attempts as number,
-          reason: ev.reason as string,
-        }));
-        addLog(`${provider}: retrying (${ev.attempt}/${ev.max_attempts}) — ${(ev.reason as string)?.split(":").pop()?.trim()}`, "warn");
-        break;
-      case "provider_failed":
-        updateNode(provider!, () => ({
-          kind: "failed",
-          attemptsMade: ev.attempts_made as number,
-          reason: ev.reason as string,
-        }));
-        addLog(`${provider}: failed after ${ev.attempts_made} attempt(s).`, "error");
-        break;
-      case "fallback_switch":
-        addLog(`Switching from ${ev.from} → ${ev.to}`, "warn");
-        break;
-      case "provider_success":
-        updateNode(provider!, (prev) => ({
-          kind: "success",
-          attempt: prev.kind === "running" || prev.kind === "retrying" ? prev.attempt : 1,
-        }));
-        addLog(`${provider}: succeeded.`, "success");
-        break;
-      case "grading_complete":
-        addLog("Grading complete — saving result…", "success");
-        break;
-      case "grading_failed":
-        addLog(`All providers failed: ${ev.reason}`, "error");
-        setGradingPhase("error");
-        setSubmitError(String(ev.reason ?? "All grading providers exhausted."));
-        break;
-    }
-  }
-
-  // ── Submit with SSE streaming ─────────────────────────────────────────────
+  // ── Submit with fire-and-forget ───────────────────────────────────────────
 
   async function handleSubmitOnBehalf(e: React.FormEvent) {
     e.preventDefault();
     if (!soStudent || !hwFile || !waFile) return;
 
-    setNodes(INITIAL_NODES.map((n) => ({ ...n, status: { kind: "standby" } })));
-    setLog([]);
-    setSubmitError("");
-    setGradingPhase("connecting");
-
+    setIsSubmitting(true);
     const requestId = crypto.randomUUID();
-    addLog(`Request ID: ${requestId}`, "info");
-    addLog("Opening SSE connection…", "info");
 
-    // Step A: open SSE stream BEFORE posting files
-    let sseResponse: Response | null = null;
+    // Open SSE channel BEFORE posting files so no events are missed.
+    // This fetch is fast (~200ms) — just establishing the stream.
+    let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     try {
-      sseResponse = await fetch(
+      const sseResp = await fetch(
         `${API}/api/autograder/grade/events/${requestId}`,
         { headers: authHeaders() }
       );
-      if (!sseResponse.ok || !sseResponse.body) {
-        throw new Error(`SSE open failed: HTTP ${sseResponse.status}`);
+      if (sseResp.ok && sseResp.body) {
+        reader = sseResp.body.getReader();
       }
-    } catch (err) {
-      addLog(`SSE unavailable: ${err}. Submitting without live updates.`, "warn");
-      await submitWithoutSSE(requestId);
-      return;
+    } catch {
+      // SSE unavailable — trackJob will still track via fetchPromise
     }
 
-    addLog("SSE connected. Sending files to grader…", "info");
-    setGradingPhase("grading");
-
-    // Drain SSE stream in background
-    const reader = sseResponse.body.getReader();
-    readerRef.current = reader;
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    const sseLoop = (async () => {
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const parts = buffer.split(/\n\n/);
-          buffer = parts.pop() ?? "";
-          for (const block of parts) {
-            if (!block.trim()) continue;
-            let eventType = "message";
-            let data = "";
-            for (const line of block.split("\n")) {
-              if (line.startsWith("event:")) eventType = line.slice(6).trim();
-              else if (line.startsWith("data:")) data = line.slice(5).trim();
-            }
-            if (data) handleSSEEvent(eventType, data);
-          }
-        }
-      } catch {
-        // reader was cancelled — normal on cleanup
-      }
-    })();
-
-    // Step B: POST the files with request_id
     const formData = new FormData();
     formData.append("student_answer", hwFile);
     formData.append("webassign_pdf", waFile);
     formData.append("request_id", requestId);
 
-    const targetStudentId = soStudent.id;
+    const studentId = soStudent.id;
+    const fetchPromise = fetch(
+      `${API}/api/sae/publisher/students/${studentId}/submit`,
+      { method: "POST", headers: authHeaders(), body: formData }
+    );
 
-    try {
-      const resp = await fetch(
-        `${API}/api/sae/publisher/students/${targetStudentId}/submit`,
-        { method: "POST", headers: authHeaders(), body: formData }
-      );
+    trackJob({
+      requestId,
+      studentId,
+      studentName: soStudent.display_name,
+      studentCode: soStudent.student_code,
+      reader,
+      fetchPromise,
+    });
 
-      await sseLoop;
-
-      if (!resp.ok) throw new Error(await resp.text());
-
-      setShowSubmitModal(false);
-      resetSubmitModal();
-      router.push(`/publisher/sae/students/${targetStudentId}`);
-    } catch (err) {
-      await sseLoop;
-      if (gradingPhase !== "error") {
-        setGradingPhase("error");
-        const msg = err instanceof Error ? err.message : "Submission failed.";
-        setSubmitError(msg);
-        addLog(`Request failed: ${msg}`, "error");
-      }
-    } finally {
-      reader.cancel().catch(() => {});
-      readerRef.current = null;
-    }
-  }
-
-  // Fallback: plain POST when SSE connection itself fails
-  async function submitWithoutSSE(requestId: string) {
-    setGradingPhase("grading");
-    const targetStudentId = soStudent!.id;
-    const formData = new FormData();
-    formData.append("student_answer", hwFile!);
-    formData.append("webassign_pdf", waFile!);
-    formData.append("request_id", requestId);
-    try {
-      const resp = await fetch(
-        `${API}/api/sae/publisher/students/${targetStudentId}/submit`,
-        { method: "POST", headers: authHeaders(), body: formData }
-      );
-      if (!resp.ok) throw new Error(await resp.text());
-      setShowSubmitModal(false);
-      resetSubmitModal();
-      router.push(`/publisher/sae/students/${targetStudentId}`);
-    } catch (err) {
-      setGradingPhase("error");
-      setSubmitError(err instanceof Error ? err.message : "Submission failed.");
-    }
+    // Close modal immediately — grading progress is now in the ActiveGradingJobs panel
+    setShowSubmitModal(false);
+    resetSubmitModal();
   }
 
   function resetSubmitModal() {
-    readerRef.current?.cancel().catch(() => {});
-    readerRef.current = null;
     setSoStudent(null);
     setHwFile(null);
     setWaFile(null);
-    setGradingPhase("idle");
-    setSubmitError("");
-    setNodes(INITIAL_NODES.map((n) => ({ ...n, status: { kind: "standby" } })));
-    setLog([]);
+    setIsSubmitting(false);
   }
 
   function openSubmitModal(student: SAEStudentRow) {
@@ -418,7 +178,6 @@ export default function PublisherSAEPage() {
   }
 
   function closeSubmitModal() {
-    if (gradingPhase === "grading" || gradingPhase === "connecting") return; // block close mid-grading
     setShowSubmitModal(false);
     resetSubmitModal();
   }
@@ -427,15 +186,6 @@ export default function PublisherSAEPage() {
 
   useEffect(() => { loadAssessments(); loadStudents(); }, []);
 
-  useEffect(() => {
-    if (!showNewAssessment) return;
-    publisherPromptApi.listTemplates('grading.assessment')
-      .then(setGradingPrompts)
-      .catch(() => setGradingPrompts([]));
-    avatarApi.list()
-      .then((res) => setAvatarList(res.avatars))
-      .catch(() => setAvatarList([]));
-  }, [showNewAssessment]);
 
   async function loadAssessments() {
     try {
@@ -457,6 +207,10 @@ export default function PublisherSAEPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    writeStoredAssessmentId(selectedAssessmentId);
+  }, [selectedAssessmentId]);
 
   useEffect(() => {
     const t = setTimeout(() => loadStudents(search || undefined), 350);
@@ -488,8 +242,7 @@ export default function PublisherSAEPage() {
     setShowNewAssessment(false);
     setNewAssessmentName("");
     setNewAssessmentDesc("");
-    setNewAssessmentPromptId("");
-    setNewAssessmentAvatarId("");
+    // setNewAssessmentAvatarId(""); // SAE-only: avatar linking disabled
   }
 
   async function handleCreateAssessment(e: React.FormEvent) {
@@ -500,8 +253,8 @@ export default function PublisherSAEPage() {
       const a = await createAssessment(
         newAssessmentName.trim(),
         newAssessmentDesc.trim() || undefined,
-        newAssessmentPromptId || null,
-        newAssessmentAvatarId || null,
+        null,
+        null, // SAE-only: avatar linking disabled; was: newAssessmentAvatarId || null
       );
       setAssessments((prev) => [a, ...prev]);
       setSelectedAssessmentId(a.id);
@@ -511,6 +264,71 @@ export default function PublisherSAEPage() {
       toast(err instanceof Error ? err.message : "Failed to create assessment.", "error");
     } finally {
       setCreatingAssessment(false);
+    }
+  }
+
+  // ── Edit Prompt ────────────────────────────────────────────────────────────
+
+  async function openEditPromptModal() {
+    const assessment = assessments.find((a) => a.id === selectedAssessmentId);
+    if (!assessment) return;
+    setPromptError("");
+    setPromptDirty(false);
+    if (assessment.grading_prompt_snapshot) {
+      setEditingPrompt(assessment.grading_prompt_snapshot);
+      setShowEditPrompt(true);
+    } else {
+      // Legacy assessment created before snapshot-defaulting was deployed —
+      // fetch the system default so the editor is never shown empty.
+      setLoadingDefaultPrompt(true);
+      try {
+        const defaultBody = await getDefaultGradingPrompt();
+        setEditingPrompt(defaultBody);
+        setShowEditPrompt(true);
+      } catch (err: unknown) {
+        toast(err instanceof Error ? err.message : "Failed to load default prompt.", "error");
+      } finally {
+        setLoadingDefaultPrompt(false);
+      }
+    }
+  }
+
+  function closeEditPromptModal() {
+    if (promptDirty && !window.confirm("You have unsaved changes. Close anyway?")) return;
+    setShowEditPrompt(false);
+    setEditingPrompt("");
+    setPromptDirty(false);
+    setPromptError("");
+  }
+
+  async function handleResetPromptToDefault() {
+    setLoadingDefaultPrompt(true);
+    try {
+      const defaultBody = await getDefaultGradingPrompt();
+      setEditingPrompt(defaultBody);
+      setPromptDirty(true);
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Failed to load default prompt.", "error");
+    } finally {
+      setLoadingDefaultPrompt(false);
+    }
+  }
+
+  async function handleSavePrompt() {
+    if (!selectedAssessmentId) return;
+    setSavingPrompt(true);
+    setPromptError("");
+    try {
+      const updated = await updateAssessmentPrompt(selectedAssessmentId, editingPrompt);
+      setAssessments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      setPromptDirty(false);
+      setShowEditPrompt(false);
+      setEditingPrompt("");
+      toast("Grading prompt saved.");
+    } catch (err: unknown) {
+      setPromptError(err instanceof Error ? err.message : "Failed to save prompt.");
+    } finally {
+      setSavingPrompt(false);
     }
   }
 
@@ -537,12 +355,30 @@ export default function PublisherSAEPage() {
     }
   }
 
+  function openDeleteModal(student: SAEStudentRow) {
+    setDeleteTarget(student);
+    setShowDeleteModal(true);
+  }
+
+  async function handleDeleteStudent() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteStudent(deleteTarget.id);
+      setStudents((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+      toast(`${deleteTarget.display_name} removed.`);
+      setShowDeleteModal(false);
+      setDeleteTarget(null);
+    } catch (err: unknown) {
+      toast(err instanceof Error ? err.message : "Delete failed.", "error");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   function copyToClipboard(text: string, label: string) {
     navigator.clipboard.writeText(text).then(() => toast(`${label} copied.`));
   }
-
-  const isGrading = gradingPhase === "connecting" || gradingPhase === "grading";
-  const showChain = gradingPhase !== "idle";
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -623,6 +459,14 @@ export default function PublisherSAEPage() {
           >
             + New Assessment
           </button>
+          <button
+            onClick={openEditPromptModal}
+            disabled={!selectedAssessmentId || loadingDefaultPrompt}
+            title={!selectedAssessmentId ? "Select an assessment first" : "Edit the grading prompt for this assessment"}
+            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 whitespace-nowrap transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loadingDefaultPrompt ? "Loading…" : "Edit Prompt for Grading"}
+          </button>
         </div>
 
         {/* Search */}
@@ -694,6 +538,19 @@ export default function PublisherSAEPage() {
                             Submit for
                           </button>
                         )}
+                        <button
+                          onClick={() => openDeleteModal(s)}
+                          title="Delete student"
+                          className="rounded border border-red-200 bg-red-50 p-1.5 text-red-600 hover:bg-red-100"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                          </svg>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -797,7 +654,7 @@ export default function PublisherSAEPage() {
         </Modal>
       )}
 
-      {/* ── Submit-on-behalf modal (publisher only, with SSE progress) ─────── */}
+      {/* ── Submit-on-behalf modal ────────────────────────────────────────── */}
       {showSubmitModal && soStudent && (
         <Modal
           title={`Submit for ${soStudent.display_name}`}
@@ -805,112 +662,44 @@ export default function PublisherSAEPage() {
           wide
         >
           <form onSubmit={handleSubmitOnBehalf} className="space-y-4">
-            {gradingPhase === "idle" && (
-              <>
-                <p className="text-sm text-slate-600">
-                  You are submitting on behalf of{" "}
-                  <span className="font-semibold">{soStudent.display_name}</span>{" "}
-                  ({soStudent.student_code}). This action cannot be undone.
-                </p>
+            <p className="text-sm text-slate-600">
+              You are submitting on behalf of{" "}
+              <span className="font-semibold">{soStudent.display_name}</span>{" "}
+              ({soStudent.student_code}). Grading progress will appear in the panel at the
+              bottom-right of the screen — you can submit more students while this is grading.
+            </p>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Student Answer PDF</label>
-                  <input type="file" accept=".pdf" onChange={(e) => setHwFile(e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Student Answer PDF</label>
+              <input type="file" accept=".pdf" onChange={(e) => setHwFile(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium"
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Questions PDF</label>
-                  <input type="file" accept=".pdf" onChange={(e) => setWaFile(e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Questions PDF</label>
+              <input type="file" accept=".pdf" onChange={(e) => setWaFile(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium"
+              />
+            </div>
 
-                <div className="flex gap-3 pt-2">
-                  <button type="submit" disabled={!hwFile || !waFile}
-                    className="flex-1 rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
-                    Submit &amp; Grade
-                  </button>
-                  <button type="button" onClick={closeSubmitModal}
-                    className="flex-1 rounded-md border border-slate-300 py-2.5 text-sm text-slate-600 hover:bg-slate-50">
-                    Cancel
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* ── SSE progress view (shown once grading starts) ── */}
-            {gradingPhase !== "idle" && (
-              <div className="space-y-4">
-                {/* Provider chain */}
-                {showChain && (
-                  <div>
-                    <p className="text-xs font-medium text-slate-500 mb-2">Provider Chain</p>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {nodes.map((node, i) => (
-                        <div key={node.label} className="flex items-center gap-1.5">
-                          <ProviderNodeCard node={node} />
-                          {i < nodes.length - 1 && (
-                            <span className={`text-base font-light transition-colors ${
-                              node.status.kind === "failed" ? "text-red-300" : "text-slate-300"
-                            }`}>→</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Status message */}
-                {isGrading && (
-                  <p className="text-xs text-slate-500 flex items-center gap-2">
-                    <span className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin inline-block" />
-                    {gradingPhase === "connecting" ? "Connecting to grading service…" : "Grading in progress — this may take ~30s…"}
-                  </p>
-                )}
-
-                {gradingPhase === "error" && (
-                  <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    <strong>Grading failed.</strong> {submitError}
-                    <div className="mt-2 flex gap-2">
-                      <button type="submit" disabled={!hwFile || !waFile}
-                        className="rounded-md bg-red-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-red-700">
-                        Retry
-                      </button>
-                      <button type="button" onClick={closeSubmitModal}
-                        className="rounded-md border border-red-300 px-4 py-1.5 text-xs text-red-700 hover:bg-red-100">
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Live log */}
-                {log.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">Live Log</p>
-                    <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 font-mono text-xs space-y-0.5 max-h-36 overflow-y-auto">
-                      {log.map((entry, i) => (
-                        <div key={i} className={`flex gap-2 ${
-                          entry.level === "error"   ? "text-red-600"
-                          : entry.level === "warn"  ? "text-orange-600"
-                          : entry.level === "success" ? "text-green-600"
-                          : "text-slate-600"
-                        }`}>
-                          <span className="text-slate-400 shrink-0">{entry.ts}</span>
-                          <span>{entry.text}</span>
-                        </div>
-                      ))}
-                      <div ref={logEndRef} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={!hwFile || !waFile || isSubmitting}
+                className="flex-1 rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Starting…" : "Submit & Grade"}
+              </button>
+              <button type="button" onClick={closeSubmitModal}
+                className="flex-1 rounded-md border border-slate-300 py-2.5 text-sm text-slate-600 hover:bg-slate-50">
+                Cancel
+              </button>
+            </div>
           </form>
         </Modal>
       )}
+
       {/* ── New Assessment modal ─────────────────────────────────────────── */}
       {showNewAssessment && (
         <Modal
@@ -939,6 +728,8 @@ export default function PublisherSAEPage() {
                 className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
               />
             </div>
+            {/* SAE-only: avatar linking in assessment creation disabled.
+            Restore by un-commenting this block and the avatarList/newAssessmentAvatarId state above.
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Linked avatar (optional)</label>
               <select
@@ -955,33 +746,7 @@ export default function PublisherSAEPage() {
                 Linking an avatar snapshots its grading prompt at creation. You can change this later from the avatar&apos;s page.
               </p>
             </div>
-            {!newAssessmentAvatarId && (
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Grading prompt override (optional)</label>
-                <select
-                  value={newAssessmentPromptId}
-                  onChange={(e) => setNewAssessmentPromptId(e.target.value)}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-                >
-                  <option value="">System default</option>
-                  {gradingPrompts.filter((p) => p.is_system).length > 0 && (
-                    <optgroup label="System Templates">
-                      {gradingPrompts.filter((p) => p.is_system).map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-                  {gradingPrompts.filter((p) => !p.is_system).length > 0 && (
-                    <optgroup label="My Prompts">
-                      {gradingPrompts.filter((p) => !p.is_system).map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
-                <p className="mt-1 text-xs text-slate-400">The selected prompt is snapshotted at creation — all students in this assessment are graded against the same frozen rubric.</p>
-              </div>
-            )}
+            */}
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
@@ -1001,6 +766,104 @@ export default function PublisherSAEPage() {
           </form>
         </Modal>
       )}
+
+      {/* ── Edit Grading Prompt modal ─────────────────────────────────────── */}
+      {showEditPrompt && selectedAssessmentId && (
+        <Modal
+          title={`Grading Prompt — ${assessments.find((a) => a.id === selectedAssessmentId)?.name ?? ""}`}
+          onClose={closeEditPromptModal}
+          wide
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-slate-600">
+              This prompt is sent to the AI for every submission graded under this assessment.
+              Edits take effect on the next submission — past grades are not changed.
+            </p>
+
+            <textarea
+              value={editingPrompt}
+              onChange={(e) => {
+                setEditingPrompt(e.target.value);
+                setPromptDirty(true);
+              }}
+              rows={20}
+              spellCheck={false}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs leading-relaxed focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
+            />
+
+            <p className="text-right text-xs text-slate-400">
+              {editingPrompt.length.toLocaleString()} characters
+            </p>
+
+            {promptError && (
+              <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {promptError}
+              </p>
+            )}
+
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <button
+                type="button"
+                onClick={handleResetPromptToDefault}
+                disabled={loadingDefaultPrompt || savingPrompt}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors"
+              >
+                {loadingDefaultPrompt ? "Loading…" : "Reset to default"}
+              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeEditPromptModal}
+                  disabled={savingPrompt}
+                  className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePrompt}
+                  disabled={savingPrompt || !promptDirty || editingPrompt.trim().length < 50}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                >
+                  {savingPrompt ? "Saving…" : "Save Prompt"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Delete student modal ─────────────────────────────────────────── */}
+      {showDeleteModal && deleteTarget && (
+        <Modal title="Delete Student Slot" onClose={() => { setShowDeleteModal(false); setDeleteTarget(null); }}>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Permanently delete <span className="font-semibold">{deleteTarget.display_name}</span>{" "}
+              (<span className="font-mono text-xs">{deleteTarget.student_code}</span>)?
+              Their invitation link will become invalid and this cannot be undone.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={handleDeleteStudent}
+                disabled={deleting}
+                className="flex-1 rounded-md bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowDeleteModal(false); setDeleteTarget(null); }}
+                className="flex-1 rounded-md border border-slate-300 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Floating active-grading panel — renders itself only when there are jobs */}
+      <ActiveGradingJobs />
     </div>
   );
 }

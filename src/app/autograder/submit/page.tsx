@@ -171,8 +171,8 @@ export default function AutograderSubmitPage() {
   const [createdCode, setCreatedCode] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
 
-  // Avatar override (optional — enables per-avatar grading prompt)
-  const [avatarId, setAvatarId] = useState("");
+  // SAE-only: avatar override disabled — grading prompt is now always the system default.
+  // const [avatarId, setAvatarId] = useState("");
 
   // Step 2 — files
   const [handwrittenFile, setHandwrittenFile] = useState<File | null>(null);
@@ -353,7 +353,8 @@ export default function AutograderSubmitPage() {
     formData.append("request_id", requestId);
     formData.append("student_answer", handwrittenFile);
     formData.append("webassign_pdf", webassignFile);
-    if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
+    // SAE-only: avatar_id not sent; backend always uses hardcoded grading prompt
+    // if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
 
     try {
       const resp = await fetch(`${API}/api/autograder/grade`, {
@@ -393,7 +394,8 @@ export default function AutograderSubmitPage() {
     formData.append("request_id", requestId);
     formData.append("student_answer", handwrittenFile!);
     formData.append("webassign_pdf", webassignFile!);
-    if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
+    // SAE-only: avatar_id not sent; backend always uses hardcoded grading prompt
+    // if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
     try {
       const resp = await fetch(`${API}/api/autograder/grade`, {
         method: "POST",
@@ -591,7 +593,8 @@ export default function AutograderSubmitPage() {
           )}
         </div>
 
-        {/* ── Optional: Avatar ID ── */}
+        {/* SAE-only: Avatar Override section disabled — grading always uses hardcoded system prompt. */}
+        {/* Restore by un-commenting this block and the avatarId state above.
         {resolved && (
           <div className="mt-4 rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -614,6 +617,7 @@ export default function AutograderSubmitPage() {
             </div>
           </div>
         )}
+        */}
 
         {/* ── Step 2: Files ── */}
         {resolved && (

@@ -482,6 +482,31 @@ function ResultView({
     }
   }
 
+  // ── Feedback PDF export ───────────────────────────────────────────────────
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleDownloadPDF() {
+    if (!reportRef.current) return;
+    setExporting(true);
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const filename = `feedback_${enrollment.student_code}_submission_${submission.submission_number ?? submission.id}.pdf`;
+      await html2pdf()
+        .set({
+          margin: [12, 12, 12, 12],
+          filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(reportRef.current)
+        .save();
+    } finally {
+      setExporting(false);
+    }
+  }
+
   // ── Draggable divider ─────────────────────────────────────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
   const leftPanelRef = useRef<HTMLDivElement>(null);
@@ -534,7 +559,7 @@ function ResultView({
 
   // ── Feedback content ──────────────────────────────────────────────────────
   const feedbackContent = (
-    <div className="px-6 py-5 space-y-5">
+    <div ref={reportRef} className="px-6 py-5 space-y-5">
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
           Your Results
@@ -693,6 +718,13 @@ function ResultView({
             }`}
           >
             Questions PDF
+          </button>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={exporting}
+            className="rounded-md px-3 py-1 text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+          >
+            {exporting ? "Generating…" : "Download Feedback ↓"}
           </button>
         </div>
       </header>

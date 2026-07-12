@@ -148,7 +148,8 @@ export default function SAESetupPage() {
         username.trim(),
         password,
         isFirstUse ? country : "",
-        isFirstUse ? effectiveCurriculum : ""
+        isFirstUse ? effectiveCurriculum : "",
+        isExistingAccount,
       );
       clearAuthSession();
       localStorage.setItem("auth_token", res.access_token);
@@ -262,6 +263,34 @@ export default function SAESetupPage() {
               : "Choose a username and password — you will use these to log in for all future sessions. No real name is required."}
           </p>
         </div>
+
+        {/* Mode toggle — shown only on first use so returning students see it immediately */}
+        {isFirstUse && (
+          <div className="mb-4 flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => { setIsExistingAccount(false); setFieldError(""); }}
+              className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+                !isExistingAccount
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              New Account
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsExistingAccount(true); setFieldError(""); }}
+              className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+                isExistingAccount
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              I Already Have an Account
+            </button>
+          </div>
+        )}
 
         {/* Form card */}
         <div className="rounded-xl border bg-white p-8 shadow-sm">
@@ -414,34 +443,6 @@ export default function SAESetupPage() {
           </p>
         </div>
 
-        {/* Toggle between new-account and existing-account modes (first use only) */}
-        {isFirstUse && (
-          <p className="mt-4 text-center text-xs text-slate-500">
-            {isExistingAccount ? (
-              <>
-                New student?{" "}
-                <button
-                  type="button"
-                  onClick={() => { setIsExistingAccount(false); setFieldError(""); }}
-                  className="text-blue-600 hover:underline"
-                >
-                  Create an account instead
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  onClick={() => { setIsExistingAccount(true); setFieldError(""); }}
-                  className="text-blue-600 hover:underline"
-                >
-                  Log in to gain access
-                </button>
-              </>
-            )}
-          </p>
-        )}
       </div>
     </main>
   );

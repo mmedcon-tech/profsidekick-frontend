@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { tr } from "@/lib/v2/i18n"
@@ -25,7 +25,6 @@ import { useDraggable } from "@/hooks/useDraggable"
 import { useAssistantAvatar } from "@/hooks/useAssistantAvatar"
 import {
   getQuickNavActions,
-  resolveNavDestination,
   type NavDestination,
 } from "@/lib/navigation"
 
@@ -73,48 +72,10 @@ const uid = () => `m${++_id}`
 
 type Mode = "chat" | "call"
 
-function getReply(input: string, lang: "en" | "ar", userName: string): string {
-  const q = input.toLowerCase()
-  const has = (...w: string[]) => w.some((x) => q.includes(x))
-
-  if (has("hello", "hi", "مرحبا", "أهلا", "اهلا")) {
-    return lang === "ar"
-      ? `أهلًا ${userName}، أنا مساعدك في منصة MyOS. كيف يمكنني مساعدتك؟`
-      : `Hello ${userName}, I'm your MyOS assistant. How can I help you today?`
-  }
-  if (has("navigate", "go to", "where", "اذهب", "انتقل", "أين")) {
-    return lang === "ar"
-      ? "يمكنك التنقل باستخدام القائمة الجانبية على اليسار. أي قسم تبحث عنه؟"
-      : "You can navigate using the sidebar on the left. Which section are you looking for?"
-  }
-  if (has("course", "دورة", "تدريب")) {
-    return lang === "ar"
-      ? "يمكنك الوصول إلى دوراتك من قائمة «الدورات» في الشريط الجانبي. هل تريد بدء جلسة جديدة؟"
-      : "You can access your courses from the Courses section in the sidebar. Would you like to start a new session?"
-  }
-  if (has("session", "جلسة")) {
-    return lang === "ar"
-      ? "لبدء جلسة، انتقل إلى الدورات، واختر دورة، ثم اضغط «بدء الجلسة». سيفتح واجهة المحاضر الحي."
-      : "To start a session, go to Courses, pick a course, then tap Start Session. The live avatar interface will open."
-  }
-  if (has("avatar", "مساعد")) {
-    return lang === "ar"
-      ? "يمكنك تخصيص المساعد الافتراضي من إعدادات البرنامج. الناشر يمكنه اختيار الصوت والشخصية والنموذج."
-      : "You can customise the avatar from Program settings. Publishers can choose the voice, persona, and 3D model."
-  }
-  if (has("help", "مساعدة", "ساعد")) {
-    return lang === "ar"
-      ? "أنا هنا لمساعدتك في التنقل والتدريب وفهم المحتوى. ماذا تحتاج؟"
-      : "I'm here to help with navigation, training, and understanding content. What do you need?"
-  }
-  return lang === "ar"
-    ? "يمكنني مساعدتك في التنقل بالمنصة أو الإجابة على أسئلتك. اسألني أي شيء."
-    : "I can help you navigate the platform or answer your questions. Ask me anything."
-}
-
 export function FloatingAssistant() {
   const { user } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   // The active avatar (publisher's own / subscriber's subscribed / default) drives
   // the 3D model, the voice, and the language the assistant speaks.
   const { avatar } = useAssistantAvatar()
@@ -199,30 +160,37 @@ export function FloatingAssistant() {
     }
   }, [assistantOpen, mode, stopSpeaking, stopListening])
 
-  function reply(text: string) {
+  async function reply(text: string) {
     setTyping(true)
-    setTimeout(() => {
-      // Role-aware navigation: resolve the intent to a real route the current
-      // user can access, then navigate there. Falls back to a normal answer.
-      const dest = resolveNavDestination(user?.role, text)
-      let answer: string
-      if (dest) {
-        router.push(dest.route)
-        answer =
-          lang === "ar"
-            ? `جاري الانتقال إلى ${dest.label.ar}...`
-            : `Navigating to ${dest.label.en}...`
-      } else {
-        answer = getReply(text, lang, userName)
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || ""
+      const history = messages.slice(-8).map((m) => ({ role: m.role, text: m.text }))
+      const res = await fetch(`${backendUrl}/api/assistant/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history, currentPage: pathname }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.detail || data.error || `Server error ${res.status}`)
       }
-
+      const answer: string =
+        data.reply?.trim() ||
+        (lang === "ar" ? "عذرًا، لم أتلقَّ ردًّا." : "Sorry, I didn't get a response.")
       setMessages((m) => [...m, { id: uid(), role: "assistant", text: answer }])
-      setTyping(false)
       if (mode === "call" && !mutedRef.current) {
         setCaption(answer)
         speak(answer)
       }
-    }, 800)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ""
+      const fallback = msg
+        ? (lang === "ar" ? `خطأ: ${msg}` : `Error: ${msg}`)
+        : (lang === "ar" ? "عذرًا، تعذّر الاتصال بالمساعد." : "Sorry, couldn't reach the assistant.")
+      setMessages((m) => [...m, { id: uid(), role: "assistant", text: fallback }])
+    } finally {
+      setTyping(false)
+    }
   }
 
   function navigateTo(dest: NavDestination) {

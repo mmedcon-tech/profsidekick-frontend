@@ -32,29 +32,35 @@ function LoginForm() {
           return;
         }
 
+        // SAE-only: redirect all roles to their SAE page after login
         if (user.role === 'admin') {
-          router.push('/admin/dashboard');
+          router.push('/admin/sae');
         } else if (user.role === 'subscriber') {
-          try {
-            // Check if first-time login (no courses)
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${apiUrl}/api/courses`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            const courses = await res.json();
-            if (mounted) {
-              if (Array.isArray(courses) && courses.length === 0) {
-                router.push('/subscriber/marketplace');
-              } else {
-                router.push('/subscriber/dashboard');
-              }
-            }
-          } catch (e) {
-            if (mounted) router.push('/subscriber/dashboard');
-          }
+          router.push('/sae/exam');
         } else {
-          router.push('/publisher/dashboard');
+          router.push('/publisher/sae');
         }
+        // OLD role-based dashboard/marketplace redirect (commented out for reference):
+        // if (user.role === 'admin') {
+        //   router.push('/admin/dashboard');
+        // } else if (user.role === 'subscriber') {
+        //   try {
+        //     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        //     const res = await fetch(`${apiUrl}/api/courses`, { headers: { Authorization: `Bearer ${token}` } });
+        //     const courses = await res.json();
+        //     if (mounted) {
+        //       if (Array.isArray(courses) && courses.length === 0) {
+        //         router.push('/subscriber/marketplace');
+        //       } else {
+        //         router.push('/subscriber/dashboard');
+        //       }
+        //     }
+        //   } catch (e) {
+        //     if (mounted) router.push('/subscriber/dashboard');
+        //   }
+        // } else {
+        //   router.push('/publisher/dashboard');
+        // }
       }
     };
 

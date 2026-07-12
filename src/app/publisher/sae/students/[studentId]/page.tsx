@@ -90,6 +90,29 @@ function FeedbackPanel({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [promptExpanded, setPromptExpanded] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  async function handleDownloadPDF() {
+    if (!reportRef.current) return;
+    setExporting(true);
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const filename = `feedback_${detail.student_code}_submission_${submission.submission_number ?? submission.id}.pdf`;
+      await html2pdf()
+        .set({
+          margin: [12, 12, 12, 12],
+          filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(reportRef.current)
+        .save();
+    } finally {
+      setExporting(false);
+    }
+  }
 
   // Reset edit state when the displayed submission changes
   useEffect(() => {
@@ -136,7 +159,7 @@ function FeedbackPanel({
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-6 py-5 space-y-5">
+      <div ref={reportRef} className="px-6 py-5 space-y-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
@@ -168,35 +191,44 @@ function FeedbackPanel({
           </div>
 
           {/* Edit controls — only for the active (most recent) submission */}
-          {isActive && (
-            <>
-              {!editing ? (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="shrink-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  Edit Grades
-                </button>
-              ) : (
-                <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={handleDownloadPDF}
+              disabled={exporting}
+              className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+            >
+              {exporting ? "Generating…" : "Download Feedback ↓"}
+            </button>
+            {isActive && (
+              <>
+                {!editing ? (
                   <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                    onClick={() => setEditing(true)}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                   >
-                    {saving ? "Saving…" : "Save"}
+                    Edit Grades
                   </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    disabled={saving}
-                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+                ) : (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                    >
+                      {saving ? "Saving…" : "Save"}
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={saving}
+                      className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {saveError && (
