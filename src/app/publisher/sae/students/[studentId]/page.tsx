@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import SAEPdfViewer from "@/components/sae/SAEPdfViewer";
 import {
   fetchPublisherStudentFile,
+  fetchPublisherStudentTranscript,
   getStudentDetail,
   updateSubmission,
 } from "@/lib/sae-api";
@@ -14,8 +15,11 @@ import type {
   SAEStudentDetail,
   SAESubmissionResultPublisher,
 } from "@/types/sae";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
-type ActiveFile = "handwritten" | "webassign";
+type ActiveView = "handwritten" | "webassign" | "transcript";
 
 const DIVIDER_STORAGE_KEY = "sae_review_divider_pct_v2";
 const DEFAULT_DIVIDER_PCT = 50;
@@ -267,6 +271,31 @@ function FeedbackPanel({
                       Review: {q.human_review_reason || "Required."}
                     </p>
                   )}
+
+                  {submission.comments
+                    ?.filter((comment) => comment.question_id === q.id)
+                    .map((comment) => (
+                      <div
+                        key={comment.id}
+                        className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                          Student Comment
+                        </p>
+
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+                          {comment.comment}
+                        </p>
+
+                        <p className="mt-2 text-xs text-slate-500">
+                          Submitted{" "}
+                          {new Date(comment.created_at).toLocaleString("en-US", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </p>
+                      </div>
+                    ))}
                 </div>
               ))}
             </div>
@@ -289,18 +318,58 @@ export default function PublisherStudentReviewPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  // ── PDF toggle ─────────────────────────────────────────────────────────────
-  const [pdfVisible, setPdfVisible] = useState(false);
-  const [activeFile, setActiveFile] = useState<ActiveFile>("handwritten");
+  // ── View file toggle ─────────────────────────────────────────────────────────────
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [activeView, setActiveView] = useState<ActiveView>("handwritten");
 
-  function handlePdfButton(file: ActiveFile) {
-    if (pdfVisible && activeFile === file) {
-      setPdfVisible(false);
-    } else {
-      setActiveFile(file);
-      setPdfVisible(true);
+  const [transcriptText, setTranscriptText] = useState("");
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [transcriptError, setTranscriptError] = useState("");
+
+  function handleViewButton(view: ActiveView) {
+    if (viewerVisible && activeView === view) {
+      setViewerVisible(false);
+      return;
     }
+
+    setActiveView(view);
+    setViewerVisible(true);
   }
+
+  useEffect(() => {
+    if (!viewerVisible || activeView !== "transcript") return;
+
+    let cancelled = false;
+
+    setTranscriptLoading(true);
+    setTranscriptError("");
+
+    fetchPublisherStudentTranscript(studentId)
+      .then((text) => {
+        if (!cancelled) {
+          setTranscriptText(text);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setTranscriptError(
+            err instanceof Error
+              ? err.message
+              : "Could not load transcript."
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setTranscriptLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, 
+  [studentId, activeView, viewerVisible]);
 
   // ── Draggable divider ──────────────────────────────────────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
@@ -361,8 +430,12 @@ export default function PublisherStudentReviewPage() {
   }, [studentId]);
 
   const fetchActivePdf = useCallback(
-    () => fetchPublisherStudentFile(studentId, activeFile),
-    [studentId, activeFile]
+    () =>
+      fetchPublisherStudentFile(
+        studentId,
+        activeView as "handwritten" | "webassign"
+      ),
+    [studentId, activeView]
   );
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -415,24 +488,36 @@ export default function PublisherStudentReviewPage() {
         {hasSubmission && (
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => handlePdfButton("handwritten")}
+              onClick={() => handleViewButton("handwritten")}
               className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                pdfVisible && activeFile === "handwritten"
+                viewerVisible && activeView === "handwritten"
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
               Handwritten Solutions
             </button>
+
             <button
-              onClick={() => handlePdfButton("webassign")}
+              onClick={() => handleViewButton("webassign")}
               className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                pdfVisible && activeFile === "webassign"
+                viewerVisible && activeView === "webassign"
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
               WebAssign Questions
+            </button>
+
+            <button
+              onClick={() => handleViewButton("transcript")}
+              className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                viewerVisible && activeView === "transcript"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              Transcript
             </button>
           </div>
         )}
@@ -449,7 +534,7 @@ export default function PublisherStudentReviewPage() {
             </button>
           </div>
         </div>
-      ) : pdfVisible ? (
+      ) : viewerVisible ? (
         /* Split pane */
         <div ref={containerRef} className="flex flex-1 min-h-0 select-none">
           <div ref={leftPanelRef} style={{ width: `${leftPct}%` }} className="flex flex-col min-h-0 min-w-0">
@@ -473,15 +558,70 @@ export default function PublisherStudentReviewPage() {
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <SAEPdfViewer
-              key={`${studentId}-${activeFile}`}
-              fetchPdf={fetchActivePdf}
-              label={
-                activeFile === "handwritten"
-                  ? (submission.handwritten_filename ?? "Handwritten Solutions")
-                  : (submission.webassign_filename ?? "WebAssign Questions")
-              }
-            />
+            {activeView === "transcript" ? (
+              <div className="h-full overflow-y-auto bg-slate-50 p-6">
+                <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
+                  OCR Transcript
+                </p>
+
+                <h2 className="mt-1 text-xl font-bold text-slate-900">
+                  Handwritten Transcript
+                </h2>
+
+                {transcriptLoading && (
+                  <p className="mt-4 text-sm text-slate-500">
+                    Loading transcript…
+                  </p>
+                )}
+
+                {transcriptError && (
+                  <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {transcriptError}
+                  </div>
+                )}
+
+                {!transcriptLoading && !transcriptError && (
+                  <div className="mt-4 rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-800 shadow-sm">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        table: (props) => (
+                          <table
+                            className="my-4 w-full border-collapse border border-slate-300"
+                            {...props}
+                          />
+                        ),
+                        th: (props) => (
+                          <th
+                            className="border border-slate-300 bg-slate-100 px-2 py-1 text-left"
+                            {...props}
+                          />
+                        ),
+                        td: (props) => (
+                          <td
+                            className="border border-slate-300 px-2 py-1"
+                            {...props}
+                          />
+                        ),
+                      }}
+                    >
+                      {transcriptText || "No transcript available."}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <SAEPdfViewer
+                key={`${studentId}-${activeView}`}
+                fetchPdf={fetchActivePdf}
+                label={
+                  activeView === "handwritten"
+                    ? submission.handwritten_filename ?? "Handwritten Solutions"
+                    : submission.webassign_filename ?? "WebAssign Questions"
+                }
+              />
+            )}
           </div>
         </div>
       ) : (

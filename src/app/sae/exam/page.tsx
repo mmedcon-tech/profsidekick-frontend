@@ -3,28 +3,31 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  fetchMyDraftFile,
   fetchMyFile,
   getMyProfile,
   getMySubmission,
   gradeDraftSubmission,
+  submitQuestionComment,
   transcribeExam,
 } from "@/lib/sae-api";
 import SAEPdfViewer from "@/components/sae/SAEPdfViewer";
-import type { SAEStudentMe, SAESubmissionResult, SAEGradingQuestion, SAEGradingBasis, SAETranscribeResponse } from "@/types/sae";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
+import type { SAEStudentMe, SAESubmissionResult, SAEGradingQuestion, SAEGradingBasis} from "@/types/sae";
 
 type PageState =
   | { kind: "loading" }
   | { kind: "unauthorized"; reason: string }
   | { kind: "ready"; profile: SAEStudentMe }
-  | { kind: "already_submitted"; profile: SAEStudentMe; submission: SAESubmissionResult }
-  | { kind: "transcribing"; profile: SAEStudentMe }
-  | { kind: "preview"; profile: SAEStudentMe; draft: SAETranscribeResponse }
+  | {
+      kind: "already_submitted";
+      profile: SAEStudentMe;
+      submission: SAESubmissionResult;
+    }
   | { kind: "submitting"; profile: SAEStudentMe }
-  | { kind: "result"; profile: SAEStudentMe; submission: SAESubmissionResult };
+  | {
+      kind: "result";
+      profile: SAEStudentMe;
+      submission: SAESubmissionResult;
+    };
 
 const STUDENT_DIVIDER_KEY = "sae_student_divider_pct";
 const DEFAULT_DIVIDER_PCT = 50;
@@ -86,13 +89,14 @@ export default function SAEExamPage() {
     if (!handwrittenFile || !webassignFile) return;
 
     const profile = (pageState as { profile: SAEStudentMe }).profile;
-    setPageState({ kind: "transcribing", profile });
+    setPageState({ kind: "submitting", profile });
 
     try {
-      const draft = await transcribeExam(handwrittenFile, webassignFile);
-      setPageState({ kind: "preview", profile, draft });
+      await transcribeExam(handwrittenFile, webassignFile);
+      const submission = await gradeDraftSubmission();
+      setPageState({ kind: "result", profile, submission });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Transcription failed.";
+      const msg = err instanceof Error ? err.message : "Submission failed.";
       setSubmitError(msg);
       setPageState({ kind: "ready", profile });
     }
@@ -122,48 +126,19 @@ export default function SAEExamPage() {
     return <ResultView profile={profile} submission={submission} />;
   }
 
-  if (pageState.kind === "transcribing" || pageState.kind === "submitting") {
-    const isTranscribing = pageState.kind === "transcribing";
-
+  if (pageState.kind === "submitting") {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin" />
           <p className="text-slate-700 font-medium">
-            {isTranscribing ? "Transcribing your exam…" : "Grading your exam…"}
+            Transcribing and grading your exam…
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            {isTranscribing
-              ? "This may take a little longer while we prepare the preview."
-              : "This may take up to 30 seconds."}
+            Please keep this page open. This may take a few minutes. Your feedback will appear automatically.
           </p>
         </div>
       </main>
-    );
-  }
-
-  if (pageState.kind === "preview") {
-  return (
-      <TranscriptPreviewView
-        profile={pageState.profile}
-        draft={pageState.draft}
-        onBack={() => setPageState({ kind: "ready", profile: pageState.profile })}
-        onSubmitForGrading={async () => {
-          const profile = pageState.profile;
-          setSubmitError("");
-          setPageState({ kind: "submitting", profile });
-
-          try {
-            const submission = await gradeDraftSubmission();
-            setPageState({ kind: "result", profile, submission });
-          } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Grading failed.";
-            setSubmitError(msg);
-            setPageState({ kind: "preview", profile, draft: pageState.draft });
-          }
-        }}
-        submitError={submitError}
-      />
     );
   }
 
@@ -243,133 +218,6 @@ export default function SAEExamPage() {
   );
 }
 
-function TranscriptPreviewView({
-  profile,
-  draft,
-  onBack,
-  onSubmitForGrading,
-  submitError,
-}: {
-  profile: SAEStudentMe;
-  draft: SAETranscribeResponse;
-  onBack: () => void;
-  onSubmitForGrading: () => Promise<void>;
-  submitError: string;
-}) {
-  const [activeFile, setActiveFile] = useState<"handwritten" | "webassign">("handwritten");
-
-  const activeTranscript =
-    activeFile === "handwritten"
-      ? draft.transcript.handwritten
-      : draft.transcript.webassign;
-
-  return (
-    <main className="min-h-screen bg-slate-50">
-      <header className="flex h-12 items-center gap-3 border-b border-slate-200 bg-white px-4">
-        <p className="shrink-0 text-xs font-medium uppercase tracking-wider text-blue-600">
-          Self Assessment Exam
-        </p>
-        <span className="text-slate-300">|</span>
-        <div className="min-w-0 flex-1">
-          <span className="truncate text-sm font-semibold text-slate-800">
-            {profile.display_name}
-          </span>
-          <span className="ml-2 font-mono text-xs text-slate-500">
-            {profile.student_code}
-          </span>
-        </div>
-
-        <button
-          onClick={onBack}
-          className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-200"
-        >
-          Back
-        </button>
-        <button
-          onClick={onSubmitForGrading}
-          className="rounded-md bg-blue-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
-        >
-          Submit for Grading
-        </button>
-      </header>
-
-      {submitError && (
-        <div className="mx-4 mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {submitError}
-        </div>
-      )}
-
-      <div className="grid h-[calc(100vh-3rem)] grid-cols-1 gap-0 lg:grid-cols-2">
-        <section className="flex min-h-0 flex-col border-r border-slate-200 bg-white">
-          <div className="flex items-center gap-2 border-b border-slate-200 p-3">
-            <button
-              onClick={() => setActiveFile("handwritten")}
-              className={`rounded-md px-3 py-1 text-xs font-medium ${
-                activeFile === "handwritten"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              Handwritten Solutions
-            </button>
-            <button
-              onClick={() => setActiveFile("webassign")}
-              className={`rounded-md px-3 py-1 text-xs font-medium ${
-                activeFile === "webassign"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              WebAssign Questions
-            </button>
-          </div>
-
-          <div className="min-h-0 flex-1">
-            <SAEPdfViewer
-              key={activeFile}
-              fetchPdf={() => fetchMyDraftFile(activeFile)}
-              label={
-                activeFile === "handwritten"
-                  ? "Draft Handwritten Solutions"
-                  : "Draft WebAssign Questions"
-              }
-            />
-          </div>
-        </section>
-
-        <section className="min-h-0 overflow-y-auto bg-slate-50 p-6">
-          <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
-            Transcript Preview
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-slate-900">
-            {activeFile === "handwritten"
-              ? "Handwritten Transcript"
-              : "WebAssign Transcript"}
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Review the AI transcription. For this demo, grading still uses the original uploaded PDFs.
-          </p>
-
-          {activeTranscript?.error && (
-            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              Transcription error: {activeTranscript.error}
-            </div>
-          )}
-
-          <div className="mt-4 max-h-[70vh] overflow-auto rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-800 shadow-sm">
-            <ReactMarkdown
-              remarkPlugins={[remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-            >
-              {activeTranscript?.latex || "No transcript returned."}
-            </ReactMarkdown>
-          </div>
-        </section>
-      </div>
-    </main>
-  );
-}
-
 // ── Result view ───────────────────────────────────────────────────────────────
 
 function ResultView({
@@ -385,6 +233,28 @@ function ResultView({
   const rawMax = rj?.raw_max_score as number | undefined;
   const overallFeedback = rj?.overall_feedback as string | undefined;
   const reviewReasons = (rj?.submission_review_reasons ?? []) as string[];
+
+  const [openCommentQuestion, setOpenCommentQuestion] =
+    useState<string | null>(null);
+
+  const [commentTexts, setCommentTexts] =
+    useState<Record<string, string>>({});
+
+  const [submittedComments, setSubmittedComments] =
+    useState<Record<string, string>>(() =>
+      Object.fromEntries(
+        (submission.comments ?? []).map((comment) => [
+          comment.question_id,
+          comment.comment,
+        ])
+      )
+    );
+
+  const [savingCommentQuestion, setSavingCommentQuestion] =
+    useState<string | null>(null);
+
+  const [commentErrors, setCommentErrors] =
+    useState<Record<string, string>>({});
 
   // ── PDF toggle ───────────────────────────────────────────────────────────
   const [pdfVisible, setPdfVisible] = useState(false);
@@ -445,6 +315,45 @@ function ResultView({
   }
 
   const fetchActivePdf = useCallback(() => fetchMyFile(activeFile), [activeFile]);
+
+  async function handleSubmitComment(questionId: string) {
+    const comment = commentTexts[questionId]?.trim();
+
+    if (!comment) return;
+
+    setSavingCommentQuestion(questionId);
+
+    setCommentErrors((current) => ({
+      ...current,
+      [questionId]: "",
+    }));
+
+    try {
+      const saved = await submitQuestionComment(questionId, comment);
+
+      setSubmittedComments((current) => ({
+        ...current,
+        [saved.question_id]: saved.comment,
+      }));
+
+      setCommentTexts((current) => ({
+        ...current,
+        [saved.question_id]: saved.comment,
+      }));
+
+      setOpenCommentQuestion(null);
+    } catch (error) {
+      setCommentErrors((current) => ({
+        ...current,
+        [questionId]:
+          error instanceof Error
+            ? error.message
+            : "Could not submit comment.",
+      }));
+    } finally {
+      setSavingCommentQuestion(null);
+    }
+  }
 
   // ── Feedback content (shared between split and full-width layouts) ────────
   const feedbackContent = (
@@ -527,6 +436,131 @@ function ResultView({
                     Instructor review: {q.human_review_reason || "Review required."}
                   </p>
                 )}
+
+                <div
+                  data-html2canvas-ignore="true"
+                  className="mt-4 border-t border-slate-200 pt-4"
+                >
+                  {!submittedComments[q.id] ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenCommentQuestion((current) =>
+                          current === q.id ? null : q.id
+                        )
+                      }
+                      className="rounded-md border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                    >
+                      Send Comment
+                    </button>
+                  ) : openCommentQuestion !== q.id ? (
+                    <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                            Your Comment
+                          </p>
+
+                          <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+                            {submittedComments[q.id]}
+                          </p>
+
+                          <p className="mt-2 text-xs text-blue-700">
+                            Submitted for instructor review
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCommentTexts((current) => ({
+                              ...current,
+                              [q.id]: submittedComments[q.id],
+                            }));
+
+                            setOpenCommentQuestion(q.id);
+                          }}
+                          className="text-sm font-medium text-blue-700 hover:text-blue-900"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {openCommentQuestion === q.id && (
+                    <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-sm font-medium text-slate-800">
+                        Comment about Question {q.id}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        Explain which part of the grading you would like the instructor to
+                        review.
+                      </p>
+
+                      <textarea
+                        rows={4}
+                        maxLength={2000}
+                        value={commentTexts[q.id] ?? ""}
+                        onChange={(event) =>
+                          setCommentTexts((current) => ({
+                            ...current,
+                            [q.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Explain why you think this question should be reviewed..."
+                        className="mt-3 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-xs text-slate-400">
+                          {(commentTexts[q.id] ?? "").length}/2000
+                        </p>
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={savingCommentQuestion === q.id}
+                            onClick={() => {
+                              setOpenCommentQuestion(null);
+
+                              setCommentErrors((current) => ({
+                                ...current,
+                                [q.id]: "",
+                              }));
+                            }}
+                            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Cancel
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={
+                              !commentTexts[q.id]?.trim() ||
+                              savingCommentQuestion === q.id
+                            }
+                            onClick={() => handleSubmitComment(q.id)}
+                            className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                          >
+                            {savingCommentQuestion === q.id
+                              ? "Submitting..."
+                              : submittedComments[q.id]
+                                ? "Update Comment"
+                                : "Submit Comment"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {commentErrors[q.id] && (
+                        <p className="mt-2 text-sm text-red-600">
+                          {commentErrors[q.id]}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

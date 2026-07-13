@@ -34,17 +34,25 @@ export interface SAESetupResponse {
   display_name: string;
 }
 
+export interface SAEQuestionComment {
+  id: string;
+  question_id: string;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+}
+
 /** Student-facing submission result. result_json is always the effective (possibly edited) grading. */
 export interface SAESubmissionResult {
   id: string;
   score: number | null;
-  overall_confidence: string | null;
   review_required: boolean;
   result_json: Record<string, unknown> | null;
   submitted_by_publisher: boolean;
   created_at: string;
   handwritten_filename: string | null;
   webassign_filename: string | null;
+  comments: SAEQuestionComment[];
 }
 
 /** Publisher-facing submission result — includes edit metadata. */
@@ -53,20 +61,10 @@ export interface SAESubmissionResultPublisher extends SAESubmissionResult {
   last_edited_at: string | null;
 }
 
-export interface SAETranscriptPart {
-  model?: string;
-  latex?: string;
-  error?: string;
-}
-
 export interface SAETranscribeResponse {
-  draft_id: string;
   student_code: string;
   display_name: string;
-  transcript: {
-    handwritten?: SAETranscriptPart;
-    webassign?: SAETranscriptPart;
-  };
+  transcription_complete: boolean;
 }
 
 export interface SAEStudentDetail extends SAEStudentRow {
