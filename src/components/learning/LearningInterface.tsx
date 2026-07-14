@@ -979,6 +979,16 @@ export default function LearningInterface({
     console.log("🔧 Initializing session with AI-led slide navigation...", { mode, slideIndex });
 
     const voiceProvider = sessionAvatarRef.current.voiceProvider ?? "openai";
+    if (voiceProvider === "elevenlabs") {
+      console.log("🔊 Voice engine: ElevenLabs (OpenAI Realtime running text-only)", {
+        voiceId: sessionAvatarRef.current.voiceId,
+        dialect: sessionAvatarRef.current.voiceDialect,
+      });
+    } else {
+      console.log("🔊 Voice engine: OpenAI Realtime audio", {
+        voice: sessionAvatarRef.current.voiceId ?? pickRealtimeVoiceForAvatar(sessionAvatarRef.current),
+      });
+    }
     // ElevenLabs branch: OpenAI still does STT + reasoning, but must not also
     // synthesize audio — that's what the ElevenLabs AudioSink is for. GA
     // field name mirrors the `response.modalities` shape this file already

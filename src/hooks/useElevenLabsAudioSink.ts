@@ -56,6 +56,23 @@ export function useElevenLabsAudioSink({
     }
   };
 
+  // Last-resort fallback when ElevenLabs is unreachable (bad/missing API key,
+  // quota, network) — same "ElevenLabs primary, browser TTS fallback" pattern
+  // already used in lib/v2/use-speech.ts. The avatar won't lip-sync to this
+  // (no <audio> element backs speechSynthesis), but the learner still hears
+  // the words instead of dead silence.
+  const speakWithBrowserTts = (text: string): Promise<void> =>
+    new Promise((resolve) => {
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+        resolve();
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
+      window.speechSynthesis.speak(utterance);
+    });
+
   const processQueue = useCallback(async () => {
     if (processingRef.current) return;
     processingRef.current = true;
@@ -67,21 +84,44 @@ export function useElevenLabsAudioSink({
         const text = queueRef.current.shift()!;
         if (!text.trim() || !audio) continue;
 
-        let audioBuffer: ArrayBuffer;
+        let audioBuffer: ArrayBuffer | null = null;
         try {
+          console.log('🔊 [ElevenLabs] synthesizing clause', {
+            voiceId: voiceIdRef.current,
+            chars: text.length,
+          });
           const res = await fetch('/api/tts/elevenlabs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, voiceId: voiceIdRef.current ?? undefined }),
           });
           if (generation !== generationRef.current) return;
-          if (!res.ok) continue;
-          audioBuffer = await res.arrayBuffer();
-        } catch {
-          continue;
+          if (!res.ok) {
+            console.warn(
+              `⚠️ [ElevenLabs] synthesis request failed (status ${res.status}) — falling back to browser TTS`,
+            );
+          } else {
+            audioBuffer = await res.arrayBuffer();
+          }
+        } catch (err) {
+          console.warn(
+            '⚠️ [ElevenLabs] synthesis request errored — falling back to browser TTS',
+            err,
+          );
         }
         if (generation !== generationRef.current) return;
 
+        if (!audioBuffer) {
+          onSpeakingChangeRef.current?.(true);
+          await speakWithBrowserTts(text);
+          if (generation !== generationRef.current) return;
+          onSpeakingChangeRef.current?.(false);
+          continue;
+        }
+
+        console.log('✅ [ElevenLabs] clause synthesized — playing via ElevenLabs audio', {
+          chars: text.length,
+        });
         releaseCurrentObjectUrl();
         const objectUrl = URL.createObjectURL(
           new Blob([audioBuffer], { type: 'audio/mpeg' }),
@@ -121,6 +161,7 @@ export function useElevenLabsAudioSink({
   }, [processQueue]);
 
   const stop = useCallback(() => {
+    console.log('🛑 [ElevenLabs] sink stopped — clearing queue');
     generationRef.current += 1;
     queueRef.current = [];
     const audio = audioRef.current;
@@ -130,6 +171,9 @@ export function useElevenLabsAudioSink({
       audio.load();
     }
     releaseCurrentObjectUrl();
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
     processingRef.current = false;
     onSpeakingChangeRef.current?.(false);
   }, []);

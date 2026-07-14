@@ -117,4 +117,34 @@ describe('useElevenLabsAudioSink', () => {
     });
     expect(fakeAudio.play).toHaveBeenCalledTimes(1);
   });
+
+  it('falls back to browser speechSynthesis when the ElevenLabs request fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 503, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) }),
+    );
+    const speak = vi.fn((utterance: SpeechSynthesisUtterance) => {
+      utterance.onend?.(new Event('end') as unknown as SpeechSynthesisEvent);
+    });
+    vi.stubGlobal('speechSynthesis', { speak, cancel: vi.fn() });
+    vi.stubGlobal(
+      'SpeechSynthesisUtterance',
+      vi.fn(function (this: any, text: string) {
+        this.text = text;
+      }),
+    );
+
+    const onSpeakingChange = vi.fn();
+    const { result } = renderHook(() =>
+      useElevenLabsAudioSink({ voiceId: 'voice-1', onSpeakingChange }),
+    );
+
+    act(() => {
+      result.current.push('Hello there.');
+    });
+
+    await waitFor(() => expect(speak).toHaveBeenCalled());
+    expect(fakeAudio.play).not.toHaveBeenCalled();
+    await waitFor(() => expect(onSpeakingChange).toHaveBeenLastCalledWith(false));
+  });
 });
