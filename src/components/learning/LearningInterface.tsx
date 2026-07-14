@@ -1854,6 +1854,7 @@ export default function LearningInterface({
             </div>
           )}
 
+
           {/* Slide content area */}
           <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 md:p-6">
             <div className="w-full max-w-4xl max-h-full flex items-center justify-center transition-all duration-500 ease-in-out">
