@@ -141,11 +141,14 @@ export interface ReferenceSolutionResponse {
 
 // ── Configuration ────────────────────────────────────────────────────
 
+export type TtsProvider = 'openai' | 'elevenlabs';
+
 export interface AvatarConfigurationCreate {
   voice?: string;
   language?: string;
   difficulty_level?: string;
   additional_settings?: Record<string, unknown>;
+  tts_provider?: TtsProvider;
 }
 
 export type AvatarConfigurationUpdate = AvatarConfigurationCreate;
@@ -157,11 +160,26 @@ export interface AvatarConfigurationResponse {
   language: string | null;
   difficulty_level: string | null;
   additional_settings: Record<string, unknown> | null;
+  tts_provider: TtsProvider | null;
   rubrics: RubricResponse[];
   knowledge_documents: KnowledgeDocumentResponse[];
   reference_solutions: ReferenceSolutionResponse[];
   created_at: string;
   updated_at: string;
+}
+
+// ── Voice Catalog ────────────────────────────────────────────────────
+
+export interface VoiceCatalogEntry {
+  id: string;
+  name: string;
+  dialects: string[];
+}
+
+export interface VoiceCatalogResponse {
+  provider: TtsProvider;
+  voices: VoiceCatalogEntry[];
+  cost_per_1k_characters_usd: number;
 }
 
 // ── Avatar ───────────────────────────────────────────────────────────

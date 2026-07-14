@@ -240,6 +240,12 @@ export function useHandleServerEvent({
         break;
       }
 
+      // Text-only mode (ElevenLabs voice engine — OpenAI does STT/reasoning
+      // only, no audio) emits text deltas instead of audio-transcript deltas.
+      // Reuse the exact same accumulation as the audio-transcript case below
+      // so response.done's turn-completion logic works for both engines.
+      case "response.output_text.delta":
+      case "response.text.delta":
       // GA gpt-realtime models emit "response.output_audio_transcript.delta";
       // older preview models used "response.audio_transcript.delta".
       case "response.output_audio_transcript.delta":

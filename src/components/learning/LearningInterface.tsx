@@ -50,6 +50,7 @@ import {
 import { pickRealtimeVoiceForAvatar } from "@/lib/realtimeVoice";
 import { getDefaultChatbotAvatar } from "@/lib/avatarLibrary";
 import { useRealtimeTeachingLipSync } from "@/hooks/useRealtimeTeachingLipSync";
+import { useElevenLabsAudioSink } from "@/hooks/useElevenLabsAudioSink";
 import { notifyLearnerSlideChangeToRealtime } from "@/lib/learnerSlideRealtimeNotify";
 import { toast } from "sonner";
 
@@ -168,8 +169,25 @@ export default function LearningInterface({
     () => undefined,
   );
 
+  // "Mouth" for the ElevenLabs voice engine — only ever fed text when the
+  // resolved avatar's voiceProvider is 'elevenlabs' (see initializeSession /
+  // setMessageHandler). Its <audio> element replaces the OpenAI WebRTC one
+  // below in that case, so lip sync reuses the existing amplitude pipeline
+  // unmodified — it never touches realtimeConnection.ts or the OpenAI path.
+  const elevenLabsSink = useElevenLabsAudioSink({
+    voiceId: sessionAvatar.voiceId,
+    onSpeakingChange: setIsAISpeaking,
+  });
+  const elevenLabsTurnTextRef = useRef("");
+  const elevenLabsPendingClauseRef = useRef("");
+
+  const activeOutputAudioElement =
+    sessionAvatar.voiceProvider === "elevenlabs"
+      ? elevenLabsSink.audioElement
+      : outputAudioElement;
+
   const lipSyncAmplitude = useRealtimeTeachingLipSync(
-    outputAudioElement,
+    activeOutputAudioElement,
     sessionStatus === "CONNECTED",
   );
 
@@ -720,6 +738,7 @@ export default function LearningInterface({
       audioElementRef.current.pause();
       audioElementRef.current.srcObject = null;
     }
+    elevenLabsSink.stop();
 
     // Reset data channel state
     setDataChannel(null);
@@ -879,6 +898,7 @@ export default function LearningInterface({
       audioElementRef.current.pause();
       audioElementRef.current.srcObject = null;
     }
+    elevenLabsSink.stop();
 
     // Reset data channel state
     setDataChannel(null);
@@ -958,15 +978,30 @@ export default function LearningInterface({
 
     console.log("🔧 Initializing session with AI-led slide navigation...", { mode, slideIndex });
 
+    const voiceProvider = sessionAvatarRef.current.voiceProvider ?? "openai";
+    // ElevenLabs branch: OpenAI still does STT + reasoning, but must not also
+    // synthesize audio — that's what the ElevenLabs AudioSink is for. GA
+    // field name mirrors the `response.modalities` shape this file already
+    // sends for the slide-change-interrupt response.create call; if a future
+    // OpenAI Realtime GA revision renames this, this is the one place to fix.
+    const voiceSessionFields =
+      voiceProvider === "elevenlabs"
+        ? { modalities: ["text"] }
+        : {
+            audio: {
+              output: {
+                voice:
+                  sessionAvatarRef.current.voiceId ??
+                  pickRealtimeVoiceForAvatar(sessionAvatarRef.current),
+              },
+            },
+          };
+
     const sessionUpdate = {
       type: "session.update",
       session: {
         tool_choice: "auto",
-        audio: {
-          output: {
-            voice: pickRealtimeVoiceForAvatar(sessionAvatarRef.current),
-          },
-        },
+        ...voiceSessionFields,
         tools: [
           ...buildSlideNavigationTools(),
           {
@@ -1397,9 +1432,20 @@ export default function LearningInterface({
         sendSessionKickoff();
       }
 
+      const voiceProvider = sessionAvatarRef.current.voiceProvider ?? "openai";
+
       // --- Track voice activity ---
       if (serverEvent.type === "input_audio_buffer.speech_started") {
         setIsUserSpeaking(true);
+        // Barge-in: OpenAI's server_vad auto-cancels/truncates its own
+        // in-flight audio response, but that has no effect on ElevenLabs
+        // audio we've already queued/are playing — stop it ourselves.
+        if (voiceProvider === "elevenlabs") {
+          elevenLabsSink.stop();
+          elevenLabsTurnTextRef.current = "";
+          elevenLabsPendingClauseRef.current = "";
+          sendClientEvent({ type: "response.cancel" });
+        }
       } else if (serverEvent.type === "input_audio_buffer.speech_stopped") {
         setIsUserSpeaking(false);
       }
@@ -1408,6 +1454,63 @@ export default function LearningInterface({
         setIsAISpeaking(true);
       } else if (serverEvent.type === "output_audio_buffer.stopped") {
         setIsAISpeaking(false);
+      }
+
+      // --- ElevenLabs branch: OpenAI is text-only, so assistant speech comes
+      // from text deltas instead of the audio-transcript events below. GA
+      // gpt-realtime models are expected to emit "response.output_text.delta";
+      // dual-listen for "response.text.delta" the same way the audio-transcript
+      // events do, in case of a preview/GA naming difference. ---
+      if (
+        voiceProvider === "elevenlabs" &&
+        (serverEvent.type === "response.output_text.delta" ||
+          serverEvent.type === "response.text.delta")
+      ) {
+        if (!elevenLabsTurnTextRef.current && !elevenLabsPendingClauseRef.current) {
+          slideToolHandledThisTurnRef.current = false;
+        }
+        const deltaText = serverEvent.delta || "";
+        elevenLabsTurnTextRef.current += deltaText;
+        elevenLabsPendingClauseRef.current += deltaText;
+
+        const pending = elevenLabsPendingClauseRef.current;
+        const endsClause = /[.!?][")'\]]?\s*$/.test(pending) || pending.endsWith("\n");
+        const wordCount = pending.trim().split(/\s+/).filter(Boolean).length;
+        if (pending.trim() && (endsClause || wordCount >= 40)) {
+          elevenLabsSink.push(pending);
+          elevenLabsPendingClauseRef.current = "";
+        }
+      }
+
+      if (voiceProvider === "elevenlabs" && serverEvent.type === "response.done") {
+        const remainingClause = elevenLabsPendingClauseRef.current;
+        if (remainingClause.trim()) {
+          elevenLabsSink.push(remainingClause);
+        }
+        const fullTurnText = elevenLabsTurnTextRef.current;
+        if (fullTurnText.trim()) {
+          setTranscript((prev) => [
+            ...prev,
+            { id: createTranscriptId(), role: "assistant", text: fullTurnText },
+          ]);
+          if (heygenAvatarRef.current) {
+            heygenAvatarRef.current
+              .speak({ text: fullTurnText, taskType: TaskType.REPEAT })
+              .catch(() => { });
+          }
+          if (!slideToolHandledThisTurnRef.current && aiLeadEnabled) {
+            const target = detectSlideAdvanceFromSpeech(
+              fullTurnText,
+              currentSlideRef.current,
+              slideCount,
+            );
+            if (target !== null) {
+              performAiSlideAdvanceRef.current(target);
+            }
+          }
+        }
+        elevenLabsTurnTextRef.current = "";
+        elevenLabsPendingClauseRef.current = "";
       }
 
       // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
@@ -1649,7 +1752,7 @@ export default function LearningInterface({
             <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent shadow-xl pointer-events-none">
               <SessionAvatarRenderer
                 config={sessionAvatar}
-                audioElement={outputAudioElement}
+                audioElement={activeOutputAudioElement}
                 isConnected={sessionStatus === "CONNECTED"}
                 isAISpeaking={isAISpeaking}
                 isUserSpeaking={isUserSpeaking}

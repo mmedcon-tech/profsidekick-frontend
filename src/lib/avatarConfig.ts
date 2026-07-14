@@ -39,6 +39,11 @@ export function resolveAvatarConfig(
       response.session_language ?? fallback?.sessionLanguage ?? 'en',
     sessionMode:
       response.session_mode ?? fallback?.sessionMode ?? 'teaching',
+    voiceProvider:
+      response.voice_provider ?? fallback?.voiceProvider ?? 'openai',
+    voiceId: response.voice_id ?? fallback?.voiceId ?? null,
+    voiceDialect: response.voice_dialect ?? fallback?.voiceDialect ?? null,
+    voiceSource: response.voice_source ?? fallback?.voiceSource,
   };
 }
 

@@ -5,7 +5,8 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { configApi, ApiError } from '@/lib/avatarApi';
-import type { AvatarConfigurationResponse } from '@/types/avatar';
+import { voiceApi } from '@/lib/voiceApi';
+import type { AvatarConfigurationResponse, TtsProvider, VoiceCatalogEntry } from '@/types/avatar';
 import { ArrowLeft, Save, Box } from 'lucide-react';
 import { usePublisherModels } from '@/hooks/usePublisherModels';
 import type { Avatar3DModel } from '@/hooks/useAdminModels';
@@ -18,6 +19,10 @@ const GlbAvatarPreview = dynamic(
 const VOICES = ['alloy','ash','ballad','coral','echo','sage','shimmer','verse'];
 const DIFFICULTIES = ['beginner','intermediate','advanced'];
 const LANGUAGES = ['English','Arabic','French','Spanish','German','Chinese','Japanese'];
+const ENGINES: { id: TtsProvider; label: string }[] = [
+  { id: 'openai', label: 'OpenAI' },
+  { id: 'elevenlabs', label: 'ElevenLabs' },
+];
 
 export default function ConfigurePage() {
   const { id } = useParams<{ id: string }>();
@@ -33,12 +38,18 @@ export default function ConfigurePage() {
     language: string;
     difficulty_level: string;
     additional_settings: Record<string, any>;
+    tts_provider: TtsProvider;
   }>({
     voice: '',
     language: 'English',
     difficulty_level: 'intermediate',
     additional_settings: {},
+    tts_provider: 'openai',
   });
+
+  const [elevenLabsVoices, setElevenLabsVoices] = useState<VoiceCatalogEntry[]>([]);
+  const [elevenLabsVoicesLoading, setElevenLabsVoicesLoading] = useState(false);
+  const [elevenLabsVoicesError, setElevenLabsVoicesError] = useState<string | null>(null);
 
   const { models, loading: modelsLoading } = usePublisherModels();
 
@@ -50,7 +61,8 @@ export default function ConfigurePage() {
           voice: c.voice || 'alloy',
           language: c.language || 'English',
           difficulty_level: c.difficulty_level || 'intermediate',
-          additional_settings: c.additional_settings || {}
+          additional_settings: c.additional_settings || {},
+          tts_provider: c.tts_provider || 'openai',
         });
       })
       .catch(() => {
@@ -58,11 +70,22 @@ export default function ConfigurePage() {
           voice: 'alloy',
           language: 'English',
           difficulty_level: 'intermediate',
-          additional_settings: {}
+          additional_settings: {},
+          tts_provider: 'openai',
         });
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (form.tts_provider !== 'elevenlabs') return;
+    setElevenLabsVoicesLoading(true);
+    setElevenLabsVoicesError(null);
+    voiceApi.getCatalog('elevenlabs')
+      .then((res) => setElevenLabsVoices(res.voices))
+      .catch(() => setElevenLabsVoicesError('Could not load ElevenLabs voices'))
+      .finally(() => setElevenLabsVoicesLoading(false));
+  }, [form.tts_provider]);
 
   const handleSave = async () => {
     setSaving(true); setError(null); setSuccess(false);
@@ -116,20 +139,57 @@ export default function ConfigurePage() {
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800">
 
+        {/* Voice Engine */}
+        <div className="p-6 space-y-3">
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Voice Engine</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Which service synthesizes this avatar&apos;s speech during sessions.</p>
+          <div className="flex gap-3">
+            {ENGINES.map((e) => (
+              <button key={e.id}
+                onClick={() => setForm((p) => ({ ...p, tts_provider: e.id, voice: '' }))}
+                className={`flex-1 py-2.5 text-sm rounded-lg border transition-all font-medium ${
+                  form.tts_provider === e.id ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221]' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                }`}>
+                {e.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Voice */}
         <div className="p-6 space-y-3">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">Voice</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">The voice your avatar uses during sessions.</p>
-          <div className="grid grid-cols-4 gap-2">
-            {VOICES.map((v) => (
-              <button key={v} onClick={() => setForm((p) => ({ ...p, voice: v }))}
-                className={`px-3 py-2 text-sm rounded-lg border transition-all capitalize ${
-                  form.voice === v ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
-                }`}>
-                {v}
-              </button>
-            ))}
-          </div>
+          {form.tts_provider === 'openai' ? (
+            <div className="grid grid-cols-4 gap-2">
+              {VOICES.map((v) => (
+                <button key={v} onClick={() => setForm((p) => ({ ...p, voice: v }))}
+                  className={`px-3 py-2 text-sm rounded-lg border transition-all capitalize ${
+                    form.voice === v ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                  }`}>
+                  {v}
+                </button>
+              ))}
+            </div>
+          ) : elevenLabsVoicesLoading ? (
+            <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+          ) : elevenLabsVoicesError ? (
+            <p className="text-sm text-red-600">{elevenLabsVoicesError}</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {elevenLabsVoices.map((v) => (
+                <button key={v.id} onClick={() => setForm((p) => ({ ...p, voice: v.id }))}
+                  className={`px-3 py-2 text-sm rounded-lg border transition-all text-left ${
+                    form.voice === v.id ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                  }`}>
+                  <div>{v.name}</div>
+                  {v.dialects.length > 0 && (
+                    <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">{v.dialects.join(' · ')}</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Difficulty */}
@@ -148,9 +208,14 @@ export default function ConfigurePage() {
           </div>
         </div>
 
-        {/* Language */}
+        {/* Language / Dialect */}
         <div className="p-6 space-y-3">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Language</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+            {form.tts_provider === 'elevenlabs' ? 'Dialect' : 'Language'}
+          </h2>
+          {form.tts_provider === 'elevenlabs' && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">The regional accent/dialect ElevenLabs should use (e.g. Emirati Arabic).</p>
+          )}
           <select value={form.language} onChange={(e) => setForm((p) => ({ ...p, language: e.target.value }))}
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] text-sm">
             {LANGUAGES.map((l) => <option key={l}>{l}</option>)}

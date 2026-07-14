@@ -331,6 +331,10 @@ export interface EphemeralTokenResponse {
   avatar_image_url?: string | null;
   avatar_name?: string | null;
   glb_library_id?: string | null;
+  voice_provider?: 'openai' | 'elevenlabs';
+  voice_id?: string | null;
+  voice_dialect?: string | null;
+  voice_source?: 'subscriber' | 'publisher';
 }
 
 export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | '3d' | 'glb';
@@ -349,6 +353,10 @@ export interface SessionAvatarConfig {
   heygenAccessToken?: string | null;
   sessionLanguage?: string;
   sessionMode?: 'teaching' | 'examination' | 'consultation';
+  voiceProvider?: 'openai' | 'elevenlabs';
+  voiceId?: string | null;
+  voiceDialect?: string | null;
+  voiceSource?: 'subscriber' | 'publisher';
 }
 
 export interface SessionEphemeralBundle {
