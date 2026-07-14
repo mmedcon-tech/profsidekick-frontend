@@ -19,11 +19,16 @@ export default function PublisherAvatarsPage() {
   const [avatars, setAvatars] = useState<AvatarSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [serviceAvailable, setServiceAvailable] = useState(true);
 
   const load = () => {
     setLoading(true);
     avatarApi.list(activeProgram?.id)
-      .then((r) => { setAvatars(r.avatars); setError(null); })
+      .then((r) => {
+        setAvatars(r.avatars);
+        setServiceAvailable(r.serviceAvailable !== false);
+        setError(null);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
@@ -75,6 +80,14 @@ export default function PublisherAvatarsPage() {
           </Button>
         </Link>
       </div>
+
+      {!loading && !error && !serviceAvailable && (
+        <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+          The avatar platform API is not available on this backend yet. You can still
+          browse the page, but creating avatars requires the full avatar service to be
+          deployed on the API server.
+        </div>
+      )}
 
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2">

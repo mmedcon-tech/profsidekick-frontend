@@ -272,6 +272,8 @@ export interface GlbAvatarPreviewProps {
   isSpeaking?: boolean;
   /** Disables jaw-amplitude fallback while viseme lip-sync is active. */
   isVisemeDriven?: boolean;
+  /** Live audio level meter for mouth drive (0–1). */
+  getAudioLevel?: () => number;
 }
 
 /**

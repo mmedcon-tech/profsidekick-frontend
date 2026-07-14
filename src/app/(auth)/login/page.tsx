@@ -18,7 +18,13 @@ function LoginForm() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message) setSuccessMessage(message);
+  }, [searchParams]);
 
   // Redirect if already authenticated — role-based destination
   useEffect(() => {
@@ -122,6 +128,11 @@ function LoginForm() {
 
       {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
+        {successMessage && (
+          <div className="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg">
+            <p className="text-green-800 dark:text-green-300 text-sm">{successMessage}</p>
+          </div>
+        )}
         {error && (
           <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
             <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>

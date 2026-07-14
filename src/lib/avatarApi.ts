@@ -213,7 +213,7 @@ export const templateApi = {
 
 export const publisherTemplateApi = {
   list: () =>
-    req<AvatarTemplateSummary[]>('/api/publisher/avatar-templates'),
+    bffReq<AvatarTemplateSummary[]>('/api/publisher/avatar-templates'),
 };
 
 // ─── Avatars — Publisher ─────────────────────────────────────────────────────
@@ -250,57 +250,63 @@ export interface LinkedCourseLink {
 
 export const avatarApi = {
   list: (programId?: string) =>
-    req<AvatarListResponse>(
-      programId ? `/api/publisher/avatars?program_id=${programId}` : '/api/publisher/avatars'
+    bffReq<AvatarListResponse & { serviceAvailable?: boolean }>(
+      programId ? `/api/publisher/avatars?program_id=${programId}` : '/api/publisher/avatars',
     ),
-  get: (id: string) => req<AvatarResponse>(`/api/publisher/avatars/${id}`),
+  get: (id: string) => bffReq<AvatarResponse>(`/api/publisher/avatars/${id}`),
   create: (data: AvatarCreate & { program_id?: string }) =>
-    req<AvatarResponse>('/api/publisher/avatars', 'POST', data),
+    bffReq<AvatarResponse>('/api/publisher/avatars', 'POST', data),
   update: (id: string, data: AvatarUpdate) =>
-    req<AvatarResponse>(`/api/publisher/avatars/${id}`, 'PUT', data),
+    bffReq<AvatarResponse>(`/api/publisher/avatars/${id}`, 'PUT', data),
   publish: (id: string) =>
-    req<AvatarResponse>(`/api/publisher/avatars/${id}/publish`, 'PATCH'),
+    bffReq<AvatarResponse>(`/api/publisher/avatars/${id}/publish`, 'PATCH'),
   delete: (id: string) =>
-    req<void>(`/api/publisher/avatars/${id}`, 'DELETE'),
+    bffReq<void>(`/api/publisher/avatars/${id}`, 'DELETE'),
 
   // Access codes
   listCodes: (avatarId: string) =>
-    req<{ codes: AccessCodeRecord[]; total: number }>(
-      `/api/publisher/avatars/${avatarId}/access-codes`
+    bffReq<{ codes: AccessCodeRecord[]; total: number }>(
+      `/api/publisher/avatars/${avatarId}/access-codes`,
     ),
   createCode: (avatarId: string, data: AccessCodeCreate) =>
-    req<AccessCodeRecord>(`/api/publisher/avatars/${avatarId}/access-codes`, 'POST', data),
+    bffReq<AccessCodeRecord>(`/api/publisher/avatars/${avatarId}/access-codes`, 'POST', data),
   updateCode: (avatarId: string, codeId: string, data: AccessCodeUpdate) =>
-    req<AccessCodeRecord>(`/api/publisher/avatars/${avatarId}/access-codes/${codeId}`, 'PATCH', data),
+    bffReq<AccessCodeRecord>(
+      `/api/publisher/avatars/${avatarId}/access-codes/${codeId}`,
+      'PATCH',
+      data,
+    ),
   deactivateCode: (avatarId: string, codeId: string) =>
-    req<void>(`/api/publisher/avatars/${avatarId}/access-codes/${codeId}`, 'DELETE'),
+    bffReq<void>(`/api/publisher/avatars/${avatarId}/access-codes/${codeId}`, 'DELETE'),
 
   // Avatar–course links (avatar_courses join table)
   listLinkedCourses: (avatarId: string) =>
-    req<{ courses: LinkedCourseLink[]; total: number }>(
-      `/api/publisher/avatars/${avatarId}/courses`
+    bffReq<{ courses: LinkedCourseLink[]; total: number }>(
+      `/api/publisher/avatars/${avatarId}/courses`,
     ),
   linkCourse: (avatarId: string, courseUuid: string) =>
-    req<LinkedCourseLink>(`/api/publisher/avatars/${avatarId}/courses`, 'POST', { course_id: courseUuid }),
+    bffReq<LinkedCourseLink>(`/api/publisher/avatars/${avatarId}/courses`, 'POST', {
+      course_id: courseUuid,
+    }),
   unlinkCourse: (avatarId: string, courseUuid: string) =>
-    req<void>(`/api/publisher/avatars/${avatarId}/courses/${courseUuid}`, 'DELETE'),
+    bffReq<void>(`/api/publisher/avatars/${avatarId}/courses/${courseUuid}`, 'DELETE'),
 };
 
 // ─── Avatar Configuration — Publisher ───────────────────────────────────────
 
 export const configApi = {
   get: (avatarId: string) =>
-    req<AvatarConfigurationResponse>(
+    bffReq<AvatarConfigurationResponse>(
       `/api/publisher/avatars/${avatarId}/configuration`,
     ),
   create: (avatarId: string, data: AvatarConfigurationCreate) =>
-    req<AvatarConfigurationResponse>(
+    bffReq<AvatarConfigurationResponse>(
       `/api/publisher/avatars/${avatarId}/configuration`,
       'POST',
       data,
     ),
   update: (avatarId: string, data: AvatarConfigurationUpdate) =>
-    req<AvatarConfigurationResponse>(
+    bffReq<AvatarConfigurationResponse>(
       `/api/publisher/avatars/${avatarId}/configuration`,
       'PUT',
       data,

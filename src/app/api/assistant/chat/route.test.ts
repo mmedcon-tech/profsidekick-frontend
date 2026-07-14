@@ -79,7 +79,11 @@ describe('POST /api/assistant/chat', () => {
       string,
       { body: string },
     ];
-    const payload = JSON.parse(init.body) as { max_tokens: number; temperature: number };
+    const payload = JSON.parse(init.body) as {
+      max_tokens: number;
+      temperature: number;
+      messages: Array<{ role: string; content: string }>;
+    };
     expect(payload.max_tokens).toBe(90);
     expect(payload.temperature).toBe(0.55);
     expect(payload.messages[0].content).toContain('one or two short spoken sentences');

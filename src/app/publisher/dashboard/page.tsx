@@ -4,17 +4,16 @@ import { useAuth } from "@/contexts/AuthContext"
 import { tr } from "@/lib/v2/i18n"
 import { useProgramContext } from "@/contexts/ProgramContext"
 import { usePublisherAnalytics } from "@/hooks/usePublisherAnalytics"
+import {
+  CoursePerformanceMetrics,
+  MonthlyCompletionMetrics,
+} from "@/components/publisher/CoursePerformanceMetrics"
 import { Progress } from "@/components/ui/progress"
+import { resolveLocalizedLabel, normalizeCompletionPercent } from "@/lib/analyticsLabels"
 import {
   Bot, BookOpen, Users, TrendingUp, AlertTriangle,
-  LayoutGrid, Info,
+  LayoutGrid,
 } from "lucide-react"
-import {
-  Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip,
-  Area, AreaChart, CartesianGrid,
-} from "recharts"
-
-// ── Skeleton primitives ──────────────────────────────────────────────────────
 
 function SkeletonBlock({ className }: { className?: string }) {
   return (
@@ -32,8 +31,6 @@ function StatSkeleton() {
     </div>
   )
 }
-
-// ── Stat card ────────────────────────────────────────────────────────────────
 
 function Stat({
   icon: Icon,
@@ -66,33 +63,12 @@ function Stat({
   )
 }
 
-// ── Empty state ──────────────────────────────────────────────────────────────
-
-function EmptyChart({ label }: { label: string }) {
-  return (
-    <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-      <Info className="h-5 w-5 text-gray-300 dark:text-gray-600" />
-      <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
-    </div>
-  )
+function localizeName(
+  name: unknown,
+  lang: "en" | "ar",
+): string {
+  return resolveLocalizedLabel(name, lang)
 }
-
-// ── Chart colors — resolved to hsl() so recharts can consume them directly ──
-const CHART_BLUE  = "hsl(213 94% 58%)"
-const CHART_GOLD  = "hsl(46 65% 52%)"
-const CHART_MUTED = "hsl(220 13% 91%)"
-
-// ── Custom tooltip ────────────────────────────────────────────────────────────
-
-const TooltipStyle = {
-  background: "var(--popover)",
-  border: "1px solid var(--border)",
-  borderRadius: 8,
-  fontSize: 12,
-  color: "var(--popover-foreground)",
-} as const
-
-// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PublisherDashboardPage() {
   const { user } = useAuth()
@@ -108,14 +84,23 @@ export default function PublisherDashboardPage() {
   const totalSessions    = analytics?.total_sessions    ?? 0
   const totalAvatars     = analytics?.total_avatars     ?? 0
 
-  const coursePerf     = analytics?.course_performance    ?? []
-  const monthlyComps   = analytics?.monthly_completions   ?? []
-  const atRisk         = analytics?.at_risk_learners      ?? []
+  const coursePerf   = analytics?.course_performance  ?? []
+  const monthlyComps = analytics?.monthly_completions ?? []
+  const atRisk       = analytics?.at_risk_learners    ?? []
+
+  const courseRows = coursePerf.map((d: {
+    name?: unknown
+    completion?: unknown
+    subscribers?: number
+  }) => ({
+    name: localizeName(d.name, lang),
+    completion: normalizeCompletionPercent(d.completion),
+    subscribers: d.subscribers,
+  }))
 
   return (
     <div className="px-4 sm:px-6 py-6 space-y-6 max-w-6xl mx-auto">
 
-      {/* Header */}
       <div className="flex flex-col gap-1">
         <p className="text-xs font-medium uppercase tracking-widest text-gray-400 dark:text-gray-500">
           {tr("welcomeBack", lang)}, {user?.firstName}
@@ -128,7 +113,6 @@ export default function PublisherDashboardPage() {
         </p>
       </div>
 
-      {/* Program scope banner */}
       {contextReady && activeProgram && (
         <div className="flex items-center gap-2.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-4 py-2.5 text-sm">
           <span className="h-2 w-2 rounded-full bg-blue-500" />
@@ -142,7 +126,6 @@ export default function PublisherDashboardPage() {
         </div>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
@@ -156,119 +139,22 @@ export default function PublisherDashboardPage() {
         )}
       </div>
 
-      {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
-
-        {/* Bar: Course Completion */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
             Course Performance
           </h3>
-          {loading ? (
-            <SkeletonBlock className="h-56 w-full" />
-          ) : coursePerf.length === 0 ? (
-            <EmptyChart label="No course data yet" />
-          ) : (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={coursePerf} margin={{ top: 4, right: 8, left: -16, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis
-                    dataKey={(d: any) => d.name[lang] ?? d.name}
-                    tickLine={false}
-                    axisLine={false}
-                    interval={0}
-                    height={60}
-                    tick={({ x, y, payload }: any) => {
-                      const name = String(payload.value)
-                      const label = name.length > 14 ? name.slice(0, 14) + "…" : name
-                      return (
-                        <g transform={`translate(${x},${y})`}>
-                          <text
-                            x={0} y={0} dy={6}
-                            textAnchor="end"
-                            fill="currentColor"
-                            className="fill-gray-400 dark:fill-gray-500"
-                            fontSize={11}
-                            transform="rotate(-35)"
-                          >
-                            {label}
-                          </text>
-                        </g>
-                      )
-                    }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                    tickLine={false}
-                    axisLine={false}
-                    domain={[0, 100]}
-                    tickFormatter={(v) => `${v}%`}
-                  />
-                  <Tooltip
-                    cursor={{ fill: CHART_MUTED, opacity: 0.3 }}
-                    contentStyle={TooltipStyle}
-                    formatter={(v: any) => [`${v}%`, "Completion"]}
-                  />
-                  <Bar
-                    dataKey="completion"
-                    fill={CHART_BLUE}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          <CoursePerformanceMetrics rows={courseRows} loading={loading} />
         </div>
 
-        {/* Area: Monthly Completions */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
             {tr("monthlyCompletions", lang)}
           </h3>
-          {loading ? (
-            <SkeletonBlock className="h-56 w-full" />
-          ) : monthlyComps.length === 0 ? (
-            <EmptyChart label="No completion data yet" />
-          ) : (
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyComps} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="pubFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%"   stopColor={CHART_GOLD} stopOpacity={0.35} />
-                      <stop offset="100%" stopColor={CHART_GOLD} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip contentStyle={TooltipStyle} />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke={CHART_GOLD}
-                    strokeWidth={2}
-                    fill="url(#pubFill)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          <MonthlyCompletionMetrics rows={monthlyComps} loading={loading} />
         </div>
       </div>
 
-      {/* At-risk learners */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-gray-900 dark:text-gray-100">
           <AlertTriangle className="h-4 w-4 text-red-500" />
@@ -291,14 +177,18 @@ export default function PublisherDashboardPage() {
           </div>
         ) : (
           <ul className="space-y-3">
-            {atRisk.map((e: any, i: number) => (
+            {atRisk.map((e: {
+              name: { en: string; ar: string } | string
+              course: { en: string; ar: string } | string
+              progress: number
+            }, i: number) => (
               <li key={i} className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {e.name[lang] ?? e.name}
+                    {localizeName(e.name, lang)}
                   </p>
                   <p className="truncate text-xs text-gray-400 dark:text-gray-500">
-                    {e.course[lang] ?? e.course}
+                    {localizeName(e.course, lang)}
                   </p>
                 </div>
                 <div className="w-28 shrink-0">

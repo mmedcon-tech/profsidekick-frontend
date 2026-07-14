@@ -1,13 +1,14 @@
 "use client";
 
 import { usePublisherAnalytics } from '@/hooks/usePublisherAnalytics';
+import {
+  CoursePerformanceMetrics,
+  MonthlyCompletionMetrics,
+} from '@/components/publisher/CoursePerformanceMetrics';
+import { normalizeCompletionPercent, resolveLocalizedLabel } from '@/lib/analyticsLabels';
 import { Bot, BookOpen, CreditCard, AlertCircle } from 'lucide-react';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar
-} from 'recharts';
 
-function StatCard({ icon: Icon, label, value }: { icon: any, label: string, value: string | number }) {
+function StatCard({ icon: Icon, label, value }: { icon: typeof Bot; label: string; value: string | number }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition-all hover:shadow-md">
       <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
@@ -17,6 +18,10 @@ function StatCard({ icon: Icon, label, value }: { icon: any, label: string, valu
       <div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div>
     </div>
   );
+}
+
+function localizeName(name: unknown): string {
+  return resolveLocalizedLabel(name, 'en');
 }
 
 export default function PublisherAnalyticsPage() {
@@ -38,6 +43,16 @@ export default function PublisherAnalyticsPage() {
     );
   }
 
+  const courseRows = (data.course_performance ?? []).map((d: {
+    name?: unknown;
+    completion?: unknown;
+    subscribers?: number;
+  }) => ({
+    name: localizeName(d.name),
+    completion: normalizeCompletionPercent(d.completion),
+    subscribers: d.subscribers,
+  }));
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div>
@@ -47,7 +62,6 @@ export default function PublisherAnalyticsPage() {
         </p>
       </div>
 
-      {/* Publisher stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard icon={Bot} label="Total Avatars" value={data.total_avatars} />
         <StatCard icon={BookOpen} label="Total Courses" value={data.total_courses} />
@@ -55,61 +69,49 @@ export default function PublisherAnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly completions chart */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">Course Completions (Monthly)</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={data.monthly_completions ?? []} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-              <defs>
-                <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} stroke="#6b7280" />
-              <YAxis tick={{ fontSize: 11 }} stroke="#6b7280" />
-              <Tooltip contentStyle={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 8, fontSize: 12, color: "#fff" }} />
-              <Area type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} fill="url(#colorVal)" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+            Subscriber Course Progress
+          </h2>
+          <CoursePerformanceMetrics rows={courseRows} />
         </div>
 
-        {/* Course performance */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
-          <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">Subscriber Course Progress</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={(data.course_performance ?? []).map((d: any) => ({ name: d.name.en || d.name, completion: d.completion, subscribers: d.subscribers }))} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#6b7280" />
-              <YAxis tick={{ fontSize: 11 }} stroke="#6b7280" unit="%" />
-              <Tooltip contentStyle={{ background: "#1f2937", border: "1px solid #374151", borderRadius: 8, fontSize: 12, color: "#fff" }} />
-              <Bar dataKey="completion" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+            Course Completions (Monthly)
+          </h2>
+          <MonthlyCompletionMetrics rows={data.monthly_completions ?? []} />
         </div>
       </div>
 
-      {/* At-risk learners */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-white">At-Risk Subscribers</h2>
-          <button className="text-xs text-primary hover:underline">View All</button>
         </div>
         <div className="space-y-3">
-          {data.at_risk_learners?.map((learner: any, idx: number) => (
+          {data.at_risk_learners?.map((learner: {
+            name?: unknown;
+            course?: unknown;
+            progress?: unknown;
+          }, idx: number) => (
             <div key={idx} className="flex items-center justify-between rounded-lg bg-red-50/50 dark:bg-red-900/10 p-3 border border-red-100 dark:border-red-900/30">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 shrink-0">
                   <AlertCircle className="h-4 w-4" />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{learner.name.en || learner.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Struggling in: {learner.course.en || learner.course}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white break-words">
+                    {localizeName(learner.name)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 break-words">
+                    Struggling in: {localizeName(learner.course)}
+                  </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-bold text-red-600 dark:text-red-400">{learner.progress}%</p>
+              <div className="text-right shrink-0">
+                <p className="text-sm font-bold text-red-600 dark:text-red-400">
+                  {normalizeCompletionPercent(learner.progress)}%
+                </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Progress</p>
               </div>
             </div>

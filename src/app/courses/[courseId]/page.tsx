@@ -12,6 +12,7 @@ import {
   CreditCard, Lock,
 } from 'lucide-react';
 import { config } from '@/lib/config';
+import { toast } from 'sonner';
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -53,7 +54,7 @@ export default function CourseDetailPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(config.getApiUrl(`/api/courses/${courseId}`), {
+      const res = await fetch(`/api/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -112,9 +113,10 @@ export default function CourseDetailPage() {
     try {
       await updateCourse(courseId, localCourse);
       setHasChanges(false);
+      toast.success('Course settings saved');
       await fetchCourse();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Save failed');
+      toast.error(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
     }
