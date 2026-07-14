@@ -17,4 +17,13 @@ describe('openaiSpeech', () => {
     expect(body.input).toBe('Hello there');
     expect(body.response_format).toBe('mp3');
   });
+
+  it('uses an explicit voice id over the gender-based pick when provided', () => {
+    const body = buildOpenAiSpeechBody({
+      text: 'Hello there',
+      gender: 'female',
+      voice: 'ash',
+    });
+    expect(body.voice).toBe('ash');
+  });
 });

@@ -5,6 +5,8 @@ import type { SpeechVoiceGender } from '@/lib/openaiSpeech';
 interface SpeechPreviewBody {
   text?: string;
   gender?: SpeechVoiceGender;
+  /** Explicit OpenAI TTS voice id — bypasses the gender-based pick. */
+  voice?: string;
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -37,7 +39,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(buildOpenAiSpeechBody({ text, gender })),
+      body: JSON.stringify(buildOpenAiSpeechBody({ text, gender, voice: body.voice })),
     });
 
     if (!res.ok) {

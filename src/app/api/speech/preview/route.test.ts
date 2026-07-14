@@ -55,4 +55,17 @@ describe('POST /api/speech/preview', () => {
       }),
     );
   });
+
+  it('uses an explicit voice id over the gender-based pick when provided', async () => {
+    const request = new NextRequest('http://localhost/api/speech/preview', {
+      method: 'POST',
+      body: JSON.stringify({ text: 'Hello', gender: 'female', voice: 'ash' }),
+    });
+
+    await POST(request);
+
+    const [, options] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const sentBody = JSON.parse(options.body as string);
+    expect(sentBody.voice).toBe('ash');
+  });
 });

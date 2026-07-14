@@ -7,9 +7,10 @@ import { useParams } from 'next/navigation';
 import { configApi, ApiError } from '@/lib/avatarApi';
 import { voiceApi } from '@/lib/voiceApi';
 import type { AvatarConfigurationResponse, TtsProvider, VoiceCatalogEntry } from '@/types/avatar';
-import { ArrowLeft, Save, Box } from 'lucide-react';
+import { ArrowLeft, Save, Box, Play, Square, Loader2 } from 'lucide-react';
 import { usePublisherModels } from '@/hooks/usePublisherModels';
 import type { Avatar3DModel } from '@/hooks/useAdminModels';
+import { useVoicePreview } from '@/hooks/useVoicePreview';
 
 const GlbAvatarPreview = dynamic(
   () => import('@/components/avatar/GlbAvatarPreview'),
@@ -52,6 +53,7 @@ export default function ConfigurePage() {
   const [elevenLabsVoicesError, setElevenLabsVoicesError] = useState<string | null>(null);
 
   const { models, loading: modelsLoading } = usePublisherModels();
+  const voicePreview = useVoicePreview();
 
   useEffect(() => {
     configApi.get(id)
@@ -146,7 +148,7 @@ export default function ConfigurePage() {
           <div className="flex gap-3">
             {ENGINES.map((e) => (
               <button key={e.id}
-                onClick={() => setForm((p) => ({ ...p, tts_provider: e.id, voice: '' }))}
+                onClick={() => { voicePreview.stop(); setForm((p) => ({ ...p, tts_provider: e.id, voice: '' })); }}
                 className={`flex-1 py-2.5 text-sm rounded-lg border transition-all font-medium ${
                   form.tts_provider === e.id ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221]' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
@@ -159,17 +161,42 @@ export default function ConfigurePage() {
         {/* Voice */}
         <div className="p-6 space-y-3">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">Voice</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">The voice your avatar uses during sessions.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">The voice your avatar uses during sessions. Click the play icon to hear a preview.</p>
+          {voicePreview.error && <p className="text-xs text-red-600">{voicePreview.error}</p>}
           {form.tts_provider === 'openai' ? (
             <div className="grid grid-cols-4 gap-2">
-              {VOICES.map((v) => (
-                <button key={v} onClick={() => setForm((p) => ({ ...p, voice: v }))}
-                  className={`px-3 py-2 text-sm rounded-lg border transition-all capitalize ${
-                    form.voice === v ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
-                  }`}>
-                  {v}
-                </button>
-              ))}
+              {VOICES.map((v) => {
+                const selected = form.voice === v;
+                const isPlaying = voicePreview.playingId === v;
+                const isLoading = voicePreview.loadingId === v;
+                return (
+                  <div key={v}
+                    className={`flex items-center rounded-lg border transition-all ${
+                      selected ? 'border-[#133221] bg-primary/5 dark:bg-gray-800' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    }`}>
+                    <button onClick={() => setForm((p) => ({ ...p, voice: v }))}
+                      className={`flex-1 min-w-0 px-3 py-2 text-sm text-left capitalize truncate ${
+                        selected ? 'text-[#133221] font-medium' : 'text-gray-700 dark:text-gray-300'
+                      }`}>
+                      {v}
+                    </button>
+                    <button
+                      onClick={() => voicePreview.play('openai', v)}
+                      title={isPlaying ? 'Stop preview' : 'Preview voice'}
+                      aria-label={isPlaying ? `Stop preview of ${v}` : `Preview ${v}`}
+                      className="shrink-0 p-2 text-gray-500 hover:text-[#133221] dark:hover:text-gray-100"
+                    >
+                      {isLoading ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : isPlaying ? (
+                        <Square size={14} />
+                      ) : (
+                        <Play size={14} />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           ) : elevenLabsVoicesLoading ? (
             <div className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
@@ -177,17 +204,41 @@ export default function ConfigurePage() {
             <p className="text-sm text-red-600">{elevenLabsVoicesError}</p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              {elevenLabsVoices.map((v) => (
-                <button key={v.id} onClick={() => setForm((p) => ({ ...p, voice: v.id }))}
-                  className={`px-3 py-2 text-sm rounded-lg border transition-all text-left ${
-                    form.voice === v.id ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
-                  }`}>
-                  <div>{v.name}</div>
-                  {v.dialects.length > 0 && (
-                    <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">{v.dialects.join(' · ')}</div>
-                  )}
-                </button>
-              ))}
+              {elevenLabsVoices.map((v) => {
+                const selected = form.voice === v.id;
+                const isPlaying = voicePreview.playingId === v.id;
+                const isLoading = voicePreview.loadingId === v.id;
+                return (
+                  <div key={v.id}
+                    className={`flex items-center rounded-lg border transition-all ${
+                      selected ? 'border-[#133221] bg-primary/5 dark:bg-gray-800' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    }`}>
+                    <button onClick={() => setForm((p) => ({ ...p, voice: v.id }))}
+                      className={`flex-1 min-w-0 px-3 py-2 text-sm text-left ${
+                        selected ? 'text-[#133221] font-medium' : 'text-gray-700 dark:text-gray-300'
+                      }`}>
+                      <div className="truncate">{v.name}</div>
+                      {v.dialects.length > 0 && (
+                        <div className="text-[10px] uppercase tracking-wider text-gray-500 mt-0.5">{v.dialects.join(' · ')}</div>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => voicePreview.play('elevenlabs', v.id)}
+                      title={isPlaying ? 'Stop preview' : 'Preview voice'}
+                      aria-label={isPlaying ? `Stop preview of ${v.name}` : `Preview ${v.name}`}
+                      className="shrink-0 p-2 text-gray-500 hover:text-[#133221] dark:hover:text-gray-100"
+                    >
+                      {isLoading ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : isPlaying ? (
+                        <Square size={14} />
+                      ) : (
+                        <Play size={14} />
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
