@@ -323,27 +323,7 @@ export default function AutograderSubmitPage() {
       }
 
       const data = await resp.json();
-
-  // Fallback plain-POST path if SSE connection itself fails
-  async function submitWithoutSSE(requestId: string) {
-    setGradingPhase("grading");
-    const formData = new FormData();
-    formData.append("student_id", resolved!.student_id);
-    formData.append("request_id", requestId);
-    formData.append("student_answer", handwrittenFile!);
-    formData.append("webassign_pdf", webassignFile!);
-    // SAE-only: avatar_id not sent; backend always uses hardcoded grading prompt
-    // if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
-    try {
-      const resp = await fetch(`${API}/api/autograder/grade`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${getToken()}` },
-        body: formData,
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      const data = await resp.json();
       setGradingPhase("done");
-
       router.push(`/autograder/transcribe/${data.draft_id}`);
     } catch (err) {
       setGradingPhase("error");
