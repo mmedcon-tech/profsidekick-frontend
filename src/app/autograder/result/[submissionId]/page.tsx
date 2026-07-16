@@ -66,9 +66,12 @@ export default function AutograderFeedbackPage() {
   const params = useParams();
   const submissionId = params.submissionId as string;
 
+  const reportRef = useRef<HTMLDivElement>(null);
+
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   // ── PDF toggle ─────────────────────────────────────────────────────────────
   const [pdfVisible, setPdfVisible] = useState(false);
@@ -126,6 +129,28 @@ export default function AutograderFeedbackPage() {
   function onDividerMouseDown(e: React.MouseEvent) {
     isDragging.current = true;
     e.preventDefault();
+  }
+
+  // ── PDF report export ──────────────────────────────────────────────────────
+  async function handleDownloadPDF() {
+    if (!reportRef.current || !submission) return;
+    setExporting(true);
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const filename = `feedback_${submission.student_net_id}_submission_${submission.id}.pdf`;
+      await html2pdf()
+        .set({
+          margin: [12, 12, 12, 12],
+          filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        })
+        .from(reportRef.current)
+        .save();
+    } finally {
+      setExporting(false);
+    }
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
@@ -193,7 +218,7 @@ export default function AutograderFeedbackPage() {
 
   // ── Feedback content ───────────────────────────────────────────────────────
   const feedbackContent = (
-    <div className="px-6 py-5 space-y-5">
+    <div ref={reportRef} className="px-6 py-5 space-y-5">
       <div>
         <p className="text-xs font-medium uppercase tracking-wider text-blue-600">Autograder Feedback</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">{submission.student_name}</h1>
@@ -312,6 +337,15 @@ export default function AutograderFeedbackPage() {
           <span className="text-sm font-semibold text-slate-800 truncate">{submission.student_name}</span>
           <span className="ml-2 font-mono text-xs text-slate-500">{submission.student_net_id}</span>
         </div>
+
+        {/* PDF report export */}
+        <button
+          onClick={handleDownloadPDF}
+          disabled={exporting}
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {exporting ? "Generating…" : "Download PDF ↓"}
+        </button>
 
         {/* PDF toggle buttons */}
         <div className="flex items-center gap-1 shrink-0">

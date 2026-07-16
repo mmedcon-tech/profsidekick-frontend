@@ -1,0 +1,34 @@
+export type SpeechVoiceGender = 'male' | 'female';
+
+/** OpenAI TTS voices tuned for natural marketplace previews. */
+const OPENAI_VOICES: Record<SpeechVoiceGender, string> = {
+  male: 'cedar',
+  female: 'marin',
+};
+
+export function pickOpenAiTtsVoice(gender: SpeechVoiceGender): string {
+  return OPENAI_VOICES[gender];
+}
+
+export const OPENAI_TTS_MODEL = 'tts-1-hd';
+
+export interface OpenAiSpeechRequest {
+  text: string;
+  gender: SpeechVoiceGender;
+}
+
+export function buildOpenAiSpeechBody({ text, gender }: OpenAiSpeechRequest): {
+  model: string;
+  input: string;
+  voice: string;
+  response_format: 'mp3';
+  speed: number;
+} {
+  return {
+    model: OPENAI_TTS_MODEL,
+    input: text,
+    voice: pickOpenAiTtsVoice(gender),
+    response_format: 'mp3',
+    speed: 0.96,
+  };
+}

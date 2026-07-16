@@ -228,7 +228,7 @@ Additional custom instructions will be provided separately.`;
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors ${
                     errors.name ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="e.g., Advanced Math Tutor"
@@ -252,7 +252,7 @@ Additional custom instructions will be provided separately.`;
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors ${
                       errors.category ? 'border-red-300' : 'border-gray-300'
                     }`}
                   >
@@ -280,7 +280,7 @@ Additional custom instructions will be provided separately.`;
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors ${
                   errors.description ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Brief description of what this prompt does..."
@@ -310,7 +310,7 @@ Additional custom instructions will be provided separately.`;
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleAddTag}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors"
                   placeholder="e.g., math, algebra, step-by-step"
                 />
               </div>
@@ -320,13 +320,13 @@ Additional custom instructions will be provided separately.`;
                   {parseTagsString(formData.tags).map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 dark:bg-primary/40 text-primary dark:text-primary/20"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="ml-2 text-blue-600 hover:text-blue-800"
+                        className="ml-2 text-primary/90 dark:text-primary/40 hover:text-primary dark:text-primary/20"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -352,7 +352,7 @@ Additional custom instructions will be provided separately.`;
                 value={formData.content}
                 onChange={handleInputChange}
                 rows={8}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 transition-colors ${
                   errors.content ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Add custom examination instructions, question strategies, or subject-specific behavior..."
@@ -398,7 +398,7 @@ Additional custom instructions will be provided separately.`;
                 name="isPublic"
                 checked={Boolean(formData.isPublic)}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary/90 dark:text-primary/40 focus:ring-primary/50 dark:focus:ring-primary/50 border-gray-300 rounded"
               />
               <label htmlFor="isPublic" className="ml-2 block text-sm text-gray-900 dark:text-gray-100">
                 Make this prompt public (other users can discover and use it)
@@ -418,7 +418,7 @@ Additional custom instructions will be provided separately.`;
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-6 py-3 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {isSaving ? (
                 <>

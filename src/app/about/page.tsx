@@ -7,14 +7,15 @@ import { ArrowLeft, Users, Lightbulb, Award } from 'lucide-react';
 
 export default function AboutPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
 
   // Show loading while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -39,7 +40,7 @@ export default function AboutPage() {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <span className="text-2xl font-bold text-blue-900">ProfSidekick</span>
+              <span className="text-2xl font-bold text-primary dark:text-primary/10">ProfSidekick</span>
             </button>
             
             <div className="flex items-center space-x-4">
@@ -52,15 +53,15 @@ export default function AboutPage() {
               </button>
               {isAuthenticated ? (
                 <button
-                  onClick={() => router.push('/dashboard')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  onClick={() => router.push(dashboardUrl)}
+                  className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
                 >
                   Dashboard
                 </button>
               ) : (
                 <button
                   onClick={() => router.push('/login')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
                 >
                   Sign In
                 </button>
@@ -71,7 +72,7 @@ export default function AboutPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
+      <section className="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
             About ProfSidekick
@@ -90,7 +91,7 @@ export default function AboutPage() {
           <div className="text-center">
             {/* <div>
               <div className="flex items-center gap-3 mb-6">
-                <Target className="w-8 h-8 text-blue-600" />
+                <Target className="w-8 h-8 text-primary/90 dark:text-primary/40" />
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Our Mission</h2>
               </div>
               <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
@@ -106,26 +107,26 @@ export default function AboutPage() {
             </div> */}
                          <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-8">
                <div className="text-center">
-                 <h3 className="text-2xl font-bold text-blue-900 mb-4">🚀 Coming Soon</h3>
+                 <h3 className="text-2xl font-bold text-primary dark:text-primary/10 mb-4">🚀 Coming Soon</h3>
                  <p className="text-gray-700 dark:text-gray-300 mb-6">
                    We are building something amazing for educators worldwide. 
                    ProfSidekick is currently in active development.
                  </p>
                  {/* <div className="grid grid-cols-2 gap-4 text-center">
                    <div>
-                     <div className="text-2xl font-bold text-blue-600 mb-1">✨</div>
+                     <div className="text-2xl font-bold text-primary/90 dark:text-primary/40 mb-1">✨</div>
                      <div className="text-sm text-gray-600 dark:text-gray-400">AI-Powered</div>
                    </div>
                    <div>
-                     <div className="text-2xl font-bold text-blue-600 mb-1">🎯</div>
+                     <div className="text-2xl font-bold text-primary/90 dark:text-primary/40 mb-1">🎯</div>
                      <div className="text-sm text-gray-600 dark:text-gray-400">Educator-Focused</div>
                    </div>
                    <div>
-                     <div className="text-2xl font-bold text-blue-600 mb-1">🔮</div>
+                     <div className="text-2xl font-bold text-primary/90 dark:text-primary/40 mb-1">🔮</div>
                      <div className="text-sm text-gray-600 dark:text-gray-400">Future-Ready</div>
                    </div>
                    <div>
-                     <div className="text-2xl font-bold text-blue-600 mb-1">💡</div>
+                     <div className="text-2xl font-bold text-primary/90 dark:text-primary/40 mb-1">💡</div>
                      <div className="text-sm text-gray-600 dark:text-gray-400">Innovative</div>
                    </div>
                  </div> */}
@@ -147,8 +148,8 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Lightbulb className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-primary/10 dark:bg-primary/40 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Lightbulb className="w-8 h-8 text-primary/90 dark:text-primary/40" />
               </div>
               <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Innovation</h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -158,8 +159,8 @@ export default function AboutPage() {
             </div>
 
             <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Accessibility</h3>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -215,7 +216,7 @@ export default function AboutPage() {
       </section> */}
 
       {/* CTA Section */}
-      {/* <section className="py-20 bg-blue-600">
+      {/* <section className="py-20 bg-primary dark:bg-primary/90">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Transform Your Teaching?
@@ -226,22 +227,22 @@ export default function AboutPage() {
                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
              {isAuthenticated ? (
                <button
-                 onClick={() => router.push('/dashboard')}
-                 className="bg-white dark:bg-gray-800 text-blue-600 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 dark:bg-gray-800 transition-colors"
+                 onClick={() => router.push(dashboardUrl)}
+                 className="bg-white dark:bg-gray-800 text-primary/90 dark:text-primary/40 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                >
                  Go to Dashboard
                </button>
              ) : (
                <button
                  onClick={() => router.push('/register')}
-                 className="bg-white dark:bg-gray-800 text-blue-600 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 dark:bg-gray-800 transition-colors"
+                 className="bg-white dark:bg-gray-800 text-primary/90 dark:text-primary/40 px-8 py-4 rounded-lg font-medium hover:bg-gray-100 dark:bg-gray-800 transition-colors"
                >
                  Get Started Free
                </button>
              )}
              <button
                onClick={() => router.push('/contact')}
-               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-medium hover:bg-white dark:bg-gray-800 hover:text-blue-600 transition-colors"
+               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-medium hover:bg-white dark:bg-gray-800 hover:text-primary/90 dark:text-primary/40 transition-colors"
              >
                Contact Us
              </button>
@@ -282,7 +283,7 @@ export default function AboutPage() {
                <h3 className="font-semibold mb-4">Account</h3>
                <ul className="space-y-2 text-gray-400">
                  {isAuthenticated ? (
-                   <li><button onClick={() => router.push('/dashboard')} className="hover:text-white transition-colors">Dashboard</button></li>
+                   <li><button onClick={() => router.push(dashboardUrl)} className="hover:text-white transition-colors">Dashboard</button></li>
                  ) : (
                    <>
                      <li><button onClick={() => router.push('/login')} className="hover:text-white transition-colors">Sign In</button></li>

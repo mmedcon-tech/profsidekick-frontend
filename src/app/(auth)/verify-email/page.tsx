@@ -51,12 +51,12 @@ export default function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 px-4">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
         <div className="text-center">
           {status === 'loading' && (
             <>
-              <Loader2 className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
+              <Loader2 className="w-16 h-16 text-primary/90 dark:text-primary/40 mx-auto mb-4 animate-spin" />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Verifying Your Email
               </h1>
@@ -68,8 +68,8 @@ export default function VerifyEmailPage() {
 
           {status === 'success' && (
             <>
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-10 h-10 text-green-600" />
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-10 h-10 text-primary" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Email Verified! 🎉
@@ -77,14 +77,14 @@ export default function VerifyEmailPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {message}
               </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="bg-primary/5 dark:bg-primary/20 border border-primary/20 dark:border-primary/90 rounded-lg p-4 mb-6">
                 <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <Mail className="w-5 h-5 text-primary/90 dark:text-primary/40 mt-0.5 flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-sm font-medium text-blue-900 mb-1">
+                    <p className="text-sm font-medium text-primary dark:text-primary/10 mb-1">
                       What happens next?
                     </p>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-primary/95 dark:text-primary/30">
                       Your account is pending approval. You will receive an email once your account is approved and ready to use.
                     </p>
                   </div>
@@ -92,7 +92,7 @@ export default function VerifyEmailPage() {
               </div>
               <button
                 onClick={() => router.push('/login')}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="w-full px-6 py-3 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary transition-colors font-medium"
               >
                 Return to Login
               </button>
@@ -124,7 +124,7 @@ export default function VerifyEmailPage() {
                 </button>
                 <button
                   onClick={() => router.push('/login')}
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="flex-1 px-6 py-3 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary transition-colors font-medium"
                 >
                   Go to Login
                 </button>

@@ -1,65 +1,54 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react"; 
-import { useRouter, useSearchParams } from "next/navigation"; 
-import { ClassDetails } from "@/types/types"; 
-import { useAuth } from "@/contexts/AuthContext"; 
-import ProtectedRoute from "@/components/auth/ProtectedRoute"; 
-import { config } from "@/lib/config"; 
-import { ChevronLeft } from "lucide-react"; 
-import CourseSelector from "./CourseSelector"; 
-import { CourseDetails } from "@/hooks/useCourses"; 
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ClassDetails } from "@/types/types";
+import { useAuth } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { config } from "@/lib/config";
+import { ChevronLeft } from "lucide-react";
+import CourseSelector from "./CourseSelector";
+import { CourseDetails } from "@/hooks/useCourses";
+import { publisherPromptApi, type PromptTemplateResponse } from "@/lib/avatarApi";
 
-// Helper component for collapsible sections 
-interface CollapsibleSectionProps { 
-  title: string; 
-  isOpen: boolean; 
-  onToggle: () => void; 
-  children: React.ReactNode; 
-} 
+interface CollapsibleSectionProps {
+  title: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}
 
-const showSection = false; 
+const showSection = false;
 
-function CollapsibleSection({ title, isOpen, onToggle, children }: CollapsibleSectionProps) { 
-  return ( 
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg"> 
-    <button 
-      type="button" 
-      onClick={onToggle} 
-      className="w-full px-4 py-3 text-left flex justify-between items-center bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:bg-gray-800 rounded-t-lg transition-colors" 
-    > 
-      <span className="font-medium text-gray-700 dark:text-gray-300">{title}</span> 
-      <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}> 
-      ▼ 
-      </span> 
-    </button> 
-    {isOpen && ( 
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700"> 
-        {children} 
-      </div> 
-    )} 
-    </div> 
-  ); 
-} 
-
+function CollapsibleSection({ title, isOpen, onToggle, children }: CollapsibleSectionProps) {
+  return (
+    <div className="rounded-lg border border-border">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between rounded-t-lg bg-muted px-4 py-3 text-left transition-colors hover:bg-muted/80"
+      >
+        <span className="font-medium text-foreground">{title}</span>
+        <span className={`transition-transform ${isOpen ? "rotate-180" : ""}`}>▼</span>
+      </button>
+      {isOpen && (
+        <div className="border-t border-border p-4">{children}</div>
+      )}
+    </div>
+  );
+}
 
 export default function ClassCreation() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token } = useAuth();
 
-  // const [, setDefaultPrompt] = useState("");
-
-  // Course selection state
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [, setSelectedCourse] = useState<CourseDetails | null>(null);
 
-  // Check for courseId URL parameter to pre-select course
   useEffect(() => {
     const courseIdParam = searchParams.get("courseId");
-    if (courseIdParam) {
-      setSelectedCourseId(courseIdParam);
-    }
+    if (courseIdParam) setSelectedCourseId(courseIdParam);
   }, [searchParams]);
 
   const [classDetails, setClassDetails] = useState<ClassDetails>({
@@ -72,15 +61,10 @@ export default function ClassCreation() {
       "You are an expert academic content analyst. Extract and describe the complete content of this examination slide for use by an AI oral examiner. Transcribe all text, equations (plain-text notation), code, diagrams (structure, axes, labels, key values), and tables. Be thorough and exact — this content will be used to generate examination questions and evaluate student responses.",
     assistant_parameters: {
       input_audio_format: "pcm16",
-      input_audio_noice_reduction: {
-        type: "near_field",
-      },
-      input_audio_transcription: {
-        language: "en",
-        model: "whisper-1",
-      },
+      input_audio_noice_reduction: { type: "near_field" },
+      input_audio_transcription: { language: "en", model: "whisper-1" },
       instructions: "",
-      model: "gpt-4o-realtime-preview-2024-12-17",
+      model: "gpt-realtime-2",
       output_audio_format: "pcm16",
       temperature: 0.8,
       tool_choice: "auto",
@@ -96,41 +80,58 @@ export default function ClassCreation() {
     },
   });
 
-  const [sessionMode, setSessionMode] = useState<'teaching' | 'examination'>('teaching');
+  // version2 adds consultation mode; subscriberRuntimeMode is SAE feature kept from local branch
+  const [sessionMode, setSessionMode] = useState<"teaching" | "examination" | "consultation">("teaching");
   const [subscriberRuntimeMode, setSubscriberRuntimeMode] = useState<'avatar' | 'chat' | 'choice'>('avatar');
 
-  // Avatar + role selection
+  // Prompt picker (publishers only)
+  const [availablePrompts, setAvailablePrompts] = useState<PromptTemplateResponse[]>([]);
+  const [selectedPromptTemplateId, setSelectedPromptTemplateId] = useState<string>("");
+
+  const SESSION_MODE_TO_USE_CASE: Record<string, string> = {
+    teaching:     'session.teaching',
+    examination:  'session.examination',
+    consultation: 'session.conversation',
+  };
+
+  useEffect(() => {
+    if (!token || user?.role !== 'publisher') return;
+    const useCase = SESSION_MODE_TO_USE_CASE[sessionMode] ?? 'session.teaching';
+    publisherPromptApi.listTemplates(useCase)
+      .then(setAvailablePrompts)
+      .catch(() => setAvailablePrompts([]));
+    setSelectedPromptTemplateId('');
+  }, [sessionMode, token, user?.role]);
+
   const [availableAvatars, setAvailableAvatars] = useState<{ id: string; name: string; template_id: string; template_image_url: string | null }[]>([]);
-  const [selectedAvatarId, setSelectedAvatarId] = useState<string>('');
-  const [selectedAvatarTemplateId, setSelectedAvatarTemplateId] = useState<string>('');
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string>("");
+  const [selectedAvatarTemplateId, setSelectedAvatarTemplateId] = useState<string>("");
   const [availableRoles, setAvailableRoles] = useState<{ id: string; name: string; description: string | null; prompt_context: string | null }[]>([]);
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('');
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("");
 
   useEffect(() => {
     if (!token) return;
-    fetch(config.getApiUrl('/api/publisher/avatars'), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    fetch(config.getApiUrl("/api/publisher/avatars"), { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((data) => setAvailableAvatars(data.avatars || []))
       .catch(() => {});
   }, [token]);
 
   useEffect(() => {
-    if (!selectedAvatarTemplateId || !token) { setAvailableRoles([]); setSelectedRoleId(''); return; }
+    if (!selectedAvatarTemplateId || !token) { setAvailableRoles([]); setSelectedRoleId(""); return; }
     fetch(config.getApiUrl(`/api/publisher/avatar-templates/${selectedAvatarTemplateId}/roles`), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((data) => setAvailableRoles(Array.isArray(data) ? data : []))
       .catch(() => setAvailableRoles([]));
-    setSelectedRoleId('');
+    setSelectedRoleId("");
   }, [selectedAvatarTemplateId, token]);
 
   const handleAvatarChange = (avatarId: string) => {
     setSelectedAvatarId(avatarId);
     const avatar = availableAvatars.find((a) => a.id === avatarId);
-    setSelectedAvatarTemplateId(avatar?.template_id || '');
+    setSelectedAvatarTemplateId(avatar?.template_id || "");
   };
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -141,64 +142,53 @@ export default function ClassCreation() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const solutionFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle course selection
+  // Assessment mode state
+  const [sessionSource, setSessionSource] = useState<"upload" | "assessment">("upload");
+  type SubmissionRow = { id: string; display_name: string; student_name: string; score: number | null; version_number: number | null; created_at: string | null };
+  const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>("");
+
+  useEffect(() => {
+    if (sessionSource !== "assessment" || !token) return;
+    fetch(config.getApiUrl("/api/autograder/submissions"), {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setSubmissions(Array.isArray(data) ? data : []))
+      .catch(() => setSubmissions([]));
+  }, [sessionSource, token]);
+
   const handleCourseSelect = (courseId: string, course?: CourseDetails) => {
     setSelectedCourseId(courseId);
     setSelectedCourse(course || null);
-
-    // Update class details with course info for legacy compatibility
     if (course) {
-      setClassDetails((prev) => ({
-        ...prev,
-        courseName: course.name || "",
-        courseCode: course.code || "",
-      }));
+      setClassDetails((prev) => ({ ...prev, courseName: course.name || "", courseCode: course.code || "" }));
     }
   };
 
   const handleMaterialSelection = (materialId: string, checked: boolean) => {
-    setSelectedMaterialIds(prev =>
-      checked ? [...prev, materialId] : prev.filter(id => id !== materialId)
+    setSelectedMaterialIds((prev) =>
+      checked ? [...prev, materialId] : prev.filter((id) => id !== materialId)
     );
   };
 
-
-  // State for managing visibility of advanced sections
   const [showAdvancedAudio, setShowAdvancedAudio] = useState(false);
-  const [showAdvancedTurnDetection, setShowAdvancedTurnDetection] =
-    useState(false);
+  const [showAdvancedTurnDetection, setShowAdvancedTurnDetection] = useState(false);
   const [showAdvancedTools, setShowAdvancedTools] = useState(false);
-
   const audioPlayerRef = useRef<HTMLAudioElement>(null);
-  const [currentlyPlayingVoice, setCurrentlyPlayingVoice] = useState<
-    string | null
-  >(null);
+  const [currentlyPlayingVoice, setCurrentlyPlayingVoice] = useState<string | null>(null);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const path = e.target.dataset.path || name;
-
     let parsedValue: any = value;
     if (type === "number") {
       parsedValue = parseFloat(value);
-      if (isNaN(parsedValue)) {
-        parsedValue = 0; // Or handle error, or keep as string if appropriate
-      }
+      if (isNaN(parsedValue)) parsedValue = 0;
     } else if (type === "checkbox") {
       parsedValue = (e.target as HTMLInputElement).checked;
     }
-
-    // Handle specific known number or boolean fields that don't have type="number/checkbox"
-    // For example, duration is a top-level prop.
-    if (name === "duration") {
-      parsedValue = parseInt(value, 10);
-    }
-
-    // For turn_detection enable/disable
+    if (name === "duration") parsedValue = parseInt(value, 10);
     if (name === "turn_detection_enabled") {
       const enabled = (e.target as HTMLInputElement).checked;
       setClassDetails((prev) => ({
@@ -206,29 +196,18 @@ export default function ClassCreation() {
         assistant_parameters: {
           ...prev.assistant_parameters,
           turn_detection: enabled
-            ? {
-                type: "server_vad", // Default values when re-enabled
-                threshold: 0.5,
-                silence_duration_ms: 1000,
-                prefix_padding_ms: 1000,
-                interrupt_response: true,
-                eagerness: "auto",
-                create_response: true,
-              }
+            ? { type: "server_vad", threshold: 0.5, silence_duration_ms: 1000, prefix_padding_ms: 1000, interrupt_response: true, eagerness: "auto", create_response: true }
             : null,
         },
       }));
       return;
     }
-
     const keys = path.split(".");
     setClassDetails((prev) => {
       const newState = { ...prev };
       let currentLevel: any = newState;
       for (let i = 0; i < keys.length - 1; i++) {
-        if (!currentLevel[keys[i]]) {
-          currentLevel[keys[i]] = {};
-        }
+        if (!currentLevel[keys[i]]) currentLevel[keys[i]] = {};
         currentLevel = currentLevel[keys[i]];
       }
       currentLevel[keys[keys.length - 1]] = parsedValue;
@@ -245,84 +224,38 @@ export default function ClassCreation() {
   const SUPPORTED_FORMAT_LABEL = "PDF, PPTX, or DOCX";
 
   const handleFileSelect = (file: File) => {
-    if (!SUPPORTED_MIME_TYPES.includes(file.type)) {
-      setError(`Please upload a ${SUPPORTED_FORMAT_LABEL} file`);
-      return;
-    }
-
-    if (file.size > 30 * 1024 * 1024) {
-      setError(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 30 MB.`);
-      return;
-    }
-
+    if (!SUPPORTED_MIME_TYPES.includes(file.type)) { setError(`Please upload a ${SUPPORTED_FORMAT_LABEL} file`); return; }
+    if (file.size > 50 * 1024 * 1024) { setError("File size must be less than 50MB"); return; }
     setSelectedFile(file);
     setError(null);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFileSelect(files[0]);
-    }
-  };
+  const handleDrop = (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(false); const files = Array.from(e.dataTransfer.files); if (files.length > 0) handleFileSelect(files[0]); };
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(false); };
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => { const files = e.target.files; if (files && files.length > 0) handleFileSelect(files[0]); };
 
   const handleSolutionFileSelect = (file: File) => {
-    if (!SUPPORTED_MIME_TYPES.includes(file.type)) {
-      setError(`Solution file must be a ${SUPPORTED_FORMAT_LABEL}`);
-      return;
-    }
-    if (file.size > 30 * 1024 * 1024) {
-      setError(`Solution file is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 30 MB.`);
-      return;
-    }
+    if (!SUPPORTED_MIME_TYPES.includes(file.type)) { setError(`Solution file must be a ${SUPPORTED_FORMAT_LABEL}`); return; }
+    if (file.size > 50 * 1024 * 1024) { setError("Solution file size must be less than 50MB"); return; }
     setSelectedSolutionFile(file);
     setError(null);
   };
 
   const handleSolutionFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      handleSolutionFileSelect(files[0]);
-    }
+    if (files && files.length > 0) handleSolutionFileSelect(files[0]);
   };
 
   const validateForm = (): boolean => {
-    if (!selectedCourseId.trim()) {
-      setError("Please select a course");
-      return false;
-    }
-    if (!classDetails.className.trim()) {
-      setError("Class name is required");
-      return false;
-    }
-    if (!selectedFile) {
-      setError("Please upload a presentation file");
-      return false;
-    }
+    if (!selectedCourseId.trim()) { setError("Please select a course"); return false; }
+    if (!classDetails.className.trim()) { setError("Class name is required"); return false; }
+    if (sessionSource === "upload" && !selectedFile) { setError("Please upload a presentation file"); return false; }
+    if (sessionSource === "assessment" && !selectedSubmissionId) { setError("Please select a submission"); return false; }
+    if (!classDetails.visionInstructions.trim()) { setError("Vision instructions are required"); return false; }
     return true;
   };
 
-
-  // To allow attaching course materials to the session
   const [materials, setMaterials] = useState<{ id: string; title: string }[]>([]);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
 
@@ -330,18 +263,12 @@ export default function ClassCreation() {
     const fetchMaterials = async () => {
       if (!selectedCourseId) return;
       try {
-        const res = await fetch(
-          config.getApiUrl(`/api/course-materials/courses/${selectedCourseId}`),
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const res = await fetch(config.getApiUrl(`/api/course-materials/courses/${selectedCourseId}`), {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        });
         if (!res.ok) throw new Error("Failed to fetch materials");
         const data = await res.json();
-        setMaterials(data.materials); // this is an array
+        setMaterials(data.materials);
       } catch (err) {
         console.error("Error fetching materials:", err);
       }
@@ -351,14 +278,10 @@ export default function ClassCreation() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
     setIsLoading(true);
     setError(null);
-
     try {
-      // Transform classDetails to sessionDetails format for backend
       const sessionDetails = {
         courseId: selectedCourseId,
         avatarId: selectedAvatarId || null,
@@ -369,16 +292,12 @@ export default function ClassCreation() {
         sessionMode,
         visionInstructions: classDetails.visionInstructions,
         assistantParameters: {
-          input_audio_format:
-            classDetails.assistant_parameters.input_audio_format,
-          input_audio_noise_reduction:
-            classDetails.assistant_parameters.input_audio_noice_reduction,
-          input_audio_transcription:
-            classDetails.assistant_parameters.input_audio_transcription,
+          input_audio_format: classDetails.assistant_parameters.input_audio_format,
+          input_audio_noise_reduction: classDetails.assistant_parameters.input_audio_noice_reduction,
+          input_audio_transcription: classDetails.assistant_parameters.input_audio_transcription,
           instructions: "",
           model: classDetails.assistant_parameters.model,
-          output_audio_format:
-            classDetails.assistant_parameters.output_audio_format,
+          output_audio_format: classDetails.assistant_parameters.output_audio_format,
           temperature: classDetails.assistant_parameters.temperature,
           tool_choice: classDetails.assistant_parameters.tool_choice,
           tools: classDetails.assistant_parameters.tools,
@@ -387,47 +306,34 @@ export default function ClassCreation() {
         },
         materialId: selectedMaterialIds || null,
         subscriberRuntimeMode,
+        promptTemplateId: selectedPromptTemplateId || null,
+        source: sessionSource,
+        ...(sessionSource === "assessment" ? { submissionId: selectedSubmissionId } : {}),
       };
-
       const formData = new FormData();
-      formData.append("presentation", selectedFile!);
-      if (selectedSolutionFile) {
-        formData.append("solution_file", selectedSolutionFile);
+      if (sessionSource === "upload") {
+        formData.append("presentation", selectedFile!);
+        if (selectedSolutionFile) formData.append("solution_file", selectedSolutionFile);
       }
       formData.append("sessionDetails", JSON.stringify(sessionDetails));
-
       const response = await fetch(config.getApiUrl("/api/sessions/create"), {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-
       if (response.status === 413) {
-        throw new Error("File is too large. Please upload a file under 30 MB.");
+        throw new Error("File is too large. Please upload a file under 50MB.");
       }
       const result = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          result.detail || result.message || result.error || "Failed to create session"
-        );
-      }
-
-      // Redirect to the session overview page using new nested URL structure
+      if (!response.ok) throw new Error(result.detail || result.error || result.message || "Failed to create session");
       router.push(`/courses/${selectedCourseId}/sessions/${result.sessionId}`);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while creating the session"
-      );
+      setError(err instanceof Error ? err.message : "An error occurred while creating the session");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Default values for turn_detection when it's enabled
   const defaultTurnDetectionParams = {
     type: "server_vad" as const,
     threshold: 0.5,
@@ -445,71 +351,61 @@ export default function ClassCreation() {
         audioPlayerRef.current.currentTime = 0;
         setCurrentlyPlayingVoice(null);
       } else {
-        // Stop any currently playing sample first
         audioPlayerRef.current.pause();
         audioPlayerRef.current.currentTime = 0;
         audioPlayerRef.current.src = `/audio/voice_samples/${voiceName}.flac`;
-        audioPlayerRef.current
-          .play()
-          .then(() => {
-            setCurrentlyPlayingVoice(voiceName);
-          })
-          .catch((err) => {
-            console.error("Error playing audio:", err);
-            setCurrentlyPlayingVoice(null); // Reset if error
-            setError(
-              `Could not play sample for ${voiceName}. Ensure audio files are in /public/audio/voice_samples/`
-            );
-          });
+        audioPlayerRef.current.play()
+          .then(() => setCurrentlyPlayingVoice(voiceName))
+          .catch(() => { setCurrentlyPlayingVoice(null); setError(`Could not play sample for ${voiceName}.`); });
       }
     }
   };
-
-
-
 
   useEffect(() => {
     const audioEl = audioPlayerRef.current;
     const handleAudioEnd = () => setCurrentlyPlayingVoice(null);
     if (audioEl) {
       audioEl.addEventListener("ended", handleAudioEnd);
-      return () => {
-        audioEl.removeEventListener("ended", handleAudioEnd);
-      };
+      return () => audioEl.removeEventListener("ended", handleAudioEnd);
     }
   }, []);
 
+  // Shared unselected card classes
+  const modeCardBase = "flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors";
+  const modeCardIdle = "border-border hover:border-primary/40 hover:bg-accent";
+
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <audio ref={audioPlayerRef} />{" "}
-        {/* Hidden audio player controlled by the ref */}
-        <div className="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-4 mb-4">
+      <audio ref={audioPlayerRef} />
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <div className="mb-4 flex items-center justify-center gap-4">
               <button
-                onClick={() => router.push("/dashboard")}
-                className="p-2 hover:bg-white dark:bg-gray-800/50 rounded-lg transition-colors"
+                onClick={() => {
+                  const courseIdParam = searchParams.get("courseId");
+                  if (courseIdParam) router.push(`/courses/${courseIdParam}`);
+                  else router.back();
+                }}
+                className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
-                <ChevronLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                <ChevronLeft className="h-6 w-6" />
               </button>
-              <h1 className="text-3xl font-bold text-blue-900">
-                Create New Session
-              </h1>
+              <h1 className="text-3xl font-bold text-foreground">Create New Session</h1>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Upload your presentation and configure your AI teaching assistant
+            <p className="text-muted-foreground">
+              Upload your presentation and configure your AI assistant
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Section 1: Basic Class Information */}
-            <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <legend className="text-lg font-semibold text-blue-700 px-2">
-                Basic Class Information
+            {/* Section 1: Basic Information */}
+            <fieldset className="space-y-4 rounded-lg border border-border p-4">
+              <legend className="px-2 text-lg font-semibold text-foreground">
+                Basic Information
               </legend>
 
-              {/* Course Selection - NEW */}
               <CourseSelector
                 selectedCourseId={selectedCourseId}
                 onCourseSelect={handleCourseSelect}
@@ -518,10 +414,7 @@ export default function ClassCreation() {
               />
 
               <div>
-                <label
-                  htmlFor="className"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
+                <label htmlFor="className" className="mb-1 block text-sm font-medium text-foreground">
                   Session Name *
                 </label>
                 <input
@@ -532,54 +425,68 @@ export default function ClassCreation() {
                   onChange={handleInputChange}
                   required
                   className="w-full input-style"
-                  placeholder="Introduction to AI - Lecture 1"
+                  placeholder="Introduction to AI — Lecture 1"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Name for this specific teaching session
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Name for this specific session</p>
               </div>
 
               {/* Session Mode */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Session Mode *
-                </label>
-                <div className="grid grid-cols-2 gap-3">
+                <label className="mb-2 block text-sm font-medium text-foreground">Session Mode *</label>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <button
                     type="button"
-                    onClick={() => setSessionMode('teaching')}
-                    className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors ${
-                      sessionMode === 'teaching'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:bg-gray-900'
+                    onClick={() => setSessionMode("teaching")}
+                    className={`${modeCardBase} ${
+                      sessionMode === "teaching"
+                        ? "border-primary bg-primary/5"
+                        : modeCardIdle
                     }`}
                   >
-                    <span className={`text-sm font-semibold ${sessionMode === 'teaching' ? 'text-blue-700' : 'text-gray-700 dark:text-gray-300'}`}>
-                      📚 Teaching Mode
+                    <span className={`text-sm font-semibold ${sessionMode === "teaching" ? "text-primary" : "text-foreground"}`}>
+                      📚 Teaching
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      The AI guides and explains concepts. Loads the Teaching Prompt from the avatar template.
+                    <span className="text-xs leading-relaxed text-muted-foreground">
+                      AI guides and explains concepts using the Teaching Prompt.
                     </span>
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => setSessionMode('examination')}
-                    className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 text-left transition-colors ${
-                      sessionMode === 'examination'
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:bg-gray-900'
+                    onClick={() => setSessionMode("examination")}
+                    className={`${modeCardBase} ${
+                      sessionMode === "examination"
+                        ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+                        : modeCardIdle
                     }`}
                   >
-                    <span className={`text-sm font-semibold ${sessionMode === 'examination' ? 'text-indigo-700' : 'text-gray-700 dark:text-gray-300'}`}>
-                      📝 Examination Mode
+                    <span className={`text-sm font-semibold ${sessionMode === "examination" ? "text-amber-700 dark:text-amber-400" : "text-foreground"}`}>
+                      📝 Examination
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      The AI assesses and evaluates. Loads the Examination Prompt with strict assessment rules.
+                    <span className="text-xs leading-relaxed text-muted-foreground">
+                      AI assesses and evaluates with strict assessment rules.
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSessionMode("consultation")}
+                    className={`${modeCardBase} ${
+                      sessionMode === "consultation"
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                        : modeCardIdle
+                    }`}
+                  >
+                    <span className={`text-sm font-semibold ${sessionMode === "consultation" ? "text-emerald-700 dark:text-emerald-400" : "text-foreground"}`}>
+                      💬 Consultation
+                    </span>
+                    <span className="text-xs leading-relaxed text-muted-foreground">
+                      AI acts as an expert advisor — answers questions and gives actionable guidance.
                     </span>
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                  This determines which AI behaviour is used throughout the session and cannot be changed after creation.
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Determines AI behaviour for the session. Cannot be changed after creation.
                 </p>
               </div>
 
@@ -633,7 +540,7 @@ export default function ClassCreation() {
               {/* Avatar selection */}
               {availableAvatars.length > 0 && (
                 <div>
-                  <label htmlFor="avatar_select" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="avatar_select" className="mb-1 block text-sm font-medium text-foreground">
                     Avatar (Optional)
                   </label>
                   <select
@@ -647,49 +554,87 @@ export default function ClassCreation() {
                       <option key={a.id} value={a.id}>{a.name}</option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Choose an avatar to apply its AI persona and enable role selection.
                   </p>
                 </div>
               )}
 
-              {/* Role selection — only shown when an avatar with roles is selected */}
+              {/* Role selection */}
               {availableRoles.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Student Role
-                  </label>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Student Role</label>
                   <div className="space-y-2">
                     {availableRoles.map((role) => (
-                      <label key={role.id} className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${selectedRoleId === role.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'}`}>
+                      <label
+                        key={role.id}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                          selectedRoleId === role.id
+                            ? "border-primary/50 bg-primary/5"
+                            : "border-border hover:border-primary/30 hover:bg-accent"
+                        }`}
+                      >
                         <input
                           type="radio"
                           name="session_role"
                           value={role.id}
                           checked={selectedRoleId === role.id}
                           onChange={() => setSelectedRoleId(role.id)}
-                          className="mt-0.5 accent-blue-600"
+                          className="mt-0.5 accent-primary"
                         />
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{role.name}</p>
+                          <p className="text-sm font-medium text-foreground">{role.name}</p>
                           {role.description && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{role.description}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{role.description}</p>
                           )}
                         </div>
                       </label>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    The AI will adapt its behaviour to the selected role.
+                  <p className="mt-1 text-xs text-muted-foreground">The AI will adapt its behaviour to the selected role.</p>
+                </div>
+              )}
+
+              {/* Prompt override — publishers only */}
+              {user?.role === 'publisher' && availablePrompts.length > 0 && (
+                <div>
+                  <label htmlFor="prompt_select" className="mb-1 block text-sm font-medium text-foreground">
+                    Prompt Override (Optional)
+                  </label>
+                  <select
+                    id="prompt_select"
+                    value={selectedPromptTemplateId}
+                    onChange={(e) => setSelectedPromptTemplateId(e.target.value)}
+                    className="w-full input-style"
+                  >
+                    <option value="">— Use avatar / system default —</option>
+                    {availablePrompts.filter((p) => p.is_system).length > 0 && (
+                      <optgroup label="System Defaults">
+                        {availablePrompts.filter((p) => p.is_system).map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {availablePrompts.filter((p) => !p.is_system).length > 0 && (
+                      <optgroup label="My Prompts">
+                        {availablePrompts.filter((p) => !p.is_system).map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Override the AI system prompt for this session only. Leave blank to use the avatar's configured prompt.
                   </p>
                 </div>
               )}
 
+              {/* Course materials */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Attach Materials from Course Materials (Optional)
+                <label className="mb-1 block text-sm font-medium text-foreground">
+                  Attach Course Materials (Optional)
                 </label>
-                <div className="space-y-2 max-h-48 overflow-y-auto border p-2 rounded-lg bg-gray-50 dark:bg-gray-900">
+                <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-border bg-muted/40 p-2">
                   {materials.map((m) => (
                     <div key={m.id} className="flex items-center gap-2">
                       <input
@@ -697,50 +642,33 @@ export default function ClassCreation() {
                         id={`material-${m.id}`}
                         checked={selectedMaterialIds.includes(m.id)}
                         onChange={(e) => handleMaterialSelection(m.id, e.target.checked)}
+                        className="accent-primary"
                       />
-                      <label htmlFor={`material-${m.id}`} className="text-gray-700 dark:text-gray-300">
-                        {m.title}
-                      </label>
+                      <label htmlFor={`material-${m.id}`} className="text-sm text-foreground">{m.title}</label>
                     </div>
                   ))}
                   {materials.length === 0 && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">No course materials available.</p>
+                    <p className="text-xs text-muted-foreground">No course materials available.</p>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Choose one or more existing course materials to include in this session.
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Choose existing course materials to include in this session.
                 </p>
               </div>
 
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label
-                    htmlFor="duration"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
+                  <label htmlFor="duration" className="mb-1 block text-sm font-medium text-foreground">
                     Duration (minutes)
                   </label>
-                  <select
-                    name="duration"
-                    id="duration"
-                    value={classDetails.duration}
-                    onChange={handleInputChange}
-                    className="w-full input-style"
-                  >
+                  <select name="duration" id="duration" value={classDetails.duration} onChange={handleInputChange} className="w-full input-style">
                     {[30, 45, 60, 75, 90].map((d) => (
-                      <option key={d} value={d}>
-                        {d} minutes
-                      </option>
+                      <option key={d} value={d}>{d} minutes</option>
                     ))}
                   </select>
                 </div>
-
                 <div>
-                  <label
-                    htmlFor="sessionNumber"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  >
+                  <label htmlFor="sessionNumber" className="mb-1 block text-sm font-medium text-foreground">
                     Session Number (Optional)
                   </label>
                   <input
@@ -751,18 +679,13 @@ export default function ClassCreation() {
                     placeholder="1"
                     min="1"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Sequential session number
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">Sequential session number</p>
                 </div>
               </div>
 
               <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Session Description (Optional)
+                <label htmlFor="description" className="mb-1 block text-sm font-medium text-foreground">
+                  Description (Optional)
                 </label>
                 <textarea
                   name="description"
@@ -772,183 +695,192 @@ export default function ClassCreation() {
                   rows={3}
                   className="w-full input-style"
                   placeholder="Brief overview of this session..."
-                ></textarea>
+                />
               </div>
             </fieldset>
+
             {/* Section 2: Presentation File */}
-            <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <legend className="text-lg font-semibold text-blue-700 px-2">
-                Presentation File
-              </legend>
-              <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  isDragOver
-                    ? "border-blue-400 bg-blue-50"
-                    : selectedFile
-                    ? "border-green-400 bg-green-50"
-                    : "border-gray-300 hover:border-gray-400"
-                }`}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.ppt,.pptx,.docx"
-                  onChange={handleFileInputChange}
-                  className="hidden"
-                />
-                {selectedFile ? (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-green-700">
-                      {selectedFile.name} ({selectedFile.size >= 1024 * 1024 ? `${(selectedFile.size / 1024 / 1024).toFixed(1)} MB` : `${(selectedFile.size / 1024).toFixed(0)} KB`})
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFile(null)}
-                      className="text-xs text-red-500 hover:underline"
-                    >
-                      Remove file
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="space-y-1">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Drag &amp; drop or click to browse (up to 30 MB)
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        Supported formats: PDF, PowerPoint (PPTX), Word (DOCX)
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <fieldset className="space-y-4 rounded-lg border border-border p-4">
+              <legend className="px-2 text-lg font-semibold text-foreground">Presentation File</legend>
 
-              {/* Solution file upload (optional) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Professor Solution File{" "}
-                  <span className="text-gray-400 font-normal">(optional — AI reference only, never shown to student)</span>
-                </label>
-                <div
-                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
-                    selectedSolutionFile
-                      ? "border-purple-400 bg-purple-50"
-                      : "border-gray-300 hover:border-gray-400"
-                  }`}
-                  onClick={() => solutionFileInputRef.current?.click()}
+              {/* Source toggle */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSessionSource("upload")}
+                  className={`${modeCardBase} ${sessionSource === "upload" ? "border-primary bg-primary/5" : modeCardIdle}`}
                 >
-                  <input
-                    ref={solutionFileInputRef}
-                    type="file"
-                    accept=".pdf,.ppt,.pptx,.docx"
-                    onChange={handleSolutionFileInputChange}
-                    className="hidden"
-                  />
-                  {selectedSolutionFile ? (
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-purple-700">
-                        {selectedSolutionFile.name} ({selectedSolutionFile.size >= 1024 * 1024 ? `${(selectedSolutionFile.size / 1024 / 1024).toFixed(1)} MB` : `${(selectedSolutionFile.size / 1024).toFixed(0)} KB`})
-                      </p>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setSelectedSolutionFile(null); }}
-                        className="text-xs text-red-500 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Click to upload solution file (optional)</p>
-                      <p className="text-xs text-gray-400">Supported: PDF, PPTX, DOCX</p>
-                    </div>
-                  )}
-                </div>
+                  <span className={`text-sm font-semibold ${sessionSource === "upload" ? "text-primary" : "text-foreground"}`}>
+                    📎 Upload Files
+                  </span>
+                  <span className="text-xs leading-relaxed text-muted-foreground">Upload a new presentation PDF or PPTX.</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSessionSource("assessment"); setSelectedSubmissionId(""); }}
+                  className={`${modeCardBase} ${sessionSource === "assessment" ? "border-primary bg-primary/5" : modeCardIdle}`}
+                >
+                  <span className={`text-sm font-semibold ${sessionSource === "assessment" ? "text-primary" : "text-foreground"}`}>
+                    📋 From Assessment
+                  </span>
+                  <span className="text-xs leading-relaxed text-muted-foreground">Use an existing graded submission as session material.</span>
+                </button>
               </div>
 
+              {sessionSource === "upload" ? (
+                <>
+                  <div
+                    className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
+                      isDragOver
+                        ? "border-primary/50 bg-primary/5"
+                        : selectedFile
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40 hover:bg-accent/50"
+                    }`}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input ref={fileInputRef} type="file" accept=".pdf,.ppt,.pptx,.docx" onChange={handleFileInputChange} className="hidden" />
+                    {selectedFile ? (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-primary">
+                          {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
+                        </p>
+                        <button type="button" onClick={() => setSelectedFile(null)} className="text-xs text-destructive hover:underline">
+                          Remove file
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Drag & drop or click to browse (up to 50MB)</p>
+                        <p className="text-xs text-muted-foreground/60">Supported: PDF, PowerPoint (PPTX), Word (DOCX)</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Solution file */}
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-foreground">
+                      Solution File{" "}
+                      <span className="font-normal text-muted-foreground">(optional — AI reference only, never shown to student)</span>
+                    </label>
+                    <div
+                      className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+                        selectedSolutionFile
+                          ? "border-primary/50 bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-accent/50"
+                      }`}
+                      onClick={() => solutionFileInputRef.current?.click()}
+                    >
+                      <input ref={solutionFileInputRef} type="file" accept=".pdf,.ppt,.pptx,.docx" onChange={handleSolutionFileInputChange} className="hidden" />
+                      {selectedSolutionFile ? (
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-primary">
+                            {selectedSolutionFile.name} ({(selectedSolutionFile.size / 1024 / 1024).toFixed(1)} MB)
+                          </p>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setSelectedSolutionFile(null); }}
+                            className="text-xs text-destructive hover:underline"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Click to upload solution file (optional)</p>
+                          <p className="text-xs text-muted-foreground/60">Supported: PDF, PPTX, DOCX</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <label className="mb-1 block text-sm font-medium text-foreground">
+                    Select Submission *
+                  </label>
+                  {submissions.length === 0 ? (
+                    <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                      No graded submissions found. Submit and grade an assignment first.
+                    </p>
+                  ) : (
+                    <select
+                      value={selectedSubmissionId}
+                      onChange={(e) => setSelectedSubmissionId(e.target.value)}
+                      className="w-full input-style"
+                    >
+                      <option value="">— Select a submission —</option>
+                      {submissions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.display_name || s.student_name}
+                          {s.version_number != null ? ` (v${s.version_number})` : ""}
+                          {s.score != null ? ` — Score: ${s.score}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    The student's handwritten work and the question sheet will be loaded as session material. Grading feedback will be injected into the AI's context.
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="visionInstructions" className="mb-1 block text-sm font-medium text-foreground">
+                  Vision Model Instructions
+                </label>
+                <textarea
+                  name="visionInstructions"
+                  id="visionInstructions"
+                  value={classDetails.visionInstructions}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full input-style"
+                  placeholder="You are an expert academic content analyst…"
+                />
+              </div>
             </fieldset>
 
             {/* Section 3: Core AI Settings */}
-            <fieldset className="space-y-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <legend className="text-lg font-semibold text-blue-700 px-2">
-                Core AI Settings
-              </legend>
+            <fieldset className="space-y-4 rounded-lg border border-border p-4">
+              <legend className="px-2 text-lg font-semibold text-foreground">Core AI Settings</legend>
 
               <div>
-                <label
-                  htmlFor="assistant_parameters.model"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
+                <label htmlFor="assistant_parameters.model" className="mb-1 block text-sm font-medium text-foreground">
                   AI Model
                 </label>
-                <select
-                  data-path="assistant_parameters.model"
-                  id="assistant_parameters.model"
-                  value={classDetails.assistant_parameters.model}
-                  onChange={handleInputChange}
-                  className="w-full input-style"
-                >
-                  <option value="gpt-4o-realtime-preview-2024-12-17">
-                    GPT-4o Realtime (Recommended)
-                  </option>
-                  <option value="gpt-4o-mini-realtime-preview-2024-12-17">
-                    GPT-4o Mini Realtime
-                  </option>
+                <select data-path="assistant_parameters.model" id="assistant_parameters.model" value={classDetails.assistant_parameters.model} onChange={handleInputChange} className="w-full input-style">
+                  <option value="gpt-realtime-2">GPT-Realtime-2 (Recommended)</option>
+                  <option value="gpt-realtime-mini">GPT-Realtime mini</option>
                   <option value="gpt-realtime">GPT Realtime</option>
                 </select>
               </div>
 
               <div>
-                <label
-                  htmlFor="assistant_parameters.voice"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
+                <label htmlFor="assistant_parameters.voice" className="mb-1 block text-sm font-medium text-foreground">
                   Assistant Voice
                 </label>
                 <div className="flex items-center gap-2">
-                  <select
-                    data-path="assistant_parameters.voice"
-                    id="assistant_parameters.voice"
-                    value={classDetails.assistant_parameters.voice}
-                    onChange={handleInputChange}
-                    className="flex-grow input-style"
-                  >
-                    {["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"].map(
-                      (v) => (
-                        <option key={v} value={v}>
-                          {v.charAt(0).toUpperCase() + v.slice(1)}
-                        </option>
-                      )
-                    )}
+                  <select data-path="assistant_parameters.voice" id="assistant_parameters.voice" value={classDetails.assistant_parameters.voice} onChange={handleInputChange} className="flex-grow input-style">
+                    {["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"].map((v) => (
+                      <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>
+                    ))}
                   </select>
                   <button
                     type="button"
                     onClick={() => playVoiceSample(classDetails.assistant_parameters.voice)}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="rounded-lg border border-input p-2 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
                     aria-label={`Preview voice ${classDetails.assistant_parameters.voice}`}
                   >
                     {currentlyPlayingVoice === classDetails.assistant_parameters.voice ? (
-                      // Stop Icon (simple square)
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-5 h-5 text-red-600"
-                      >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-destructive">
                         <path d="M6 6h12v12H6z" />
                       </svg>
                     ) : (
-                      // Play Icon (simple triangle)
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="w-5 h-5 text-blue-600"
-                      >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-primary">
                         <path d="M8 5v14l11-7z" />
                       </svg>
                     )}
@@ -957,10 +889,7 @@ export default function ClassCreation() {
               </div>
 
               <div>
-                <label
-                  htmlFor="assistant_parameters.temperature"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
+                <label htmlFor="assistant_parameters.temperature" className="mb-1 block text-sm font-medium text-foreground">
                   Temperature (Creativity): {classDetails.assistant_parameters.temperature}
                 </label>
                 <input
@@ -972,158 +901,67 @@ export default function ClassCreation() {
                   min="0.6"
                   max="1.2"
                   step="0.1"
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-muted accent-primary"
                 />
               </div>
-
             </fieldset>
-            {/* Advanced Settings Sections */}
+
+            {/* Advanced sections (hidden by default via showSection flag) */}
             {showSection && (
-              <CollapsibleSection
-                title="Advanced Tool Settings"
-                isOpen={showAdvancedTools}
-                onToggle={() => setShowAdvancedTools(!showAdvancedTools)}
-              >
+              <CollapsibleSection title="Advanced Tool Settings" isOpen={showAdvancedTools} onToggle={() => setShowAdvancedTools(!showAdvancedTools)}>
                 <div className="space-y-4">
                   <div>
-                    <label
-                      htmlFor="assistant_parameters.tool_choice"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Tool Choice
-                    </label>
-                    <select
-                      data-path="assistant_parameters.tool_choice"
-                      id="assistant_parameters.tool_choice"
-                      value={classDetails.assistant_parameters.tool_choice}
-                      onChange={handleInputChange}
-                      className="w-full input-style"
-                    >
+                    <label htmlFor="assistant_parameters.tool_choice" className="mb-1 block text-sm font-medium text-foreground">Tool Choice</label>
+                    <select data-path="assistant_parameters.tool_choice" id="assistant_parameters.tool_choice" value={classDetails.assistant_parameters.tool_choice} onChange={handleInputChange} className="w-full input-style">
                       <option value="auto">Auto</option>
                       <option value="none">None</option>
                       <option value="required">Required</option>
                     </select>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Controls if/how the model uses tools. Tools array itself is pre-configured.
-                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">Controls if/how the model uses tools.</p>
                   </div>
-                  {/* Add other model params like max_response_output_tokens, modalities if they need to be user-configurable */}
                 </div>
               </CollapsibleSection>
             )}
 
             {showSection && (
-              <CollapsibleSection
-                title="Advanced Audio Settings"
-                isOpen={showAdvancedAudio}
-                onToggle={() => setShowAdvancedAudio(!showAdvancedAudio)}
-              >
+              <CollapsibleSection title="Advanced Audio Settings" isOpen={showAdvancedAudio} onToggle={() => setShowAdvancedAudio(!showAdvancedAudio)}>
                 <div className="space-y-6">
-                  <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 border-b pb-1">Input Audio</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <h4 className="border-b border-border pb-1 text-base font-semibold text-foreground">Input Audio</h4>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label
-                        htmlFor="assistant_parameters.input_audio_format"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Format
-                      </label>
-                      <select
-                        data-path="assistant_parameters.input_audio_format"
-                        id="assistant_parameters.input_audio_format"
-                        value={classDetails.assistant_parameters.input_audio_format}
-                        onChange={handleInputChange}
-                        className="w-full input-style"
-                      >
-                        {["pcm16", "g711_ulaw", "g711_alaw"].map((f) => (
-                          <option key={f} value={f}>
-                            {f}
-                          </option>
-                        ))}
+                      <label htmlFor="assistant_parameters.input_audio_format" className="mb-1 block text-sm font-medium text-foreground">Format</label>
+                      <select data-path="assistant_parameters.input_audio_format" id="assistant_parameters.input_audio_format" value={classDetails.assistant_parameters.input_audio_format} onChange={handleInputChange} className="w-full input-style">
+                        {["pcm16", "g711_ulaw", "g711_alaw"].map((f) => (<option key={f} value={f}>{f}</option>))}
                       </select>
                     </div>
-
                     <div>
-                      <label
-                        htmlFor="assistant_parameters.input_audio_noice_reduction.type"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Noise Reduction Type
-                      </label>
-                      <select
-                        data-path="assistant_parameters.input_audio_noice_reduction.type"
-                        id="assistant_parameters.input_audio_noice_reduction.type"
-                        value={classDetails.assistant_parameters.input_audio_noice_reduction.type}
-                        onChange={handleInputChange}
-                        className="w-full input-style"
-                      >
+                      <label htmlFor="assistant_parameters.input_audio_noice_reduction.type" className="mb-1 block text-sm font-medium text-foreground">Noise Reduction</label>
+                      <select data-path="assistant_parameters.input_audio_noice_reduction.type" id="assistant_parameters.input_audio_noice_reduction.type" value={classDetails.assistant_parameters.input_audio_noice_reduction.type} onChange={handleInputChange} className="w-full input-style">
                         <option value="near_field">Near Field</option>
                         <option value="far_field">Far Field</option>
                       </select>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label
-                        htmlFor="assistant_parameters.input_audio_transcription.model"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Transcription Model
-                      </label>
-                      <select
-                        data-path="assistant_parameters.input_audio_transcription.model"
-                        id="assistant_parameters.input_audio_transcription.model"
-                        value={classDetails.assistant_parameters.input_audio_transcription.model}
-                        onChange={handleInputChange}
-                        className="w-full input-style"
-                      >
+                      <label htmlFor="assistant_parameters.input_audio_transcription.model" className="mb-1 block text-sm font-medium text-foreground">Transcription Model</label>
+                      <select data-path="assistant_parameters.input_audio_transcription.model" id="assistant_parameters.input_audio_transcription.model" value={classDetails.assistant_parameters.input_audio_transcription.model} onChange={handleInputChange} className="w-full input-style">
                         <option value="whisper-1">Whisper-1</option>
                         <option value="gpt-4o-transcribe">GPT-4o Transcribe</option>
                         <option value="gpt-4o-mini-transcribe">GPT-4o Mini Transcribe</option>
                       </select>
                     </div>
-
                     <div>
-                      <label
-                        htmlFor="assistant_parameters.input_audio_transcription.language"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Transcription Language
-                      </label>
-                      <input
-                        type="text"
-                        data-path="assistant_parameters.input_audio_transcription.language"
-                        id="assistant_parameters.input_audio_transcription.language"
-                        value={classDetails.assistant_parameters.input_audio_transcription.language}
-                        onChange={handleInputChange}
-                        className="w-full input-style"
-                        placeholder="e.g., en, es, fr"
-                      />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">ISO 639-1 code (e.g., en for English).</p>
+                      <label htmlFor="assistant_parameters.input_audio_transcription.language" className="mb-1 block text-sm font-medium text-foreground">Language</label>
+                      <input type="text" data-path="assistant_parameters.input_audio_transcription.language" id="assistant_parameters.input_audio_transcription.language" value={classDetails.assistant_parameters.input_audio_transcription.language} onChange={handleInputChange} className="w-full input-style" placeholder="e.g., en, es, fr" />
+                      <p className="mt-1 text-xs text-muted-foreground">ISO 639-1 code (e.g., en for English).</p>
                     </div>
                   </div>
-
-                  <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 border-b pb-1 mt-4">Output Audio</h4>
+                  <h4 className="mt-4 border-b border-border pb-1 text-base font-semibold text-foreground">Output Audio</h4>
                   <div>
-                    <label
-                      htmlFor="assistant_parameters.output_audio_format"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Format
-                    </label>
-                    <select
-                      data-path="assistant_parameters.output_audio_format"
-                      id="assistant_parameters.output_audio_format"
-                      value={classDetails.assistant_parameters.output_audio_format}
-                      onChange={handleInputChange}
-                      className="w-full input-style"
-                    >
-                      {["pcm16", "g711_ulaw", "g711_alaw"].map((f) => (
-                        <option key={f} value={f}>
-                          {f}
-                        </option>
-                      ))}
+                    <label htmlFor="assistant_parameters.output_audio_format" className="mb-1 block text-sm font-medium text-foreground">Format</label>
+                    <select data-path="assistant_parameters.output_audio_format" id="assistant_parameters.output_audio_format" value={classDetails.assistant_parameters.output_audio_format} onChange={handleInputChange} className="w-full input-style">
+                      {["pcm16", "g711_ulaw", "g711_alaw"].map((f) => (<option key={f} value={f}>{f}</option>))}
                     </select>
                   </div>
                 </div>
@@ -1131,43 +969,19 @@ export default function ClassCreation() {
             )}
 
             {showSection && (
-              <CollapsibleSection
-                title="Advanced Turn Detection Settings"
-                isOpen={showAdvancedTurnDetection}
-                onToggle={() => setShowAdvancedTurnDetection(!showAdvancedTurnDetection)}
-              >
+              <CollapsibleSection title="Advanced Turn Detection" isOpen={showAdvancedTurnDetection} onToggle={() => setShowAdvancedTurnDetection(!showAdvancedTurnDetection)}>
                 <div className="space-y-4">
                   <div>
-                    <label
-                      htmlFor="turn_detection_type"
-                      className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >
-                      Turn Detection Type
-                    </label>
+                    <label htmlFor="turn_detection_type" className="mb-1 block text-sm font-medium text-foreground">Turn Detection Type</label>
                     <select
                       id="turn_detection_type"
                       value={classDetails.assistant_parameters.turn_detection?.type || "none"}
                       onChange={(e) => {
                         const type = e.target.value;
                         if (type === "none") {
-                          setClassDetails((prev) => ({
-                            ...prev,
-                            assistant_parameters: {
-                              ...prev.assistant_parameters,
-                              turn_detection: null,
-                            },
-                          }));
+                          setClassDetails((prev) => ({ ...prev, assistant_parameters: { ...prev.assistant_parameters, turn_detection: null } }));
                         } else {
-                          setClassDetails((prev) => ({
-                            ...prev,
-                            assistant_parameters: {
-                              ...prev.assistant_parameters,
-                              turn_detection: {
-                                ...defaultTurnDetectionParams,
-                                type: type as "server_vad" | "semantic_vad",
-                              },
-                            },
-                          }));
+                          setClassDetails((prev) => ({ ...prev, assistant_parameters: { ...prev.assistant_parameters, turn_detection: { ...defaultTurnDetectionParams, type: type as "server_vad" | "semantic_vad" } } }));
                         }
                       }}
                       className="w-full input-style"
@@ -1176,114 +990,57 @@ export default function ClassCreation() {
                       <option value="server_vad">Server VAD</option>
                       <option value="semantic_vad">Semantic VAD</option>
                     </select>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Choose how the AI detects when users stop speaking
-                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">How the AI detects when users stop speaking</p>
                   </div>
-
                   {classDetails.assistant_parameters.turn_detection?.type === "server_vad" && (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
-                          <label
-                            htmlFor="assistant_parameters.turn_detection.threshold"
-                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                          >
+                          <label htmlFor="assistant_parameters.turn_detection.threshold" className="mb-1 block text-sm font-medium text-foreground">
                             Threshold ({classDetails.assistant_parameters.turn_detection.threshold})
                           </label>
-                          <input
-                            type="range"
-                            data-path="assistant_parameters.turn_detection.threshold"
-                            id="assistant_parameters.turn_detection.threshold"
-                            value={classDetails.assistant_parameters.turn_detection.threshold}
-                            onChange={handleInputChange}
-                            min="0.0"
-                            max="1.0"
-                            step="0.1"
-                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                          />
+                          <input type="range" data-path="assistant_parameters.turn_detection.threshold" id="assistant_parameters.turn_detection.threshold" value={classDetails.assistant_parameters.turn_detection.threshold} onChange={handleInputChange} min="0.0" max="1.0" step="0.1" className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-muted accent-primary" />
                         </div>
-
                         <div>
-                          <label
-                            htmlFor="assistant_parameters.turn_detection.silence_duration_ms"
-                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                          >
-                            Silence Duration (ms)
-                          </label>
-                          <input
-                            type="number"
-                            data-path="assistant_parameters.turn_detection.silence_duration_ms"
-                            id="assistant_parameters.turn_detection.silence_duration_ms"
-                            value={classDetails.assistant_parameters.turn_detection.silence_duration_ms}
-                            onChange={handleInputChange}
-                            className="w-full input-style"
-                            placeholder="e.g., 1000"
-                          />
+                          <label htmlFor="assistant_parameters.turn_detection.silence_duration_ms" className="mb-1 block text-sm font-medium text-foreground">Silence Duration (ms)</label>
+                          <input type="number" data-path="assistant_parameters.turn_detection.silence_duration_ms" id="assistant_parameters.turn_detection.silence_duration_ms" value={classDetails.assistant_parameters.turn_detection.silence_duration_ms} onChange={handleInputChange} className="w-full input-style" placeholder="e.g., 1000" />
                         </div>
                       </div>
-
                       <div>
-                        <label
-                          htmlFor="assistant_parameters.turn_detection.prefix_padding_ms"
-                          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                        >
-                          Prefix Padding (ms)
-                        </label>
-                        <input
-                          type="number"
-                          data-path="assistant_parameters.turn_detection.prefix_padding_ms"
-                          id="assistant_parameters.turn_detection.prefix_padding_ms"
-                          value={classDetails.assistant_parameters.turn_detection.prefix_padding_ms}
-                          onChange={handleInputChange}
-                          className="w-full input-style"
-                          placeholder="e.g., 300"
-                        />
+                        <label htmlFor="assistant_parameters.turn_detection.prefix_padding_ms" className="mb-1 block text-sm font-medium text-foreground">Prefix Padding (ms)</label>
+                        <input type="number" data-path="assistant_parameters.turn_detection.prefix_padding_ms" id="assistant_parameters.turn_detection.prefix_padding_ms" value={classDetails.assistant_parameters.turn_detection.prefix_padding_ms} onChange={handleInputChange} className="w-full input-style" placeholder="e.g., 300" />
                       </div>
                     </>
                   )}
-
                   {classDetails.assistant_parameters.turn_detection?.type === "semantic_vad" && (
                     <div>
-                      <label
-                        htmlFor="assistant_parameters.turn_detection.eagerness"
-                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                      >
-                        Eagerness
-                      </label>
-                      <select
-                        data-path="assistant_parameters.turn_detection.eagerness"
-                        id="assistant_parameters.turn_detection.eagerness"
-                        value={classDetails.assistant_parameters.turn_detection.eagerness}
-                        onChange={handleInputChange}
-                        className="w-full input-style"
-                      >
+                      <label htmlFor="assistant_parameters.turn_detection.eagerness" className="mb-1 block text-sm font-medium text-foreground">Eagerness</label>
+                      <select data-path="assistant_parameters.turn_detection.eagerness" id="assistant_parameters.turn_detection.eagerness" value={classDetails.assistant_parameters.turn_detection.eagerness} onChange={handleInputChange} className="w-full input-style">
                         <option value="low">Low</option>
                         <option value="auto">Auto</option>
                         <option value="high">High</option>
                       </select>
                     </div>
                   )}
-                  {/* create_response and interrupt_response are now removed from UI */}
                 </div>
               </CollapsibleSection>
             )}
 
-            {/* Error Message and Submit Button */}
+            {/* Error */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+                <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base"
+              className="w-full rounded-lg bg-primary px-4 py-3 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="mr-2 h-5 w-5 animate-spin rounded-full border-b-2 border-primary-foreground" />
                   Processing & Summoning Sidekick...
                 </div>
               ) : (

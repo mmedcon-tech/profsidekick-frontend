@@ -94,6 +94,38 @@ async function req<T>(
   return json as T;
 }
 
+async function bffReq<T>(
+  path: string,
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
+  body?: unknown,
+): Promise<T> {
+  const token =
+    typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(path, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 204) return undefined as T;
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const msg =
+      json.message || json.detail || `Request failed (${res.status})`;
+    throw new ApiError(msg, res.status);
+  }
+
+  return json as T;
+}
+
 // ─── Avatar Templates — Admin (CRUD) ────────────────────────────────────────
 
 export const templateApi = {
@@ -198,10 +230,43 @@ export const publisherTemplateApi = {
 
 // ─── Avatars — Publisher ─────────────────────────────────────────────────────
 
+export interface AccessCodeRecord {
+  id: string
+  code: string
+  max_users: number
+  users_count: number
+  credits_per_user: string
+  expires_at: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface AccessCodeCreate {
+  max_users: number
+  credits_per_user?: string
+  expires_at?: string | null
+}
+
+export interface AccessCodeUpdate {
+  max_users?: number
+  is_active?: boolean
+}
+
+export interface LinkedCourseLink {
+  id: string
+  avatar_id: string
+  course_id: string
+  sort_order: number
+  added_at: string
+}
+
 export const avatarApi = {
-  list: () => req<AvatarListResponse>('/api/publisher/avatars'),
+  list: (programId?: string) =>
+    req<AvatarListResponse>(
+      programId ? `/api/publisher/avatars?program_id=${programId}` : '/api/publisher/avatars'
+    ),
   get: (id: string) => req<AvatarResponse>(`/api/publisher/avatars/${id}`),
-  create: (data: AvatarCreate) =>
+  create: (data: AvatarCreate & { program_id?: string }) =>
     req<AvatarResponse>('/api/publisher/avatars', 'POST', data),
   update: (id: string, data: AvatarUpdate) =>
     req<AvatarResponse>(`/api/publisher/avatars/${id}`, 'PUT', data),
@@ -209,6 +274,28 @@ export const avatarApi = {
     req<AvatarResponse>(`/api/publisher/avatars/${id}/publish`, 'PATCH'),
   delete: (id: string) =>
     req<void>(`/api/publisher/avatars/${id}`, 'DELETE'),
+
+  // Access codes
+  listCodes: (avatarId: string) =>
+    req<{ codes: AccessCodeRecord[]; total: number }>(
+      `/api/publisher/avatars/${avatarId}/access-codes`
+    ),
+  createCode: (avatarId: string, data: AccessCodeCreate) =>
+    req<AccessCodeRecord>(`/api/publisher/avatars/${avatarId}/access-codes`, 'POST', data),
+  updateCode: (avatarId: string, codeId: string, data: AccessCodeUpdate) =>
+    req<AccessCodeRecord>(`/api/publisher/avatars/${avatarId}/access-codes/${codeId}`, 'PATCH', data),
+  deactivateCode: (avatarId: string, codeId: string) =>
+    req<void>(`/api/publisher/avatars/${avatarId}/access-codes/${codeId}`, 'DELETE'),
+
+  // Avatar–course links (avatar_courses join table)
+  listLinkedCourses: (avatarId: string) =>
+    req<{ courses: LinkedCourseLink[]; total: number }>(
+      `/api/publisher/avatars/${avatarId}/courses`
+    ),
+  linkCourse: (avatarId: string, courseUuid: string) =>
+    req<LinkedCourseLink>(`/api/publisher/avatars/${avatarId}/courses`, 'POST', { course_id: courseUuid }),
+  unlinkCourse: (avatarId: string, courseUuid: string) =>
+    req<void>(`/api/publisher/avatars/${avatarId}/courses/${courseUuid}`, 'DELETE'),
 };
 
 // ─── Avatar Configuration — Publisher ───────────────────────────────────────
@@ -295,9 +382,21 @@ export const referenceApi = {
 // ─── Marketplace — Subscriber ────────────────────────────────────────────────
 
 export const marketplaceApi = {
-  list: () => req<AvatarPublicListResponse>('/api/avatars'),
-  get: (id: string) => req<AvatarPublicResponse>(`/api/avatars/${id}`),
+  list: () => bffReq<AvatarPublicListResponse>('/api/avatars'),
+  get: (id: string) => bffReq<AvatarPublicResponse>(`/api/avatars/${id}`),
 };
+
+// ─── Subscriptions — Subscriber ─────────────────────────────────────────────
+
+export interface CodeRedeemResult {
+  success: boolean
+  message: string
+  avatar_id: string
+  subscription_created: boolean
+  credits_granted: number
+  courses_enrolled: string[]
+  programs_enrolled: string[]
+}
 
 // ─── Subscriptions ───────────────────────────────────────────────────────────
 
@@ -308,12 +407,114 @@ export const subscriptionApi = {
   unsubscribe: (avatarId: string) =>
     req<void>(`/api/subscriber/avatars/${avatarId}/subscribe`, 'DELETE'),
 
-  status: (avatarId: string) =>
+  checkStatus: (avatarId: string) =>
     req<SubscriptionStatusResponse>(`/api/subscriber/avatars/${avatarId}/subscription-status`),
 
   list: () =>
     req<SubscriptionListResponse>('/api/subscriber/avatars'),
+
+  redeemCode: (code: string) =>
+    req<CodeRedeemResult>('/api/avatar-access-codes/redeem', 'POST', { code }),
 };
+
+// ─── Prompt Templates ────────────────────────────────────────────────────────
+
+export interface PromptTemplateResponse {
+  id: string
+  name: string
+  description: string | null
+  use_case: string
+  body: string
+  is_system: boolean
+  is_active: boolean
+  version: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PromptTemplateCreate {
+  name: string
+  use_case: string
+  body: string
+  description?: string
+}
+
+export interface PromptTemplateUpdate {
+  name?: string
+  description?: string
+  use_case?: string
+  body?: string
+}
+
+export interface AvatarPromptConfigResponse {
+  id: string
+  avatar_id: string
+  prompt_template_id: string | null
+  use_case: string
+  is_enabled: boolean
+  override_body: string | null
+  override_name: string | null
+  pinned_version: number | null
+  is_custom: boolean
+  created_at: string
+  updated_at: string
+  is_stale: boolean | null
+}
+
+export interface AvatarPromptConfigUpsert {
+  prompt_template_id?: string | null
+  is_enabled: boolean
+  override_body?: string | null
+  override_name?: string | null
+  is_custom: boolean
+}
+
+export const adminPromptApi = {
+  list: (useCase?: string, activeOnly = false) => {
+    const params = new URLSearchParams()
+    if (useCase) params.set('use_case', useCase)
+    if (activeOnly) params.set('active_only', 'true')
+    const qs = params.toString()
+    return req<PromptTemplateResponse[]>(`/api/admin/prompt-templates${qs ? `?${qs}` : ''}`)
+  },
+  get: (id: string) =>
+    req<PromptTemplateResponse>(`/api/admin/prompt-templates/${id}`),
+  create: (data: PromptTemplateCreate) =>
+    req<PromptTemplateResponse>('/api/admin/prompt-templates', 'POST', data),
+  update: (id: string, data: PromptTemplateUpdate) =>
+    req<PromptTemplateResponse>(`/api/admin/prompt-templates/${id}`, 'PUT', data),
+  deactivate: (id: string) =>
+    req<void>(`/api/admin/prompt-templates/${id}`, 'DELETE'),
+}
+
+export const publisherPromptApi = {
+  listTemplates: (useCase?: string) => {
+    const qs = useCase ? `?use_case=${encodeURIComponent(useCase)}` : ''
+    return req<PromptTemplateResponse[]>(`/api/publisher/prompt-templates${qs}`)
+  },
+  create: (data: PromptTemplateCreate) =>
+    req<PromptTemplateResponse>('/api/publisher/prompt-templates', 'POST', data),
+  update: (id: string, data: PromptTemplateUpdate) =>
+    req<PromptTemplateResponse>(`/api/publisher/prompt-templates/${id}`, 'PUT', data),
+  deactivate: (id: string) =>
+    req<void>(`/api/publisher/prompt-templates/${id}`, 'DELETE'),
+  listUseCases: () =>
+    req<string[]>('/api/prompt-use-cases'),
+  listConfigs: (avatarId: string) =>
+    req<AvatarPromptConfigResponse[]>(`/api/avatars/${avatarId}/prompt-configs`),
+  upsertConfig: (avatarId: string, useCase: string, data: AvatarPromptConfigUpsert) =>
+    req<AvatarPromptConfigResponse>(
+      `/api/avatars/${avatarId}/prompt-configs/${encodeURIComponent(useCase)}`,
+      'PUT',
+      data,
+    ),
+  deleteConfig: (avatarId: string, useCase: string) =>
+    req<void>(
+      `/api/avatars/${avatarId}/prompt-configs/${encodeURIComponent(useCase)}`,
+      'DELETE',
+    ),
+}
 
 // ─── Admin ───────────────────────────────────────────────────────────────────
 

@@ -1,46 +1,45 @@
-"use client";
+"use client"
 
 import React, { useEffect, useState } from 'react';
+import Image from "next/image"
 import Link from 'next/link';
+
+import { tr } from "@/lib/v2/i18n"
 import { avatarApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarSummary } from '@/types/avatar';
-import { Bot, Plus, Trash2, Globe, EyeOff } from 'lucide-react';
-import AvatarIcon from '@/components/avatars/AvatarIcon';
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Plus, Globe, Lock, Trash2, Settings } from "lucide-react"
+import { useProgramContext } from "@/contexts/ProgramContext"
 
-type Tab = 'all' | 'published' | 'draft';
-
-export default function MyAvatarsPage() {
+export default function PublisherAvatarsPage() {
+  const lang = "en" as "en" | "ar"
+  const { activeProgram, contextReady } = useProgramContext()
   const [avatars, setAvatars] = useState<AvatarSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState<string | null>(null);
-  const [tab, setTab]       = useState<Tab>('all');
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [publishing, setPublishing] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
-    avatarApi.list()
+    avatarApi.list(activeProgram?.id)
       .then((r) => { setAvatars(r.avatars); setError(null); })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
-
-  const filtered = avatars.filter((a) =>
-    tab === 'all' ? true : tab === 'published' ? a.is_published : !a.is_published
-  );
+  useEffect(() => {
+    if (!contextReady) return;
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProgram?.id, contextReady]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this avatar? This cannot be undone.')) return;
-    setDeleting(id);
     try {
       await avatarApi.delete(id);
       setAvatars((prev) => prev.filter((a) => a.id !== id));
     } catch (e) {
       alert(e instanceof ApiError ? e.message : 'Delete failed');
-    } finally {
-      setDeleting(null);
     }
   };
 
@@ -49,115 +48,135 @@ export default function MyAvatarsPage() {
       alert('Unpublishing is not yet supported via UI. Contact your admin.');
       return;
     }
-    setPublishing(a.id);
     try {
       const updated = await avatarApi.publish(a.id);
       setAvatars((prev) => prev.map((x) => x.id === a.id ? { ...x, is_published: updated.is_published } : x));
     } catch (e) {
       alert(e instanceof ApiError ? e.message : 'Publish failed. Make sure a configuration exists first.');
-    } finally {
-      setPublishing(null);
     }
   };
 
-  const TABS: { value: Tab; label: string }[] = [
-    { value: 'all',       label: `All (${avatars.length})` },
-    { value: 'published', label: `Published (${avatars.filter((a) => a.is_published).length})` },
-    { value: 'draft',     label: `Draft (${avatars.filter((a) => !a.is_published).length})` },
-  ];
-
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-
+    <div className="space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Avatars</h1>
-        <Link href="/publisher/avatars/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-          <Plus size={16} /> Create Avatar
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{tr("myAvatars", lang)}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {activeProgram
+              ? `Showing avatars in "${activeProgram.name.en}" — switch to "MyOS" to see all.`
+              : "Manage your AI avatars and their configurations"}
+          </p>
+        </div>
+        <Link href="/publisher/avatars/new">
+          <Button className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            {tr("newAvatar", lang)}
+          </Button>
         </Link>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {TABS.map((t) => (
-          <button key={t.value} onClick={() => setTab(t.value)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              tab === t.value
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-300'
-            }`}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <div key={i} className="h-44 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />)}
+        <div className="grid gap-4 md:grid-cols-2">
+           {[1, 2, 3].map((i) => <div key={i} className="h-44 bg-card rounded-xl animate-pulse" />)}
         </div>
       ) : error ? (
         <div className="text-center py-16">
           <p className="text-red-600 mb-2">{error}</p>
-          <button onClick={load} className="text-blue-600 hover:underline text-sm">Retry</button>
+          <Button variant="outline" onClick={load}>Retry</Button>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <Bot size={48} className="mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
-            {tab === 'all' ? 'No avatars yet. Create one from a template to get started.' : `No ${tab} avatars.`}
-          </p>
-          <Link href="/publisher/avatars/new"
-            className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-            <Plus size={15} /> Create your first avatar
+      ) : avatars.length === 0 ? (
+        <div className="text-center py-16 border rounded-xl border-border bg-card">
+          <p className="text-muted-foreground mb-4">No avatars found.</p>
+          <Link href="/publisher/avatars/new">
+            <Button className="gap-1.5">
+              <Plus className="h-4 w-4" /> Create your first avatar
+            </Button>
           </Link>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((a) => (
-            <div key={a.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3">
-              <div className="flex items-start justify-between">
-                <AvatarIcon imageUrl={a.template_image_url} name={a.name} size={40} rounded="lg" />
-                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                  a.is_published ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                }`}>
-                  {a.is_published ? 'Published' : 'Draft'}
-                </span>
-              </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {avatars.map((avatar) => {
+            return (
+              <div
+                key={avatar.id}
+                className="group rounded-xl border border-border bg-card overflow-hidden transition-all hover:border-primary/30 hover:shadow-sm"
+              >
+                {/* Header */}
+                <div className="relative flex items-center gap-4 bg-sidebar p-5">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full ring-2 ring-sidebar-border bg-muted">
+                    {avatar.template_image_url ? (
+                        <Image
+                            src={avatar.template_image_url}
+                            alt={avatar.name}
+                            fill
+                            sizes="64px"
+                            className="object-cover"
+                        />
+                    ) : (
+                        <span className="flex h-full w-full items-center justify-center text-xl font-bold uppercase text-muted-foreground">
+                          {avatar.name.charAt(0)}
+                        </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-sidebar-foreground truncate">{avatar.name}</h3>
+                      {avatar.is_published ? (
+                        <Badge className="bg-primary/20 text-primary/40 text-[10px]">
+                          <Globe className="me-1 h-3 w-3" /> {tr("published", lang)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] border-sidebar-border text-sidebar-foreground/60">
+                          <Lock className="me-1 h-3 w-3" /> {tr("draft", lang)}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-sidebar-foreground/60">{avatar.description || 'No description provided'}</p>
+                  </div>
+                </div>
 
-              <div>
-                <Link href={`/publisher/avatars/${a.id}`}
-                  className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 transition-colors line-clamp-1">
-                  {a.name}
-                </Link>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
-                  {a.description || 'No description'}
-                </p>
-              </div>
+                {/* Body */}
+                <div className="p-5 space-y-4">
+                  {/* Template badge */}
+                  <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                    <span className="text-xs text-muted-foreground">
+                      {tr("template", lang)}: <span className="font-medium text-foreground">{avatar.template_name || 'Custom'}</span>
+                    </span>
+                  </div>
 
-              <div className="flex gap-2 mt-auto">
-                <Link href={`/publisher/avatars/${a.id}`}
-                  className="flex-1 text-center text-sm border border-gray-300 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:bg-gray-900 transition-colors">
-                  Manage
-                </Link>
-                <button
-                  onClick={() => handlePublishToggle(a)}
-                  disabled={!!publishing}
-                  title={a.is_published ? 'Unpublish' : 'Publish to marketplace'}
-                  className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-40">
-                  {a.is_published ? <EyeOff size={16} /> : <Globe size={16} />}
-                </button>
-                <button
-                  onClick={() => handleDelete(a.id)}
-                  disabled={deleting === a.id}
-                  title="Delete"
-                  className="p-1.5 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-40">
-                  <Trash2 size={16} />
-                </button>
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Link href={`/publisher/avatars/${avatar.id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full gap-1.5">
+                        <Settings className="h-3.5 w-3.5" />
+                        Manage
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1.5 px-3"
+                      onClick={() => handlePublishToggle(avatar)}
+                    >
+                      <Globe className="h-3.5 w-3.5" />
+                      {avatar.is_published ? "Unpublish" : "Publish"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1.5 px-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      onClick={() => handleDelete(avatar.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -48,7 +48,7 @@ export default function AdminMarketplacePage() {
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm"
           placeholder="Search avatars…"
         />
       </div>
@@ -78,7 +78,7 @@ export default function AdminMarketplacePage() {
               <Link
                 key={a.id}
                 href={`/admin/marketplace/${a.id}`}
-                className="flex items-center gap-4 px-5 py-4 hover:bg-indigo-50/40 transition-colors group"
+                className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
               >
                 <AvatarIcon
                   imageUrl={a.template_image_url}
@@ -88,10 +88,10 @@ export default function AdminMarketplacePage() {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-700 transition-colors">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-[#133221] transition-colors">
                       {a.name}
                     </p>
-                    <span className="flex items-center gap-1 text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-medium">
+                    <span className="flex items-center gap-1 text-xs text-primary/90 bg-primary/10 px-2 py-0.5 rounded-full font-medium">
                       <Globe size={10} /> Live
                     </span>
                     {a.subscription_cost != null && a.subscription_cost > 0 ? (
@@ -108,13 +108,13 @@ export default function AdminMarketplacePage() {
                   {tmpl && (
                     <p className="text-[10px] text-gray-400 mt-0.5">
                       Based on template:{' '}
-                      <span className="text-indigo-500 font-medium">{tmpl.name}</span>
+                      <span className="text-[#BA984E] font-medium">{tmpl.name}</span>
                     </p>
                   )}
                 </div>
                 <ChevronRight
                   size={16}
-                  className="text-gray-300 group-hover:text-indigo-400 flex-shrink-0 transition-colors"
+                  className="text-gray-300 group-hover:text-[#133221] flex-shrink-0 transition-colors"
                 />
               </Link>
             );

@@ -1,11 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { configApi, ApiError } from '@/lib/avatarApi';
 import type { AvatarConfigurationResponse } from '@/types/avatar';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Box } from 'lucide-react';
+import { usePublisherModels } from '@/hooks/usePublisherModels';
+import type { Avatar3DModel } from '@/hooks/useAdminModels';
+
+const GlbAvatarPreview = dynamic(
+  () => import('@/components/avatar/GlbAvatarPreview'),
+  { ssr: false },
+);
 
 const VOICES = ['alloy','ash','ballad','coral','echo','sage','shimmer','verse'];
 const DIFFICULTIES = ['beginner','intermediate','advanced'];
@@ -18,17 +26,41 @@ export default function ConfigurePage() {
   const [saving, setSaving]     = useState(false);
   const [success, setSuccess]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  const [previewModel, setPreviewModel] = useState<Avatar3DModel | null>(null);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    voice: string;
+    language: string;
+    difficulty_level: string;
+    additional_settings: Record<string, any>;
+  }>({
     voice: '',
     language: 'English',
     difficulty_level: 'intermediate',
+    additional_settings: {},
   });
+
+  const { models, loading: modelsLoading } = usePublisherModels();
 
   useEffect(() => {
     configApi.get(id)
-      .then((c) => { setConfig(c); setForm({ voice: c.voice || 'alloy', language: c.language || 'English', difficulty_level: c.difficulty_level || 'intermediate' }); })
-      .catch(() => { /* 404 = not configured yet */ setForm({ voice: 'alloy', language: 'English', difficulty_level: 'intermediate' }); })
+      .then((c) => {
+        setConfig(c);
+        setForm({
+          voice: c.voice || 'alloy',
+          language: c.language || 'English',
+          difficulty_level: c.difficulty_level || 'intermediate',
+          additional_settings: c.additional_settings || {}
+        });
+      })
+      .catch(() => {
+        setForm({
+          voice: 'alloy',
+          language: 'English',
+          difficulty_level: 'intermediate',
+          additional_settings: {}
+        });
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -46,7 +78,30 @@ export default function ConfigurePage() {
     }
   };
 
-  if (loading) return <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse max-w-2xl" />;
+  const selectModel = (model: Avatar3DModel) => {
+    const modelUrl = model.model_url ?? model.file_path ?? '';
+    setForm((p) => ({
+      ...p,
+      additional_settings: {
+        ...p.additional_settings,
+        renderType: '3d',
+        glbLibraryId: modelUrl,
+      }
+    }));
+  };
+
+  const isModelSelected = (model: Avatar3DModel) => {
+    const modelUrl = model.model_url ?? model.file_path ?? '';
+    return (
+      form.additional_settings?.renderType === '3d' &&
+      (form.additional_settings?.glbLibraryId === model.id ||
+       form.additional_settings?.glbLibraryId === modelUrl)
+    );
+  };
+
+  const threeJsModels = models.filter(m => m.model_type === 'three_js' || !m.model_type);
+
+  if (loading || modelsLoading) return <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse max-w-2xl" />;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -57,9 +112,10 @@ export default function ConfigurePage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Configure Avatar</h1>
 
       {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
-      {success && <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">Configuration saved!</div>}
+      {success && <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-primary/90 text-sm">Configuration saved!</div>}
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800">
+
         {/* Voice */}
         <div className="p-6 space-y-3">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">Voice</h2>
@@ -68,7 +124,7 @@ export default function ConfigurePage() {
             {VOICES.map((v) => (
               <button key={v} onClick={() => setForm((p) => ({ ...p, voice: v }))}
                 className={`px-3 py-2 text-sm rounded-lg border transition-all capitalize ${
-                  form.voice === v ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                  form.voice === v ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-medium' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
                 {v}
               </button>
@@ -84,7 +140,7 @@ export default function ConfigurePage() {
             {DIFFICULTIES.map((d) => (
               <button key={d} onClick={() => setForm((p) => ({ ...p, difficulty_level: d }))}
                 className={`flex-1 py-2.5 text-sm rounded-lg border transition-all capitalize ${
-                  form.difficulty_level === d ? 'border-blue-500 bg-blue-50 text-blue-700 font-semibold' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
+                  form.difficulty_level === d ? 'border-[#133221] bg-primary/5 dark:bg-gray-800 text-[#133221] font-semibold' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 text-gray-700 dark:text-gray-300'
                 }`}>
                 {d}
               </button>
@@ -96,14 +152,95 @@ export default function ConfigurePage() {
         <div className="p-6 space-y-3">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100">Language</h2>
           <select value={form.language} onChange={(e) => setForm((p) => ({ ...p, language: e.target.value }))}
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] focus:border-[#133221] text-sm">
             {LANGUAGES.map((l) => <option key={l}>{l}</option>)}
           </select>
+        </div>
+
+        {/* Visual Avatar Model */}
+        <div className="p-6 space-y-4">
+          <div>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Visual Avatar Model</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Select the 3D visual appearance for your avatar. Click the preview icon to see it in 3D.</p>
+          </div>
+
+          {threeJsModels.length === 0 ? (
+            <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+              No 3D models are currently available. Please contact your administrator.
+            </p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {threeJsModels.map((model) => {
+                  const selected = isModelSelected(model);
+                  const thumb = model.thumbnail_url ?? model.preview_image_path ?? null;
+                  return (
+                    <div key={model.id} className="relative group">
+                      <button
+                        onClick={() => selectModel(model)}
+                        className={`w-full flex flex-col items-center p-3 rounded-xl border-2 transition-all ${
+                          selected
+                            ? 'border-[#133221] bg-primary/5 dark:bg-gray-800'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-900'
+                        }`}
+                      >
+                        <div className="w-full aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden mb-3 relative">
+                          {thumb ? (
+                            <img src={thumb} alt={model.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-full text-xs text-gray-400">No Preview</div>
+                          )}
+                          {selected && (
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-[#133221] rounded-full flex items-center justify-center text-white">
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-sm font-medium ${selected ? 'text-[#133221] dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                          {model.name}
+                        </span>
+                        {model.gender && (
+                          <span className="text-[10px] uppercase tracking-wider text-gray-500 mt-1">{model.gender}</span>
+                        )}
+                      </button>
+
+                      {/* 3D preview button */}
+                      {(model.model_url ?? model.file_path) && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setPreviewModel(previewModel?.id === model.id ? null : model); }}
+                          title="View 3D model"
+                          className={`absolute top-2 left-2 w-7 h-7 rounded-full flex items-center justify-center shadow transition-all ${
+                            previewModel?.id === model.id
+                              ? 'bg-[#133221] text-white'
+                              : 'bg-white/90 dark:bg-gray-700/90 text-gray-600 dark:text-gray-300 opacity-0 group-hover:opacity-100'
+                          }`}
+                        >
+                          <Box size={13} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Inline GLB preview panel */}
+              {previewModel && (previewModel.model_url ?? previewModel.file_path) && (
+                <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700" style={{ height: 380 }}>
+                  <GlbAvatarPreview
+                    glbUrl={(previewModel.model_url ?? previewModel.file_path)!}
+                    amplitude={0}
+                    showControls
+                    framing="full"
+                  />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
       <button onClick={handleSave} disabled={saving}
-        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors font-medium">
+        className="flex items-center gap-2 bg-[#133221] text-white px-6 py-2.5 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 transition-colors font-medium">
         <Save size={16} /> {saving ? 'Saving...' : config ? 'Update Configuration' : 'Save Configuration'}
       </button>
     </div>

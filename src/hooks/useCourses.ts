@@ -18,6 +18,7 @@ export interface CourseDetails {
   is_active?: boolean;
   is_deleted?: boolean;
   is_public?: boolean;
+  allow_subscriber_sessions?: boolean;
   created_at: string;
   updated_at: string;
   // Computed fields that might be added by backend
@@ -45,8 +46,10 @@ export interface CourseSessionSummary {
   description?: string;
   duration: number;
   total_slides: number;
-  created_at: string;
   run_count: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 interface UseCoursesReturn {
@@ -54,7 +57,7 @@ interface UseCoursesReturn {
   loading: boolean;
   error: string | null;
   refetch: () => void;
-  createCourse: (courseData: Partial<CourseDetails>) => Promise<CourseDetails>;
+  createCourse: (courseData: Partial<CourseDetails> & { program_id?: string }) => Promise<CourseDetails>;
   updateCourse: (courseId: string, courseData: Partial<CourseDetails>) => Promise<CourseDetails>;
   deleteCourse: (courseId: string) => Promise<void>;
   enrollStudent: (courseId: string, studentEmail: string) => Promise<void>;
@@ -63,7 +66,7 @@ interface UseCoursesReturn {
   removeStudent: (courseId: string, studentId: string) => Promise<void>;
 }
 
-export function useCourses(): UseCoursesReturn {
+export function useCourses(programId?: string): UseCoursesReturn {
   const { token,  } = useAuth();
   const [courses, setCourses] = useState<CourseDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +83,11 @@ export function useCourses(): UseCoursesReturn {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(config.getApiUrl('/api/courses'), {
+      const endpoint = programId
+        ? `/api/courses?program_id=${programId}`
+        : '/api/courses';
+
+      const response = await fetch(config.getApiUrl(endpoint), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -102,9 +109,9 @@ export function useCourses(): UseCoursesReturn {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, programId]);
 
-  const createCourse = useCallback(async (courseData: Partial<CourseDetails>): Promise<CourseDetails> => {
+  const createCourse = useCallback(async (courseData: Partial<CourseDetails> & { program_id?: string }): Promise<CourseDetails> => {
     if (!token) {
       throw new Error('Authentication required');
     }

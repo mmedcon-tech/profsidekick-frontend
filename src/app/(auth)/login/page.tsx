@@ -10,8 +10,8 @@ import { Eye, EyeOff, LogIn } from 'lucide-react';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isAuthenticated, isLoading, user } = useAuth();
-  
+  const { login, isAuthenticated, isLoading, user, token } = useAuth();
+
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -22,17 +22,54 @@ function LoginForm() {
 
   // Redirect if already authenticated — role-based destination
   useEffect(() => {
-    if (isAuthenticated && !isLoading && user) {
-      const redirectParam = searchParams.get('redirect');
-      if (redirectParam) {
-        router.push(redirectParam);
-        return;
+    let mounted = true;
+
+    const performRedirect = async () => {
+      if (isAuthenticated && !isLoading && user) {
+        const redirectParam = searchParams.get('redirect');
+        if (redirectParam) {
+          router.push(redirectParam);
+          return;
+        }
+
+        // SAE-only: redirect all roles to their SAE page after login
+        if (user.role === 'admin') {
+          router.push('/admin/sae');
+        } else if (user.role === 'subscriber') {
+          router.push('/sae/exam');
+        } else {
+          router.push('/publisher/sae');
+        }
+        // OLD role-based dashboard/marketplace redirect (commented out for reference):
+        // if (user.role === 'admin') {
+        //   router.push('/admin/dashboard');
+        // } else if (user.role === 'subscriber') {
+        //   try {
+        //     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        //     const res = await fetch(`${apiUrl}/api/courses`, { headers: { Authorization: `Bearer ${token}` } });
+        //     const courses = await res.json();
+        //     if (mounted) {
+        //       if (Array.isArray(courses) && courses.length === 0) {
+        //         router.push('/subscriber/marketplace');
+        //       } else {
+        //         router.push('/subscriber/dashboard');
+        //       }
+        //     }
+        //   } catch (e) {
+        //     if (mounted) router.push('/subscriber/dashboard');
+        //   }
+        // } else {
+        //   router.push('/publisher/dashboard');
+        // }
       }
-      if (user.role === 'admin') router.push('/admin/dashboard');
-      else if (user.role === 'subscriber') router.push('/subscriber/marketplace');
-      else router.push('/publisher/dashboard');
-    }
-  }, [isAuthenticated, isLoading, user, router, searchParams]);
+    };
+
+    performRedirect();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isAuthenticated, isLoading, user, router, searchParams, token]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -48,7 +85,7 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.username.trim() || !formData.password.trim()) {
       setError('Please enter both username and password');
       return;
@@ -70,8 +107,8 @@ function LoginForm() {
   // Show loading spinner while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50"></div>
       </div>
     );
   }
@@ -82,83 +119,71 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Image
-              src="/images/logo.png"
-              alt="ProfSidekick Logo"
-              width={48}
-              height={48}
-              className="object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <h1 className="text-2xl font-bold text-blue-900 dark:text-blue-400">ProfSidekick</h1>
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-10">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Sign in</h2>
+        <p className="text-gray-500">Sign in to your MyOS account</p>
+      </div>
+
+      {/* Login Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+            <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Sign in to your account</p>
+        )}
+
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Username
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value={formData.username}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:border-primary dark:border-primary/50 transition-colors"
+            placeholder="username"
+            disabled={isSubmitting}
+            required
+          />
         </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
-              <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Username
-            </label>
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            Password
+          </label>
+          <div className="relative">
             <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              name="password"
+              value={formData.password}
               onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter your username"
+              className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:border-primary dark:border-primary/50 transition-colors"
+              placeholder="••••••••"
               disabled={isSubmitting}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              disabled={isSubmitting}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
+        </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter your password"
-                disabled={isSubmitting}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-                disabled={isSubmitting}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
-
+        <div className="pt-4">
           <button
             type="submit"
             disabled={isSubmitting}
             aria-busy={isSubmitting}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-primary dark:bg-primary/90 text-white py-3 px-4 rounded-xl font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -167,25 +192,26 @@ function LoginForm() {
               </>
             ) : (
               <>
-                <LogIn size={20} />
-                Sign In
+                Sign in
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 14 0" /><path d="m13 19 6-7-6-7" /></svg>
               </>
             )}
           </button>
-        </form>
-
-        {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Do not have an account?{' '}
-            <Link
-              href="/register"
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-            >
-              Create one here
-            </Link>
-          </p>
         </div>
+
+      </form>
+
+      {/* Footer */}
+      <div className="mt-12 text-center">
+        <p className="text-sm text-gray-600">
+          Do not have an account?{' '}
+          <Link
+            href="/register"
+            className="text-primary/90 dark:text-primary/40 hover:underline font-semibold"
+          >
+            Create one here
+          </Link>
+        </p>
       </div>
     </div>
   );
@@ -193,8 +219,8 @@ function LoginForm() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div className="flex items-center justify-center py-12">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50"></div>
     </div>
   );
 }

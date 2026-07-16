@@ -158,13 +158,13 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
                 placeholder="Search prompts by name, description, or tags..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
             >
               {categories.map(category => (
                 <option key={category} value={category}>{category}</option>
@@ -172,7 +172,7 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
             </select>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary transition-colors flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               New Prompt
@@ -181,16 +181,16 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
 
           {/* Current Instructions */}
           {currentInstructions && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-2">Current Instructions</h3>
-              <p className="text-blue-800 text-sm">{currentInstructions.substring(0, 200)}...</p>
+            <div className="mb-6 p-4 bg-primary/5 dark:bg-primary/20 border border-primary/20 dark:border-primary/90 rounded-lg">
+              <h3 className="font-semibold text-primary dark:text-primary/10 mb-2">Current Instructions</h3>
+              <p className="text-primary dark:text-primary/20 text-sm">{currentInstructions.substring(0, 200)}...</p>
             </div>
           )}
 
           {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary dark:border-primary/50"></div>
               <span className="ml-3 text-gray-600 dark:text-gray-400">Loading prompts...</span>
             </div>
           )}
@@ -214,7 +214,7 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
             {filteredPrompts.map((prompt) => (
               <div
                 key={prompt.id}
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all duration-200"
+                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-primary/30 dark:border-primary hover:shadow-md transition-all duration-200"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -254,7 +254,7 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
                       {new Date(prompt.updatedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                  <span className="px-2 py-1 bg-primary/10 dark:bg-primary/40 text-primary/95 dark:text-primary/30 rounded-full text-xs">
                     {prompt.category}
                   </span>
                 </div>
@@ -263,7 +263,7 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleSelectPrompt(prompt)}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    className="flex-1 px-3 py-2 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary transition-colors text-sm"
                   >
                     Use This Prompt
                   </button>
@@ -305,7 +305,7 @@ export default function PromptLibrary({ currentInstructions, onSelectPrompt, onC
               <p className="text-gray-500 dark:text-gray-400 text-lg">No prompts found matching your criteria</p>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="mt-4 px-4 py-2 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary transition-colors"
               >
                 Create Your First Custom Prompt
               </button>

@@ -12,7 +12,7 @@ import { STARTER_AVATARS } from '@/lib/starterAvatars';
 function PublishedBadge({ state }: { state: string }) {
   if (state === 'published') {
     return (
-      <span className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-medium">
+      <span className="flex items-center gap-1 text-xs text-primary/90 bg-primary/10 px-2 py-0.5 rounded-full font-medium">
         <CheckCircle size={10} /> Published
       </span>
     );
@@ -233,7 +233,7 @@ export default function AdminTemplatesPage() {
                 <div
                   key={t.id}
                   onClick={() => router.push(`/admin/avatars/${t.id}`)}
-                  className="grid grid-cols-12 gap-4 items-center px-5 py-4 hover:bg-indigo-50/40 cursor-pointer transition-colors group"
+                  className="grid grid-cols-12 gap-4 items-center px-5 py-4 hover:bg-gray-50/40 cursor-pointer transition-colors group"
                 >
                   {/* Name */}
                   <div className="col-span-4 min-w-0 flex items-center gap-2">
@@ -249,7 +249,7 @@ export default function AdminTemplatesPage() {
                   {/* Category */}
                   <div className="col-span-2">
                     {t.category ? (
-                      <span className="flex items-center gap-1 text-xs text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full">
+                      <span className="flex items-center gap-1 text-xs text-indigo-700 bg-gray-50 px-2 py-0.5 rounded-full">
                         <Tag size={10} /> {t.category}
                       </span>
                     ) : (

@@ -87,10 +87,10 @@ export const ACCENT = {
     gradient: 'from-purple-500 to-violet-600',
   },
   emerald: {
-    icon: 'bg-emerald-100 text-emerald-600',
-    badge: 'bg-emerald-100 text-emerald-700',
-    border: 'hover:border-emerald-400',
-    btn: 'bg-emerald-600 hover:bg-emerald-700',
-    gradient: 'from-emerald-500 to-teal-600',
+    icon: 'bg-primary/10 text-primary',
+    badge: 'bg-primary/10 text-primary/90',
+    border: 'hover:border-primary/40',
+    btn: 'bg-primary hover:bg-primary/90',
+    gradient: 'from-primary/50 to-teal-600',
   },
 } as const;

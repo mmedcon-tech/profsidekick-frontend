@@ -81,6 +81,7 @@ export default function SAESetupPage() {
   const [curriculumOther, setCurriculumOther] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [existingSession, setExistingSession] = useState<string | null>(null);
+  const [isExistingAccount, setIsExistingAccount] = useState(false);
 
   const isOtherCurriculum = curriculum === "Other";
   const effectiveCurriculum = isOtherCurriculum ? curriculumOther.trim() : curriculum;
@@ -105,6 +106,11 @@ export default function SAESetupPage() {
     e.preventDefault();
     setFieldError("");
 
+    const tokenInfo = pageState.kind === "form" ? pageState.tokenInfo : null;
+    if (!tokenInfo) return;
+
+    const isFirstUse = tokenInfo.is_first_use;
+
     if (username.trim().length < 3) {
       setFieldError("Username must be at least 3 characters.");
       return;
@@ -117,22 +123,22 @@ export default function SAESetupPage() {
       setFieldError("Passwords do not match.");
       return;
     }
-    if (!country) {
-      setFieldError("Please select your country of origin.");
-      return;
-    }
-    if (!curriculum) {
-      setFieldError("Please select your high school curriculum.");
-      return;
-    }
-    if (isOtherCurriculum && curriculumOther.trim().length < 1) {
-      setFieldError("Please describe your curriculum.");
-      return;
-    }
 
-    const tokenInfo =
-      pageState.kind === "form" ? pageState.tokenInfo : null;
-    if (!tokenInfo) return;
+    // Country and curriculum required only on first use when creating a new account
+    if (isFirstUse && !isExistingAccount) {
+      if (!country) {
+        setFieldError("Please select your country of origin.");
+        return;
+      }
+      if (!curriculum) {
+        setFieldError("Please select your high school curriculum.");
+        return;
+      }
+      if (isOtherCurriculum && curriculumOther.trim().length < 1) {
+        setFieldError("Please describe your curriculum.");
+        return;
+      }
+    }
 
     setPageState({ kind: "submitting" });
 
@@ -141,8 +147,9 @@ export default function SAESetupPage() {
         token,
         username.trim(),
         password,
-        country,
-        effectiveCurriculum
+        isFirstUse ? country : "",
+        isFirstUse ? effectiveCurriculum : "",
+        isExistingAccount,
       );
       clearAuthSession();
       localStorage.setItem("auth_token", res.access_token);
@@ -204,6 +211,8 @@ export default function SAESetupPage() {
 
   const tokenInfo = pageState.kind === "form" ? pageState.tokenInfo : null;
   const isSubmitting = pageState.kind === "submitting";
+  const isFirstUse = tokenInfo?.is_first_use ?? true;
+  const showEducationFields = isFirstUse && !isExistingAccount;
 
   const inputCls =
     "w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm " +
@@ -232,7 +241,13 @@ export default function SAESetupPage() {
           <p className="text-xs font-medium uppercase tracking-wider text-blue-600 mb-1">
             Self Assessment Exam
           </p>
-          <h1 className="text-2xl font-bold text-slate-900">Account Setup</h1>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {!isFirstUse
+              ? "Update Credentials"
+              : isExistingAccount
+              ? "Log In to Your Account"
+              : "Account Setup"}
+          </h1>
           {tokenInfo && (
             <p className="mt-2 text-sm text-slate-600">
               Welcome,{" "}
@@ -241,10 +256,41 @@ export default function SAESetupPage() {
             </p>
           )}
           <p className="mt-1 text-xs text-slate-500">
-            Choose a username and password — you will use these to log in for all future
-            sessions. No real name is required.
+            {!isFirstUse
+              ? "Choose a new username and password. Your previous submissions are preserved."
+              : isExistingAccount
+              ? "Log in with your existing account to gain access to this assessment."
+              : "Choose a username and password — you will use these to log in for all future sessions. No real name is required."}
           </p>
         </div>
+
+        {/* Mode toggle — shown only on first use so returning students see it immediately */}
+        {isFirstUse && (
+          <div className="mb-4 flex rounded-lg border border-slate-200 bg-slate-100 p-1">
+            <button
+              type="button"
+              onClick={() => { setIsExistingAccount(false); setFieldError(""); }}
+              className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+                !isExistingAccount
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              New Account
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsExistingAccount(true); setFieldError(""); }}
+              className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+                isExistingAccount
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              I Already Have an Account
+            </button>
+          </div>
+        )}
 
         {/* Form card */}
         <div className="rounded-xl border bg-white p-8 shadow-sm">
@@ -290,78 +336,79 @@ export default function SAESetupPage() {
               />
             </div>
 
-            {/* ── Divider ── */}
-            <div className="relative my-1">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200" />
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-white px-2 text-slate-400 uppercase tracking-wider">
-                  Educational Background
-                </span>
-              </div>
-            </div>
+            {/* ── Educational background — first use, new account only ── */}
+            {showEducationFields && (
+              <>
+                <div className="relative my-1">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-white px-2 text-slate-400 uppercase tracking-wider">
+                      Educational Background
+                    </span>
+                  </div>
+                </div>
 
-            <p className="text-xs text-slate-500 -mt-2">
-              This information is used to personalise your exam experience. It is
-              not linked to your real name.
-            </p>
+                <p className="text-xs text-slate-500 -mt-2">
+                  This information is used to personalise your exam experience. It is
+                  not linked to your real name.
+                </p>
 
-            {/* ── Country of origin ── */}
-            <div>
-              <label className={labelCls}>
-                Country of Education <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                disabled={isSubmitting}
-                className={inputCls}
-              >
-                <option value="" disabled>Select your country…</option>
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className={labelCls}>
+                    Country of Origin <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    disabled={isSubmitting}
+                    className={inputCls}
+                  >
+                    <option value="" disabled>Select your country…</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* ── High school curriculum ── */}
-            <div>
-              <label className={labelCls}>
-                High School Curriculum <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={curriculum}
-                onChange={(e) => {
-                  setCurriculum(e.target.value);
-                  if (e.target.value !== "Other") setCurriculumOther("");
-                }}
-                disabled={isSubmitting}
-                className={inputCls}
-              >
-                <option value="" disabled>Select your curriculum…</option>
-                {CURRICULUM_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className={labelCls}>
+                    High School Curriculum <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={curriculum}
+                    onChange={(e) => {
+                      setCurriculum(e.target.value);
+                      if (e.target.value !== "Other") setCurriculumOther("");
+                    }}
+                    disabled={isSubmitting}
+                    className={inputCls}
+                  >
+                    <option value="" disabled>Select your curriculum…</option>
+                    {CURRICULUM_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* ── "Other" free-text reveal ── */}
-            {isOtherCurriculum && (
-              <div>
-                <label className={labelCls}>
-                  Please describe your curriculum <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={curriculumOther}
-                  onChange={(e) => setCurriculumOther(e.target.value)}
-                  disabled={isSubmitting}
-                  placeholder="e.g. Nigerian WAEC, Turkish YKS…"
-                  className={inputCls}
-                  autoFocus
-                />
-              </div>
+                {isOtherCurriculum && (
+                  <div>
+                    <label className={labelCls}>
+                      Please describe your curriculum <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={curriculumOther}
+                      onChange={(e) => setCurriculumOther(e.target.value)}
+                      disabled={isSubmitting}
+                      placeholder="e.g. Nigerian WAEC, Turkish YKS…"
+                      className={inputCls}
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             {/* ── Validation error ── */}
@@ -377,29 +424,25 @@ export default function SAESetupPage() {
                 !username ||
                 !password ||
                 !confirm ||
-                !country ||
-                !curriculum ||
-                (isOtherCurriculum && !curriculumOther.trim())
+                (showEducationFields && (!country || !curriculum || (isOtherCurriculum && !curriculumOther.trim())))
               }
               className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white
                          hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60
                          transition-colors"
             >
-              {isSubmitting ? "Setting up account…" : "Create Account & Enter Exam"}
+              {isSubmitting
+                ? (!isFirstUse ? "Updating credentials…" : isExistingAccount ? "Logging in…" : "Setting up account…")
+                : (!isFirstUse ? "Update Credentials & Continue" : isExistingAccount ? "Log In & Enter Exam" : "Create Account & Enter Exam")}
             </button>
           </form>
 
           <p className="mt-4 text-xs text-slate-400 text-center">
-            This link is single-use. Once you submit, it cannot be used again.
+            {!isFirstUse
+              ? "Your previous submissions and grades are preserved."
+              : "This link is valid for one more use after setup."}
           </p>
         </div>
 
-        <p className="mt-4 text-center text-xs text-slate-400">
-          Already set up?{" "}
-          <a href="/login" className="text-blue-600 hover:underline">
-            Log in
-          </a>
-        </p>
       </div>
     </main>
   );

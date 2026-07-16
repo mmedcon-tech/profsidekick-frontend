@@ -24,6 +24,7 @@ export interface SlideData {
   content: string;
   imagePath: string;
   thumbnailPath: string;
+  source?: string;
 }
 
 export interface PresentationData {
@@ -43,7 +44,7 @@ export interface AssistantParameters {
     model: "gpt-4o-transcribe" | "gpt-4o-mini-transcribe" | "whisper-1";
   };
   instructions: string;
-  model: "gpt-4o-realtime-preview-2024-12-17" | "gpt-4o-mini-realtime-preview-2024-12-17" | "gpt-realtime";
+  model: "gpt-realtime-2" | "gpt-realtime-mini" | "gpt-realtime";
   output_audio_format: "pcm16" | "g711_ulaw" | "g711_alaw";
   temperature: number;
   tool_choice: "auto" | "none" | "required";
@@ -96,7 +97,13 @@ export interface SessionRunDetails {
   slidesDetails: SlideData[];
   startTime: string;
   endTime?: string;
-  runtimeModeUsed?: string;
+  avatarId?: string;
+  avatarName?: string;
+  avatarImageUrl?: string;
+  avatarRenderType?: AvatarRenderType;
+  heygenAvatarId?: string | null;
+  sessionLanguage?: string;
+  sessionMode?: 'teaching' | 'examination' | 'consultation';
 }
 
 // Legacy types for backward compatibility (will be removed)
@@ -117,7 +124,7 @@ export interface ClassDetails {
       model: "gpt-4o-transcribe" | "gpt-4o-mini-transcribe" | "whisper-1";
     };
     instructions: string;
-    model: "gpt-4o-realtime-preview-2024-12-17" | "gpt-4o-mini-realtime-preview-2024-12-17" | "gpt-realtime";
+    model: "gpt-realtime-2" | "gpt-realtime-mini" | "gpt-realtime";
     output_audio_format: "pcm16" | "g711_ulaw" | "g711_alaw";
     temperature: number;
     tool_choice: "auto" | "none" | "required";
@@ -314,6 +321,41 @@ export interface EphemeralTokenResponse {
     value: string;
     expires_at: string;
   };
+  openai_token?: string;
+  realtime_model?: string | null;
+  heygen_avatar_id?: string | null;
+  heygen_quality?: 'low' | 'medium' | 'high';
+  heygen_access_token?: string | null;
+  session_language?: string;
+  session_mode?: 'teaching' | 'examination';
+  avatar_render_type?: AvatarRenderType;
+  avatar_image_url?: string | null;
+  avatar_name?: string | null;
+  glb_library_id?: string | null;
+}
+
+export type AvatarRenderType = 'static' | 'heygen' | 'talkingheads' | '3d' | 'glb';
+
+export type AvatarWidgetState = 'idle' | 'listening' | 'speaking';
+
+export interface SessionAvatarConfig {
+  renderType: AvatarRenderType;
+  avatarId?: string;
+  avatarName: string;
+  imageUrl?: string;
+  modelUrl?: string;
+  glbLibraryId?: string;
+  heygenAvatarId?: string | null;
+  heygenQuality?: 'low' | 'medium' | 'high';
+  heygenAccessToken?: string | null;
+  sessionLanguage?: string;
+  sessionMode?: 'teaching' | 'examination' | 'consultation';
+}
+
+export interface SessionEphemeralBundle {
+  openaiToken: string;
+  realtimeModel: string;
+  avatar: SessionAvatarConfig;
 }
 
 export interface Avatar {

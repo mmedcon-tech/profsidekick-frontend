@@ -79,7 +79,7 @@ export default function StarterAvatarCard({ avatar, role, horizontal = false }: 
 
       {/* Name + tagline + description */}
       <p className="font-bold text-gray-900 dark:text-gray-100">{avatar.name}</p>
-      <p className="text-xs text-blue-600 font-medium mt-0.5">{avatar.tagline}</p>
+      <p className="text-xs text-primary/90 dark:text-primary/40 font-medium mt-0.5">{avatar.tagline}</p>
       <p className="text-xs text-gray-400 mt-2 line-clamp-3 flex-1">{avatar.description}</p>
 
       {/* CTA */}
@@ -102,7 +102,7 @@ export default function StarterAvatarCard({ avatar, role, horizontal = false }: 
     'rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all',
     horizontal ? 'flex items-center gap-4 p-4' : 'flex flex-col p-5',
     !disabled && avatar.id === '__profsidekick__'
-      ? `ring-2 ring-blue-200 border-blue-300 ${ac.border} hover:shadow-lg`
+      ? `ring-2 ring-primary/20 border-primary/30 dark:border-primary ${ac.border} hover:shadow-lg`
       : !disabled
       ? `${ac.border} hover:shadow-md`
       : 'opacity-60 cursor-not-allowed',

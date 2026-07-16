@@ -52,7 +52,7 @@ export default function RefinedPromptEditor({
           value={additionalInstructions}
           onChange={(e) => onAdditionalInstructionsChange(e.target.value)}
           rows={4}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
           placeholder="e.g. Use examples from clinical medicine, encourage debate, avoid jargon..."
         />
       </div>
@@ -81,14 +81,14 @@ export default function RefinedPromptEditor({
               value={refinedPrompt}
               onChange={(e) => onRefinedPromptChange(e.target.value)}
               rows={12}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 font-mono focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
             />
           </div>
           <button
             type="button"
             onClick={onSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary dark:bg-primary/90 text-white font-medium hover:bg-primary/90 dark:hover:bg-primary disabled:opacity-50"
           >
             <Save size={18} />
             {saving ? 'Saving...' : 'Save refined prompt'}

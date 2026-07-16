@@ -171,6 +171,9 @@ export default function AutograderSubmitPage() {
   const [createdCode, setCreatedCode] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
 
+  // SAE-only: avatar override disabled — grading prompt is now always the system default.
+  // const [avatarId, setAvatarId] = useState("");
+
   // Step 2 — files
   const [handwrittenFile, setHandwrittenFile] = useState<File | null>(null);
   const [webassignFile, setWebassignFile] = useState<File | null>(null);
@@ -302,6 +305,8 @@ export default function AutograderSubmitPage() {
     formData.append("request_id", requestId);
     formData.append("student_answer", handwrittenFile);
     formData.append("webassign_pdf", webassignFile);
+    // SAE-only: avatar_id not sent; backend always uses hardcoded grading prompt
+    // if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
 
     try {
       setGradingPhase("grading");
@@ -319,14 +324,24 @@ export default function AutograderSubmitPage() {
 
       const data = await resp.json();
 
-      // Store transcript response only for the preview page.
-      // The backend already saved the PDFs under this draft_id, so we do not upload them again.
-      sessionStorage.setItem(
-        `autograder_transcript_${data.draft_id}`,
-        JSON.stringify(data)
-      );
-
-      addLog("Transcription complete — opening preview…", "success");
+  // Fallback plain-POST path if SSE connection itself fails
+  async function submitWithoutSSE(requestId: string) {
+    setGradingPhase("grading");
+    const formData = new FormData();
+    formData.append("student_id", resolved!.student_id);
+    formData.append("request_id", requestId);
+    formData.append("student_answer", handwrittenFile!);
+    formData.append("webassign_pdf", webassignFile!);
+    // SAE-only: avatar_id not sent; backend always uses hardcoded grading prompt
+    // if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
+    try {
+      const resp = await fetch(`${API}/api/autograder/grade`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: formData,
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      const data = await resp.json();
       setGradingPhase("done");
 
       router.push(`/autograder/transcribe/${data.draft_id}`);
@@ -523,6 +538,32 @@ export default function AutograderSubmitPage() {
             </div>
           )}
         </div>
+
+        {/* SAE-only: Avatar Override section disabled — grading always uses hardcoded system prompt. */}
+        {/* Restore by un-commenting this block and the avatarId state above.
+        {resolved && (
+          <div className="mt-4 rounded-xl border bg-white p-6 shadow-sm">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Avatar Override <span className="normal-case font-normal text-slate-400 ml-1">(optional)</span>
+            </h2>
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Avatar ID
+              </label>
+              <input
+                value={avatarId}
+                onChange={(e) => setAvatarId(e.target.value)}
+                placeholder="Paste avatar UUID to use its configured grading prompt"
+                disabled={isGrading}
+                className="w-full rounded-md border border-slate-300 p-2.5 text-sm font-mono disabled:opacity-50"
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Leave blank to use the platform default grading prompt.
+              </p>
+            </div>
+          </div>
+        )}
+        */}
 
         {/* ── Step 2: Files ── */}
         {resolved && (

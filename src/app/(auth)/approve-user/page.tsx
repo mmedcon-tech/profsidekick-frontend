@@ -64,12 +64,12 @@ export default function ApproveUserPage() {
   }, [token]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 px-4">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
         <div className="text-center">
           {status === 'loading' && (
             <>
-              <Loader2 className="w-16 h-16 text-green-600 mx-auto mb-4 animate-spin" />
+              <Loader2 className="w-16 h-16 text-primary mx-auto mb-4 animate-spin" />
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Approving User Account
               </h1>
@@ -81,8 +81,8 @@ export default function ApproveUserPage() {
 
           {status === 'success' && (
             <>
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-10 h-10 text-green-600" />
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-10 h-10 text-primary" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Account Approved! ✅
@@ -94,7 +94,7 @@ export default function ApproveUserPage() {
               {userData && (
                 <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6 text-left">
                   <div className="flex items-center gap-2 mb-3">
-                    <UserCheck className="w-5 h-5 text-green-600" />
+                    <UserCheck className="w-5 h-5 text-primary" />
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100">Approved User Details</h3>
                   </div>
                   <div className="space-y-2 text-sm">
@@ -120,14 +120,14 @@ export default function ApproveUserPage() {
                 </div>
               )}
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
                 <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <Mail className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                   <div className="text-left">
-                    <p className="text-sm font-medium text-green-900 mb-1">
+                    <p className="text-sm font-medium text-primary mb-1">
                       User Notified
                     </p>
-                    <p className="text-sm text-green-700">
+                    <p className="text-sm text-primary/90">
                       The user has been sent an email notification that their account is now active and they can log in.
                     </p>
                   </div>
@@ -136,7 +136,7 @@ export default function ApproveUserPage() {
 
               <button
                 onClick={() => router.push('/')}
-                className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
               >
                 Done
               </button>
@@ -161,7 +161,7 @@ export default function ApproveUserPage() {
               </div>
               <button
                 onClick={() => router.push('/')}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="w-full px-6 py-3 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary transition-colors font-medium"
               >
                 Go to Home
               </button>

@@ -1,0 +1,116 @@
+{
+  "version": 7,
+  "description": "Salama and Sultan are professional teaching avatars. Layla and Omar are Roblox-style kids avatars (kids-female.glb / kids-male.glb).",
+  "avatars": [
+    {
+      "id": "avatar-1",
+      "name": "Salama",
+      "gender": "female",
+      "languages": ["ar", "en"],
+      "glbPath": "/avatars/avatar-1.glb",
+      "thumbnailPath": "/images/avatar-female.png",
+      "tagline": "Professional Arabic & English tutor",
+      "description": "Warm, articulate teaching persona — abaya & shayla portrait style for UAE learners.",
+      "tags": ["leadership", "professional", "glb"],
+      "source": "Avaturn realistic female rig (TalkingHead) · ARKit visemes",
+      "recommendedModelUrl": "https://www.cgtrader.com/search?keywords=arab-woman",
+      "previewFraming": "full",
+      "previewFitMargin": 1.02,
+      "previewModelScale": 1.18,
+      "lipSync": {
+        "morphTargets": [
+          "mouthOpen",
+          "jawOpen",
+          "viseme_aa",
+          "viseme_O",
+          "viseme_E",
+          "mouthSmile"
+        ],
+        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"]
+      }
+    },
+    {
+      "id": "avatar-2",
+      "name": "Sultan",
+      "gender": "male",
+      "languages": ["ar", "en"],
+      "glbPath": "/avatars/avatar-2.glb",
+      "thumbnailPath": "/images/avatar-male.png",
+      "tagline": "Emirati male instructor · Arabic & English",
+      "description": "Confident mentor with kandura & ghutra styling — approachable leadership and cross-cultural learning.",
+      "tags": ["leadership", "professional", "glb"],
+      "source": "AvatarSDK male rig (TalkingHead) · target look: RPM Emirati ghutra reference",
+      "recommendedModelUrl": "https://sketchfab.com/3d-models/arab-man-rigged-0f87f4c0885346ad8f99ba5ccafd153e",
+      "previewFraming": "full",
+      "previewFitMargin": 1.0,
+      "previewModelScale": 1.22,
+      "lipSync": {
+        "morphTargets": [
+          "mouthOpen",
+          "jawOpen",
+          "viseme_aa",
+          "viseme_O",
+          "viseme_E",
+          "mouthSmile"
+        ],
+        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw"]
+      }
+    },
+    {
+      "id": "kids-female",
+      "name": "Layla",
+      "gender": "female",
+      "languages": ["ar", "en"],
+      "glbPath": "/avatars/kids-female.glb",
+      "thumbnailPath": "/images/kids-female.png",
+      "tagline": "Friendly kids tutor · Arabic & English",
+      "description": "Playful Roblox-style avatar for younger learners — approachable and fun for kids sessions.",
+      "tags": ["kids", "glb"],
+      "source": "Roblox-style kids rig (women-roblox.glb)",
+      "previewFraming": "full",
+      "previewFitMargin": 1.05,
+      "previewModelScale": 1.0,
+      "lipSync": {
+        "morphTargets": [
+          "mouthOpen",
+          "jawOpen",
+          "viseme_aa",
+          "viseme_O",
+          "viseme_E",
+          "mouthSmile"
+        ],
+        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw", "Head", "head"]
+      }
+    },
+    {
+      "id": "kids-male",
+      "name": "Omar",
+      "gender": "male",
+      "languages": ["ar", "en"],
+      "glbPath": "/avatars/kids-male.glb",
+      "thumbnailPath": "/images/kids-male.png",
+      "tagline": "Friendly kids tutor · Arabic & English",
+      "description": "Playful Roblox-style avatar for younger learners — approachable and fun for kids sessions.",
+      "tags": ["kids", "glb"],
+      "source": "Roblox-style kids rig (men-roblox.glb)",
+      "previewFraming": "full",
+      "previewFitMargin": 1.05,
+      "previewModelScale": 1.0,
+      "lipSync": {
+        "morphTargets": [
+          "mouthOpen",
+          "jawOpen",
+          "viseme_aa",
+          "viseme_O",
+          "viseme_E",
+          "mouthSmile"
+        ],
+        "blinkTargets": ["eyeBlinkLeft", "eyeBlinkRight", "eyesClosed"],
+        "jawBones": ["jaw", "Jaw", "mixamorig:Jaw", "Head", "head"]
+      }
+    }
+  ]
+}

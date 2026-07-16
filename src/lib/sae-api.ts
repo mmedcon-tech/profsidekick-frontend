@@ -5,11 +5,15 @@
  */
 
 import type {
+  SAEAdminAssessmentRow,
+  SAEAdminStudentRow,
+  SAEAssessmentRow,
   SAEBatchCreateResponse,
   SAEQuestionComment,
   SAERegenerateResponse,
   SAESetupResponse,
   SAEStudentDetail,
+  SAEStudentEnrollment,
   SAEStudentMe,
   SAEStudentRow,
   SAESubmissionEditRequest,
@@ -21,7 +25,7 @@ import type {
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
-function authHeaders(): HeadersInit {
+export function authHeaders(): HeadersInit {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
   return {
@@ -71,35 +75,109 @@ export async function setupAccount(
   username: string,
   password: string,
   country_of_origin: string,
-  curriculum: string
+  curriculum: string,
+  is_existing_account: boolean = false,
 ): Promise<SAESetupResponse> {
   const res = await fetch(`${API}/api/sae/invite/${token}/setup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password, country_of_origin, curriculum }),
+    body: JSON.stringify({ username, password, country_of_origin, curriculum, is_existing_account }),
   });
   return handleResponse<SAESetupResponse>(res);
 }
 
 // ── Publisher ─────────────────────────────────────────────────────────────────
 
+export async function listAssessments(): Promise<SAEAssessmentRow[]> {
+  const res = await fetch(`${API}/api/sae/publisher/assessments`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAEAssessmentRow[]>(res);
+}
+
+export async function createAssessment(
+  name: string,
+  description?: string,
+  grading_prompt_template_id?: string | null,
+  avatar_id?: string | null,
+): Promise<SAEAssessmentRow> {
+  const res = await fetch(`${API}/api/sae/publisher/assessments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({
+      name,
+      description: description ?? null,
+      course_id: null,
+      grading_prompt_template_id: grading_prompt_template_id ?? null,
+      avatar_id: avatar_id ?? null,
+    }),
+  });
+  return handleResponse<SAEAssessmentRow>(res);
+}
+
+export async function linkAvatarToAssessment(
+  assessmentId: string,
+  avatarId: string | null,
+): Promise<SAEAssessmentRow> {
+  const res = await fetch(
+    `${API}/api/sae/publisher/assessments/${assessmentId}/avatar`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ avatar_id: avatarId }),
+    }
+  );
+  return handleResponse<SAEAssessmentRow>(res);
+}
+
+/** Update the grading prompt snapshot for an assessment.
+ *  Pass null to reset to the system default Math prompt. */
+export async function updateAssessmentPrompt(
+  assessmentId: string,
+  gradingPrompt: string | null,
+): Promise<SAEAssessmentRow> {
+  const res = await fetch(
+    `${API}/api/sae/publisher/assessments/${assessmentId}/prompt`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ grading_prompt: gradingPrompt }),
+    }
+  );
+  return handleResponse<SAEAssessmentRow>(res);
+}
+
+/** Return the system default grading prompt text (from data/grading_prompt.txt). */
+export async function getDefaultGradingPrompt(): Promise<string> {
+  const res = await fetch(`${API}/api/sae/publisher/default-grading-prompt`, {
+    headers: authHeaders(),
+  });
+  const data = await handleResponse<{ body: string }>(res);
+  return data.body;
+}
+
 export async function createStudentBatch(
+  assessmentId: string,
   count: number,
   expiresDays?: number
 ): Promise<SAEBatchCreateResponse> {
   const res = await fetch(`${API}/api/sae/publisher/students/batch`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify({ count, expires_days: expiresDays ?? null }),
+    body: JSON.stringify({ assessment_id: assessmentId, count, expires_days: expiresDays ?? null }),
   });
   return handleResponse<SAEBatchCreateResponse>(res);
 }
 
 export async function listStudents(
-  search?: string
+  search?: string,
+  assessmentId?: string
 ): Promise<SAEStudentRow[]> {
-  const params = search ? `?search=${encodeURIComponent(search)}` : "";
-  const res = await fetch(`${API}/api/sae/publisher/students${params}`, {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (assessmentId) params.set("assessment_id", assessmentId);
+  const qs = params.toString() ? `?${params}` : "";
+  const res = await fetch(`${API}/api/sae/publisher/students${qs}`, {
     headers: authHeaders(),
   });
   return handleResponse<SAEStudentRow[]>(res);
@@ -139,6 +217,22 @@ export async function regenerateStudentAccess(
   return handleResponse<SAERegenerateResponse>(res);
 }
 
+export async function deleteStudent(studentId: string): Promise<void> {
+  const res = await fetch(
+    `${API}/api/sae/publisher/students/${studentId}`,
+    { method: "DELETE", headers: authHeaders() }
+  );
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      detail = body.detail ?? body.message ?? detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+}
+
+/** Edit the active submission for a student. */
 export async function updateSubmission(
   studentId: string,
   edits: SAESubmissionEditRequest
@@ -154,6 +248,7 @@ export async function updateSubmission(
   return handleResponse<SAESubmissionResultPublisher>(res);
 }
 
+/** Download the active submission's PDF for a student (publisher view). */
 export async function fetchPublisherStudentFile(
   studentId: string,
   fileType: "handwritten" | "webassign"
@@ -175,15 +270,51 @@ export async function fetchPublisherStudentFile(
 
 // ── Student ───────────────────────────────────────────────────────────────────
 
-export async function getMyProfile(): Promise<SAEStudentMe> {
-  const res = await fetch(`${API}/api/sae/student/me`, {
+// No active callers found — commented out, not deleted.
+// export async function getMyProfile(): Promise<SAEStudentMe> {
+//   const res = await fetch(`${API}/api/sae/student/me`, {
+//     headers: authHeaders(),
+//   });
+//   return handleResponse<SAEStudentMe>(res);
+// }
+
+/**
+ * Returns all active SAE enrolments for the authenticated student.
+ * Triggers a server-side sync so new active assessments auto-appear.
+ * Returns an empty array for subscribers not enrolled in any assessment.
+ */
+export async function getMyEnrollments(): Promise<SAEStudentEnrollment[]> {
+  const res = await fetch(`${API}/api/sae/student/enrollments`, {
     headers: authHeaders(),
   });
-  return handleResponse<SAEStudentMe>(res);
+  return handleResponse<SAEStudentEnrollment[]>(res);
 }
 
-export async function getMySubmission(): Promise<SAESubmissionResult> {
-  const res = await fetch(`${API}/api/sae/student/submission`, {
+// Legacy — no active callers. Prefer getMySubmissions(). Commented out, not deleted.
+// export async function getMySubmission(): Promise<SAESubmissionResult> {
+//   const res = await fetch(`${API}/api/sae/student/submission`, {
+//     headers: authHeaders(),
+//   });
+//   return handleResponse<SAESubmissionResult>(res);
+// }
+
+/**
+ * Returns all submissions for the authenticated student, oldest first.
+ * Pass assessmentId to scope to a specific assessment; omit to use the first enrolment.
+ */
+export async function getMySubmissions(assessmentId?: string): Promise<SAESubmissionResult[]> {
+  const qs = assessmentId ? `?assessment_id=${encodeURIComponent(assessmentId)}` : "";
+  const res = await fetch(`${API}/api/sae/student/submissions${qs}`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAESubmissionResult[]>(res);
+}
+
+/** Returns a single historical submission by ID. */
+export async function getMySubmissionById(
+  submissionId: string
+): Promise<SAESubmissionResult> {
+  const res = await fetch(`${API}/api/sae/student/submissions/${submissionId}`, {
     headers: authHeaders(),
   });
   return handleResponse<SAESubmissionResult>(res);
@@ -210,13 +341,14 @@ export async function submitQuestionComment(
 
 export async function transcribeExam(
   handwrittenFile: File,
-  webassignFile: File
-): Promise<SAETranscribeResponse> {
+  webassignFile: File,
+  assessmentId?: string,
+): Promise<SAESubmissionResult> {
   const form = new FormData();
   form.append("student_answer", handwrittenFile);
   form.append("webassign_pdf", webassignFile);
-
-  const res = await fetch(`${API}/api/sae/student/transcribe`, {
+  if (assessmentId) form.append("assessment_id", assessmentId);
+  const res = await fetch(`${API}/api/sae/student/submit`, {
     method: "POST",
     headers: authHeaders(),
     body: form,
@@ -234,12 +366,15 @@ export async function gradeDraftSubmission(): Promise<SAESubmissionResult> {
   return handleResponse<SAESubmissionResult>(res);
 }
 
-export async function fetchMyFile(
+/** Download a PDF from a specific historical submission. */
+export async function fetchMySubmissionFile(
+  submissionId: string,
   fileType: "handwritten" | "webassign"
 ): Promise<ArrayBuffer> {
-  const res = await fetch(`${API}/api/sae/student/files/${fileType}`, {
-    headers: authHeaders(),
-  });
+  const res = await fetch(
+    `${API}/api/sae/student/submissions/${submissionId}/files/${fileType}`,
+    { headers: authHeaders() }
+  );
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
     try {
@@ -251,22 +386,39 @@ export async function fetchMyFile(
   return res.arrayBuffer();
 }
 
-export async function fetchPublisherStudentTranscript(
-  studentId: string
-): Promise<string> {
-  const res = await fetch(
-    `${API}/api/sae/publisher/students/${studentId}/files/transcript`,
-    { headers: authHeaders() }
-  );
+// ── Admin ─────────────────────────────────────────────────────────────────────
 
-  if (!res.ok) {
-    let detail = `HTTP ${res.status}`;
-    try {
-      const body = await res.json();
-      detail = body.detail ?? body.message ?? detail;
-    } catch {}
-    throw new Error(detail);
-  }
-
-  return res.text();
+export async function adminListSAEAssessments(): Promise<SAEAdminAssessmentRow[]> {
+  const res = await fetch(`${API}/api/admin/sae/assessments`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAEAdminAssessmentRow[]>(res);
 }
+
+export async function adminListSAEStudents(
+  assessmentId?: string
+): Promise<SAEAdminStudentRow[]> {
+  const qs = assessmentId ? `?assessment_id=${assessmentId}` : "";
+  const res = await fetch(`${API}/api/admin/sae/students${qs}`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<SAEAdminStudentRow[]>(res);
+}
+
+// Legacy — no active callers. Prefer fetchMySubmissionFile(). Commented out, not deleted.
+// export async function fetchMyFile(
+//   fileType: "handwritten" | "webassign"
+// ): Promise<ArrayBuffer> {
+//   const res = await fetch(`${API}/api/sae/student/files/${fileType}`, {
+//     headers: authHeaders(),
+//   });
+//   if (!res.ok) {
+//     let detail = `HTTP ${res.status}`;
+//     try {
+//       const body = await res.json();
+//       detail = body.detail ?? body.message ?? detail;
+//     } catch { /* ignore */ }
+//     throw new Error(detail);
+//   }
+//   return res.arrayBuffer();
+// }

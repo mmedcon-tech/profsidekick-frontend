@@ -179,9 +179,9 @@ function useDragResize(storageKey: string, defaultPct = 0.38) {
 // ─── Option dimension labels ──────────────────────────────────────────────────
 
 const OPTION_DIMENSIONS: Record<string, { label: string; badge: string; border: string }> = {
-  A: { label: 'Balanced',    badge: 'bg-blue-100 text-blue-700',     border: 'border-blue-300 hover:border-blue-500 hover:bg-blue-50'    },
+  A: { label: 'Balanced',    badge: 'bg-[#BA984E]/20 text-[#133221]',     border: 'border-[#133221] hover:border-[#133221] hover:bg-primary/5 dark:bg-gray-800'    },
   B: { label: 'Encouraging', badge: 'bg-purple-100 text-purple-700', border: 'border-purple-300 hover:border-purple-500 hover:bg-purple-50' },
-  C: { label: 'Rigorous',    badge: 'bg-emerald-100 text-emerald-700',border: 'border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50' },
+  C: { label: 'Rigorous',    badge: 'bg-primary/10 text-primary/90',border: 'border-primary/30 hover:border-primary/50 hover:bg-primary/5' },
 };
 
 // ─── Role Selection Modal ─────────────────────────────────────────────────────
@@ -196,7 +196,7 @@ function RoleSelectionModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
+        <div className="bg-gradient-to-r from-[#133221] to-[#0a1e13] px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-gray-800/20 flex items-center justify-center">
               <Users size={20} className="text-white" />
@@ -287,13 +287,13 @@ function EditableResponse({
           onChange={(e) => setDraft(e.target.value)}
           rows={Math.max(3, draft.split('\n').length + 1)}
           autoFocus
-          className="w-full text-sm border border-blue-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 leading-relaxed"
+          className="w-full text-sm border border-[#133221] rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-[#133221] focus:border-[#133221] leading-relaxed"
         />
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
             disabled={saving || !draft.trim()}
-            className="flex items-center gap-1 text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 disabled:opacity-40 transition-colors">
+            className="flex items-center gap-1 text-xs bg-[#133221] text-white px-3 py-1.5 rounded-lg hover:bg-[#0a1e13] disabled:opacity-40 transition-colors">
             {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
             Save edit
           </button>
@@ -315,14 +315,14 @@ function EditableResponse({
       <button
         onClick={handleEdit}
         title="Edit this response"
-        className="flex items-center gap-1 p-1 rounded text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors text-[11px]">
+        className="flex items-center gap-1 p-1 rounded text-gray-300 hover:text-[#133221] hover:bg-primary/5 dark:bg-gray-800 transition-colors text-[11px]">
         <Pencil size={12} />
         <span>Edit</span>
       </button>
       {(editedContent && editedContent !== originalContent) && (
-        <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">Refined</span>
+        <span className="text-[10px] text-[#133221] bg-primary/5 dark:bg-gray-800 px-1.5 py-0.5 rounded font-medium">Refined</span>
       )}
-      {saved && <span className="text-[10px] text-emerald-600 font-medium">Saved</span>}
+      {saved && <span className="text-[10px] text-primary font-medium">Saved</span>}
     </div>
   );
 }
@@ -417,7 +417,7 @@ function DocumentViewer({ slides }: { slides: SlideData[] }) {
             return (
               <button key={i} onClick={() => setCurrent(i)} title={`Slide ${s.slideNumber}`}
                 className={`flex-shrink-0 rounded border-2 overflow-hidden transition-all ${
-                  i === current ? 'border-blue-500' : 'border-transparent opacity-50 hover:opacity-80'
+                  i === current ? 'border-[#133221]' : 'border-transparent opacity-50 hover:opacity-80'
                 }`} style={{ width: 40, height: 30 }}>
                 {tUrl
                   ? <img src={tUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -460,13 +460,13 @@ function LeftPanel({
       <div className="flex border-b border-gray-800 flex-shrink-0">
         <button onClick={() => setTab('doc')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-            tab === 'doc' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-300'
+            tab === 'doc' ? 'text-white border-b-2 border-[#133221]' : 'text-gray-500 dark:text-gray-400 hover:text-gray-300'
           }`}>
           <FileText size={12} /> Document
         </button>
         <button onClick={() => setTab('convs')}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors ${
-            tab === 'convs' ? 'text-white border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-300'
+            tab === 'convs' ? 'text-white border-b-2 border-[#133221]' : 'text-gray-500 dark:text-gray-400 hover:text-gray-300'
           }`}>
           <MessageSquare size={12} /> History
         </button>
@@ -478,7 +478,7 @@ function LeftPanel({
         <div className="flex flex-col flex-1 overflow-hidden">
           <div className="p-2 border-b border-gray-800 flex-shrink-0">
             <button onClick={onNewConv}
-              className="w-full flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+              className="w-full flex items-center gap-2 bg-[#133221] hover:bg-[#0a1e13] text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
               <Plus size={13} /> New Conversation
             </button>
           </div>
@@ -490,7 +490,7 @@ function LeftPanel({
             {conversations.map((c) => (
               <button key={c.id} onClick={() => onSelectConv(c.id)}
                 className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-                  activeConvId === c.id ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800'
+                  activeConvId === c.id ? 'bg-[#133221] text-white' : 'text-gray-300 hover:bg-gray-800'
                 }`}>
                 <p className="truncate text-xs font-medium leading-tight">{c.title}</p>
                 <p className={`text-[10px] mt-0.5 ${activeConvId === c.id ? 'text-blue-200' : 'text-gray-600 dark:text-gray-400'}`}>
@@ -609,7 +609,7 @@ function RightPanel({ session, avatar }: {
         <div className="space-y-0.5 text-[10px] text-gray-400">
           {['System prompt', 'Rubric', 'Knowledge', 'Slides', 'History'].map((l) => (
             <p key={l} className="flex items-center gap-1">
-              <CheckCircle size={8} className="text-green-500 flex-shrink-0" /> {l}
+              <CheckCircle size={8} className="text-primary/50 flex-shrink-0" /> {l}
             </p>
           ))}
         </div>
@@ -895,9 +895,9 @@ function SessionChatInner() {
         {/* Role selection bar — always visible, prominent */}
         {avatar?.template_id && (
           <div className={`flex items-center gap-3 px-4 py-2 border-b flex-shrink-0 transition-colors ${
-            selectedRole ? 'bg-blue-50 border-blue-100' : 'bg-amber-50 border-amber-100'
+            selectedRole ? 'bg-primary/5 dark:bg-gray-800 border-primary/10 dark:border-primary/95' : 'bg-amber-50 border-amber-100'
           }`}>
-            <Users size={14} className={selectedRole ? 'text-blue-500' : 'text-amber-500'} />
+            <Users size={14} className={selectedRole ? 'text-[#133221]' : 'text-amber-500'} />
             <span className="text-xs font-medium text-gray-600 dark:text-gray-400 flex-shrink-0">Role:</span>
             <RoleSelector
               templateId={avatar.template_id}
@@ -905,7 +905,7 @@ function SessionChatInner() {
               onSelect={setSelectedRole}
             />
             {selectedRole ? (
-              <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
+              <span className="text-xs text-[#133221] bg-[#BA984E]/20 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
                 {selectedRole.name}
               </span>
             ) : (
@@ -932,7 +932,7 @@ function SessionChatInner() {
               {avatar?.id && (
                 <button
                   onClick={() => startSession(selectedRole)}
-                  className="mt-4 flex items-center gap-2 mx-auto bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm">
+                  className="mt-4 flex items-center gap-2 mx-auto bg-[#133221] text-white px-5 py-2.5 rounded-xl hover:bg-[#0a1e13] transition-colors font-medium text-sm">
                   <Play size={14} /> Start Session
                 </button>
               )}
@@ -940,7 +940,7 @@ function SessionChatInner() {
           )}
           {starting && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <Loader2 size={24} className="animate-spin text-blue-500" />
+              <Loader2 size={24} className="animate-spin text-[#133221]" />
               <p className="text-sm text-gray-500 dark:text-gray-400">Starting session…</p>
             </div>
           )}
@@ -960,7 +960,7 @@ function SessionChatInner() {
                 <div className="max-w-[74%]">
                   <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                     cm.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-sm'
+                      ? 'bg-[#133221] text-white rounded-br-sm'
                       : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-sm shadow-sm'
                   }`}>
                     {cm.content}
@@ -1015,7 +1015,7 @@ function SessionChatInner() {
                 }
                 rows={2}
                 disabled={sending || voice.listening}
-                className="w-full px-4 py-2.5 pr-11 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm disabled:opacity-60 leading-relaxed"
+                className="w-full px-4 py-2.5 pr-11 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#133221] focus:border-[#133221] resize-none text-sm disabled:opacity-60 leading-relaxed"
               />
               {/* Mic button — inside the textarea, bottom-right */}
               {voice.supported && (
@@ -1036,7 +1036,7 @@ function SessionChatInner() {
             <button
               onClick={handleSend}
               disabled={!input.trim() || sending || voice.listening}
-              className="flex items-center gap-1.5 bg-blue-600 text-white px-4 py-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium text-sm flex-shrink-0 h-[42px]">
+              className="flex items-center gap-1.5 bg-[#133221] text-white px-4 py-2.5 rounded-xl hover:bg-[#0a1e13] disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium text-sm flex-shrink-0 h-[42px]">
               {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
               {responseCount > 1 ? 'Generate' : 'Send'}
             </button>

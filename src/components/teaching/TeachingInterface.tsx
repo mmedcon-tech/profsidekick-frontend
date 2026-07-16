@@ -2,15 +2,36 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare } from "lucide-react";
-import { ClassSession,  } from "@/types";
+import StreamingAvatar, {
+  AvatarQuality,
+  StreamingEvents,
+  TaskType,
+} from "@heygen/streaming-avatar";
+import { ClassSession, SessionAvatarConfig } from "@/types";
+import SessionAvatarRenderer from "@/components/avatar/SessionAvatarRenderer";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
 import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
 import { classifyTurn } from "@/lib/turnClassifier";
+import {
+  fetchSessionEphemeral,
+  shouldUseHeyGenVideo,
+  isHeyGenEnabled,
+} from "@/lib/sessionService";
 import teachingAssistant from "@/constants/teachingAssistant";
 import { config } from "@/lib/config";
+
+const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
+  renderType: "static",
+  avatarName: "Teaching Assistant",
+};
+
+const DEFAULT_HEYGEN_AVATAR_ID =
+  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_FEMALE ||
+  process.env.NEXT_PUBLIC_HEYGEN_AVATAR_ID_MALE ||
+  '';
 
 // Global connection tracking to prevent React Strict Mode issues
 let globalConnectionId: string | null = null;
@@ -21,9 +42,18 @@ interface TeachingInterfaceProps {
   onEndSession: (metadata?: any) => void;
   sessionRunId?: string;
   startingSlide?: number;
+  avatarConfig?: SessionAvatarConfig;
+  isSharedLink?: boolean;
 }
 
-export default function TeachingInterface({ classSession, onEndSession, sessionRunId, startingSlide }: TeachingInterfaceProps) {
+export default function TeachingInterface({
+  classSession,
+  onEndSession,
+  sessionRunId,
+  startingSlide,
+  avatarConfig,
+  isSharedLink = false,
+}: TeachingInterfaceProps) {
   // Always start with slide 0 for SSR consistency
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -42,6 +72,13 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     suggestions: ""
   });
   const [showStartPrompt, setShowStartPrompt] = useState(true); // Show from the beginning
+  const [sessionAvatar, setSessionAvatar] = useState<SessionAvatarConfig>(
+    avatarConfig ?? DEFAULT_SESSION_AVATAR,
+  );
+  const sessionAvatarRef = useRef<SessionAvatarConfig>(
+    avatarConfig ?? DEFAULT_SESSION_AVATAR,
+  );
+  const [outputAudioElement, setOutputAudioElement] = useState<HTMLAudioElement | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
@@ -54,6 +91,13 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   const connectionLockRef = useRef(false); // Prevent simultaneous connections
   const tokenUsageRef = useRef({ input_tokens: 0, output_tokens: 0 });
   const disconnectFromRealtimeRef = useRef<(() => void) | null>(null);
+
+  // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
+  const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
+  const heygenVideoRef = useRef<HTMLVideoElement>(null);
+  const [heygenConnected, setHeygenConnected] = useState(false);
+  // Session-level avatar ID: backend may override DEFAULT via ephemeral response
+  const heygenAvatarIdRef = useRef(DEFAULT_HEYGEN_AVATAR_ID);
   const GUARD_PHRASES = ["stop", "pause", "end session", "wait"]; // Guard phrases to allow intentional interruptions
   const MIN_VOICE_LENGTH = 0.8; // Minimum length in seconds
   const MIN_CONFIDENCE = 0.85;  // Minimum confidence from speech recognition
@@ -134,35 +178,27 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     onTurnComplete: handleTurnComplete,
   });
 
-  const fetchEphemeralKey = useCallback(async () => {
+  const loadSessionEphemeral = useCallback(async () => {
+    if (!sessionRunId) {
+      throw new Error('Session run id is required');
+    }
     try {
-      const url = new URL(config.getApiUrl('/api/session/ephemeral'));
-      url.searchParams.append('session_id', classSession.sessionId);
-      if (sessionRunId) {
-        url.searchParams.append('session_run_id', sessionRunId);
+      const bundle = await fetchSessionEphemeral(
+        classSession.sessionId,
+        sessionRunId,
+        { token, fallbackAvatar: avatarConfig ?? sessionAvatar },
+      );
+      setSessionAvatar(bundle.avatar);
+      sessionAvatarRef.current = bundle.avatar;
+      if (bundle.avatar.heygenAvatarId) {
+        heygenAvatarIdRef.current = bundle.avatar.heygenAvatarId;
       }
-
-      // Send the auth token when available.
-      // Unauthenticated callers (shared-link / guest flow) omit the header;
-      // the backend permits them only when the run belongs to the guest user.
-      const headers: HeadersInit = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(url.toString(), { headers });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.client_secret.value;
+      return { openaiToken: bundle.openaiToken, realtimeModel: bundle.realtimeModel };
     } catch (error) {
-      console.error('Failed to fetch ephemeral key:', error);
+      console.error('Failed to fetch ephemeral session bundle:', error);
       throw error;
     }
-  }, [classSession.sessionId, sessionRunId, token]);
+  }, [classSession.sessionId, sessionRunId, token, avatarConfig, sessionAvatar]);
 
   const handleUserSpeech = useCallback(
     (recognizedText: string, confidence: number, duration: number) => {
@@ -217,6 +253,59 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
 
 
 
+  // ── HeyGen visual layer ──────────────────────────────────────────────────────
+
+  const stopHeyGen = useCallback(async () => {
+    if (heygenAvatarRef.current) {
+      try { await heygenAvatarRef.current.stopAvatar(); } catch (_) {}
+      heygenAvatarRef.current = null;
+    }
+    if (heygenVideoRef.current) heygenVideoRef.current.srcObject = null;
+    setHeygenConnected(false);
+  }, []);
+
+  const initHeyGen = useCallback(async () => {
+    const avatarConfigSnapshot = sessionAvatarRef.current;
+    if (!shouldUseHeyGenVideo(avatarConfigSnapshot)) return;
+    const avatarId =
+      avatarConfigSnapshot.heygenAvatarId ||
+      heygenAvatarIdRef.current ||
+      DEFAULT_HEYGEN_AVATAR_ID;
+    if (!avatarId) return;
+    try {
+      const res = await fetch('/api/heygen/token', { method: 'POST' });
+      if (!res.ok) return;
+      const { token: heygenToken } = await res.json();
+
+      const avatar = new StreamingAvatar({ token: heygenToken });
+      heygenAvatarRef.current = avatar;
+
+      avatar.on(StreamingEvents.STREAM_READY, () => {
+        const stream = avatar.mediaStream;
+        if (heygenVideoRef.current && stream) {
+          heygenVideoRef.current.srcObject = stream;
+          heygenVideoRef.current.play().catch(() => {});
+        }
+        setHeygenConnected(true);
+      });
+
+      avatar.on(StreamingEvents.STREAM_DISCONNECTED, () => {
+        setHeygenConnected(false);
+        heygenAvatarRef.current = null;
+      });
+
+      await avatar.createStartAvatar({
+        avatarName: avatarId,
+        quality: AvatarQuality.Medium,
+      });
+    } catch (err) {
+      console.error('HeyGen init error:', err);
+      heygenAvatarRef.current = null;
+    }
+  }, []);
+
+  // ── OpenAI Realtime connection ───────────────────────────────────────────────
+
   const connectToRealtime = async () => {
     // Generate unique connection ID for this attempt
     const connectionId = Math.random().toString(36).substr(2, 9);
@@ -254,8 +343,8 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
     // Create a promise to track this connection
     globalConnectionPromise = (async () => {
       try {
-        const EPHEMERAL_KEY = await fetchEphemeralKey();
-        if (!EPHEMERAL_KEY) {
+        const ephemeral = await loadSessionEphemeral();
+        if (!ephemeral?.openaiToken) {
           setSessionStatus("ERROR");
           setIsConnecting(false);
           hasConnectedRef.current = false;
@@ -264,27 +353,26 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           globalConnectionPromise = null;
           return;
         }
+        const { openaiToken: EPHEMERAL_KEY, realtimeModel } = ephemeral;
 
         if (!audioElementRef.current) {
           audioElementRef.current = document.createElement("audio");
         }
         audioElementRef.current.autoplay = true;
         audioElementRef.current.muted = !isAudioEnabled;
+        setOutputAudioElement(audioElementRef.current);
 
         // Generate unique ID for this connection
         const dataChannelId = Math.random().toString(36).substr(2, 9);
 
         console.log(`🌐 Creating WebRTC connection... [${connectionId}] -> [${dataChannelId}]`);
-        // Get the model from sessionStorage (stored when session run was created)
-        const storedModel = sessionRunId ? sessionStorage.getItem(`session_run_model_${sessionRunId}`) : null;
-        const modelToUse = storedModel || "gpt-realtime";
-        console.log(`🎯 Using model for session ${sessionRunId}: ${modelToUse}`);
-        
+        console.log(`🎯 Using model for session ${sessionRunId}: ${realtimeModel}`);
+
         const { pc, dc, mediaStream } = await createRealtimeConnection(
           EPHEMERAL_KEY,
           audioElementRef,
           "opus",
-          modelToUse
+          realtimeModel
         );
         
         console.log(`🔗 Created new peer connection and data channel [${connectionId}] -> [${dataChannelId}] - Lock: ${connectionLockRef.current}`);
@@ -304,11 +392,14 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
           isIntentionallyDisconnectedRef.current = false; // Reset disconnect flag for active connection
           globalConnectionId = null;
           globalConnectionPromise = null;
-          
+
           // Set up message handler immediately when data channel opens
           setMessageHandler();
-          
+
           initializeSession(); // Enable tools for AI
+
+          // Start HeyGen visual layer alongside OpenAI voice (no-op if not configured)
+          initHeyGen();
         });
         dc.addEventListener("close", () => {
           logClientEvent({}, "data_channel.close");
@@ -407,7 +498,10 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
 
   const disconnectFromRealtime = () => {
     console.log('Disconnecting from realtime... (user initiated)');
-    
+
+    // Stop HeyGen visual layer cleanly
+    stopHeyGen();
+
     // Mark as intentionally disconnected to prevent auto-reconnection
     isIntentionallyDisconnectedRef.current = true;
     
@@ -618,7 +712,9 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
   // Separate function for React Strict Mode cleanup
   const disconnectFromRealtimeReactCleanup = () => {
     console.log('Disconnecting from realtime... (React Strict Mode cleanup)');
-    
+
+    stopHeyGen();
+
     // Mark as intentionally disconnected to prevent auto-reconnection
     isIntentionallyDisconnectedRef.current = true;
     
@@ -1175,6 +1271,18 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
         setIsAISpeaking(false);
       }
 
+      // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
+      // response.audio_transcript.done fires when a full assistant turn completes
+      if (
+        serverEvent.type === "response.audio_transcript.done" &&
+        serverEvent.transcript &&
+        heygenAvatarRef.current
+      ) {
+        heygenAvatarRef.current
+          .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
+          .catch(() => {});
+      }
+
       // --- Guard phrases: intercept intentional interruptions ---
       // Fix 2: "transcript.final" does not exist in the Realtime API; use the correct event.
       if (serverEvent.type === "conversation.item.input_audio_transcription.completed") {
@@ -1333,7 +1441,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
           <div className={`${
             sessionStatus === "CONNECTED"
-              ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/30"
+              ? "bg-gradient-to-r from-primary/50 to-teal-500 shadow-primary/50/30"
               : "bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-500/30"
           } text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 transition-all duration-300`}>
             <div className="w-10 h-10 bg-white dark:bg-gray-800/20 rounded-full flex items-center justify-center animate-pulse">
@@ -1347,7 +1455,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
               {sessionStatus === "CONNECTED" ? (
                 <>
                   <p className="font-semibold text-base">👋 Ready to start!</p>
-                  <p className="text-sm text-emerald-50">Say something to begin the conversation</p>
+                  <p className="text-sm text-primary/5">Say something to begin the conversation</p>
                 </>
               ) : (
                 <>
@@ -1372,12 +1480,12 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
       {/* Left Side - Slide Viewer (70%) */}
       <div className="w-[80%] bg-white dark:bg-gray-800 flex flex-col">
         {/* Header */}
-        <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
+        <div className="bg-primary dark:bg-primary/90 text-white p-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <img 
               src="/images/logo.png" 
               alt="ProfSidekick Logo" 
-              className="w-11 h-11 object-contain bg-blue rounded-full"
+              className="w-11 h-11 object-contain bg-primary/50 rounded-full"
               onError={(e) => {
                 // Hide image if logo file doesn't exist
                 e.currentTarget.style.display = 'none';
@@ -1385,7 +1493,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
             />
             <div>
               <h1 className="text-xl font-semibold">{classSession.classDetails.className}</h1>
-              <p className="text-blue-100 text-sm">
+              <p className="text-primary/10 text-sm">
                 {classSession.classDetails.courseName} • {classSession.classDetails.courseCode}
               </p>
             </div>
@@ -1473,14 +1581,14 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
         {/* Header */}
         <div className="p-4 border-b border-slate-200/50">
           <div className="flex items-center gap-3">
-            {/* <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            {/* <div className="w-8 h-8 bg-gradient-to-br from-primary/50 to-purple-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">🤖</span>
             </div> */}
             <div>
               <h3 className="font-semibold text-slate-900 text-sm">ProfSidekick</h3>
               <div className="flex items-center gap-1.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${
-                  sessionStatus === "CONNECTED" ? "bg-emerald-500" : 
+                  sessionStatus === "CONNECTED" ? "bg-primary/50" : 
                   sessionStatus === "CONNECTING" ? "bg-amber-500" : 
                   sessionStatus === "ERROR" ? "bg-red-500" : "bg-slate-400"
                 }`}></div>
@@ -1493,81 +1601,61 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
         </div>
 
         {/* Guard Phrase Info */}
-        <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-200">
-          <p className="text-xs text-emerald-900 font-semibold mb-1">
+        <div className="px-4 py-3 bg-primary/5 border-b border-primary/20">
+          <p className="text-xs text-primary font-semibold mb-1">
             Voice Commands
           </p>
-          <p className="text-xs text-emerald-800 leading-relaxed">
+          <p className="text-xs text-primary/95 leading-relaxed">
             To pause/end the session, say:{" "}
-            <span className="font-semibold text-emerald-900">“stop”</span>,{" "}
-            <span className="font-semibold text-emerald-900">“pause”</span>,{" "}
-            <span className="font-semibold text-emerald-900">“wait”</span>, or{" "}
-            <span className="font-semibold text-emerald-900">“end session”</span>.
+            <span className="font-semibold text-primary">“stop”</span>,{" "}
+            <span className="font-semibold text-primary">“pause”</span>,{" "}
+            <span className="font-semibold text-primary">“wait”</span>, or{" "}
+            <span className="font-semibold text-primary">“end session”</span>.
           </p>
         </div>
 
-        {/* Voice Status */}
-        <div className="p-4 space-y-3">
-          {/* Connection Status Warning */}
-          {sessionStatus === "CONNECTED" && (!dcRef.current || dcRef.current.readyState !== "open") && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-xs text-yellow-800 font-medium">⚠️ AI Connection Lost</p>
-              <p className="text-xs text-yellow-600">Slide controls work, but AI cannot respond. Reconnecting...</p>
+        {/* Avatar visual — HeyGen video or audio-driven static / talkingheads animation */}
+        <div className="relative bg-gray-900 flex-shrink-0" style={{ aspectRatio: '9/16' }}>
+          <SessionAvatarRenderer
+            config={sessionAvatar}
+            audioElement={outputAudioElement}
+            isConnected={sessionStatus === "CONNECTED"}
+            isAISpeaking={isAISpeaking}
+            isUserSpeaking={isUserSpeaking}
+            heygenConnected={heygenConnected}
+            heygenVideoRef={heygenVideoRef}
+          />
+
+          {/* Speaking indicator overlay */}
+          {isAISpeaking && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 items-end h-4">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="w-1 bg-primary/40 rounded-full animate-pulse"
+                  style={{ height: `${8 + i * 4}px`, animationDelay: `${i * 100}ms` }}
+                />
+              ))}
             </div>
           )}
-          
-          {/* AI Status */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-slate-200/60 shadow-sm">
-            <div className={`w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-              isAISpeaking 
-                ? "bg-emerald-100 border-emerald-400 shadow-lg shadow-emerald-400/20" 
-                : sessionStatus === "CONNECTED" && dcRef.current?.readyState === "open"
-                  ? "bg-slate-100 border-slate-300"
-                  : "bg-red-100 border-red-300"
-            }`}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className={`transition-all duration-300 ${
-                  isAISpeaking ? "animate-pulse scale-110" : ""
-                }`}>
-                  🎤
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-slate-900">AI Assistant</p>
-              <p className="text-xs text-slate-500 truncate">
-                {sessionStatus !== "CONNECTED" ? "Disconnected" :
-                 dcRef.current?.readyState !== "open" ? "Connection Lost" :
-                 isAISpeaking ? "Speaking..." : "Listening"}
-              </p>
-            </div>
-          </div>
+        </div>
 
-          {/* User Status */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-slate-200/60 shadow-sm">
-            <div className={`w-10 h-10 rounded-full border-2 transition-all duration-300 ${
-              isMicMuted
-                ? "bg-red-100 border-red-400"
-                : isUserSpeaking 
-                  ? "bg-blue-100 border-blue-400 shadow-lg shadow-blue-400/20" 
-                  : "bg-slate-100 border-slate-300"
-            }`}>
-              <div className="w-full h-full flex items-center justify-center">
-                <div className={`transition-all duration-300 ${
-                  isUserSpeaking && !isMicMuted ? "animate-pulse scale-110" : ""
-                }`}>
-                  {isMicMuted ? "🔇" : "👤"}
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-slate-900">You</p>
-              <p className="text-xs text-slate-500 truncate">
-                {isMicMuted ? "Microphone Muted" : 
-                 isUserSpeaking ? "Speaking..." : "Ready"}
-              </p>
-            </div>
-          </div>
+        {/* Voice status strip */}
+        <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-200/50 bg-slate-50 flex-shrink-0">
+          {/* AI indicator */}
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+            isAISpeaking ? 'bg-primary/5 dark:bg-primary/200 animate-pulse' :
+            sessionStatus === 'CONNECTED' ? 'bg-primary/50' : 'bg-slate-300'
+          }`} />
+          <span className="text-[11px] text-slate-500 truncate flex-1">
+            {sessionStatus !== 'CONNECTED' ? 'Disconnected' :
+             isAISpeaking ? 'AI speaking…' :
+             isUserSpeaking ? 'You speaking…' : 'Listening'}
+          </span>
+          {/* Mic indicator */}
+          {isMicMuted && (
+            <span className="text-[11px] text-red-500 flex-shrink-0">Muted</span>
+          )}
         </div>
 
         {/* Session Notes Panel */}
@@ -1587,9 +1675,9 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
               </div>
             )}
             {currentQuestion && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-blue-600 mb-1 uppercase tracking-wide">Current Question</p>
-                <p className="text-xs text-blue-900 leading-relaxed">{currentQuestion}</p>
+              <div className="bg-primary/5 dark:bg-primary/20 border border-primary/20 dark:border-primary/90 rounded-lg p-3">
+                <p className="text-xs font-semibold text-primary/90 dark:text-primary/40 mb-1 uppercase tracking-wide">Current Question</p>
+                <p className="text-xs text-primary dark:text-primary/10 leading-relaxed">{currentQuestion}</p>
               </div>
             )}
             {latestResponse && (
@@ -1599,11 +1687,11 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
               </div>
             )}
             {keyConcepts.length > 0 && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-emerald-600 mb-2 uppercase tracking-wide">Key Concepts</p>
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <p className="text-xs font-semibold text-primary mb-2 uppercase tracking-wide">Key Concepts</p>
                 <div className="flex flex-wrap gap-1">
                   {keyConcepts.map((c) => (
-                    <span key={c} className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-medium rounded">
+                    <span key={c} className="px-1.5 py-0.5 bg-primary/10 text-primary/95 text-xs font-medium rounded">
                       {c}
                     </span>
                   ))}
@@ -1626,7 +1714,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
             onClick={toggleAudio}
             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
               isAudioEnabled 
-                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/25 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-500/30" 
+                ? "bg-primary/5 dark:bg-primary/200 text-white shadow-lg shadow-primary/50/25 hover:bg-primary dark:bg-primary/90 hover:shadow-xl hover:shadow-primary/50/30" 
                 : "bg-slate-200 text-slate-700 hover:bg-slate-300"
             }`}
           >
@@ -1656,7 +1744,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-medium text-xs transition-all duration-200 ${
               sessionStatus === "CONNECTED" 
                 ? "bg-red-500 text-white shadow-lg shadow-red-500/25 hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30" 
-                : "bg-emerald-500 text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:shadow-xl hover:shadow-emerald-500/30"
+                : "bg-primary/50 text-white shadow-lg shadow-primary/50/25 hover:bg-primary hover:shadow-xl hover:shadow-primary/50/30"
             }`}
           >
             {sessionStatus === "CONNECTED" ? <PhoneOff size={16} /> : <Phone size={16} />}
@@ -1703,7 +1791,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                 value={feedbackData.feedback}
                 onChange={(e) => handleFeedbackChange('feedback', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="How was your overall experience with the AI teaching assistant?"
               />
             </div>
@@ -1718,7 +1806,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                 value={feedbackData.issues}
                 onChange={(e) => handleFeedbackChange('issues', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="Did you encounter any technical issues, bugs, or unexpected behavior?"
               />
             </div>
@@ -1733,7 +1821,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
                 value={feedbackData.suggestions}
                 onChange={(e) => handleFeedbackChange('suggestions', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
                 placeholder="What features or improvements would make this better?"
               />
             </div>
@@ -1748,7 +1836,7 @@ export default function TeachingInterface({ classSession, onEndSession, sessionR
               </button>
               <button
                 onClick={handleFeedbackSubmit}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="bg-primary dark:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:ring-offset-2 transition-colors"
               >
                 Submit & End Session
               </button>

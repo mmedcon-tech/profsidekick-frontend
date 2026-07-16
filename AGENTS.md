@@ -9,12 +9,14 @@
 
 ProfSidekick is an AI-powered teaching assistant platform. This repository is the **frontend**: a Next.js 15 application that:
 
-- Lets teachers upload presentations (PDF/PPTX) and configure interactive classes
+- Lets teachers (publishers) upload presentations (PDF/PPTX), configure courses, and build AI avatar-backed sessions
 - Delivers voice-based AI tutoring via the OpenAI Realtime API over WebRTC
-- Provides a dashboard for managing courses, sessions, prompts, and course materials
+- Provides a subscriber-facing learning dashboard: stats, in-progress course cards, and a floating AI assistant widget
 - Proxies all backend calls through Next.js API route handlers (BFF pattern), keeping credentials server-side
 
 The frontend communicates with the backend described in [backend-main/AGENTS.md](../backend-main/AGENTS.md) via HTTP REST. It communicates with OpenAI directly for voice via WebRTC using ephemeral tokens vended by the backend.
+
+**UI design reference:** `UI_AGENT_PROMPT.md` at the repo root is the authoritative UI/UX guide — brand, layout rules, colour system, component classes, screen inventory, and behaviour rules. Read it before touching any UI.
 
 ---
 
@@ -22,56 +24,77 @@ The frontend communicates with the backend described in [backend-main/AGENTS.md]
 
 ```
 profsidekick-frontend-main/
-├── public/                          # Static assets — do not add secrets here
+├── public/
 │   ├── audio/voice_samples/         # Sample voice clips for UI demos
-│   ├── images/                      # Logos and team photos
-│   └── prompts/                     # Baseline AI prompt text files (ai_prompt.txt, core_prompt.txt)
+│   ├── images/                      # Logos and static assets
+│   │   ├── logo.png                 # Sidebar brand logo
+│   │   ├── avatar-female.png        # Fallback avatar image (female persona)
+│   │   └── avatar-male.png          # Fallback avatar image (male persona)
+│   └── prompts/                     # Baseline AI prompt text files
+├── UI_AGENT_PROMPT.md               # Authoritative UI/UX guide — read before any UI work
 └── src/
-    ├── app/                         # Next.js App Router root
-    │   ├── (auth)/                  # Route group: login, register — unauthenticated access
-    │   ├── (dashboard)/             # Route group: all protected teacher/student routes
-    │   ├── about/                   # Public about page
-    │   ├── contact/                 # Public contact page
-    │   ├── api/                     # Next.js route handlers — BFF proxy layer only, no business logic
+    ├── app/
+    │   ├── (auth)/                  # Unauthenticated routes: login, register, verify-email
+    │   ├── (dashboard)/             # Protected routes using DashboardLayout (role-aware)
+    │   │   ├── layout.tsx           # Picks publisherNav|subscriberNav|adminNav; mounts FloatingAvatar
+    │   │   ├── courses/[courseId]/  # Course detail — two-column layout (sessions list + assistant card)
+    │   │   └── ...                  # Other dashboard routes
+    │   ├── subscriber/              # Subscriber-specific pages
+    │   │   ├── dashboard/           # Landing page after login: stats tiles + Continue Learning
+    │   │   ├── courses/             # Full course grid (StudentDashboard, SearchContext integrated)
+    │   │   ├── marketplace/         # Avatar marketplace
+    │   │   ├── history/
+    │   │   ├── profile/
+    │   │   └── layout.tsx           # Subscriber layout guard
+    │   ├── publisher/               # Publisher-specific pages
+    │   │   └── layout.tsx           # Publisher layout guard
+    │   ├── admin/                   # Admin-only pages
+    │   ├── api/                     # BFF route handlers — thin proxies, no business logic
+    │   │   ├── assistant/chat/      # Text chat fallback → OpenAI gpt-4o-mini (no HeyGen needed)
+    │   │   ├── heygen/token/        # Vends HeyGen streaming token (server-side HEYGEN_API_KEY)
     │   │   ├── chat/completions/    # Proxies to OpenAI chat completions
     │   │   ├── prompts/             # CRUD for saved prompts
     │   │   └── sessions/            # Session & session-run CRUD + ephemeral token
-    │   ├── globals.css              # Global CSS: Tailwind base + CSS custom properties
-    │   ├── layout.tsx               # Root layout — context providers are mounted here
-    │   ├── page.tsx                 # Public landing page
-    │   ├── error.tsx                # Root error boundary
-    │   ├── loading.tsx              # Root loading state
-    │   └── not-found.tsx            # 404 page
-    ├── components/                  # React components — presentational, no direct API calls
+    │   ├── globals.css              # Tailwind base + CSS custom properties incl. .input-style utility
+    │   ├── layout.tsx               # Root layout — all context providers mount here
+    │   └── page.tsx                 # Public landing page
+    ├── components/
     │   ├── auth/                    # ProtectedRoute redirect guard
+    │   ├── avatar/
+    │   │   └── FloatingAvatar.tsx   # Subscriber floating AI assistant widget (see §10)
     │   ├── courses/                 # CourseMaterials, CourseSettingsTabs
-    │   ├── layout/                  # ConditionalHeader, NavigationHeader
-    │   ├── sessions/                # ClassCreation, UnifiedDashboard, SessionRuns, SlidesPreview,
-    │   │                            #   AISettings, PromptCreationModal, PromptLibrary, etc.
+    │   ├── layout/
+    │   │   ├── DashboardLayout.tsx  # Shared shell: collapsible sidebar + header + content (see §10)
+    │   │   ├── ConditionalHeader.tsx
+    │   │   └── NavigationHeader.tsx
+    │   ├── sessions/                # ClassCreation, StudentDashboard, UnifiedDashboard, SessionRuns,
+    │   │                            #   SlidesPreview, AISettings, PromptCreationModal, PromptLibrary
     │   └── teaching/                # TeachingInterface, BottomToolbar, Transcript, Events, GuardrailChip
-    ├── constants/                   # Static configuration — AI agent definitions live here
-    │   ├── teachingAssistant.ts     # Primary AgentConfig for the teaching assistant
-    │   ├── simpleHandoff.ts         # Reference example for multi-agent handoff pattern
-    │   └── utils.ts                 # injectTransferTools() helper
-    ├── contexts/                    # React context providers
+    ├── constants/                   # Static AI agent configuration — see §3.5
+    │   ├── teachingAssistant.ts
+    │   ├── simpleHandoff.ts
+    │   └── utils.ts
+    ├── contexts/
     │   ├── AuthContext.tsx          # Auth state: login / logout / refresh / checkAuth
-    │   ├── EventContext.tsx         # Realtime API event log (debugging tool)
+    │   ├── SearchContext.tsx        # Header search: pages call register(placeholder, setter) on mount
+    │   ├── EventContext.tsx         # Realtime API event log (debugging)
     │   └── TranscriptContext.tsx    # Conversation transcript state
-    ├── hooks/                       # Custom React hooks — data fetching and event handling
+    ├── hooks/
     │   ├── useCourses.ts
+    │   ├── useSubscriberStats.ts    # Aggregate learning stats (completedRuns, totalMinutes, progress%)
     │   ├── useHandleServerEvent.ts  # Core Realtime API event handler — critical path
     │   ├── usePrompts.ts
     │   ├── useSessionRuns.ts
     │   └── useUserSessions.ts
-    ├── lib/                         # Pure utility functions — no React, no module-level side effects
+    ├── lib/
     │   ├── config.ts                # Backend URL resolution from env vars
     │   ├── realtimeConnection.ts    # WebRTC + RTCPeerConnection setup for OpenAI Realtime
-    │   ├── audioUtils.ts            # WAV encoding helpers
-    │   └── tagUtils.ts              # Comma-separated tag string helpers
-    └── types/                       # TypeScript type definitions
+    │   ├── audioUtils.ts
+    │   └── tagUtils.ts
+    └── types/
         ├── types.ts                 # All shared types — primary source of truth
-        ├── materials.ts             # Course material types
-        └── index.ts                 # Re-exports
+        ├── materials.ts
+        └── index.ts
 ```
 
 ### Directories That Must Not Be Modified Without Justification
@@ -82,6 +105,8 @@ profsidekick-frontend-main/
 | `src/lib/realtimeConnection.ts` | WebRTC negotiation — breakage silently kills voice sessions |
 | `src/constants/teachingAssistant.ts` | Tool names must stay in sync with `useHandleServerEvent.ts` |
 | `src/app/layout.tsx` | Root layout changes affect all pages and context providers |
+| `src/components/layout/DashboardLayout.tsx` | Changes affect sidebar nav and the layout shell for every authenticated page; see §10 |
+| `src/contexts/SearchContext.tsx` | Header search integration — changing the `register`/`unregister` API breaks every page that uses it |
 
 ---
 
@@ -250,7 +275,9 @@ Always check `response.ok` and read `detail` for user-facing messages. Do not as
 | GET | `/api/sessions/{id}/runs` | Yes | `useSessionRuns` |
 | POST | `/api/sessions/{id}/run/start` | Yes | `TeachingInterface` |
 | POST | `/api/sessions/{id}/run/{runId}/stop` | Yes | `TeachingInterface` |
+| POST | `/api/sessions/{id}/run/{runId}/transcript` | Yes | `useTranscriptPersistence` |
 | GET | `/api/session/ephemeral` | Yes | `TeachingInterface` (Realtime token) |
+| POST | `/api/tts/elevenlabs` | Yes | `playElevenLabsAudio`, `useSpeechPreview` |
 | GET | `/api/prompts` | Yes | `usePrompts` |
 | POST | `/api/prompts` | Yes | `PromptCreationModal` |
 | PUT | `/api/prompts/{id}` | Yes | `PromptLibrary` |

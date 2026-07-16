@@ -91,7 +91,7 @@ export default function RubricsPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Rubrics</h1>
         {!noConfig && !showForm && (
           <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+            className="flex items-center gap-2 bg-[#133221] text-white px-4 py-2 rounded-lg hover:bg-[#0a1e13] transition-colors text-sm font-medium">
             <Plus size={15} /> New Rubric
           </button>
         )}
@@ -117,14 +117,14 @@ export default function RubricsPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rubric Title</label>
             <input value={rubricTitle} onChange={(e) => setRubricTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm"
               placeholder="e.g., Oral Examination Rubric" />
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Criteria</label>
-              <span className={`text-xs font-medium ${totalWeight === 100 ? 'text-green-600' : 'text-red-500'}`}>
+              <span className={`text-xs font-medium ${totalWeight === 100 ? 'text-primary' : 'text-red-500'}`}>
                 Total: {totalWeight}% {totalWeight !== 100 && '(must be 100%)'}
               </span>
             </div>
@@ -133,16 +133,16 @@ export default function RubricsPage() {
               <div key={i} className="grid grid-cols-[1fr_80px_auto] gap-2 items-start p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <div className="space-y-2">
                   <input value={c.name} onChange={(e) => updateCriterion(i, 'name', e.target.value)}
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#133221]"
                     placeholder="Criterion name" />
                   <input value={c.description} onChange={(e) => updateCriterion(i, 'description', e.target.value)}
-                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#133221]"
                     placeholder="Description (optional)" />
                 </div>
                 <div className="flex items-center gap-1">
                   <input type="number" min={0} max={100} value={c.weight}
                     onChange={(e) => updateCriterion(i, 'weight', parseInt(e.target.value) || 0)}
-                    className="w-16 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500" />
+                    className="w-16 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-[#133221]" />
                   <span className="text-xs text-gray-400">%</span>
                 </div>
                 <button onClick={() => removeCriterion(i)} disabled={criteria.length === 1}
@@ -153,7 +153,7 @@ export default function RubricsPage() {
             ))}
 
             <button onClick={addCriterion}
-              className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium">
+              className="flex items-center gap-1 text-sm text-[#133221] hover:text-[#133221] font-medium">
               <Plus size={14} /> Add criterion
             </button>
           </div>
@@ -164,7 +164,7 @@ export default function RubricsPage() {
               Cancel
             </button>
             <button onClick={handleSave} disabled={saving}
-              className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm transition-colors">
+              className="flex-1 bg-[#133221] text-white py-2 rounded-lg hover:bg-[#0a1e13] disabled:opacity-50 text-sm transition-colors">
               {saving ? 'Saving...' : 'Save Rubric'}
             </button>
           </div>
@@ -193,7 +193,7 @@ export default function RubricsPage() {
                   <span className="text-gray-700 dark:text-gray-300">{name}</span>
                   <div className="flex items-center gap-2">
                     {val.description && <span className="text-gray-400 text-xs">{val.description}</span>}
-                    <span className="font-medium text-blue-600">{val.weight}%</span>
+                    <span className="font-medium text-[#133221]">{val.weight}%</span>
                   </div>
                 </div>
               ))}

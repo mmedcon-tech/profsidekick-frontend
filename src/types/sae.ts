@@ -1,8 +1,22 @@
 // Self Assessment Exam (SAE) TypeScript types.
 // Mirror the Pydantic schemas in profsidekick-api/app/schemas/sae.py.
 
+export interface SAEAssessmentRow {
+  id: string;
+  publisher_id: string;
+  course_id: string | null;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  grading_prompt_template_id: string | null;
+  grading_prompt_snapshot: string | null;
+  avatar_id: string | null;
+  created_at: string;
+}
+
 export interface SAEStudentRow {
   id: string;
+  assessment_id: string;
   student_number: number;
   student_code: string;
   display_name: string;
@@ -10,7 +24,7 @@ export interface SAEStudentRow {
   invitation_token: string;
   is_activated: boolean;
   activated_at: string | null;
-  has_submitted: boolean;
+  submission_count: number;
   submitted_at: string | null;
   country_of_origin: string | null;
   curriculum: string | null;
@@ -25,6 +39,7 @@ export interface SAETokenValidationResponse {
   valid: boolean;
   student_code: string;
   display_name: string;
+  is_first_use: boolean;
 }
 
 export interface SAESetupResponse {
@@ -45,6 +60,8 @@ export interface SAEQuestionComment {
 /** Student-facing submission result. result_json is always the effective (possibly edited) grading. */
 export interface SAESubmissionResult {
   id: string;
+  submission_number: number | null;
+  is_active: boolean | null;
   score: number | null;
   review_required: boolean;
   result_json: Record<string, unknown> | null;
@@ -61,30 +78,77 @@ export interface SAESubmissionResultPublisher extends SAESubmissionResult {
   last_edited_at: string | null;
 }
 
-export interface SAETranscribeResponse {
-  student_code: string;
-  display_name: string;
-  transcription_complete: boolean;
-}
-
+/** Returned by GET /api/sae/publisher/students/{id} — now includes all submissions. */
 export interface SAEStudentDetail extends SAEStudentRow {
-  submission: SAESubmissionResultPublisher | null;
+  submissions: SAESubmissionResultPublisher[];
+  grading_prompt_snapshot: string | null;
 }
 
-export interface SAEStudentMe {
+/**
+ * One active assessment enrolment for the authenticated student.
+ * Returned as an array by GET /api/sae/student/enrollments.
+ * All fields are guaranteed non-null unlike SAEStudentMe.
+ */
+export interface SAEStudentEnrollment {
   id: string;
   student_number: number;
   student_code: string;
   display_name: string;
   is_activated: boolean;
-  has_submitted: boolean;
+  submission_count: number;
   country_of_origin: string | null;
   curriculum: string | null;
+  assessment_id: string;
+  assessment_name: string | null;
+}
+
+/**
+ * Returned by GET /api/sae/student/me for any authenticated subscriber.
+ * is_enrolled=false means this user is a regular subscriber not in the SAE system;
+ * all other fields will be undefined in that case.
+ */
+export interface SAEStudentMe {
+  is_enrolled: boolean;
+  id?: string;
+  student_number?: number;
+  student_code?: string;
+  display_name?: string;
+  is_activated?: boolean;
+  submission_count?: number;
+  country_of_origin?: string | null;
+  curriculum?: string | null;
+  assessment_id?: string;
+  assessment_name?: string | null;
 }
 
 export interface SAERegenerateResponse {
   invitation_url: string;
   invitation_token: string;
+}
+
+// ── Admin read-only views (no grading data) ───────────────────────────────────
+
+export interface SAEAdminAssessmentRow {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  publisher_id: string;
+  publisher_username: string;
+  enrolled_count: number;
+}
+
+export interface SAEAdminStudentRow {
+  id: string;
+  student_code: string;
+  is_activated: boolean;
+  activation_date: string | null;
+  submission_count: number;
+  created_at: string;
+  assessment_id: string;
+  assessment_name: string;
+  publisher_username: string;
+  user_username: string | null;
 }
 
 // ── Grading question shape inside result_json ─────────────────────────────────

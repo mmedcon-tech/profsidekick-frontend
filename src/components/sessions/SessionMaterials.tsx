@@ -265,7 +265,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary dark:border-primary/50"></div>
       </div>
     );
   }
@@ -280,7 +280,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
         </div>
         <button
           onClick={fetchAvailableMaterials}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="flex items-center gap-2 bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:ring-offset-2"
         >
           <Plus className="w-4 h-4" />
           Add Materials
@@ -303,7 +303,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
             <p className="text-gray-500 dark:text-gray-400 mb-4">No materials selected for this session</p>
             <button
               onClick={fetchAvailableMaterials}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-primary/90 dark:text-primary/40 hover:text-primary/95 dark:text-primary/30 font-medium"
             >
               Add materials from your course
             </button>
@@ -318,7 +318,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                 key={sessionMaterial.id} 
                 className={`border rounded-lg p-4 transition-all ${
                   isIncluded 
-                    ? 'border-green-200 bg-green-50' 
+                    ? 'border-primary/20 bg-primary/5' 
                     : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
                 }`}
               >
@@ -329,7 +329,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                       onClick={() => toggleMaterialInclusion(sessionMaterial.id, isIncluded)}
                       className={`mt-1 p-1 rounded-full transition-colors ${
                         isIncluded 
-                          ? 'text-green-600 hover:text-green-700' 
+                          ? 'text-primary hover:text-primary/80' 
                           : 'text-gray-400 hover:text-gray-600 dark:text-gray-400'
                       }`}
                     >
@@ -352,7 +352,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                           </span>
                         )}
                         {isIncluded && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                             Included
                           </span>
                         )}
@@ -380,12 +380,12 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                                 onChange={(e) => setInstructionsText(e.target.value)}
                                 placeholder="Add usage instructions for this session..."
                                 rows={3}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50 text-sm"
                               />
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => updateInstructions(sessionMaterial.id, instructionsText)}
-                                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                                  className="px-3 py-1 bg-primary dark:bg-primary/90 text-white text-sm rounded hover:bg-primary/90 dark:hover:bg-primary"
                                 >
                                   Save
                                 </button>
@@ -408,7 +408,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                                 </div>
                                 <button
                                   onClick={() => startEditInstructions(sessionMaterial)}
-                                  className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 rounded"
+                                  className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-primary/90 dark:text-primary/40 rounded"
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
@@ -427,7 +427,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                         href={material.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary/90 dark:text-primary/40 rounded-lg hover:bg-primary/5 dark:bg-primary/20"
                         title="Open link"
                       >
                         <ExternalLink className="w-4 h-4" />
@@ -439,7 +439,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                         href={material.file_path.startsWith('http') ? material.file_path : config.getApiUrl(material.file_path)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-green-600 rounded-lg hover:bg-green-50"
+                        className="p-2 text-gray-500 dark:text-gray-400 hover:text-primary rounded-lg hover:bg-primary/5"
                         title="Download file"
                       >
                         <Download className="w-4 h-4" />
@@ -489,7 +489,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                       key={material.id}
                       className={`border rounded-lg p-4 cursor-pointer transition-all ${
                         materialModal.selectedMaterials.has(material.id)
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-primary/50 dark:border-primary/50 bg-primary/5 dark:bg-primary/20'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                       }`}
                       onClick={() => toggleMaterialSelection(material.id)}
@@ -497,7 +497,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                       <div className="flex items-start gap-3">
                         <div className="mt-1">
                           {materialModal.selectedMaterials.has(material.id) ? (
-                            <CheckCircle className="w-5 h-5 text-blue-600" />
+                            <CheckCircle className="w-5 h-5 text-primary/90 dark:text-primary/40" />
                           ) : (
                             <Circle className="w-5 h-5 text-gray-400" />
                           )}
@@ -541,7 +541,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
               <button
                 onClick={addMaterialsToSession}
                 disabled={materialModal.selectedMaterials.size === 0 || saving}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-primary dark:bg-primary/90 text-white rounded-lg hover:bg-primary/90 dark:hover:bg-primary disabled:opacity-50"
               >
                 {saving ? (
                   <>
