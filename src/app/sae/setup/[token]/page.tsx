@@ -310,7 +310,7 @@ export default function SAESetupPage() {
             {/* ── Country of origin ── */}
             <div>
               <label className={labelCls}>
-                Country of Origin <span className="text-red-500">*</span>
+                Country of Education <span className="text-red-500">*</span>
               </label>
               <select
                 value={country}
