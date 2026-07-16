@@ -41,7 +41,7 @@ function CollapsibleSection({ title, isOpen, onToggle, children }: CollapsibleSe
 export default function ClassCreation() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [, setSelectedCourse] = useState<CourseDetails | null>(null);

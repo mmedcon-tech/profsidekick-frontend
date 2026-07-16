@@ -778,7 +778,7 @@ export default function PublisherStudentReviewPage() {
             </button>
           </div>
         </div>
-      ) : pdfVisible && isSelectedActive ? (
+      ) : viewerVisible && isSelectedActive ? (
         /* Split pane (PDF only available for active submission) */
         <div ref={containerRef} className="flex flex-1 min-h-0 select-none">
           <div
@@ -790,7 +790,7 @@ export default function PublisherStudentReviewPage() {
               <SubmissionSelector
                 submissions={submissions}
                 selectedId={selectedSub.id}
-                onSelect={(s) => { setSelectedSub(s); setPdfVisible(false); }}
+                onSelect={(s) => { setSelectedSub(s); setViewerVisible(false); }}
               />
             )}
             <FeedbackPanel
@@ -814,15 +814,70 @@ export default function PublisherStudentReviewPage() {
           </div>
 
           <div className="flex-1 min-w-0 overflow-hidden">
-            <SAEPdfViewer
-              key={`${studentId}-${activeFile}`}
-              fetchPdf={fetchActivePdf}
-              label={
-                activeFile === "handwritten"
-                  ? (selectedSub?.handwritten_filename ?? "Student Answer PDF")
-                  : (selectedSub?.webassign_filename ?? "Questions PDF")
-              }
-            />
+            {activeView === "transcript" ? (
+              <div className="h-full overflow-y-auto bg-slate-50 p-6">
+                <p className="text-xs font-medium uppercase tracking-wider text-blue-600">
+                  OCR Transcript
+                </p>
+
+                <h2 className="mt-1 text-xl font-bold text-slate-900">
+                  Handwritten Transcript
+                </h2>
+
+                {transcriptLoading && (
+                  <p className="mt-4 text-sm text-slate-500">
+                    Loading transcript…
+                  </p>
+                )}
+
+                {transcriptError && (
+                  <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {transcriptError}
+                  </div>
+                )}
+
+                {!transcriptLoading && !transcriptError && (
+                  <div className="mt-4 rounded-lg border border-slate-200 bg-white p-5 text-sm text-slate-800 shadow-sm">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        table: (props) => (
+                          <table
+                            className="my-4 w-full border-collapse border border-slate-300"
+                            {...props}
+                          />
+                        ),
+                        th: (props) => (
+                          <th
+                            className="border border-slate-300 bg-slate-100 px-2 py-1 text-left"
+                            {...props}
+                          />
+                        ),
+                        td: (props) => (
+                          <td
+                            className="border border-slate-300 px-2 py-1"
+                            {...props}
+                          />
+                        ),
+                      }}
+                    >
+                      {transcriptText || "No transcript available."}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <SAEPdfViewer
+                key={`${studentId}-${activeView}`}
+                fetchPdf={fetchActivePdf}
+                label={
+                  activeView === "handwritten"
+                    ? (selectedSub?.handwritten_filename ?? "Student Answer PDF")
+                    : (selectedSub?.webassign_filename ?? "Questions PDF")
+                }
+              />
+            )}
           </div>
         </div>
       ) : (

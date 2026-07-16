@@ -6,7 +6,8 @@ import {
   fetchMySubmissionFile,
   getMyEnrollments,
   getMySubmissions,
-  submitExam,
+  submitQuestionComment,
+  transcribeExam,
 } from "@/lib/sae-api";
 import SAEPdfViewer from "@/components/sae/SAEPdfViewer";
 import type {
@@ -127,7 +128,7 @@ export default function SAEExamPage() {
     };
     setSubmitError("");
     try {
-      const newSub = await submitExam(handwrittenFile, webassignFile, selected.assessment_id);
+      const newSub = await transcribeExam(handwrittenFile, webassignFile, selected.assessment_id);
       const updated = [...submissions, newSub];
       // Refresh the selected enrollment to update submission_count
       const freshEnrollments = await getMyEnrollments();
@@ -468,6 +469,68 @@ function ResultView({
   const rawMax = rj?.raw_max_score as number | undefined;
   const overallFeedback = rj?.overall_feedback as string | undefined;
   const reviewReasons = (rj?.submission_review_reasons ?? []) as string[];
+
+  // ── Question comments ─────────────────────────────────────────────────────
+  const [openCommentQuestion, setOpenCommentQuestion] =
+    useState<string | null>(null);
+
+  const [commentTexts, setCommentTexts] =
+    useState<Record<string, string>>({});
+
+  const [submittedComments, setSubmittedComments] =
+    useState<Record<string, string>>(() =>
+      Object.fromEntries(
+        (submission.comments ?? []).map((comment) => [
+          comment.question_id,
+          comment.comment,
+        ])
+      )
+    );
+
+  const [savingCommentQuestion, setSavingCommentQuestion] =
+    useState<string | null>(null);
+
+  const [commentErrors, setCommentErrors] =
+    useState<Record<string, string>>({});
+
+  async function handleSubmitComment(questionId: string) {
+    const comment = commentTexts[questionId]?.trim();
+
+    if (!comment) return;
+
+    setSavingCommentQuestion(questionId);
+
+    setCommentErrors((current) => ({
+      ...current,
+      [questionId]: "",
+    }));
+
+    try {
+      const saved = await submitQuestionComment(questionId, comment);
+
+      setSubmittedComments((current) => ({
+        ...current,
+        [saved.question_id]: saved.comment,
+      }));
+
+      setCommentTexts((current) => ({
+        ...current,
+        [saved.question_id]: saved.comment,
+      }));
+
+      setOpenCommentQuestion(null);
+    } catch (error) {
+      setCommentErrors((current) => ({
+        ...current,
+        [questionId]:
+          error instanceof Error
+            ? error.message
+            : "Could not submit comment.",
+      }));
+    } finally {
+      setSavingCommentQuestion(null);
+    }
+  }
 
   // ── PDF toggle ────────────────────────────────────────────────────────────
   const [pdfVisible, setPdfVisible] = useState(false);

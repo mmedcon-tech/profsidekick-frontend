@@ -20,7 +20,6 @@ import type {
   SAESubmissionResult,
   SAESubmissionResultPublisher,
   SAETokenValidationResponse,
-  SAETranscribeResponse,
 } from "@/types/sae";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
@@ -268,6 +267,25 @@ export async function fetchPublisherStudentFile(
   return res.arrayBuffer();
 }
 
+/** Download the active submission's OCR transcript for a student (publisher view). */
+export async function fetchPublisherStudentTranscript(
+  studentId: string
+): Promise<string> {
+  const res = await fetch(
+    `${API}/api/sae/publisher/students/${studentId}/files/transcript`,
+    { headers: authHeaders() }
+  );
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      detail = body.detail ?? body.message ?? detail;
+    } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+  return res.text();
+}
+
 // ── Student ───────────────────────────────────────────────────────────────────
 
 // No active callers found — commented out, not deleted.
@@ -354,7 +372,7 @@ export async function transcribeExam(
     body: form,
   });
 
-  return handleResponse<SAETranscribeResponse>(res);
+  return handleResponse<SAESubmissionResult>(res);
 }
 
 export async function gradeDraftSubmission(): Promise<SAESubmissionResult> {

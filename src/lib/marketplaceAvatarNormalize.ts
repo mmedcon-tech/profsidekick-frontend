@@ -65,6 +65,7 @@ export function normalizeAvatarPublicResponse(raw: unknown): AvatarPublicRespons
     template_image_url:
       pickString(record, 'template_image_url', 'templateImageUrl', 'image_url', 'imageUrl') ??
       null,
+    subscription_cost: pickNumber(record, 'subscription_cost', 'subscriptionCost'),
     created_at: createdAt,
     updated_at: updatedAt,
     is_enrolled: pickBool(record, 'is_enrolled', 'isEnrolled'),
@@ -111,6 +112,7 @@ export function libraryEntryToPublicAvatar(entry: AvatarLibraryEntry): AvatarPub
     description: entry.description ?? null,
     is_published: true,
     template_image_url: entry.thumbnailPath,
+    subscription_cost: null,
     created_at: now,
     updated_at: now,
     tagline: entry.tagline ?? null,
