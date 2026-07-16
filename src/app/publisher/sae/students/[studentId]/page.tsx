@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import SAEPdfViewer from "@/components/sae/SAEPdfViewer";
 import {
   fetchPublisherStudentFile,
+  fetchPublisherStudentTranscript,
   getStudentDetail,
   updateSubmission,
 } from "@/lib/sae-api";
@@ -14,8 +15,11 @@ import type {
   SAEStudentDetail,
   SAESubmissionResultPublisher,
 } from "@/types/sae";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
-type ActiveFile = "handwritten" | "webassign";
+type ActiveView = "handwritten" | "webassign" | "transcript";
 
 const DIVIDER_STORAGE_KEY = "sae_review_divider_pct_v2";
 const DEFAULT_DIVIDER_PCT = 50;
@@ -412,6 +416,31 @@ function FeedbackPanel({
                       Review: {q.human_review_reason || "Required."}
                     </p>
                   )}
+
+                  {submission.comments
+                    ?.filter((comment) => comment.question_id === q.id)
+                    .map((comment) => (
+                      <div
+                        key={comment.id}
+                        className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3"
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                          Student Comment
+                        </p>
+
+                        <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+                          {comment.comment}
+                        </p>
+
+                        <p className="mt-2 text-xs text-slate-500">
+                          Submitted{" "}
+                          {new Date(comment.created_at).toLocaleString("en-US", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </p>
+                      </div>
+                    ))}
                 </div>
               ))}
             </div>
@@ -499,18 +528,58 @@ export default function PublisherStudentReviewPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  // ── PDF toggle ─────────────────────────────────────────────────────────────
-  const [pdfVisible, setPdfVisible] = useState(false);
-  const [activeFile, setActiveFile] = useState<ActiveFile>("handwritten");
+  // ── View file toggle ─────────────────────────────────────────────────────────────
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [activeView, setActiveView] = useState<ActiveView>("handwritten");
 
-  function handlePdfButton(file: ActiveFile) {
-    if (pdfVisible && activeFile === file) {
-      setPdfVisible(false);
-    } else {
-      setActiveFile(file);
-      setPdfVisible(true);
+  const [transcriptText, setTranscriptText] = useState("");
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [transcriptError, setTranscriptError] = useState("");
+
+  function handleViewButton(view: ActiveView) {
+    if (viewerVisible && activeView === view) {
+      setViewerVisible(false);
+      return;
     }
+
+    setActiveView(view);
+    setViewerVisible(true);
   }
+
+  useEffect(() => {
+    if (!viewerVisible || activeView !== "transcript") return;
+
+    let cancelled = false;
+
+    setTranscriptLoading(true);
+    setTranscriptError("");
+
+    fetchPublisherStudentTranscript(studentId)
+      .then((text) => {
+        if (!cancelled) {
+          setTranscriptText(text);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setTranscriptError(
+            err instanceof Error
+              ? err.message
+              : "Could not load transcript."
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setTranscriptLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, 
+  [studentId, activeView, viewerVisible]);
 
   // ── Draggable divider ──────────────────────────────────────────────────────
   const containerRef = useRef<HTMLDivElement>(null);
@@ -586,8 +655,12 @@ export default function PublisherStudentReviewPage() {
 
   // PDF only available for the active submission (backend limitation)
   const fetchActivePdf = useCallback(
-    () => fetchPublisherStudentFile(studentId, activeFile),
-    [studentId, activeFile]
+    () =>
+      fetchPublisherStudentFile(
+        studentId,
+        activeView as "handwritten" | "webassign"
+      ),
+    [studentId, activeView]
   );
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -654,24 +727,36 @@ export default function PublisherStudentReviewPage() {
         {hasSubmissions && isSelectedActive && (
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => handlePdfButton("handwritten")}
+              onClick={() => handleViewButton("handwritten")}
               className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                pdfVisible && activeFile === "handwritten"
+                viewerVisible && activeView === "handwritten"
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
               Student Answer PDF
             </button>
+
             <button
-              onClick={() => handlePdfButton("webassign")}
+              onClick={() => handleViewButton("webassign")}
               className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                pdfVisible && activeFile === "webassign"
+                viewerVisible && activeView === "webassign"
                   ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
               Questions PDF
+            </button>
+
+            <button
+              onClick={() => handleViewButton("transcript")}
+              className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                viewerVisible && activeView === "transcript"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              Transcript
             </button>
           </div>
         )}

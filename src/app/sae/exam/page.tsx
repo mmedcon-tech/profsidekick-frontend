@@ -661,6 +661,131 @@ function ResultView({
                     Instructor review: {q.human_review_reason || "Review required."}
                   </p>
                 )}
+
+                <div
+                  data-html2canvas-ignore="true"
+                  className="mt-4 border-t border-slate-200 pt-4"
+                >
+                  {!submittedComments[q.id] ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenCommentQuestion((current) =>
+                          current === q.id ? null : q.id
+                        )
+                      }
+                      className="rounded-md border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                    >
+                      Send Comment
+                    </button>
+                  ) : openCommentQuestion !== q.id ? (
+                    <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                            Your Comment
+                          </p>
+
+                          <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+                            {submittedComments[q.id]}
+                          </p>
+
+                          <p className="mt-2 text-xs text-blue-700">
+                            Submitted for instructor review
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCommentTexts((current) => ({
+                              ...current,
+                              [q.id]: submittedComments[q.id],
+                            }));
+
+                            setOpenCommentQuestion(q.id);
+                          }}
+                          className="text-sm font-medium text-blue-700 hover:text-blue-900"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {openCommentQuestion === q.id && (
+                    <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-sm font-medium text-slate-800">
+                        Comment about Question {q.id}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        Explain which part of the grading you would like the instructor to
+                        review.
+                      </p>
+
+                      <textarea
+                        rows={4}
+                        maxLength={2000}
+                        value={commentTexts[q.id] ?? ""}
+                        onChange={(event) =>
+                          setCommentTexts((current) => ({
+                            ...current,
+                            [q.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="Explain why you think this question should be reviewed..."
+                        className="mt-3 w-full resize-y rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                      />
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-xs text-slate-400">
+                          {(commentTexts[q.id] ?? "").length}/2000
+                        </p>
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={savingCommentQuestion === q.id}
+                            onClick={() => {
+                              setOpenCommentQuestion(null);
+
+                              setCommentErrors((current) => ({
+                                ...current,
+                                [q.id]: "",
+                              }));
+                            }}
+                            className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Cancel
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={
+                              !commentTexts[q.id]?.trim() ||
+                              savingCommentQuestion === q.id
+                            }
+                            onClick={() => handleSubmitComment(q.id)}
+                            className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                          >
+                            {savingCommentQuestion === q.id
+                              ? "Submitting..."
+                              : submittedComments[q.id]
+                                ? "Update Comment"
+                                : "Submit Comment"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {commentErrors[q.id] && (
+                        <p className="mt-2 text-sm text-red-600">
+                          {commentErrors[q.id]}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

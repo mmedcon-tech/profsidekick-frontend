@@ -9,6 +9,7 @@ import type {
   SAEAdminStudentRow,
   SAEAssessmentRow,
   SAEBatchCreateResponse,
+  SAEQuestionComment,
   SAERegenerateResponse,
   SAESetupResponse,
   SAEStudentDetail,
@@ -19,6 +20,7 @@ import type {
   SAESubmissionResult,
   SAESubmissionResultPublisher,
   SAETokenValidationResponse,
+  SAETranscribeResponse,
 } from "@/types/sae";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
@@ -36,14 +38,26 @@ export function authHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
+
     try {
       const body = await res.json();
-      detail = body.detail ?? body.message ?? detail;
+
+      if (Array.isArray(body.detail)) {
+        detail = body.detail
+          .map((item: { msg?: string }) => item.msg ?? "Validation error")
+          .join("; ");
+      } else if (typeof body.detail === "string") {
+        detail = body.detail;
+      } else if (typeof body.message === "string") {
+        detail = body.message;
+      }
     } catch {
-      // ignore parse errors
+      // Keep the HTTP status fallback.
     }
+
     throw new Error(detail);
   }
+
   return res.json() as Promise<T>;
 }
 
@@ -306,7 +320,26 @@ export async function getMySubmissionById(
   return handleResponse<SAESubmissionResult>(res);
 }
 
-export async function submitExam(
+export async function submitQuestionComment(
+  questionId: string,
+  comment: string
+): Promise<SAEQuestionComment> {
+  const res = await fetch(
+    `${API}/api/sae/student/submission/comments/${encodeURIComponent(questionId)}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({ comment }),
+    }
+  );
+
+  return handleResponse<SAEQuestionComment>(res);
+}
+
+export async function transcribeExam(
   handwrittenFile: File,
   webassignFile: File,
   assessmentId?: string,
@@ -320,6 +353,16 @@ export async function submitExam(
     headers: authHeaders(),
     body: form,
   });
+
+  return handleResponse<SAETranscribeResponse>(res);
+}
+
+export async function gradeDraftSubmission(): Promise<SAESubmissionResult> {
+  const res = await fetch(`${API}/api/sae/student/grade-draft`, {
+    method: "POST",
+    headers: authHeaders(),
+  });
+
   return handleResponse<SAESubmissionResult>(res);
 }
 

@@ -178,7 +178,9 @@ export default function AutograderSubmitPage() {
   const [handwrittenFile, setHandwrittenFile] = useState<File | null>(null);
   const [webassignFile, setWebassignFile] = useState<File | null>(null);
 
-  // Step 3 — grading state
+  // Step 3 — transcription state
+  // For this demo, the first submit uploads the PDFs once and creates a transcript preview.
+  // Actual grading happens on the transcript preview page using the returned draft_id.
   const [gradingPhase, setGradingPhase] = useState<
     "idle" | "connecting" | "grading" | "done" | "error"
   >("idle");
@@ -295,59 +297,9 @@ export default function AutograderSubmitPage() {
 
     const requestId = crypto.randomUUID();
     addLog(`Request ID: ${requestId}`, "info");
-    addLog("Opening SSE connection…", "info");
+    addLog("Uploading files for transcription…", "info");
 
-    // ── Step A: open SSE stream BEFORE posting ──────────────────────────────
-    let sseResponse: Response;
-    try {
-      sseResponse = await fetch(
-        `${API}/api/autograder/grade/events/${requestId}`,
-        { headers: { Authorization: `Bearer ${getToken()}` } }
-      );
-      if (!sseResponse.ok || !sseResponse.body) {
-        throw new Error(`SSE open failed: HTTP ${sseResponse.status}`);
-      }
-    } catch (err) {
-      addLog(`SSE connection failed: ${err}. Submitting without live updates.`, "warn");
-      // Degrade gracefully — fall through to plain POST
-      await submitWithoutSSE(requestId);
-      return;
-    }
-
-    addLog("SSE connected. Sending files to grader…", "info");
-    setGradingPhase("grading");
-
-    // Start consuming the SSE stream in background
-    const reader = sseResponse.body.getReader();
-    readerRef.current = reader;
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    const sseLoop = (async () => {
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const parts = buffer.split(/\n\n/);
-          buffer = parts.pop() ?? "";
-          for (const block of parts) {
-            if (!block.trim()) continue;
-            let eventType = "message";
-            let data = "";
-            for (const line of block.split("\n")) {
-              if (line.startsWith("event:")) eventType = line.slice(6).trim();
-              else if (line.startsWith("data:")) data = line.slice(5).trim();
-            }
-            if (data) handleSSEEvent(eventType, data);
-          }
-        }
-      } catch {
-        // reader was cancelled (normal on cleanup)
-      }
-    })();
-
-    // ── Step B: POST the form ───────────────────────────────────────────────
+    // ── Step A: POST files once for transcription preview ─────────────────────
     const formData = new FormData();
     formData.append("student_id", resolved.student_id);
     formData.append("request_id", requestId);
@@ -357,13 +309,13 @@ export default function AutograderSubmitPage() {
     // if (avatarId.trim()) formData.append("avatar_id", avatarId.trim());
 
     try {
-      const resp = await fetch(`${API}/api/autograder/grade`, {
+      setGradingPhase("grading");
+
+      const resp = await fetch(`${API}/api/autograder/transcribe`, {
         method: "POST",
         headers: { Authorization: `Bearer ${getToken()}` },
         body: formData,
       });
-
-      await sseLoop; // drain remaining SSE events
 
       if (!resp.ok) {
         const detail = await resp.text();
@@ -371,20 +323,6 @@ export default function AutograderSubmitPage() {
       }
 
       const data = await resp.json();
-      setGradingPhase("done");
-      router.push(`/autograder/result/${data.submission_id}`);
-    } catch (err) {
-      await sseLoop;
-      if (gradingPhase !== "error") {
-        setGradingPhase("error");
-        setSubmitError(err instanceof Error ? err.message : "Grading failed.");
-        addLog(`Request failed: ${err}`, "error");
-      }
-    } finally {
-      reader.cancel().catch(() => {});
-      readerRef.current = null;
-    }
-  }
 
   // Fallback plain-POST path if SSE connection itself fails
   async function submitWithoutSSE(requestId: string) {
@@ -405,11 +343,19 @@ export default function AutograderSubmitPage() {
       if (!resp.ok) throw new Error(await resp.text());
       const data = await resp.json();
       setGradingPhase("done");
-      router.push(`/autograder/result/${data.submission_id}`);
+
+      router.push(`/autograder/transcribe/${data.draft_id}`);
     } catch (err) {
       setGradingPhase("error");
-      setSubmitError(err instanceof Error ? err.message : "Grading failed.");
+      setSubmitError(err instanceof Error ? err.message : "Transcription failed.");
+      addLog(`Transcription failed: ${err}`, "error");
     }
+  }
+
+  // Fallback plain-POST path retained for compatibility.
+  // The transcription flow no longer opens an SSE stream from this page.
+  async function submitWithoutSSE(_requestId: string) {
+    await handleSubmit();
   }
 
   // ── Student lookup ─────────────────────────────────────────────────────────
@@ -485,7 +431,7 @@ export default function AutograderSubmitPage() {
   }
 
   const isGrading = gradingPhase === "connecting" || gradingPhase === "grading";
-  const showChain = gradingPhase !== "idle";
+  const showChain = false;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -650,11 +596,11 @@ export default function AutograderSubmitPage() {
           </div>
         )}
 
-        {/* ── Step 3: Grade + Provider Chain ── */}
+        {/* ── Step 3: Transcribe + Preview ── */}
         {resolved && (
           <div className="mt-4 rounded-xl border bg-white p-6 shadow-sm">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Step 3 — Grade
+              Step 3 — Transcribe
             </h2>
 
             {/* Provider chain — always visible once grading starts */}
@@ -707,16 +653,16 @@ export default function AutograderSubmitPage() {
                 className="mt-4 rounded-md bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {gradingPhase === "connecting"
-                  ? "Connecting…"
+                  ? "Preparing upload…"
                   : gradingPhase === "grading"
-                  ? "Grading… (this may take ~30s)"
-                  : "Submit for Grading"}
+                  ? "Transcribing…"
+                  : "Continue to Transcript Preview"}
               </button>
             )}
 
             {isGrading && (
               <p className="mt-2 text-xs text-slate-500">
-                You will be redirected to the report automatically when grading completes.
+                You will be redirected to the transcript preview when transcription completes.
               </p>
             )}
 
