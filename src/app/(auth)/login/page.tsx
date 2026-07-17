@@ -20,11 +20,32 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stuckLoading, setStuckLoading] = useState(false);
 
   useEffect(() => {
     const message = searchParams.get('message');
     if (message) setSuccessMessage(message);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setStuckLoading(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setStuckLoading(true), 5000);
+    return () => window.clearTimeout(timer);
+  }, [isLoading, isAuthenticated]);
+
+  const clearStuckSession = () => {
+    try {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      localStorage.removeItem('auth_expires_at');
+    } catch {
+      // ignore
+    }
+    window.location.href = '/login';
+  };
 
   // Redirect if already authenticated — role-based destination
   useEffect(() => {
@@ -34,33 +55,39 @@ function LoginForm() {
       if (isAuthenticated && !isLoading && user) {
         const redirectParam = searchParams.get('redirect');
         if (redirectParam) {
-          router.push(redirectParam);
+          window.location.replace(redirectParam);
           return;
         }
 
         if (user.role === 'admin') {
-          router.push('/admin/dashboard');
-        } else if (user.role === 'subscriber') {
+          window.location.replace('/admin/dashboard');
+          return;
+        }
+
+        if (user.role === 'subscriber') {
           try {
-            // Check if first-time login (no courses)
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${apiUrl}/api/courses`, {
-              headers: { Authorization: `Bearer ${token}` }
+            const controller = new AbortController();
+            const timeout = window.setTimeout(() => controller.abort(), 4000);
+            const res = await fetch('/api/courses', {
+              headers: { Authorization: `Bearer ${token}` },
+              signal: controller.signal,
             });
-            const courses = await res.json();
+            window.clearTimeout(timeout);
+            const courses = await res.json().catch(() => []);
             if (mounted) {
               if (Array.isArray(courses) && courses.length === 0) {
-                router.push('/subscriber/marketplace');
+                window.location.replace('/subscriber/marketplace');
               } else {
-                router.push('/subscriber/dashboard');
+                window.location.replace('/subscriber/dashboard');
               }
             }
-          } catch (e) {
-            if (mounted) router.push('/subscriber/dashboard');
+          } catch {
+            if (mounted) window.location.replace('/subscriber/dashboard');
           }
-        } else {
-          router.push('/publisher/dashboard');
+          return;
         }
+
+        window.location.replace('/publisher/dashboard');
       }
     };
 
@@ -69,7 +96,7 @@ function LoginForm() {
     return () => {
       mounted = false;
     };
-  }, [isAuthenticated, isLoading, user, router, searchParams, token]);
+  }, [isAuthenticated, isLoading, user, searchParams, token]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -104,18 +131,25 @@ function LoginForm() {
     }
   };
 
-  // Show loading spinner while checking auth
-  if (isLoading) {
+  // Show loading spinner while checking auth or redirecting an existing session
+  if (isLoading || isAuthenticated) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50"></div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {isAuthenticated ? 'Taking you to your dashboard…' : 'Loading…'}
+        </p>
+        {stuckLoading && (
+          <button
+            type="button"
+            onClick={clearStuckSession}
+            className="mt-4 text-sm font-medium text-primary underline"
+          >
+            Stuck? Clear session and show login
+          </button>
+        )}
       </div>
     );
-  }
-
-  // Don't show login form if already authenticated
-  if (isAuthenticated) {
-    return null;
   }
 
   return (

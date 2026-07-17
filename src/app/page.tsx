@@ -1,13 +1,24 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { BookOpen, Users, Zap, ArrowRight, CheckCircle, LogOut } from 'lucide-react';
 
+function clearLocalAuthSession(): void {
+  try {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_expires_at');
+  } catch {
+    // ignore
+  }
+}
+
 export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, logout, user, token } = useAuth();
+  const [stuck, setStuck] = useState(false);
   const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
 
   const handleLogout = async () => {
@@ -15,67 +26,61 @@ export default function LandingPage() {
     router.push('/');
   };
 
-  // Redirect authenticated users to their role dashboard immediately
+  // Redirect authenticated users with a hard navigation so Safari never hangs on soft routing
   useEffect(() => {
-    let mounted = true;
-    const redirectTimer = window.setTimeout(() => {
-      if (!mounted || isLoading || !isAuthenticated || !user) return;
-      if (user.role === 'admin') {
-        router.replace('/admin/dashboard');
-      } else if (user.role === 'subscriber') {
-        router.replace('/subscriber/dashboard');
-      } else {
-        router.replace('/publisher/dashboard');
-      }
-    }, 6000);
+    if (isLoading || !isAuthenticated || !user) return;
 
-    const performRedirect = async () => {
-      if (isLoading || !isAuthenticated || !user) return;
-      if (user.role === 'admin') {
-        router.replace('/admin/dashboard');
-        return;
-      }
-      if (user.role === 'publisher') {
-        router.replace('/publisher/dashboard');
-        return;
-      }
-      if (user.role !== 'subscriber') return;
+    const role = user.role;
+    let destination = '/publisher/dashboard';
+    if (role === 'admin') destination = '/admin/dashboard';
+    else if (role === 'subscriber') destination = '/subscriber/dashboard';
 
-      try {
-        const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 4000);
-        const res = await fetch('/api/courses', {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        });
-        window.clearTimeout(timeoutId);
-        const courses = await res.json();
-        if (!mounted) return;
-        if (Array.isArray(courses) && courses.length === 0) {
-          router.replace('/subscriber/marketplace');
-        } else {
-          router.replace('/subscriber/dashboard');
-        }
-      } catch {
-        if (mounted) router.replace('/subscriber/dashboard');
-      }
-    };
+    // Immediate hard redirect — avoids Next soft-nav stalls in Safari
+    const timer = window.setTimeout(() => {
+      window.location.replace(destination);
+    }, 100);
 
-    void performRedirect();
+    return () => window.clearTimeout(timer);
+  }, [isAuthenticated, isLoading, user]);
 
+  // If loading/auth hangs, offer escape hatch and eventually force login
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setStuck(false);
+      return;
+    }
+    const stuckTimer = window.setTimeout(() => setStuck(true), 3000);
+    const forceLogin = window.setTimeout(() => {
+      clearLocalAuthSession();
+      window.location.replace('/login');
+    }, 10000);
     return () => {
-      mounted = false;
-      window.clearTimeout(redirectTimer);
+      window.clearTimeout(stuckTimer);
+      window.clearTimeout(forceLogin);
     };
-  }, [isAuthenticated, isLoading, user, router, token]);
+  }, [isLoading, isAuthenticated]);
 
   // Show spinner while auth check runs OR while redirect is in flight
   if (isLoading || isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-sm px-6">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            {isAuthenticated ? 'Opening your dashboard…' : 'Loading…'}
+          </p>
+          {stuck && (
+            <button
+              type="button"
+              onClick={() => {
+                clearLocalAuthSession();
+                window.location.replace('/login');
+              }}
+              className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-white"
+            >
+              Stuck? Clear session & go to login
+            </button>
+          )}
         </div>
       </div>
     );
