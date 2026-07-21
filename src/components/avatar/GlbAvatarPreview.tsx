@@ -19,6 +19,7 @@ import {
   type LipSyncHints,
 } from '@/lib/glbLipSync';
 import { applyNaturalArmPose } from '@/lib/glbArmPose';
+import { alignAvatarFacingCamera } from '@/lib/glbFacing';
 import { normalizeAvatarMeshes } from '@/lib/glbMaterialFix';
 import { normalizeAvatarHeight } from '@/lib/glbNormalize';
 import { computeSidewaysIdleRotation } from '@/lib/glbIdleMotion';
@@ -42,9 +43,11 @@ function useClonedPosedModel(url: string): Group {
   const { scene } = useGLTF(url);
   return useMemo(() => {
     const clone = cloneSkeleton(scene) as Group;
-    applyNaturalArmPose(clone);
     normalizeAvatarMeshes(clone);
     normalizeAvatarHeight(clone);
+    // Face the camera first so world-space arm aiming uses the final orientation.
+    alignAvatarFacingCamera(clone);
+    applyNaturalArmPose(clone);
     return clone;
   }, [scene]);
 }
@@ -56,6 +59,8 @@ function useAvatarAnimation(
   lipSyncHints?: LipSyncHints,
   visemeRef?: React.RefObject<VisemeMorphWeights | null>,
   forceSpeaking = false,
+  isVisemeDriven = false,
+  getAudioLevel?: () => number,
 ): void {
   const idlePhase = useRef(0);
   const blinkPhase = useRef(0);
@@ -75,20 +80,27 @@ function useAvatarAnimation(
       (window as { __AVATAR_FORCE_TALK?: boolean }).__AVATAR_FORCE_TALK === true;
     const visemeWeights = visemeRef?.current;
     const hasVisemeWeights =
-      visemeWeights && Object.values(visemeWeights).some((v) => v > 0.04);
-    const effectiveAmplitude = forceTalk
-      ? 0.35 + 0.25 * Math.sin(idlePhase.current * 9)
-      : hasVisemeWeights
+      !isVisemeDriven &&
+      visemeWeights &&
+      Object.values(visemeWeights).some((v) => v > 0.04);
+    const effectiveAmplitude =
+      isVisemeDriven
         ? 0
-        : amplitude > 0.03
-          ? amplitude
-          : forceSpeaking
-            ? 0.18 + 0.2 * Math.abs(Math.sin(speakingPhase.current * 10.5))
-            : amplitude;
+        : forceTalk
+          ? 0.35 + 0.25 * Math.sin(idlePhase.current * 9)
+          : hasVisemeWeights
+            ? 0
+            : amplitude > 0.03
+              ? amplitude
+              : forceSpeaking
+                ? 0.18 + 0.2 * Math.abs(Math.sin(speakingPhase.current * 10.5))
+                : amplitude;
 
-    const isSpeaking = visemeWeights
-      ? Object.values(visemeWeights).some((v) => v > 0.06)
-      : effectiveAmplitude > 0.04;
+    const isSpeaking = isVisemeDriven
+      ? !!visemeWeights && Object.values(visemeWeights).some((v) => v > 0.06)
+      : visemeWeights
+        ? Object.values(visemeWeights).some((v) => v > 0.06)
+        : effectiveAmplitude > 0.04;
 
     const speakingTarget = isSpeaking ? 1 : 0;
     const blendStep = 1 - Math.exp(-6 * Math.max(0, delta));
@@ -99,8 +111,9 @@ function useAvatarAnimation(
       1 - speakingBlend.current,
     );
 
-    if (visemeWeights) {
-      applyVisemeMorphWeights(model, visemeWeights, lipSyncHints, delta);
+    if (isVisemeDriven || visemeWeights) {
+      const audioLevel = getAudioLevel?.() ?? 0;
+      applyVisemeMorphWeights(model, visemeWeights ?? {}, lipSyncHints, delta, audioLevel);
     } else {
       applyLipSyncAmplitude(model, effectiveAmplitude, lipSyncHints, delta);
     }
@@ -120,10 +133,25 @@ function BustModel({
   fitMargin,
   modelScale,
   isSpeaking = false,
-}: Omit<GlbModelProps, 'framing' | 'coverHeightFraction'> & { isSpeaking?: boolean }): React.ReactElement {
+  isVisemeDriven = false,
+  getAudioLevel,
+}: Omit<GlbModelProps, 'framing' | 'coverHeightFraction'> & {
+  isSpeaking?: boolean;
+  isVisemeDriven?: boolean;
+  getAudioLevel?: () => number;
+}): React.ReactElement {
   const groupRef = useRef<Group>(null);
   const model = useClonedPosedModel(url);
-  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints, visemeRef, isSpeaking);
+  useAvatarAnimation(
+    model,
+    groupRef,
+    amplitude,
+    lipSyncHints,
+    visemeRef,
+    isSpeaking,
+    isVisemeDriven,
+    getAudioLevel,
+  );
 
   return (
     <Bounds fit clip margin={fitMargin} maxDuration={0.35}>
@@ -150,11 +178,26 @@ function FullModel({
   modelScale,
   coverHeightFraction,
   isSpeaking = false,
-}: Omit<GlbModelProps, 'framing'> & { isSpeaking?: boolean }): React.ReactElement {
+  isVisemeDriven = false,
+  getAudioLevel,
+}: Omit<GlbModelProps, 'framing'> & {
+  isSpeaking?: boolean;
+  isVisemeDriven?: boolean;
+  getAudioLevel?: () => number;
+}): React.ReactElement {
   const groupRef = useRef<Group>(null);
   const innerRef = useRef<Group>(null);
   const model = useClonedPosedModel(url);
-  useAvatarAnimation(model, groupRef, amplitude, lipSyncHints, visemeRef, isSpeaking);
+  useAvatarAnimation(
+    model,
+    groupRef,
+    amplitude,
+    lipSyncHints,
+    visemeRef,
+    isSpeaking,
+    isVisemeDriven,
+    getAudioLevel,
+  );
 
   const camera = useThree((state) => state.camera);
   const controls = useThree((state) => state.controls) as
@@ -227,6 +270,10 @@ export interface GlbAvatarPreviewProps {
   posterSrc?: string;
   /** Drive mouth movement when audio amplitude analysis is unavailable. */
   isSpeaking?: boolean;
+  /** Disables jaw-amplitude fallback while viseme lip-sync is active. */
+  isVisemeDriven?: boolean;
+  /** Live audio level meter for mouth drive (0–1). */
+  getAudioLevel?: () => number;
 }
 
 /**
@@ -252,6 +299,8 @@ export default function GlbAvatarPreview({
   coverHeightFraction = 0.74,
   posterSrc,
   isSpeaking = false,
+  isVisemeDriven = false,
+  getAudioLevel,
 }: GlbAvatarPreviewProps): React.ReactElement {
   const cameraY = framing === 'bust' ? 1.45 : 1.05;
   const targetY = framing === 'bust' ? 1.35 : 0.95;
@@ -301,6 +350,8 @@ export default function GlbAvatarPreview({
               fitMargin={fitMargin}
               modelScale={modelScale}
               isSpeaking={isSpeaking}
+              isVisemeDriven={isVisemeDriven}
+              getAudioLevel={getAudioLevel}
             />
           ) : (
             <FullModel
@@ -312,6 +363,8 @@ export default function GlbAvatarPreview({
               modelScale={modelScale}
               coverHeightFraction={coverHeightFraction}
               isSpeaking={isSpeaking}
+              isVisemeDriven={isVisemeDriven}
+              getAudioLevel={getAudioLevel}
             />
           )}
           <ContactShadows

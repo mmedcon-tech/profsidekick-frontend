@@ -88,6 +88,23 @@ export default function GlbLibraryDetailPage(): React.ReactElement {
                   <code className="text-[10px]">./scripts/install-sultan-glb.sh your-file.glb</code>
                 </p>
               )}
+              {entry.id === 'avatar-1' && entry.recommendedModelUrl && (
+                <p>
+                  Download the advisor Emirati woman GLB from{' '}
+                  <a
+                    href={entry.recommendedModelUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 underline hover:text-emerald-700"
+                  >
+                    Google Drive
+                  </a>{' '}
+                  and run{' '}
+                  <code className="text-[10px]">./scripts/install-salama-glb.sh your-file.glb</code>
+                  . Portrait reference:{' '}
+                  <code className="text-[10px]">public/images/salama-emirati-reference.png</code>.
+                </p>
+              )}
             </div>
           </div>
         </div>

@@ -2,6 +2,8 @@ export type ElevenLabsVoiceGender = 'male' | 'female';
 export type ElevenLabsVoiceProfile = 'adult' | 'kids';
 
 export const ELEVENLABS_TTS_MODEL = 'eleven_multilingual_v2';
+/** Faster model for live call mode — lower latency, still supports timestamps. */
+export const ELEVENLABS_TTS_MODEL_FAST = 'eleven_turbo_v2_5';
 
 const DEFAULT_VOICE_IDS: Record<ElevenLabsVoiceProfile, Record<ElevenLabsVoiceGender, string>> = {
   adult: {
@@ -40,7 +42,8 @@ export function buildElevenLabsSpeechBody({
   text,
   gender,
   voiceProfile = 'adult',
-}: ElevenLabsSpeechRequest): {
+  modelId,
+}: ElevenLabsSpeechRequest & { modelId?: string }): {
   text: string;
   model_id: string;
   voice_settings: {
@@ -53,7 +56,7 @@ export function buildElevenLabsSpeechBody({
   const isKids = voiceProfile === 'kids';
   return {
     text,
-    model_id: ELEVENLABS_TTS_MODEL,
+    model_id: modelId ?? ELEVENLABS_TTS_MODEL,
     voice_settings: {
       stability: isKids ? 0.58 : 0.45,
       similarity_boost: isKids ? 0.72 : 0.8,

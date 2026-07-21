@@ -12,6 +12,8 @@ interface PortraitAvatarStageProps {
   className?: string;
   showStatusRing?: boolean;
   size?: 'default' | 'large';
+  objectFit?: 'cover' | 'contain';
+  objectPosition?: string;
 }
 
 export default function PortraitAvatarStage({
@@ -22,6 +24,8 @@ export default function PortraitAvatarStage({
   className = '',
   showStatusRing = true,
   size = 'large',
+  objectFit = 'contain',
+  objectPosition = 'center',
 }: PortraitAvatarStageProps): React.ReactElement {
   const [blink, setBlink] = useState(false);
   const isSpeaking = widgetState === 'speaking';
@@ -87,10 +91,11 @@ export default function PortraitAvatarStage({
             alt={avatarName}
             fill
             unoptimized
-            className="object-contain object-center p-1"
+            className={objectFit === 'cover' ? 'object-cover' : 'object-contain object-center p-1'}
             sizes="(max-width: 768px) 100vw, 560px"
             priority
             style={{
+              objectPosition,
               transform: blink ? 'scaleY(0.96)' : 'scaleY(1)',
               transformOrigin: 'center 22%',
               transition: 'transform 120ms ease',

@@ -64,6 +64,31 @@ describe('POST /api/assistant/chat', () => {
     expect(response.status).toBe(503);
   });
 
+  it('uses shorter call-mode settings when responseMode is call', async () => {
+    const request = new NextRequest('http://localhost/api/assistant/chat', {
+      method: 'POST',
+      body: JSON.stringify({
+        message: 'Explain quantum physics',
+        responseMode: 'call',
+      }),
+    });
+
+    await POST(request);
+
+    const [, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      { body: string },
+    ];
+    const payload = JSON.parse(init.body) as {
+      max_tokens: number;
+      temperature: number;
+      messages: Array<{ role: string; content: string }>;
+    };
+    expect(payload.max_tokens).toBe(90);
+    expect(payload.temperature).toBe(0.55);
+    expect(payload.messages[0].content).toContain('one or two short spoken sentences');
+  });
+
   it('proxies chat to OpenAI and returns reply', async () => {
     const request = new NextRequest('http://localhost/api/assistant/chat', {
       method: 'POST',

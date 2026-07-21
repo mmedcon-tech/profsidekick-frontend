@@ -26,11 +26,12 @@ export function useVisemePlayback(
 
     const rigStyle = inferLipSyncRigStyle(lipSyncHints?.morphTargets);
     const gain = lipSyncHints?.mouthOpenGain ?? 1;
+    const blendHold = lipSyncHints?.visemeBlendHold;
     let rafId = 0;
 
     const tick = (): void => {
       const t = clock();
-      ref.current = sampleVisemeTimeline(timeline, t, rigStyle, gain);
+      ref.current = sampleVisemeTimeline(timeline, t, rigStyle, gain, blendHold);
       rafId = window.requestAnimationFrame(tick);
     };
 

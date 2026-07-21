@@ -9,12 +9,17 @@ describe('POST /api/speech/preview', () => {
     process.env.OPENAI_API_KEY = 'test-key';
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(new Uint8Array([1, 2, 3]), {
-          status: 200,
-          headers: { 'Content-Type': 'audio/mpeg' },
-        }),
-      ),
+      vi.fn().mockImplementation((url: string) => {
+        if (String(url).includes('/api/tts/openai')) {
+          return Promise.resolve(new Response(null, { status: 404 }));
+        }
+        return Promise.resolve(
+          new Response(new Uint8Array([1, 2, 3]), {
+            status: 200,
+            headers: { 'Content-Type': 'audio/mpeg' },
+          }),
+        );
+      }),
     );
   });
 

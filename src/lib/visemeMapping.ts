@@ -142,12 +142,34 @@ const ROBLOX_VISEME_SHAPES: Record<VisemeId, VisemeMorphWeights> = {
   RR: { jawOpen: 0.3, mouthFunnel: 0.2 },
 };
 
+const SIMPLE_VISEME_SHAPES: Record<VisemeId, VisemeMorphWeights> = {
+  sil: { mouthOpen: 0.02, mouthClose: 0.48 },
+  aa: { mouthOpen: 0.72, mouthFunnel: 0.08, mouthClose: 0.03 },
+  E: { mouthOpen: 0.48, mouthFunnel: 0.05, mouthClose: 0.04 },
+  I: { mouthOpen: 0.38, mouthFunnel: 0.04, mouthClose: 0.05 },
+  O: { mouthOpen: 0.52, mouthFunnel: 0.5, mouthClose: 0.03 },
+  U: { mouthOpen: 0.42, mouthFunnel: 0.62, mouthClose: 0.03 },
+  PP: { mouthClose: 0.62, mouthOpen: 0.03 },
+  FF: { mouthOpen: 0.26, mouthFunnel: 0.18, mouthClose: 0.12 },
+  TH: { mouthOpen: 0.28, mouthFunnel: 0.12, mouthClose: 0.1 },
+  DD: { mouthOpen: 0.3, mouthFunnel: 0.06, mouthClose: 0.1 },
+  SS: { mouthOpen: 0.2, mouthFunnel: 0.08, mouthClose: 0.14 },
+  CH: { mouthOpen: 0.34, mouthFunnel: 0.18, mouthClose: 0.08 },
+  nn: { mouthOpen: 0.12, mouthFunnel: 0.03, mouthClose: 0.22 },
+  RR: { mouthOpen: 0.24, mouthFunnel: 0.08, mouthClose: 0.1 },
+};
+
 export function visemeToMorphWeights(
   viseme: VisemeId,
   rigStyle: LipSyncRigStyle,
   mouthOpenGain = 1,
 ): VisemeMorphWeights {
-  const base = rigStyle === 'arkit' ? ARKIT_VISEME_SHAPES[viseme] : ROBLOX_VISEME_SHAPES[viseme];
+  const base =
+    rigStyle === 'arkit'
+      ? ARKIT_VISEME_SHAPES[viseme]
+      : rigStyle === 'simple'
+        ? SIMPLE_VISEME_SHAPES[viseme]
+        : ROBLOX_VISEME_SHAPES[viseme];
   if (mouthOpenGain === 1) return { ...base };
 
   const scaled: VisemeMorphWeights = {};
@@ -179,5 +201,8 @@ export function lerpMorphWeights(
 
 export function inferLipSyncRigStyle(morphTargets: string[] | undefined): LipSyncRigStyle {
   if (!morphTargets?.length) return 'arkit';
-  return morphTargets.some((name) => /viseme_/i.test(name)) ? 'arkit' : 'roblox';
+  const lower = morphTargets.map((name) => name.toLowerCase());
+  if (lower.some((name) => /viseme_/i.test(name))) return 'arkit';
+  if (lower.some((name) => /mouthopen|mouthfunnel|mouthclose/i.test(name))) return 'simple';
+  return 'roblox';
 }

@@ -216,8 +216,13 @@ export default function CourseSettingsTabs({
             <input
               type="number"
               min="1"
-              value={course.max_enrollment || ''}
-              onChange={(e) => onCourseUpdate('max_enrollment', e.target.value ? parseInt(e.target.value) : undefined)}
+              value={course.max_enrollment ?? ''}
+              onChange={(e) =>
+                onCourseUpdate(
+                  'max_enrollment',
+                  e.target.value ? parseInt(e.target.value, 10) : null,
+                )
+              }
               className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50 focus:border-primary/50 dark:border-primary/50"
               placeholder="No limit"
             />

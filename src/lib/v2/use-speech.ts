@@ -1,13 +1,18 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { playElevenLabsSpeech } from "@/lib/playElevenLabsAudio"
+import { playAvatarSpeech } from "@/lib/playAvatarSpeech"
 import { buildEstimatedTimeline } from "@/lib/visemeTimeline"
 import type { VisemeTimeline } from "@/lib/visemeTypes"
 import { resolveVoiceProfile, type VoiceProfile } from "@/lib/voiceProfiles"
 
 /** Fallback speaking rate (chars/sec) used until onboundary events calibrate it. */
 const FALLBACK_CHARS_PER_SECOND = 13
+
+export interface SpeakOptions {
+  /** Turbo TTS + faster audio start for live call mode. */
+  lowLatency?: boolean;
+}
 
 // Minimal typings for the Web Speech API (not in TS lib DOM by default)
 type SpeechRecognitionResultLike = {
@@ -65,6 +70,7 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
   const finalRef = useRef<string>("")
   const onFinalRef = useRef<((t: string) => void) | null>(null)
   const stopAudioRef = useRef<(() => void) | null>(null)
+  const getAudioLevelRef = useRef<() => number>(() => 0)
 
   // Clock sources: ElevenLabs uses the audio element's real currentTime; browser
   // TTS estimates progress from onboundary word events (which fire as the engine
@@ -87,7 +93,7 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
   /** Elapsed seconds within the current utterance, mapped onto the timeline. */
   const getSpeechTime = useCallback((): number => {
     const audio = audioElRef.current
-    if (audio) return audio.currentTime
+    if (audio) return Math.max(0, audio.currentTime)
     if (ttsStartRef.current <= 0) return 0
 
     const duration = ttsDurationRef.current || 0
@@ -189,9 +195,12 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
         ttsCharsPerSecRef.current = 0
         setSpeaking(true)
         setVisemeTimeline(buildEstimatedTimeline(text, estDuration))
+        getAudioLevelRef.current = () =>
+          0.2 + 0.35 * Math.abs(Math.sin(performance.now() / 95))
       }
       const finish = () => {
         resetTtsClock()
+        getAudioLevelRef.current = () => 0
         setVisemeTimeline(null)
         setSpeaking(false)
         onDone?.()
@@ -204,18 +213,20 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
   )
 
   const speak = useCallback(
-    (text: string, onDone?: () => void) => {
+    (text: string, onDone?: () => void, options?: SpeakOptions) => {
       stopAudioRef.current?.()
       stopAudioRef.current = null
+      getAudioLevelRef.current = () => 0
       audioElRef.current = null
       resetTtsClock()
 
       // Prefer ElevenLabs for both languages: it returns per-character timing,
       // which is the only way to make the mouth shapes match the actual words.
       // The audio element's currentTime then drives the viseme clock exactly.
-      playElevenLabsSpeech({
+      playAvatarSpeech({
         text,
         gender,
+        lowLatency: options?.lowLatency,
         onSpeakingChange: (isSpeaking) => {
           setSpeaking(isSpeaking)
           if (!isSpeaking) {
@@ -228,10 +239,11 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
         .then((result) => {
           stopAudioRef.current = result.stop
           audioElRef.current = result.audio
+          getAudioLevelRef.current = result.getAudioLevel ?? (() => 0)
           setVisemeTimeline(result.timeline)
         })
         .catch(() => {
-          // ElevenLabs unavailable (no key / quota / network) → browser TTS.
+          // ElevenLabs + OpenAI unavailable → browser TTS.
           speakWithBrowserTts(text, onDone)
         })
     },
@@ -241,6 +253,7 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
   const stopSpeaking = useCallback(() => {
     stopAudioRef.current?.()
     stopAudioRef.current = null
+    getAudioLevelRef.current = () => 0
     audioElRef.current = null
     resetTtsClock()
     setVisemeTimeline(null)
@@ -310,5 +323,6 @@ export function useSpeech(lang: "en" | "ar", voice: VoiceProfile | "male" | "fem
     stopListening,
     visemeTimeline,
     getSpeechTime,
+    getAudioLevel: useCallback(() => getAudioLevelRef.current(), []),
   }
 }

@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { config } from '@/lib/config';
 import { buildOpenAiSpeechBody } from '@/lib/openaiSpeech';
 import type { SpeechVoiceGender } from '@/lib/openaiSpeech';
 
@@ -7,20 +8,43 @@ interface SpeechPreviewBody {
   gender?: SpeechVoiceGender;
 }
 
-export async function POST(req: Request): Promise<NextResponse> {
+async function proxyToBackend(
+  request: NextRequest,
+  body: SpeechPreviewBody,
+): Promise<Response | null> {
+  const authHeader = request.headers.get('authorization');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (authHeader) {
+    headers.Authorization = authHeader;
+  }
+
+  try {
+    const response = await fetch(config.getApiUrl('/api/tts/openai'), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (response.status === 404 || response.status === 501) {
+      return null;
+    }
+
+    return response;
+  } catch {
+    return null;
+  }
+}
+
+async function synthesizeWithOpenAi(body: SpeechPreviewBody): Promise<Response> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
       { detail: 'OPENAI_API_KEY is not configured on the server' },
       { status: 503 },
     );
-  }
-
-  let body: SpeechPreviewBody;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ detail: 'Invalid JSON body' }, { status: 400 });
   }
 
   const text = body.text?.trim();
@@ -63,4 +87,27 @@ export async function POST(req: Request): Promise<NextResponse> {
     console.error('speech/preview error:', error);
     return NextResponse.json({ detail: 'Failed to reach OpenAI' }, { status: 500 });
   }
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse | Response> {
+  let body: SpeechPreviewBody;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ detail: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const backendResponse = await proxyToBackend(request, body);
+  if (backendResponse?.ok) {
+    const audio = await backendResponse.arrayBuffer();
+    return new NextResponse(audio, {
+      status: 200,
+      headers: {
+        'Content-Type': backendResponse.headers.get('Content-Type') || 'audio/mpeg',
+        'Cache-Control': 'no-store',
+      },
+    });
+  }
+
+  return synthesizeWithOpenAi(body);
 }

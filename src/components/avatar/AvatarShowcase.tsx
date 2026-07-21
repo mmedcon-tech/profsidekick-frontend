@@ -6,6 +6,7 @@ import { Box, ImageIcon, Square, Volume2 } from 'lucide-react';
 import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
 import { useSpeechPreview } from '@/hooks/useSpeechPreview';
 import type { AvatarLibraryEntry } from '@/lib/avatarLibrary';
+import { resolvePortraitPresentation } from '@/lib/avatarLibrary';
 import type { GlbFraming } from '@/components/avatar/GlbAvatarPreview';
 
 const GlbAvatarPreview = dynamic(
@@ -25,6 +26,9 @@ interface AvatarShowcaseProps {
     | 'previewFraming'
     | 'previewFitMargin'
     | 'previewModelScale'
+    | 'previewCoverHeightFraction'
+    | 'portraitObjectPosition'
+    | 'portraitObjectFit'
   >;
   className?: string;
   defaultTab?: ShowcaseTab;
@@ -41,6 +45,8 @@ export default function AvatarShowcase({
   const framing: GlbFraming = entry.previewFraming ?? 'full';
   const fitMargin = entry.previewFitMargin ?? 1.05;
   const modelScale = entry.previewModelScale ?? 1.15;
+  const coverHeightFraction = entry.previewCoverHeightFraction ?? 0.74;
+  const portrait = resolvePortraitPresentation(entry as AvatarLibraryEntry);
 
   return (
     <div className={`relative h-full min-h-[520px] ${className}`}>
@@ -76,6 +82,8 @@ export default function AvatarShowcase({
             avatarName={entry.name}
             widgetState={widgetState}
             amplitude={speechPreview.amplitude}
+            objectFit={portrait.objectFit}
+            objectPosition={portrait.objectPosition}
           />
         ) : (
           <GlbAvatarPreview
@@ -83,10 +91,12 @@ export default function AvatarShowcase({
             lipSyncHints={entry.lipSync}
             visemeRef={speechPreview.visemeRef}
             amplitude={speechPreview.amplitude}
-            showControls
+            showControls={false}
             framing={framing}
             fitMargin={fitMargin}
             modelScale={modelScale}
+            coverHeightFraction={coverHeightFraction}
+            posterSrc={entry.thumbnailPath}
           />
         )}
       </div>

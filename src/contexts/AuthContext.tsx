@@ -131,6 +131,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuth = useCallback(async () => {
     setIsLoading(true);
+    const safetyTimer = setTimeout(() => {
+      // Never leave the UI stuck on Loading if a network call hangs.
+      setIsLoading(false);
+    }, 6000);
+
     try {
       const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
       const storedUser = localStorage.getItem(AUTH_USER_KEY);
@@ -144,7 +149,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const expiresAt = localStorage.getItem(AUTH_EXPIRES_AT_KEY);
       if (shouldProactivelyRefresh(expiresAt)) {
         try {
-          await refreshTokenRef.current();
+          const refreshController = new AbortController();
+          const refreshTimeout = setTimeout(() => refreshController.abort(), 4000);
+          const currentToken = localStorage.getItem(AUTH_TOKEN_KEY);
+          if (currentToken) {
+            const refreshResponse = await fetch('/api/auth/refresh', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${currentToken}`,
+                'Content-Type': 'application/json',
+              },
+              signal: refreshController.signal,
+            });
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              const { token: newToken, expiresAt: newExpiresAt } = refreshData;
+              if (newToken) {
+                setToken(newToken);
+                try {
+                  persistAuthSession({
+                    token: newToken,
+                    user: JSON.parse(storedUser),
+                    expiresAt: newExpiresAt ?? null,
+                  });
+                } catch {
+                  // ignore corrupt stored user during refresh
+                }
+              }
+            }
+          }
+          clearTimeout(refreshTimeout);
         } catch (error) {
           console.error('Proactive token refresh failed:', error);
         }
@@ -153,7 +187,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const tokenForVerify =
         localStorage.getItem(AUTH_TOKEN_KEY) ?? storedToken;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       try {
         const response = await fetch('/api/auth/verify', {
@@ -182,7 +216,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } finally {
         clearTimeout(timeoutId);
       }
+    } catch (error) {
+      console.error('checkAuth unexpected error:', error);
+      clearAuthSession();
+      setToken(null);
+      setUser(null);
     } finally {
+      clearTimeout(safetyTimer);
       setIsLoading(false);
     }
   }, []);

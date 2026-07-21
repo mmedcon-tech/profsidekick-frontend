@@ -23,6 +23,14 @@ import Image from "next/image"
 import { ChatbotAvatar3D, preloadChatbotAvatar } from "@/components/layout/ChatbotAvatar3D"
 import { useDraggable } from "@/hooks/useDraggable"
 import { useAssistantAvatar } from "@/hooks/useAssistantAvatar"
+import { useAssistantPlatformAvatar } from "@/hooks/useAssistantPlatformAvatar"
+import {
+  getAvatarLibraryEntry,
+  resolvePortraitPresentation,
+} from "@/lib/avatarLibrary"
+import {
+  ASSISTANT_PLATFORM_AVATAR_IDS,
+} from "@/lib/assistantPlatformAvatars"
 import {
   getQuickNavActions,
   resolveNavDestination,
@@ -35,11 +43,13 @@ function AvatarOrbV2({
   speaking = false,
   src,
   alt,
+  objectPosition = "center 20%",
 }: {
   size?: number
   speaking?: boolean
   src: string
   alt: string
+  objectPosition?: string
 }) {
   return (
     <div
@@ -52,6 +62,7 @@ function AvatarOrbV2({
         width={size}
         height={size}
         className="h-full w-full object-cover"
+        style={{ objectPosition }}
       />
       {speaking && (
         <span className="absolute bottom-0 end-0 flex h-3 w-3 items-center justify-center rounded-full bg-accent ring-2 ring-card">
@@ -112,13 +123,31 @@ function getReply(input: string, lang: "en" | "ar", userName: string): string {
     : "I can help you navigate the platform or answer your questions. Ask me anything."
 }
 
+function isGenericCannedReply(reply: string, lang: "en" | "ar"): boolean {
+  return lang === "ar"
+    ? reply.startsWith("يمكنني مساعدتك")
+    : reply.startsWith("I can help you navigate")
+}
+
 export function FloatingAssistant() {
   const { user } = useAuth()
   const router = useRouter()
-  // The active avatar (publisher's own / subscriber's subscribed / default) drives
-  // the 3D model, the voice, and the language the assistant speaks.
-  const { avatar } = useAssistantAvatar()
-  const lang = avatar.language
+  const { avatar: subscribedAvatar } = useAssistantAvatar()
+  const lang = subscribedAvatar.language
+  const {
+    avatar,
+    portraitSrc,
+    alternatePortraitSrc,
+    alternateName,
+    toggleAvatar,
+    activeId,
+  } = useAssistantPlatformAvatar(lang)
+  const activePortrait = resolvePortraitPresentation(
+    getAvatarLibraryEntry(activeId) ?? getAvatarLibraryEntry("avatar-1")!,
+  )
+  const alternatePortrait = resolvePortraitPresentation(
+    getAvatarLibraryEntry(activeId === "avatar-1" ? "avatar-2" : "avatar-1")!,
+  )
   const dir = lang === "ar" ? "rtl" : "ltr"
 
   const [assistantOpen, setAssistantOpen] = useState(false)
@@ -130,7 +159,11 @@ export function FloatingAssistant() {
   const [caption, setCaption] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const mutedRef = useRef(muted)
+  const pendingCaptionRef = useRef("")
+  const replyAbortRef = useRef<AbortController | null>(null)
+  const modeRef = useRef(mode)
   mutedRef.current = muted
+  modeRef.current = mode
 
   // Draggable widget: launcher and panel share one offset so it stays where
   // the user dropped it across open/close. Persisted to localStorage.
@@ -138,20 +171,28 @@ export function FloatingAssistant() {
     useDraggable("myos-assistant-position")
   const dragStyle = { transform: `translate(${offset.x}px, ${offset.y}px)` }
 
-  // Warm the 3D avatar cache on idle so opening a call renders in ms, not the
-  // ~20s cold network+parse it used to take before GLB meshopt compression.
+  // Warm both Emirati GLBs on idle so switching in call mode is instant.
   useEffect(() => {
     const w = window as Window & {
       requestIdleCallback?: (cb: () => void) => number
       cancelIdleCallback?: (id: number) => void
     }
     const schedule = w.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500))
-    const id = schedule(() => preloadChatbotAvatar(avatar.glbUrl))
+    const id = schedule(() => {
+      for (const avatarId of ASSISTANT_PLATFORM_AVATAR_IDS) {
+        preloadChatbotAvatar(getAvatarLibraryEntry(avatarId)?.glbPath)
+      }
+    })
     return () => {
       if (w.cancelIdleCallback && typeof id === "number") w.cancelIdleCallback(id)
       else window.clearTimeout(id as unknown as number)
     }
-  }, [avatar.glbUrl])
+  }, [])
+
+  function switchCallAvatar() {
+    stopSpeaking()
+    toggleAvatar()
+  }
 
   // Re-clamp into view when the panel opens or switches size (chat ↔ call).
   useEffect(() => {
@@ -181,6 +222,7 @@ export function FloatingAssistant() {
     stopListening,
     visemeTimeline,
     getSpeechTime,
+    getAudioLevel,
   } = useSpeech(lang, avatar.voice)
 
   const assistantName = lang === "ar" ? "مساعد MyOS" : "MyOS Assistant"
@@ -208,18 +250,39 @@ export function FloatingAssistant() {
     }
   }, [assistantOpen, mode, stopSpeaking, stopListening])
 
+  // Show call captions only once audio actually starts — not while TTS is loading.
+  useEffect(() => {
+    if (mode !== "call") return
+    if (speaking && pendingCaptionRef.current) {
+      setCaption(pendingCaptionRef.current)
+    }
+    if (!speaking) {
+      pendingCaptionRef.current = ""
+    }
+  }, [speaking, mode])
+
   // Emit an assistant message (and speak it while in call mode).
   function emitAssistant(answer: string) {
     setMessages((m) => [...m, { id: uid(), role: "assistant", text: answer }])
     setTyping(false)
-    if (mode === "call" && !mutedRef.current) {
-      setCaption(answer)
-      speak(answer)
+    if (modeRef.current === "call" && !mutedRef.current) {
+      pendingCaptionRef.current = answer
+      setCaption(lang === "ar" ? "جارٍ التحدث..." : "Speaking...")
+      speak(answer, undefined, { lowLatency: true })
     }
   }
 
   async function reply(text: string) {
+    replyAbortRef.current?.abort()
+    const controller = new AbortController()
+    replyAbortRef.current = controller
+
+    stopSpeaking()
     setTyping(true)
+    if (modeRef.current === "call") {
+      pendingCaptionRef.current = ""
+      setCaption(lang === "ar" ? "جارٍ التفكير..." : "Thinking...")
+    }
 
     // Role-aware navigation first: resolve the intent to a real route the current
     // user can access, then navigate there immediately.
@@ -234,12 +297,22 @@ export function FloatingAssistant() {
       return
     }
 
+    // In call mode, skip the API for common platform questions (instant reply).
+    if (modeRef.current === "call") {
+      const quick = getReply(text, lang, userName)
+      if (!isGenericCannedReply(quick, lang)) {
+        emitAssistant(quick)
+        return
+      }
+    }
+
     // Everything else goes to the real AI assistant for a genuine answer.
     try {
+      const isCall = modeRef.current === "call"
       const history = messages
-        .slice(-8)
+        .slice(isCall ? -4 : -8)
         .map((m) => ({ role: m.role, text: m.text }))
-      const systemPrompt =
+      const basePrompt =
         lang === "ar"
           ? `أنت ${assistantName}، مساعد تعليمي ودود على منصة MyOS (ProfSidekick)${userName ? ` تساعد ${userName}` : ""}. أجب عن أسئلة المستخدم بوضوح واختصار، ويمكنك إرشاده للتنقل في المنصة (الدورات، لوحة التحكم، السوق، التحليلات).`
           : `You are ${assistantName}, a friendly AI learning assistant on the MyOS (ProfSidekick) platform${userName ? `, helping ${userName}` : ""}. Answer the user's questions clearly and concisely. You can also guide them around the platform (courses, dashboard, marketplace, analytics). Keep replies short and conversational.`
@@ -247,7 +320,13 @@ export function FloatingAssistant() {
       const res = await fetch("/api/assistant/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history, systemPrompt }),
+        body: JSON.stringify({
+          message: text,
+          history,
+          systemPrompt: basePrompt,
+          responseMode: isCall ? "call" : "chat",
+        }),
+        signal: controller.signal,
       })
       const data = await res.json()
       if (!res.ok || !data?.reply) {
@@ -255,6 +334,7 @@ export function FloatingAssistant() {
       }
       emitAssistant(data.reply)
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return
       const detail = err instanceof Error ? err.message.toLowerCase() : ""
       const quotaExceeded = detail.includes("quota")
       if (quotaExceeded) {
@@ -311,8 +391,13 @@ export function FloatingAssistant() {
     setMode("call")
     const last = [...messages].reverse().find((m) => m.role === "assistant")
     const line = last?.text || (lang === "ar" ? "مرحبًا، أنا أستمع." : "Hello, I am listening.")
-    setCaption(line)
-    if (!muted) setTimeout(() => speak(line), 400)
+    if (!muted) {
+      pendingCaptionRef.current = line
+      setCaption(lang === "ar" ? "جارٍ التحدث..." : "Speaking...")
+      setTimeout(() => speak(line, undefined, { lowLatency: true }), 150)
+    } else {
+      setCaption(line)
+    }
   }
 
   function endCall() {
@@ -356,7 +441,13 @@ export function FloatingAssistant() {
             )}
             aria-label={lang === "ar" ? "فتح المساعد" : "Open assistant"}
           >
-            <AvatarOrbV2 size={44} speaking src={avatar.posterSrc} alt={avatar.name} />
+            <AvatarOrbV2
+              size={44}
+              speaking
+              src={portraitSrc}
+              alt={avatar.name}
+              objectPosition={activePortrait.objectPosition}
+            />
             <span className="pointer-events-none text-start leading-tight">
               <span className="block text-sm font-semibold">{assistantName}</span>
               <span className="flex items-center gap-1 text-[11px] text-accent">
@@ -385,7 +476,13 @@ export function FloatingAssistant() {
                 isDragging ? "cursor-grabbing" : "cursor-grab",
               )}
             >
-              <AvatarOrbV2 size={40} speaking={speaking || typing} src={avatar.posterSrc} alt={avatar.name} />
+              <AvatarOrbV2
+                size={40}
+                speaking={speaking || typing}
+                src={portraitSrc}
+                alt={avatar.name}
+                objectPosition={activePortrait.objectPosition}
+              />
               <div className="min-w-0 flex-1 leading-tight">
                 <p className="text-sm font-semibold">{assistantName}</p>
                 <p className="flex items-center gap-1 text-[11px] text-accent">
@@ -409,14 +506,42 @@ export function FloatingAssistant() {
           {mode === "call" ? (
             /* Call mode — 3D avatar fills the whole surface, controls overlay on top */
             <div className="relative flex flex-1 flex-col overflow-hidden bg-sidebar/95 text-sidebar-foreground">
-              {/* Full-bleed avatar (pointer-events-none, so controls/drag pass through) */}
+              {/* Full-bleed 3D avatar */}
               <ChatbotAvatar3D
+                key={avatar.glbUrl}
                 fill
                 speaking={speaking}
                 avatar={avatar}
                 visemeTimeline={visemeTimeline}
                 speechClock={getSpeechTime}
+                getAudioLevel={getAudioLevel}
               />
+
+              {/* 2D portrait — tap to switch between Salama and Sultan */}
+              <button
+                type="button"
+                onClick={switchCallAvatar}
+                className="pointer-events-auto absolute start-4 top-4 z-20 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full ring-2 ring-white/30 shadow-lg transition-transform hover:scale-105"
+                aria-label={
+                  lang === "ar"
+                    ? `التبديل إلى ${alternateName}`
+                    : `Switch to ${alternateName}`
+                }
+                title={
+                  lang === "ar"
+                    ? `التبديل إلى ${alternateName}`
+                    : `Switch to ${alternateName}`
+                }
+              >
+                <Image
+                  src={alternatePortraitSrc}
+                  alt={alternateName}
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-cover"
+                  style={{ objectPosition: alternatePortrait.objectPosition }}
+                />
+              </button>
 
               {/* Status pill */}
               <div className="relative z-10 flex justify-center px-5 pt-4">
@@ -457,7 +582,13 @@ export function FloatingAssistant() {
                     {listening ? <Square className="h-6 w-6" /> : <Mic className="h-7 w-7" />}
                   </button>
                   <button
-                    onClick={() => { if (lastAssistant && !muted) { setCaption(lastAssistant); speak(lastAssistant) } }}
+                    onClick={() => {
+                      if (lastAssistant && !muted) {
+                        pendingCaptionRef.current = lastAssistant
+                        setCaption(lang === "ar" ? "جارٍ التحدث..." : "Speaking...")
+                        speak(lastAssistant)
+                      }
+                    }}
                     className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm hover:bg-white/25"
                   >
                     <RotateCcw className="h-5 w-5" />

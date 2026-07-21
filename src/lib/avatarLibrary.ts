@@ -6,6 +6,13 @@ export interface AvatarLibraryLipSyncHints {
   blinkTargets?: string[];
   jawBones: string[];
   mouthOpenGain?: number;
+  /** Viseme morph attack rate — lower = slower mouth movement. Default 28. */
+  visemeAttack?: number;
+  /** Viseme morph release rate — lower = slower mouth close. Default 14. */
+  visemeRelease?: number;
+  /** Fraction of each keyframe held before blending to the next shape (0–1). */
+  visemeBlendHold?: number;
+  visemeIntensity?: number;
 }
 
 export interface AvatarLibraryEntry {
@@ -23,6 +30,11 @@ export interface AvatarLibraryEntry {
   previewFraming?: 'bust' | 'full';
   previewFitMargin?: number;
   previewModelScale?: number;
+  /** Fraction of model height shown in 3D preview (upper-body crop). */
+  previewCoverHeightFraction?: number;
+  /** CSS object-position for the 2D portrait so the face lines up with the 3D crop. */
+  portraitObjectPosition?: string;
+  portraitObjectFit?: 'cover' | 'contain';
   voiceProfile?: ElevenLabsVoiceProfile;
   lipSync: AvatarLibraryLipSyncHints;
 }
@@ -61,6 +73,16 @@ export function resolveGlbUrl(modelUrl?: string | null, libraryId?: string | nul
     if (entry) return entry.glbPath;
   }
   return library.avatars[0]?.glbPath ?? '/avatars/avatar-1.glb';
+}
+
+export function resolvePortraitPresentation(entry: AvatarLibraryEntry): {
+  objectFit: 'cover' | 'contain';
+  objectPosition: string;
+} {
+  return {
+    objectFit: entry.portraitObjectFit ?? 'cover',
+    objectPosition: entry.portraitObjectPosition ?? 'center 20%',
+  };
 }
 
 /** Shared Emirati male avatar for the floating chatbot (issue #64). */

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { config } from '@/lib/config';
 import {
   buildElevenLabsSpeechBody,
+  ELEVENLABS_TTS_MODEL_FAST,
   resolveElevenLabsVoiceId,
   type ElevenLabsVoiceGender,
   type ElevenLabsVoiceProfile,
@@ -13,6 +14,8 @@ interface ElevenLabsTtsBody {
   voiceId?: string;
   voiceProfile?: ElevenLabsVoiceProfile;
   withTimestamps?: boolean;
+  /** Use turbo model for lower latency (call mode). */
+  lowLatency?: boolean;
 }
 
 async function proxyToBackend(
@@ -65,7 +68,13 @@ async function synthesizeWithElevenLabs(
   const voiceProfile: ElevenLabsVoiceProfile =
     body.voiceProfile === 'kids' ? 'kids' : 'adult';
   const voiceId = resolveElevenLabsVoiceId(gender, body.voiceId, voiceProfile);
-  const speechBody = buildElevenLabsSpeechBody({ text, gender, voiceId, voiceProfile });
+  const speechBody = buildElevenLabsSpeechBody({
+    text,
+    gender,
+    voiceId,
+    voiceProfile,
+    modelId: body.lowLatency ? ELEVENLABS_TTS_MODEL_FAST : undefined,
+  });
   const endpoint = body.withTimestamps
     ? `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`
     : `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
@@ -112,6 +121,11 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  // Lip-sync needs character timestamps — the backend proxy returns plain MPEG only.
+  if (body.withTimestamps) {
+    return synthesizeWithElevenLabs(body);
   }
 
   const backendResponse = await proxyToBackend(request, body);

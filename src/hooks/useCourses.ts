@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { buildCourseUpdatePayload } from '@/lib/courseUpdate';
+import { formatApiError } from '@/lib/apiError';
 import { config } from '@/lib/config';
 
 export interface CourseDetails {
@@ -19,6 +21,8 @@ export interface CourseDetails {
   is_deleted?: boolean;
   is_public?: boolean;
   allow_subscriber_sessions?: boolean;
+  allow_self_enrollment?: boolean;
+  max_enrollment?: number | null;
   created_at: string;
   updated_at: string;
   // Computed fields that might be added by backend
@@ -138,18 +142,20 @@ export function useCourses(programId?: string): UseCoursesReturn {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(config.getApiUrl(`/api/courses/${courseId}`), {
+    const payload = buildCourseUpdatePayload(courseData);
+
+    const response = await fetch(`/api/courses/${courseId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(courseData),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to update course');
+      throw new Error(formatApiError(errorData, 'Failed to update course'));
     }
 
     const updatedCourse = await response.json();

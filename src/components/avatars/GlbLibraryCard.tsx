@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Languages, Mic2, Sparkles, Star } from 'lucide-react';
 import type { AvatarLibraryEntry } from '@/lib/avatarLibrary';
+import { resolvePortraitPresentation } from '@/lib/avatarLibrary';
 
 interface GlbLibraryCardProps {
   entry: AvatarLibraryEntry;
@@ -18,6 +19,7 @@ export default function GlbLibraryCard({
   variant = 'default',
 }: GlbLibraryCardProps): React.ReactElement {
   const isKids = variant === 'kids' || entry.tags.includes('kids');
+  const portrait = resolvePortraitPresentation(entry);
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all hover:border-[#133221]/40 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800">
       <div className={`relative px-5 pb-14 pt-5 ${isKids ? 'bg-gradient-to-br from-[#1d3557] via-[#14213d] to-[#0b1320]' : 'bg-gradient-to-br from-[#133221] via-[#0f281c] to-[#0a1e13]'}`}>
@@ -37,7 +39,8 @@ export default function GlbLibraryCard({
             src={entry.thumbnailPath}
             alt={entry.name}
             fill
-            className="object-contain object-center p-1"
+            className={portrait.objectFit === 'cover' ? 'object-cover' : 'object-contain object-center p-1'}
+            style={{ objectPosition: portrait.objectPosition }}
             sizes="144px"
           />
         </div>

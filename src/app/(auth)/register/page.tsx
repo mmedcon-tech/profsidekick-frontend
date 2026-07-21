@@ -5,12 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, Mic, GraduationCap, ShieldCheck, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
-import { config } from '@/lib/config';
-import { toBackendRole } from '@/lib/roleMapping';
+import { Eye, EyeOff, Mic, GraduationCap, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import { formatApiError } from '@/lib/apiError';
 
-type Step = 1 | 2;
-type Role = 'publisher' | 'subscriber' | 'admin';
+type Step = 1 | 2 | 'done';
+type Role = 'publisher' | 'subscriber';
 
 const ROLES: { value: Role; label: string; description: string; icon: React.ReactNode; color: string }[] = [
   {
@@ -26,13 +25,6 @@ const ROLES: { value: Role; label: string; description: string; icon: React.Reac
     description: 'Browse the marketplace, subscribe to AI avatars, and learn through voice-driven experiences.',
     icon: <GraduationCap size={28} />,
     color: 'green',
-  },
-  {
-    value: 'admin',
-    label: 'Admin',
-    description: 'Platform administrator. Manage templates, avatars, publishers, and subscribers.',
-    icon: <ShieldCheck size={28} />,
-    color: 'purple',
   },
 ];
 
@@ -66,6 +58,8 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [registeredRole, setRegisteredRole] = useState<Role | ''>('');
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) router.push('/');
@@ -98,7 +92,7 @@ export default function RegisterPage() {
     setError(null);
 
     try {
-      const res = await fetch(config.getApiUrl('/api/auth/register'), {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -107,13 +101,14 @@ export default function RegisterPage() {
           password:  formData.password,
           firstName: formData.firstName,
           lastName:  formData.lastName,
-          role:      toBackendRole(formData.role),
+          role:      formData.role,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.detail || 'Registration failed');
-      const message = encodeURIComponent('Account created! Please sign in.');
-      router.push(`/login?message=${message}`);
+      if (!res.ok) throw new Error(formatApiError(data, 'Registration failed'));
+      setRegisteredEmail(formData.email);
+      setRegisteredRole(formData.role);
+      setStep('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -135,13 +130,15 @@ export default function RegisterPage() {
       <div className="mb-10">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Create account</h2>
         <p className="text-gray-500">
-          Step {step} of 2 — {step === 1 ? 'Account details' : 'Choose your role'}
+          {step === 'done'
+            ? 'Almost there'
+            : `Step ${step} of 2 — ${step === 1 ? 'Account details' : 'Choose your role'}`}
         </p>
           {/* progress bar */}
           <div className="mt-4 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-primary dark:bg-primary/90 rounded-full transition-all duration-300"
-              style={{ width: step === 1 ? '50%' : '100%' }}
+              style={{ width: step === 'done' ? '100%' : step === 1 ? '50%' : '100%' }}
             />
           </div>
         </div>
@@ -235,6 +232,37 @@ export default function RegisterPage() {
                 Sign in
               </Link>
             </p>
+          </div>
+        )}
+
+        {/* ── Success: verify email ── */}
+        {step === 'done' && (
+          <div className="space-y-6 text-center py-4">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Account created
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                We sent a verification link to{' '}
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{registeredEmail}</span>.
+                Click the link in your email to verify your account.
+              </p>
+              {registeredRole === 'publisher' && (
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Publisher accounts also require admin approval after email verification.
+                  You will receive another email once your account is approved.
+                </p>
+              )}
+            </div>
+            <Link
+              href="/login"
+              className="inline-flex w-full items-center justify-center gap-2 bg-primary dark:bg-primary/90 text-white py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
+            >
+              Go to sign in
+            </Link>
           </div>
         )}
 

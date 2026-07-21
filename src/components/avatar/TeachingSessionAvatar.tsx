@@ -11,7 +11,7 @@ import type { VisemeTimeline } from '@/lib/visemeTypes';
 
 import PortraitAvatarStage from '@/components/avatar/PortraitAvatarStage';
 import GlbAvatarPreview from '@/components/avatar/GlbAvatarPreview';
-import { getAvatarLibraryEntry } from '@/lib/avatarLibrary';
+import { getAvatarLibraryEntry, resolvePortraitPresentation } from '@/lib/avatarLibrary';
 
 /** Stable no-op clock so the viseme hook has a constant identity when no timeline is playing. */
 const NOOP_CLOCK = (): number => 0;
@@ -87,8 +87,10 @@ export default function TeachingSessionAvatar({
     config.imageUrl ??
     libraryEntry?.thumbnailPath ??
     (config.glbLibraryId === 'avatar-2' || (isDirectGlbUrl && config.glbLibraryId?.includes('male'))
-      ? '/images/avatar-male.png'
-      : '/images/avatar-female.png');
+      ? '/images/sultan-emirati-reference.png'
+      : '/images/salama-emirati-reference.png');
+
+  const portrait = libraryEntry ? resolvePortraitPresentation(libraryEntry) : undefined;
 
   const useGlbPreview =
     (config.renderType === '3d' || config.renderType === 'glb') && Boolean(glbUrl);
@@ -106,9 +108,9 @@ export default function TeachingSessionAvatar({
           isSpeaking={isSpeaking}
           showControls={false}
           framing="full"
-          fitMargin={1.08}
-          modelScale={1.2}
-          coverHeightFraction={0.62}
+          coverHeightFraction={libraryEntry?.previewCoverHeightFraction ?? 0.62}
+          fitMargin={libraryEntry?.previewFitMargin ?? 1.08}
+          modelScale={libraryEntry?.previewModelScale ?? 1.2}
         />
       </div>
     );
@@ -122,6 +124,8 @@ export default function TeachingSessionAvatar({
           avatarName={config.avatarName}
           widgetState={widgetState}
           amplitude={amplitude}
+          objectFit={portrait?.objectFit}
+          objectPosition={portrait?.objectPosition}
         />
       </div>
     );
