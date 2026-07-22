@@ -18,6 +18,7 @@ import {
   persistAuthSession,
   shouldProactivelyRefresh,
 } from '@/lib/authSession';
+import { toFrontendRole } from '@/lib/roleMapping';
 
 export interface User {
   id: string;
@@ -27,6 +28,29 @@ export interface User {
   lastName?: string;
   role?: string;
   createdAt: string;
+}
+
+function normalizeStoredUser(raw: unknown): User {
+  const user = raw as User;
+  return {
+    ...user,
+    role: toFrontendRole(user?.role) ?? user?.role,
+  };
+}
+
+function readSessionFromStorage(): { token: string; user: User } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+    const storedUser = localStorage.getItem(AUTH_USER_KEY);
+    if (!storedToken || !storedUser) return null;
+    const user = normalizeStoredUser(JSON.parse(storedUser));
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    return { token: storedToken, user };
+  } catch {
+    clearAuthSession();
+    return null;
+  }
 }
 
 export interface AuthContextType {
@@ -58,32 +82,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const hydratedRef = useRef(false);
 
   const isAuthenticated = !!user && !!token;
-
-  const restoreSessionFromStorage = (): boolean => {
-    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-    const storedUser = localStorage.getItem(AUTH_USER_KEY);
-    if (!storedToken || !storedUser) {
-      return false;
-    }
-    try {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      return true;
-    } catch {
-      clearAuthSession();
-      setToken(null);
-      setUser(null);
-      return false;
-    }
-  };
 
   const clearAuthAndRedirect = useCallback(() => {
     setUser(null);
     setToken(null);
     clearAuthSession();
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
       window.location.assign('/login');
     }
   }, []);
@@ -111,6 +118,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     const { token: newToken, expiresAt } = data;
+    if (!newToken) {
+      throw new Error('No token returned from refresh');
+    }
+
     setToken(newToken);
     const storedUser = localStorage.getItem(AUTH_USER_KEY);
     if (storedUser) {
@@ -130,64 +141,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   refreshTokenRef.current = refreshToken;
 
   const checkAuth = useCallback(async () => {
-    setIsLoading(true);
-    const safetyTimer = setTimeout(() => {
-      // Never leave the UI stuck on Loading if a network call hangs.
-      setIsLoading(false);
-    }, 6000);
+    // Always release the UI within 2.5s — never leave pages spinning.
+    const safetyTimer = window.setTimeout(() => setIsLoading(false), 2500);
 
     try {
-      const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-      const storedUser = localStorage.getItem(AUTH_USER_KEY);
-
-      if (!storedToken || !storedUser) {
+      const session = readSessionFromStorage();
+      if (!session) {
         setToken(null);
         setUser(null);
         return;
       }
 
+      // Hydrate immediately so layouts can render while we verify.
+      setToken(session.token);
+      setUser(session.user);
+      setIsLoading(false);
+
       const expiresAt = localStorage.getItem(AUTH_EXPIRES_AT_KEY);
       if (shouldProactivelyRefresh(expiresAt)) {
         try {
           const refreshController = new AbortController();
-          const refreshTimeout = setTimeout(() => refreshController.abort(), 4000);
-          const currentToken = localStorage.getItem(AUTH_TOKEN_KEY);
-          if (currentToken) {
-            const refreshResponse = await fetch('/api/auth/refresh', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${currentToken}`,
-                'Content-Type': 'application/json',
-              },
-              signal: refreshController.signal,
-            });
-            if (refreshResponse.ok) {
-              const refreshData = await refreshResponse.json();
-              const { token: newToken, expiresAt: newExpiresAt } = refreshData;
-              if (newToken) {
-                setToken(newToken);
-                try {
-                  persistAuthSession({
-                    token: newToken,
-                    user: JSON.parse(storedUser),
-                    expiresAt: newExpiresAt ?? null,
-                  });
-                } catch {
-                  // ignore corrupt stored user during refresh
-                }
-              }
+          const refreshTimeout = window.setTimeout(() => refreshController.abort(), 3000);
+          const refreshResponse = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session.token}`,
+              'Content-Type': 'application/json',
+            },
+            signal: refreshController.signal,
+          });
+          window.clearTimeout(refreshTimeout);
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            if (refreshData.token) {
+              setToken(refreshData.token);
+              persistAuthSession({
+                token: refreshData.token,
+                user: session.user,
+                expiresAt: refreshData.expiresAt ?? null,
+              });
             }
+          } else if (refreshResponse.status === 401 || refreshResponse.status === 403) {
+            clearAuthAndRedirect();
+            return;
           }
-          clearTimeout(refreshTimeout);
         } catch (error) {
           console.error('Proactive token refresh failed:', error);
         }
       }
 
-      const tokenForVerify =
-        localStorage.getItem(AUTH_TOKEN_KEY) ?? storedToken;
+      const tokenForVerify = localStorage.getItem(AUTH_TOKEN_KEY) ?? session.token;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = window.setTimeout(() => controller.abort(), 3000);
 
       try {
         const response = await fetch('/api/auth/verify', {
@@ -201,20 +206,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (response.ok) {
           const userData = await response.json();
+          const normalizedUser = normalizeStoredUser(userData.user);
           setToken(tokenForVerify);
-          setUser(userData.user);
+          setUser(normalizedUser);
+          persistAuthSession({
+            token: tokenForVerify,
+            user: normalizedUser,
+            expiresAt: localStorage.getItem(AUTH_EXPIRES_AT_KEY),
+          });
         } else if (response.status === 401 || response.status === 403) {
-          clearAuthSession();
-          setToken(null);
-          setUser(null);
-        } else {
-          restoreSessionFromStorage();
+          // Expired/invalid session — force a clean login.
+          clearAuthAndRedirect();
         }
       } catch (error) {
-        console.error('Auth verify failed, using cached session:', error);
-        restoreSessionFromStorage();
+        console.error('Auth verify failed, keeping cached session:', error);
       } finally {
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
       }
     } catch (error) {
       console.error('checkAuth unexpected error:', error);
@@ -222,13 +229,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(null);
       setUser(null);
     } finally {
-      clearTimeout(safetyTimer);
+      window.clearTimeout(safetyTimer);
       setIsLoading(false);
     }
-  }, []);
+  }, [clearAuthAndRedirect]);
 
   useEffect(() => {
-    checkAuth();
+    if (hydratedRef.current) return;
+    hydratedRef.current = true;
+    void checkAuth();
   }, [checkAuth]);
 
   const login = async (username: string, password: string) => {
@@ -249,11 +258,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const { user: userData, token: authToken, expiresAt } = data;
-      setUser(userData);
+      const normalizedUser = normalizeStoredUser(userData);
+      setUser(normalizedUser);
       setToken(authToken);
       persistAuthSession({
         token: authToken,
-        user: userData,
+        user: normalizedUser,
         expiresAt: expiresAt ?? null,
       });
     } catch (error) {
@@ -279,31 +289,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      setUser(null);
-      setToken(null);
-      clearAuthSession();
+      clearAuthAndRedirect();
     }
   };
 
   useEffect(() => {
     registerApiAuthHandlers({
-      refreshToken,
       getToken: () => localStorage.getItem(AUTH_TOKEN_KEY),
-      clearAuthAndRedirect,
+      refreshToken: () => refreshTokenRef.current(),
+      onUnauthorized: clearAuthAndRedirect,
     });
     return () => resetApiAuthHandlers();
-  }, [refreshToken, clearAuthAndRedirect]);
+  }, [clearAuthAndRedirect]);
 
-  const value: AuthContextType = {
-    user,
-    token,
-    isAuthenticated,
-    isLoading,
-    login,
-    logout,
-    refreshToken,
-    checkAuth,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout,
+        refreshToken,
+        checkAuth,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

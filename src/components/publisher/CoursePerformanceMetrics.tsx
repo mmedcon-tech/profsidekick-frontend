@@ -94,7 +94,8 @@ export function CoursePerformanceMetrics({
         />
       </div>
 
-      <ul className="space-y-2">
+      {/* Fixed height so long course lists scroll inside the card */}
+      <ul className="max-h-64 space-y-2 overflow-y-auto pe-1 overscroll-contain">
         {normalized.map((row, i) => (
           <li
             key={`${row.name}-${i}`}
@@ -178,7 +179,8 @@ export function MonthlyCompletionMetrics({
           value={`${Number(latest?.value) || 0}`}
         />
       </div>
-      <ul className="divide-y divide-gray-200 dark:divide-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      {/* Fixed height so longer monthly histories scroll inside the card */}
+      <ul className="max-h-64 divide-y divide-gray-200 dark:divide-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 overflow-y-auto overscroll-contain">
         {rows.map((row, i) => (
           <li
             key={`${row.month}-${i}`}
