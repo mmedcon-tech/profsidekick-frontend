@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Volume2, VolumeX, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, Pause, Play, Phone, PhoneOff, Mic, MicOff, MessageSquare, Send } from "lucide-react";
 import TranscriptPanel from "@/components/learning/TranscriptPanel";
 import StreamingAvatar, {
   AvatarQuality,
@@ -105,7 +105,7 @@ export default function LearningInterface({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
   const [sessionStatus, setSessionStatus] = useState<"DISCONNECTED" | "CONNECTING" | "CONNECTED" | "ERROR">("DISCONNECTED");
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isInterrupted, setIsInterrupted] = useState(false);
   const [isMicMuted, setIsMicMuted] = useState(true);
   const [textInput, setTextInput] = useState("");
   const [, setDataChannel] = useState<RTCDataChannel | null>(null);
@@ -176,6 +176,11 @@ export default function LearningInterface({
   useEffect(() => {
     isAISpeakingRef.current = isAISpeaking;
   }, [isAISpeaking]);
+
+  const isInterruptedRef = useRef(false);
+  useEffect(() => {
+    isInterruptedRef.current = isInterrupted;
+  }, [isInterrupted]);
 
   // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
@@ -452,7 +457,7 @@ export default function LearningInterface({
           audioElementRef.current = document.createElement("audio");
         }
         audioElementRef.current.autoplay = true;
-        audioElementRef.current.muted = !isAudioEnabled;
+        audioElementRef.current.muted = isInterrupted;
         setOutputAudioElement(audioElementRef.current);
 
         // Generate unique ID for this connection
@@ -612,6 +617,7 @@ export default function LearningInterface({
     setIsUserSpeaking(false);
     setIsAISpeaking(false);
     setIsMicMuted(false); // Reset mic mute state on disconnect
+    setIsInterrupted(false); // Reset interrupt state on disconnect
     setSessionStatus("DISCONNECTED");
     setIsConnecting(false);
     hasConnectedRef.current = false;
@@ -1009,10 +1015,55 @@ export default function LearningInterface({
     }, 700);
   };
 
-  const toggleAudio = () => {
-    setIsAudioEnabled(!isAudioEnabled);
-    if (audioElementRef.current) {
-      audioElementRef.current.muted = isAudioEnabled; // Note: isAudioEnabled is the current state, so we want the opposite
+  // Interrupts the AI mid-speech by cancelling its in-progress response on the
+  // server (OpenAI Realtime `response.cancel`) — not just muting local playback.
+  // Muting alone leaves the model generating and streaming audio, which is why
+  // the old Sound On/Off toggle silenced the speaker but the avatar kept
+  // talking (and lip-syncing, since mouth movement is driven directly off the
+  // raw incoming WebRTC audio track, independent of the <audio> element's
+  // muted flag). Pressing the button again asks the model to resume teaching
+  // from where it left off — the original cancelled response can't be resumed
+  // verbatim, so this nudges a fresh continuation instead.
+  const toggleInterrupt = () => {
+    if (sessionStatus !== "CONNECTED") return;
+
+    if (!isInterrupted) {
+      // Stop the model from generating any further audio/text for this turn.
+      sendClientEvent({ type: "response.cancel" }, "interrupt.response_cancel");
+
+      // Cut local playback immediately in case a little audio is already
+      // buffered/in-flight before the cancel takes effect server-side.
+      if (audioElementRef.current) {
+        audioElementRef.current.muted = true;
+      }
+
+      setIsAISpeaking(false);
+      setIsInterrupted(true);
+    } else {
+      if (audioElementRef.current) {
+        audioElementRef.current.muted = false;
+      }
+
+      sendClientEvent(
+        {
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: "system",
+            content: [
+              {
+                type: "input_text",
+                text:
+                  "The learner interrupted you and has just let you continue. Resume teaching naturally from where you left off — don't repeat what you already said and don't mention the interruption.",
+              },
+            ],
+          },
+        },
+        "interrupt.resume_message",
+      );
+      sendClientEvent({ type: "response.create" }, "interrupt.resume_response");
+
+      setIsInterrupted(false);
     }
   };
 
@@ -1047,6 +1098,15 @@ export default function LearningInterface({
     setIsTranscriptVisible(true);
     setTranscript((prev) => [...prev, { id: createTranscriptId(), role: "user", text: clean }]);
     handleTurnComplete("user", clean);
+
+    // Typing a question is a clear signal the learner wants to hear the answer —
+    // clear any prior Interrupt so the response isn't silently muted.
+    if (isInterrupted) {
+      if (audioElementRef.current) {
+        audioElementRef.current.muted = false;
+      }
+      setIsInterrupted(false);
+    }
 
     sendClientEvent({
       type: "conversation.item.create",
@@ -1400,6 +1460,14 @@ export default function LearningInterface({
       // --- Track voice activity ---
       if (serverEvent.type === "input_audio_buffer.speech_started") {
         setIsUserSpeaking(true);
+        // The learner is talking again — let the tutor be heard once it responds,
+        // rather than staying silenced from a prior Interrupt press.
+        if (isInterruptedRef.current) {
+          if (audioElementRef.current) {
+            audioElementRef.current.muted = false;
+          }
+          setIsInterrupted(false);
+        }
       } else if (serverEvent.type === "input_audio_buffer.speech_stopped") {
         setIsUserSpeaking(false);
       }
@@ -1735,14 +1803,18 @@ export default function LearningInterface({
                 {!isMicMuted ? "Mic On" : "Mic Off"}
               </button>
               <button
-                onClick={toggleAudio}
+                onClick={toggleInterrupt}
+                disabled={sessionStatus !== "CONNECTED"}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border",
-                  isAudioEnabled ? "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80" : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                  "flex flex-1 flex-col items-center gap-1.5 rounded-xl py-3 text-xs font-medium transition-colors border disabled:cursor-not-allowed disabled:opacity-50",
+                  isInterrupted ? "bg-amber-500/10 text-amber-600 border-amber-500/20 hover:bg-amber-500/20" : "bg-sidebar-accent text-sidebar-foreground border-transparent hover:bg-sidebar-accent/80"
                 )}
+                aria-pressed={isInterrupted}
+                aria-label={isInterrupted ? "Resume the tutor" : "Interrupt the tutor"}
+                title={isInterrupted ? "Resume the tutor" : "Interrupt the tutor"}
               >
-                {isAudioEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                {isAudioEnabled ? "Sound On" : "Sound Off"}
+                {isInterrupted ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                {isInterrupted ? "Resume" : "Interrupt"}
               </button>
               <button
                 onClick={() => setIsTranscriptVisible(!isTranscriptVisible)}
