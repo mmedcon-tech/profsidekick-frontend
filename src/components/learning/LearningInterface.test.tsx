@@ -186,6 +186,11 @@ afterEach(() => {
   cleanup();
 });
 
+/** Parses the raw JSON strings passed to fakeDc.send(...) back into objects. */
+function sentEvents(fakeDc: ReturnType<typeof createFakeDataChannel>, fromIndex = 0) {
+  return fakeDc.send.mock.calls.slice(fromIndex).map(([raw]: [string]) => JSON.parse(raw));
+}
+
 describe('LearningInterface — assistant transcript capture', () => {
   it.each([
     ['legacy preview event name', 'response.audio_transcript.done'],
@@ -303,6 +308,159 @@ describe('LearningInterface — session reset', () => {
     await waitFor(() =>
       expect(screen.queryByText('First session turn')).not.toBeInTheDocument(),
     );
+  });
+});
+
+describe('LearningInterface — interrupt / resume', () => {
+  it('sends response.cancel then output_audio_buffer.clear when interrupting', async () => {
+    const { fakeDc } = await renderConnected();
+
+    await act(async () => {
+      fakeDc.dispatch('message', {
+        data: JSON.stringify({ type: 'output_audio_buffer.started' }),
+      });
+    });
+
+    const before = fakeDc.send.mock.calls.length;
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /interrupt/i }));
+
+    const events = sentEvents(fakeDc, before);
+    expect(events[0]).toEqual({ type: 'response.cancel' });
+    expect(events[1]).toEqual({ type: 'output_audio_buffer.clear' });
+  });
+
+  it('also truncates the active assistant item with the elapsed audio duration', async () => {
+    const { fakeDc } = await renderConnected();
+
+    await act(async () => {
+      fakeDc.dispatch('message', {
+        data: JSON.stringify({
+          type: 'conversation.item.created',
+          item: { id: 'item_abc', role: 'assistant' },
+        }),
+      });
+    });
+    await act(async () => {
+      fakeDc.dispatch('message', {
+        data: JSON.stringify({ type: 'output_audio_buffer.started' }),
+      });
+    });
+
+    const before = fakeDc.send.mock.calls.length;
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /interrupt/i }));
+
+    const events = sentEvents(fakeDc, before);
+    expect(events).toHaveLength(3);
+    expect(events[2].type).toBe('conversation.item.truncate');
+    expect(events[2].item_id).toBe('item_abc');
+    expect(events[2].content_index).toBe(0);
+    expect(events[2].audio_end_ms).toBeGreaterThanOrEqual(0);
+  });
+
+  it('does not truncate when nothing has played yet', async () => {
+    const { fakeDc } = await renderConnected();
+
+    const before = fakeDc.send.mock.calls.length;
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /interrupt/i }));
+
+    const events = sentEvents(fakeDc, before);
+    expect(events).toHaveLength(2);
+    expect(events.some((e) => e.type === 'conversation.item.truncate')).toBe(false);
+  });
+
+  it('flips to Resume after Interrupt, and Resume sends a continuation nudge', async () => {
+    const { fakeDc } = await renderConnected();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /interrupt/i }));
+    expect(screen.getByRole('button', { name: /resume/i })).toBeInTheDocument();
+
+    const before = fakeDc.send.mock.calls.length;
+    await user.click(screen.getByRole('button', { name: /resume/i }));
+
+    const events = sentEvents(fakeDc, before);
+    expect(events[0].type).toBe('conversation.item.create');
+    expect(events[0].item.role).toBe('system');
+    expect(events[0].item.content[0].text).toMatch(/interrupted/i);
+    expect(events[1]).toEqual({ type: 'response.create' });
+    expect(screen.getByRole('button', { name: /interrupt/i })).toBeInTheDocument();
+  });
+
+  it('clears the tracked item once its turn ends naturally, so a later interrupt does not truncate it', async () => {
+    const { fakeDc } = await renderConnected();
+
+    await act(async () => {
+      fakeDc.dispatch('message', {
+        data: JSON.stringify({
+          type: 'conversation.item.created',
+          item: { id: 'item_x', role: 'assistant' },
+        }),
+      });
+    });
+    await act(async () => {
+      fakeDc.dispatch('message', {
+        data: JSON.stringify({ type: 'output_audio_buffer.started' }),
+      });
+    });
+    await act(async () => {
+      fakeDc.dispatch('message', {
+        data: JSON.stringify({ type: 'output_audio_buffer.stopped' }),
+      });
+    });
+
+    const before = fakeDc.send.mock.calls.length;
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /interrupt/i }));
+
+    const events = sentEvents(fakeDc, before);
+    expect(events).toHaveLength(2);
+    expect(events.some((e) => e.type === 'conversation.item.truncate')).toBe(false);
+  });
+
+  it('clears the interrupt when the learner starts speaking again, without sending a resume nudge', async () => {
+    const { fakeDc } = await renderConnected();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /interrupt/i }));
+    const before = fakeDc.send.mock.calls.length;
+
+    await act(async () => {
+      fakeDc.dispatch('message', {
+        data: JSON.stringify({ type: 'input_audio_buffer.speech_started' }),
+      });
+    });
+
+    expect(screen.getByRole('button', { name: /interrupt the tutor/i })).toBeInTheDocument();
+    expect(fakeDc.send.mock.calls.length).toBe(before);
+  });
+
+  it('clears the interrupt when the learner submits a typed message, without sending a resume nudge', async () => {
+    const { fakeDc } = await renderConnected();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /interrupt/i }));
+    expect(screen.getByRole('button', { name: /resume/i })).toBeInTheDocument();
+
+    const before = fakeDc.send.mock.calls.length;
+    await user.type(
+      screen.getByPlaceholderText('Type your question...'),
+      'Can you repeat that?',
+    );
+    await user.click(screen.getByRole('button', { name: /send typed message/i }));
+
+    const events = sentEvents(fakeDc, before);
+    expect(
+      events.some(
+        (e) =>
+          e.type === 'conversation.item.create' &&
+          e.item?.role === 'system' &&
+          /interrupted/i.test(e.item?.content?.[0]?.text ?? ''),
+      ),
+    ).toBe(false);
+    expect(screen.getByRole('button', { name: /interrupt the tutor/i })).toBeInTheDocument();
   });
 });
 
