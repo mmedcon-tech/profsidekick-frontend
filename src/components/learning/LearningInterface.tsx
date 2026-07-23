@@ -51,6 +51,7 @@ import { pickRealtimeVoiceForAvatar } from "@/lib/realtimeVoice";
 import { getDefaultChatbotAvatar } from "@/lib/avatarLibrary";
 import { useRealtimeTeachingLipSync } from "@/hooks/useRealtimeTeachingLipSync";
 import { notifyLearnerSlideChangeToRealtime } from "@/lib/learnerSlideRealtimeNotify";
+import { interruptActiveResponse, resumeInterruptedResponse } from "@/lib/realtimeInterrupt";
 import { toast } from "sonner";
 
 const defaultTeachingAvatar = getDefaultChatbotAvatar();
@@ -181,6 +182,13 @@ export default function LearningInterface({
   useEffect(() => {
     isInterruptedRef.current = isInterrupted;
   }, [isInterrupted]);
+
+  // Tracks the assistant item currently being spoken (from conversation.item.created)
+  // and when its audio started (from output_audio_buffer.started), so Interrupt can
+  // send conversation.item.truncate with an accurate audio_end_ms. Both reset to null
+  // once the turn ends naturally (output_audio_buffer.stopped) or is interrupted.
+  const activeAssistantItemIdRef = useRef<string | null>(null);
+  const audioStartedAtMsRef = useRef<number | null>(null);
 
   // HeyGen visual layer — only initialised when shouldUseHeyGenVideo() is true
   const heygenAvatarRef = useRef<StreamingAvatar | null>(null);
@@ -618,6 +626,8 @@ export default function LearningInterface({
     setIsAISpeaking(false);
     setIsMicMuted(false); // Reset mic mute state on disconnect
     setIsInterrupted(false); // Reset interrupt state on disconnect
+    activeAssistantItemIdRef.current = null;
+    audioStartedAtMsRef.current = null;
     setSessionStatus("DISCONNECTED");
     setIsConnecting(false);
     hasConnectedRef.current = false;
@@ -1015,27 +1025,35 @@ export default function LearningInterface({
     }, 700);
   };
 
-  // Interrupts the AI mid-speech by cancelling its in-progress response on the
-  // server (OpenAI Realtime `response.cancel`) — not just muting local playback.
-  // Muting alone leaves the model generating and streaming audio, which is why
-  // the old Sound On/Off toggle silenced the speaker but the avatar kept
-  // talking (and lip-syncing, since mouth movement is driven directly off the
-  // raw incoming WebRTC audio track, independent of the <audio> element's
-  // muted flag). Pressing the button again asks the model to resume teaching
-  // from where it left off — the original cancelled response can't be resumed
-  // verbatim, so this nudges a fresh continuation instead.
+  // Interrupts the AI mid-speech. `response.cancel` alone only stops future
+  // generation — audio already queued into the WebRTC output pipeline keeps
+  // playing, which is why muting used to look like a no-op (the avatar kept
+  // talking and lip-syncing, since mouth movement is driven directly off the
+  // raw incoming audio track, independent of the <audio> element's muted
+  // flag). `output_audio_buffer.clear` (see realtimeInterrupt.ts) is the
+  // WebRTC-specific event that actually clears that in-flight audio — the
+  // same fix already proven in TeachingInterface.tsx's notifyAIOfSlideChange.
+  // Pressing the button again asks the model to resume teaching from where
+  // it left off — the original cancelled response can't be resumed verbatim,
+  // so this nudges a fresh continuation instead.
   const toggleInterrupt = () => {
     if (sessionStatus !== "CONNECTED") return;
 
     if (!isInterrupted) {
-      // Stop the model from generating any further audio/text for this turn.
-      sendClientEvent({ type: "response.cancel" }, "interrupt.response_cancel");
+      interruptActiveResponse({
+        send: sendClientEvent,
+        activeAssistantItemId: activeAssistantItemIdRef.current,
+        audioStartedAtMs: audioStartedAtMsRef.current,
+      });
 
       // Cut local playback immediately in case a little audio is already
-      // buffered/in-flight before the cancel takes effect server-side.
+      // buffered/in-flight before the clear takes effect server-side.
       if (audioElementRef.current) {
         audioElementRef.current.muted = true;
       }
+
+      activeAssistantItemIdRef.current = null;
+      audioStartedAtMsRef.current = null;
 
       setIsAISpeaking(false);
       setIsInterrupted(true);
@@ -1044,24 +1062,7 @@ export default function LearningInterface({
         audioElementRef.current.muted = false;
       }
 
-      sendClientEvent(
-        {
-          type: "conversation.item.create",
-          item: {
-            type: "message",
-            role: "system",
-            content: [
-              {
-                type: "input_text",
-                text:
-                  "The learner interrupted you and has just let you continue. Resume teaching naturally from where you left off — don't repeat what you already said and don't mention the interruption.",
-              },
-            ],
-          },
-        },
-        "interrupt.resume_message",
-      );
-      sendClientEvent({ type: "response.create" }, "interrupt.resume_response");
+      resumeInterruptedResponse({ send: sendClientEvent });
 
       setIsInterrupted(false);
     }
@@ -1474,8 +1475,21 @@ export default function LearningInterface({
       if (serverEvent.type === "output_audio_buffer.started") {
         slideToolHandledThisTurnRef.current = false;
         setIsAISpeaking(true);
+        audioStartedAtMsRef.current = performance.now();
       } else if (serverEvent.type === "output_audio_buffer.stopped") {
         setIsAISpeaking(false);
+        activeAssistantItemIdRef.current = null;
+        audioStartedAtMsRef.current = null;
+      }
+
+      // Track the assistant item currently being spoken so Interrupt can
+      // truncate it accurately (see activeAssistantItemIdRef declaration above).
+      if (
+        serverEvent.type === "conversation.item.created" &&
+        serverEvent.item?.role === "assistant" &&
+        serverEvent.item?.id
+      ) {
+        activeAssistantItemIdRef.current = serverEvent.item.id;
       }
 
       // --- Feed AI text to HeyGen visual layer (§4.2 SYSTEM_DESIGN) ---
