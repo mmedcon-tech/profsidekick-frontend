@@ -5,11 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Eye, EyeOff, Mic, GraduationCap, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mic, GraduationCap, ShieldCheck, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
 import { formatApiError } from '@/lib/apiError';
 
 type Step = 1 | 2 | 'done';
-type Role = 'publisher' | 'subscriber';
+type Role = 'publisher' | 'subscriber' | 'admin';
 
 const ROLES: { value: Role; label: string; description: string; icon: React.ReactNode; color: string }[] = [
   {
@@ -25,6 +25,13 @@ const ROLES: { value: Role; label: string; description: string; icon: React.Reac
     description: 'Browse the marketplace, subscribe to AI avatars, and learn through voice-driven experiences.',
     icon: <GraduationCap size={28} />,
     color: 'green',
+  },
+  {
+    value: 'admin',
+    label: 'Admin',
+    description: 'Platform administrator. Manage templates, avatars, publishers, and subscribers.',
+    icon: <ShieldCheck size={28} />,
+    color: 'purple',
   },
 ];
 
