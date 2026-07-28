@@ -1,36 +1,36 @@
 /**
  * Role vocabulary bridge between the frontend and backend.
  *
- * The frontend routes and guards everything on `publisher` / `subscriber` / `admin`,
- * while the backend persists and returns `professor` / `student` / `admin`.
- * These helpers translate at the BFF boundary so each side keeps its own vocabulary.
+ * Both sides now use `publisher` / `subscriber` / `admin`.
+ * Legacy backend values (`professor` / `student`) are still normalized
+ * on read so older tokens or DB rows keep working.
  */
 
 export type FrontendRole = 'publisher' | 'subscriber' | 'admin';
-export type BackendRole = 'professor' | 'student' | 'admin';
+export type BackendRole = 'publisher' | 'subscriber' | 'admin';
 
-const BACKEND_TO_FRONTEND: Record<string, FrontendRole> = {
+const LEGACY_TO_CURRENT: Record<string, FrontendRole> = {
   professor: 'publisher',
+  teacher: 'publisher',
   student: 'subscriber',
+  publisher: 'publisher',
+  subscriber: 'subscriber',
   admin: 'admin',
 };
 
-const FRONTEND_TO_BACKEND: Record<string, BackendRole> = {
-  publisher: 'professor',
-  subscriber: 'student',
-  admin: 'admin',
-};
-
-/** Map a backend role (`professor`/`student`/`admin`) to the frontend vocabulary. */
+/** Map a backend/legacy role to the shared frontend vocabulary. */
 export function toFrontendRole(role: string | null | undefined): string | null | undefined {
   if (role == null) return role;
-  return BACKEND_TO_FRONTEND[role] ?? role;
+  return LEGACY_TO_CURRENT[role] ?? role;
 }
 
-/** Map a frontend role (`publisher`/`subscriber`/`admin`) to the backend vocabulary. */
+/**
+ * Map a frontend role to the backend registration vocabulary.
+ * Identity for current roles; remaps legacy aliases if they slip through.
+ */
 export function toBackendRole(role: string | null | undefined): string | null | undefined {
   if (role == null) return role;
-  return FRONTEND_TO_BACKEND[role] ?? role;
+  return LEGACY_TO_CURRENT[role] ?? role;
 }
 
 /** Return a shallow copy of an auth payload with its nested `user.role` normalized for the frontend. */

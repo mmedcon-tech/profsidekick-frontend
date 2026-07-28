@@ -6,14 +6,15 @@ import {
 } from './roleMapping';
 
 describe('toFrontendRole', () => {
-  it('maps backend roles to frontend vocabulary', () => {
+  it('maps legacy backend roles to current vocabulary', () => {
     expect(toFrontendRole('professor')).toBe('publisher');
     expect(toFrontendRole('student')).toBe('subscriber');
     expect(toFrontendRole('admin')).toBe('admin');
   });
 
-  it('passes through unknown and nullish values', () => {
+  it('passes through current roles and unknown/nullish values', () => {
     expect(toFrontendRole('publisher')).toBe('publisher');
+    expect(toFrontendRole('subscriber')).toBe('subscriber');
     expect(toFrontendRole('weird')).toBe('weird');
     expect(toFrontendRole(null)).toBeNull();
     expect(toFrontendRole(undefined)).toBeUndefined();
@@ -21,14 +22,15 @@ describe('toFrontendRole', () => {
 });
 
 describe('toBackendRole', () => {
-  it('maps frontend roles to backend vocabulary', () => {
-    expect(toBackendRole('publisher')).toBe('professor');
-    expect(toBackendRole('subscriber')).toBe('student');
+  it('sends current roles unchanged to the backend', () => {
+    expect(toBackendRole('publisher')).toBe('publisher');
+    expect(toBackendRole('subscriber')).toBe('subscriber');
     expect(toBackendRole('admin')).toBe('admin');
   });
 
-  it('passes through unknown and nullish values', () => {
-    expect(toBackendRole('professor')).toBe('professor');
+  it('remaps legacy aliases if they slip through', () => {
+    expect(toBackendRole('professor')).toBe('publisher');
+    expect(toBackendRole('student')).toBe('subscriber');
     expect(toBackendRole('weird')).toBe('weird');
     expect(toBackendRole(null)).toBeNull();
     expect(toBackendRole(undefined)).toBeUndefined();
@@ -42,7 +44,7 @@ describe('toBackendRole', () => {
 });
 
 describe('normalizeAuthUserRole', () => {
-  it('normalizes a nested user role without mutating the input', () => {
+  it('normalizes a nested legacy user role without mutating the input', () => {
     const input = { user: { id: '1', role: 'professor' }, token: 'abc' };
     const result = normalizeAuthUserRole(input);
 

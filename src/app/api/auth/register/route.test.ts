@@ -19,7 +19,7 @@ describe('POST /api/auth/register', () => {
     vi.unstubAllGlobals();
   });
 
-  it('proxies camelCase body to backend with mapped role', async () => {
+  it('proxies camelCase body to backend with publisher/subscriber roles unchanged', async () => {
     const request = new NextRequest('http://localhost/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({
@@ -45,7 +45,7 @@ describe('POST /api/auth/register', () => {
           password: 'secret123',
           firstName: 'Jane',
           lastName: 'Doe',
-          role: 'professor',
+          role: 'publisher',
         }),
       }),
     );
