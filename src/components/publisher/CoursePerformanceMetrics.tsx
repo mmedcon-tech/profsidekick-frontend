@@ -94,7 +94,7 @@ export function CoursePerformanceMetrics({
         />
       </div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-2 max-h-72 overflow-y-auto pr-1">
         {normalized.map((row, i) => (
           <li
             key={`${row.name}-${i}`}
@@ -178,7 +178,7 @@ export function MonthlyCompletionMetrics({
           value={`${Number(latest?.value) || 0}`}
         />
       </div>
-      <ul className="divide-y divide-gray-200 dark:divide-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <ul className="divide-y divide-gray-200 dark:divide-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden max-h-72 overflow-y-auto">
         {rows.map((row, i) => (
           <li
             key={`${row.month}-${i}`}
