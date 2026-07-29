@@ -851,9 +851,14 @@ export default function ClassCreation() {
               className="w-full rounded-lg bg-primary px-4 py-3 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="mr-2 h-5 w-5 animate-spin rounded-full border-b-2 border-primary-foreground" />
-                  Processing & Summoning Sidekick...
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <div className="flex items-center justify-center">
+                    <div className="mr-2 h-5 w-5 animate-spin rounded-full border-b-2 border-primary-foreground" />
+                    Processing & Summoning Sidekick...
+                  </div>
+                  <span className="text-xs font-normal text-primary-foreground/80">
+                    Large decks can take several minutes while each slide is analyzed.
+                  </span>
                 </div>
               ) : (
                 "Summon Your Sidekick"
