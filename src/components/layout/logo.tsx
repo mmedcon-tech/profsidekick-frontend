@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 export function LogoV2({
@@ -11,20 +12,20 @@ export function LogoV2({
 }) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <div
-        className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-md font-bold text-sm tracking-tight",
-          light ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground",
-        )}
-      >
-        OS
-      </div>
+      <Image
+        src="/images/logo.png"
+        alt="MyOS"
+        width={36}
+        height={36}
+        className="h-9 w-9 object-contain"
+        priority
+      />
       <div className="leading-tight">
         <p className={cn("text-sm font-semibold", light ? "text-sidebar-foreground" : "text-foreground")}>
           {brandName ?? "MyOS"}
         </p>
         <p className={cn("text-[11px]", light ? "text-sidebar-foreground/60" : "text-muted-foreground")}>
-          {brandName ? "Powered by MyOS" : "AI Learning Platform"}
+          {brandName ? "Powered by MyOS" : "Expert AI Platform"}
         </p>
       </div>
     </div>

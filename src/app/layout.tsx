@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "MyOS",
-  description: "Interactive AI-powered presentations for professors",
+  title: "MyOS — Expert AI Platform",
+  description: "Knowledge-based AI avatars that let experts scale. Expert digital twins for education.",
   icons: {
     icon: [
       {
@@ -27,6 +27,11 @@ export const metadata: Metadata = {
         type: 'image/png',
       }
     ],
+  },
+  openGraph: {
+    title: "MyOS — Expert AI Platform",
+    description: "Knowledge-based AI avatars that let experts scale.",
+    images: [{ url: '/images/logo.png' }],
   },
 };
 

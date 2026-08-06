@@ -1449,7 +1449,7 @@ export default function TeachingInterface({
             <div>
               {sessionStatus === "CONNECTED" ? (
                 <>
-                  <p className="font-semibold text-base">👋 Ready to start!</p>
+                  <p className="font-semibold text-base">Ready to start</p>
                   <p className="text-sm text-primary-foreground/80">Say something to begin the conversation</p>
                 </>
               ) : (

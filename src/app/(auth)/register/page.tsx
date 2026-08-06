@@ -276,7 +276,7 @@ export default function RegisterPage() {
         {/* ── Step 2: role selection ── */}
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 text-center">How will you use ProfSidekick?</h2>
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 text-center">How will you use MyOS?</h2>
 
             <div className="space-y-3">
               {ROLES.map((r) => {

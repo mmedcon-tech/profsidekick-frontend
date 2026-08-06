@@ -244,21 +244,21 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
     setInstructionsText(sessionMaterial.usage_instructions || '');
   };
 
-  // Get material type icon
+  // Get material type label (no emoji badges)
   const getTypeIcon = (type: MaterialType) => {
     switch (type) {
       case MaterialType.BOOK:
-        return '📚';
+        return 'Book';
       case MaterialType.ARTICLE:
-        return '📄';
+        return 'Article';
       case MaterialType.VIDEO:
-        return '🎥';
+        return 'Video';
       case MaterialType.DOCUMENT:
-        return '📋';
+        return 'Doc';
       case MaterialType.LINK:
-        return '🔗';
+        return 'Link';
       default:
-        return '📦';
+        return 'File';
     }
   };
 
@@ -342,7 +342,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">{getTypeIcon(material.material_type)}</span>
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{getTypeIcon(material.material_type)}</span>
                         <h4 className={`text-lg font-medium ${isIncluded ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>
                           {material.title}
                         </h4>
@@ -505,7 +505,7 @@ export default function SessionMaterials({ sessionId, courseId }: SessionMateria
                         
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg">{getTypeIcon(material.material_type)}</span>
+                            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{getTypeIcon(material.material_type)}</span>
                             <h4 className="font-medium text-gray-900 dark:text-gray-100">{material.title}</h4>
                             {material.is_required && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">

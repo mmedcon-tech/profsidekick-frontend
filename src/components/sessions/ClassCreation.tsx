@@ -394,7 +394,7 @@ export default function ClassCreation() {
                     }`}
                   >
                     <span className={`text-sm font-semibold ${sessionMode === "teaching" ? "text-primary" : "text-foreground"}`}>
-                      📚 Teaching
+                      Teaching
                     </span>
                     <span className="text-xs leading-relaxed text-muted-foreground">
                       AI guides and explains concepts using the Teaching Prompt.
@@ -411,7 +411,7 @@ export default function ClassCreation() {
                     }`}
                   >
                     <span className={`text-sm font-semibold ${sessionMode === "examination" ? "text-amber-700 dark:text-amber-400" : "text-foreground"}`}>
-                      📝 Examination
+                      Examination
                     </span>
                     <span className="text-xs leading-relaxed text-muted-foreground">
                       AI assesses and evaluates with strict assessment rules.
@@ -428,7 +428,7 @@ export default function ClassCreation() {
                     }`}
                   >
                     <span className={`text-sm font-semibold ${sessionMode === "consultation" ? "text-emerald-700 dark:text-emerald-400" : "text-foreground"}`}>
-                      💬 Consultation
+                      Consultation
                     </span>
                     <span className="text-xs leading-relaxed text-muted-foreground">
                       AI acts as an expert advisor — answers questions and gives actionable guidance.

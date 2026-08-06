@@ -72,7 +72,7 @@ export default function VerifyEmailPage() {
                 <CheckCircle className="w-10 h-10 text-primary" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Email Verified! 🎉
+                Email Verified!
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 {message}

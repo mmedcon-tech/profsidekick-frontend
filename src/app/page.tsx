@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Users, Zap, ArrowRight, CheckCircle, LogOut } from 'lucide-react';
+import { ArrowRight, Check, LogOut } from 'lucide-react';
 
 function clearLocalAuthSession(): void {
   try {
@@ -17,16 +19,20 @@ function clearLocalAuthSession(): void {
 
 export default function LandingPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, logout, user, token } = useAuth();
+  const { isAuthenticated, isLoading, logout, user } = useAuth();
   const [stuck, setStuck] = useState(false);
-  const dashboardUrl = user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'publisher' ? '/publisher/dashboard' : '/subscriber/dashboard';
+  const dashboardUrl =
+    user?.role === 'admin'
+      ? '/admin/dashboard'
+      : user?.role === 'publisher'
+        ? '/publisher/dashboard'
+        : '/subscriber/dashboard';
 
   const handleLogout = async () => {
     await logout();
     router.push('/');
   };
 
-  // Redirect authenticated users with a hard navigation so Safari never hangs on soft routing
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
 
@@ -35,7 +41,6 @@ export default function LandingPage() {
     if (role === 'admin') destination = '/admin/dashboard';
     else if (role === 'subscriber') destination = '/subscriber/dashboard';
 
-    // Immediate hard redirect — avoids Next soft-nav stalls in Safari
     const timer = window.setTimeout(() => {
       window.location.replace(destination);
     }, 100);
@@ -43,7 +48,6 @@ export default function LandingPage() {
     return () => window.clearTimeout(timer);
   }, [isAuthenticated, isLoading, user]);
 
-  // If loading/auth hangs, offer escape hatch and eventually force login
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       setStuck(false);
@@ -60,13 +64,12 @@ export default function LandingPage() {
     };
   }, [isLoading, isAuthenticated]);
 
-  // Show spinner while auth check runs OR while redirect is in flight
   if (isLoading || isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center max-w-sm px-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary dark:border-primary/50 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-slate-300 border-t-blue-700 dark:border-gray-600 dark:border-t-blue-400" />
+          <p className="text-slate-600 dark:text-gray-400">
             {isAuthenticated ? 'Opening your dashboard…' : 'Loading…'}
           </p>
           {stuck && (
@@ -76,7 +79,7 @@ export default function LandingPage() {
                 clearLocalAuthSession();
                 window.location.replace('/login');
               }}
-              className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-white"
+              className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-lg bg-blue-700 px-4 text-sm font-medium text-white"
             >
               Stuck? Clear session & go to login
             </button>
@@ -87,391 +90,266 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 dark:bg-gray-800">
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-gray-950 dark:text-gray-100">
       {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-900 dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <img
-                src="/images/logo.png"
-                alt="MyOS Logo"
-                className="w-10 h-10 object-contain rounded-full"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-              <span className="text-2xl font-bold text-primary/90 dark:text-primary/40">MyOS</span>
+      <nav className="border-b border-slate-200 bg-white/90 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/images/logo.png"
+              alt="MyOS"
+              width={40}
+              height={40}
+              className="h-10 w-10 object-contain"
+              priority
+            />
+            <div className="leading-tight">
+              <span className="block text-lg font-semibold tracking-tight text-slate-900 dark:text-white">
+                MyOS
+              </span>
+              <span className="block text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-gray-400">
+                Expert AI Platform
+              </span>
             </div>
+          </Link>
 
-            <div className="flex items-center gap-3">
-              {isAuthenticated ? (
-                <>
-                  <span className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
-                    {user?.firstName} · <span className="capitalize font-medium text-primary dark:text-primary/30">{user?.role}</span>
-                  </span>
-                  <button
-                    onClick={() => router.push(dashboardUrl)}
-                    className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors text-sm"
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors text-sm px-3 py-2 rounded-lg border border-gray-300 hover:border-red-300"
-                  >
-                    <LogOut size={15} />
-                    <span className="hidden sm:inline">Sign Out</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => router.push('/login')}
-                    className="text-primary/90 dark:text-primary/40 hover:text-primary dark:text-primary/30 font-medium transition-colors text-sm px-3 py-2"
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => router.push('/register')}
-                    className="bg-primary dark:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors text-sm"
-                  >
-                    Get Started
-                  </button>
-                </>
-              )}
-            </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {isAuthenticated ? (
+              <>
+                <button
+                  onClick={() => router.push(dashboardUrl)}
+                  className="min-h-[44px] rounded-lg bg-blue-700 px-4 text-sm font-medium text-white hover:bg-blue-800"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 hover:border-red-300 hover:text-red-600 dark:border-gray-700 dark:text-gray-300"
+                >
+                  <LogOut size={15} />
+                  <span className="hidden sm:inline">Sign Out</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex min-h-[44px] items-center px-3 text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-gray-300"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex min-h-[44px] items-center rounded-lg bg-blue-700 px-4 text-sm font-medium text-white hover:bg-blue-800"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-6">
-              Transform Your <span className="text-primary/90 dark:text-primary/40">Teaching</span>
-              <br />
-              with AI-Powered Presentations
+      {/* Hero — one composition: brand, headline, support, CTAs */}
+      <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-slate-50 via-white to-white dark:border-gray-800 dark:from-gray-900 dark:via-gray-950 dark:to-gray-950">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(42,168,201,0.12),_transparent_55%)]" />
+        <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pb-28 sm:pt-24">
+          <div className="mx-auto max-w-3xl text-center">
+            <Image
+              src="/images/logo.png"
+              alt="MyOS"
+              width={72}
+              height={72}
+              className="mx-auto mb-8 h-[72px] w-[72px] object-contain"
+              priority
+            />
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-gray-400">
+              MyOS
+            </p>
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
+              Knowledge-based AI avatars that let experts scale
             </h1>
-
-            <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-3xl mx-auto">
-              Upload your slides and let our AI teaching assistant help you deliver engaging,
-              interactive lessons with real-time voice support and intelligent content navigation.
+            <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-600 dark:text-gray-400">
+              Expert digital twins for education — upload your materials and teach through voice-driven AI sessions.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               {isAuthenticated ? (
                 <button
                   onClick={() => router.push(dashboardUrl)}
-                  className="bg-primary dark:bg-primary/90 text-white px-8 py-4 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
+                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-8 text-base font-medium text-white hover:bg-blue-800 sm:w-auto"
                 >
                   Go to Dashboard
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
                 <>
-                  <button
-                    onClick={() => router.push('/register')}
-                    className="bg-primary dark:bg-primary/90 text-white px-8 py-4 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:ring-offset-2 transition-colors flex items-center justify-center gap-2"
+                  <Link
+                    href="/register"
+                    className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-8 text-base font-medium text-white hover:bg-blue-800 sm:w-auto"
                   >
-                    Start Teaching for Free
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => router.push('/login')}
-                    className="bg-white dark:bg-gray-900 dark:bg-gray-800 text-primary/90 dark:text-primary/40 px-8 py-4 rounded-lg font-medium border border-primary dark:border-primary/50 hover:bg-primary/10 dark:bg-primary/90/5 focus:ring-2 focus:ring-primary dark:focus:ring-primary/50 focus:ring-offset-2 transition-colors"
+                    Start for free
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="inline-flex min-h-[48px] w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-8 text-base font-medium text-slate-800 hover:bg-slate-50 sm:w-auto dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
                   >
                     Sign In
-                  </button>
+                  </Link>
                 </>
               )}
             </div>
-
-            {/* Coming Soon Badge */}
-            <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400">
-              <div className="bg-primary dark:bg-primary/90/10 text-white dark:text-white px-4 py-2 rounded-full text-sm font-medium">
-                🚀 Currently in Development
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white dark:bg-gray-900 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">
-              Everything You Need for Interactive Teaching
+      {/* Product value */}
+      <section className="border-b border-slate-200 py-20 dark:border-gray-800">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
+              Built for modern teaching
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Our AI-powered platform transforms static presentations into dynamic, engaging learning experiences.
+            <p className="mt-4 text-lg text-slate-600 dark:text-gray-400">
+              From slide analysis to live voice sessions, MyOS helps publishers and learners work with expert knowledge at scale.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-primary dark:bg-primary/90/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <BookOpen className="w-8 h-8 text-primary/90 dark:text-primary/40" />
+          <div className="mt-14 grid gap-10 md:grid-cols-3">
+            {[
+              {
+                title: 'Content that understands itself',
+                body: 'Upload presentations and let MyOS extract structure, context, and teaching cues from every slide.',
+              },
+              {
+                title: 'Voice-led sessions',
+                body: 'Run interactive lessons with AI avatars that navigate materials and respond in real time.',
+              },
+              {
+                title: 'Experts that scale',
+                body: 'Publish once, reach many learners — with avatars that carry your expertise across courses and programs.',
+              },
+            ].map((item) => (
+              <div key={item.title} className="text-left">
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white">{item.title}</h3>
+                <p className="mt-3 text-slate-600 dark:text-gray-400 leading-relaxed">{item.body}</p>
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Smart Content Analysis</h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                Upload PDF or PowerPoint slides and our AI instantly understands your content,
-                creating contextual assistance and navigation support.
-              </p>
-            </div>
-
-            <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Zap className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-4">AI Teaching Assistant</h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                Get real-time voice assistance, answer student questions naturally,
-                and navigate through your presentation with conversational commands.
-              </p>
-            </div>
-
-            <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Enhanced Engagement</h3>
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                Create interactive learning experiences that keep students engaged
-                with AI-powered voice interactions and intelligent content delivery.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="py-20 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">
-                Why Choose MyOS?
-              </h2>
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Easy Setup</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Upload your presentation and start teaching in minutes. No complex setup or training required.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Natural Voice Interaction</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Speak naturally to navigate slides, get explanations, and handle student questions seamlessly.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <CheckCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Customizable AI Assistant</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Configure voice, personality, and style to match your preferences and subject matter.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-900 dark:bg-gray-800 p-8 rounded-2xl shadow-lg">
-              <div className="text-center">
-                {isAuthenticated ? (
-                  <>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Welcome Back!</h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">Ready to create your next amazing teaching session?</p>
-                    <button
-                      onClick={() => router.push(dashboardUrl)}
-                      className="w-full bg-primary dark:bg-primary/90 text-white px-8 py-4 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
-                    >
-                      Go to Dashboard
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">Ready to Get Started?</h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6">Be among the first educators to experience the future of AI-powered teaching.</p>
-                    <button
-                      onClick={() => router.push('/register')}
-                      className="w-full bg-primary dark:bg-primary/90 text-white px-8 py-4 rounded-lg font-medium hover:bg-primary/90 dark:hover:bg-primary transition-colors"
-                    >
-                      Create Free Account
-                    </button>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">No credit card required</p>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="py-20 bg-white dark:bg-gray-900 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white dark:text-gray-100 mb-4">
-              Meet Our Team
+      {/* Why MyOS */}
+      <section className="border-b border-slate-200 bg-slate-50 py-20 dark:border-gray-800 dark:bg-gray-900/50">
+        <div className="mx-auto grid max-w-6xl gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:items-center">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
+              Why MyOS
             </h2>
-            {/* <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Passionate educators and researchers working together to revolutionize the teaching experience.
-            </p> */}
+            <ul className="mt-8 space-y-5">
+              {[
+                {
+                  title: 'Fast to start',
+                  body: 'Upload materials and open a session in minutes — no complex setup.',
+                },
+                {
+                  title: 'Natural interaction',
+                  body: 'Navigate slides and answer questions through conversation, not menus.',
+                },
+                {
+                  title: 'Configurable avatars',
+                  body: 'Tune voice, persona, and delivery to match your subject and style.',
+                },
+              ].map((item) => (
+                <li key={item.title} className="flex gap-3">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white">
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                    <p className="mt-1 text-slate-600 dark:text-gray-400">{item.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Professor 2 - Placeholder */}
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
-              <div className="w-24 h-24 mx-auto mb-6 relative">
-                <img
-                  src="/images/team/alberto.jpg"
-                  alt="Alberto Gandolfi"
-                  className="w-24 h-24 rounded-full object-cover shadow-lg"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLDivElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div className="w-24 h-24 bg-gradient-to-br from-primary/90 dark:from-primary to-primary/95 dark:to-primary/90 rounded-full items-center justify-center absolute top-0 left-0 hidden">
-                  <span className="text-2xl font-bold text-white">AG</span>
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Alberto Gandolfi</h3>
-              <p className="text-purple-600 font-medium mb-3">Professor of Practice in Mathematics at NYU Abu Dhabi</p>
-              {/* <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Professor of Practice in Mathematics with extensive experience in educational technology 
-                and AI applications in learning environments.
-              </p> */}
-            </div>
-
-            {/* Professor 1 - Placeholder */}
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
-              <div className="w-24 h-24 mx-auto mb-6 relative">
-                <img
-                  src="/images/team/eliseo.jpg"
-                  alt="Eliseo Ferrante"
-                  className="w-24 h-24 rounded-full object-cover shadow-lg"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLDivElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div className="w-24 h-24 bg-gradient-to-br from-yellow-500 dark:from-yellow-400 to-yellow-600 dark:to-yellow-500 rounded-full items-center justify-center absolute top-0 left-0 hidden">
-                  <span className="text-2xl font-bold text-white">DR</span>
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Eliseo Ferrante</h3>
-              <p className="text-primary font-medium mb-3">Visiting Professor at NYU Abu Dhabi</p>
-              {/* <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                Professor of Computer Science with extensive experience in educational technology 
-                and AI applications in learning environments.
-              </p> */}
-            </div>
-
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
-              <div className="w-24 h-24 mx-auto mb-6 relative">
-                <img
-                  src="/images/team/hanan.jpg"
-                  alt="Hanan Salam"
-                  className="w-24 h-24 rounded-full object-cover shadow-lg"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLDivElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div className="w-24 h-24 bg-gradient-to-br from-yellow-500 dark:from-yellow-400 to-yellow-600 dark:to-yellow-500 rounded-full items-center justify-center absolute top-0 left-0 hidden">
-                  <span className="text-2xl font-bold text-white">DR</span>
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Hanan Salam</h3>
-              <p className="text-teal-600 font-medium mb-3">Assistant Professor of Computer Science at NYU Abu Dhabi</p>
-            </div>
-
-            <div className="text-center p-6 bg-gray-50 dark:bg-gray-800 dark:bg-gray-900 rounded-2xl hover:shadow-lg transition-shadow">
-              <div className="w-24 h-24 mx-auto mb-6 relative">
-                <img
-                  src="/images/team/assylbek.jpg"
-                  alt="Assylbek Saduakhassov"
-                  className="w-24 h-24 rounded-full object-cover shadow-lg"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLDivElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
-                <div className="w-24 h-24 bg-gradient-to-br from-primary dark:from-primary/50 to-primary/95 dark:to-primary/90/80 rounded-full items-center justify-center absolute top-0 left-0 hidden">
-                  <span className="text-2xl font-bold text-white">AS</span>
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white dark:text-gray-100 mb-2">Assylbek Saduakhassov</h3>
-              <p className="text-primary/90 dark:text-primary/40 font-medium mb-3">Software Engineer</p>
-            </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 dark:border-gray-700 dark:bg-gray-950">
+            <h3 className="text-2xl font-semibold text-slate-900 dark:text-white">
+              Ready to get started?
+            </h3>
+            <p className="mt-3 text-slate-600 dark:text-gray-400">
+              Create an account and publish your first AI-backed teaching session.
+            </p>
+            <Link
+              href="/register"
+              className="mt-6 inline-flex min-h-[48px] w-full items-center justify-center rounded-lg bg-blue-700 px-6 text-base font-medium text-white hover:bg-blue-800"
+            >
+              Create free account
+            </Link>
+            <p className="mt-3 text-center text-sm text-slate-500 dark:text-gray-500">
+              No credit card required
+            </p>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-3 mb-4">
-                <img
+      <footer className="bg-slate-950 py-12 text-white">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <Image
                   src="/images/logo.png"
-                  alt="MyOS Logo"
-                  className="w-8 h-8 object-contain rounded-full"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
+                  alt="MyOS"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 object-contain"
                 />
-                <span className="text-xl font-bold">MyOS</span>
+                <div>
+                  <p className="font-semibold">MyOS</p>
+                  <p className="text-xs uppercase tracking-[0.14em] text-slate-400">Expert AI Platform</p>
+                </div>
               </div>
-              <p className="text-gray-400 mb-4 max-w-md">
-                Empowering educators with AI-powered teaching tools to create more engaging and interactive learning experiences.
+              <p className="mt-4 max-w-md text-sm text-slate-400">
+                Knowledge-based AI avatars that let experts scale — expert digital twins for education.
               </p>
             </div>
 
-            {/* <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><button onClick={() => router.push('/about')} className="hover:text-white transition-colors">About</button></li>
-                <li><button onClick={() => router.push('/contact')} className="hover:text-white transition-colors">Contact</button></li>
-              </ul>
-            </div> */}
-
             <div>
-              <h3 className="font-semibold mb-4">Account</h3>
-              <ul className="space-y-2 text-gray-400">
+              <p className="text-sm font-semibold text-white">Account</p>
+              <ul className="mt-3 space-y-2 text-sm text-slate-400">
                 {isAuthenticated ? (
-                  <li><button onClick={() => router.push(dashboardUrl)} className="hover:text-white transition-colors">Dashboard</button></li>
+                  <li>
+                    <Link href={dashboardUrl} className="hover:text-white">
+                      Dashboard
+                    </Link>
+                  </li>
                 ) : (
                   <>
-                    <li><button onClick={() => router.push('/login')} className="hover:text-white transition-colors">Sign In</button></li>
-                    <li><button onClick={() => router.push('/register')} className="hover:text-white transition-colors">Register</button></li>
+                    <li>
+                      <Link href="/login" className="hover:text-white">
+                        Sign In
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/register" className="hover:text-white">
+                        Register
+                      </Link>
+                    </li>
                   </>
                 )}
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2026 MyOS. All rights reserved.</p>
+          <div className="mt-10 border-t border-slate-800 pt-6 text-center text-sm text-slate-500">
+            <p>&copy; {new Date().getFullYear()} MyOS. All rights reserved.</p>
           </div>
         </div>
       </footer>
     </div>
   );
 }
-
-

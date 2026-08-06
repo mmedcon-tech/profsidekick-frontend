@@ -67,13 +67,13 @@ export default function ContactPage() {
             >
               <img 
                 src="/images/logo.png" 
-                alt="ProfSidekick Logo" 
+                alt="MyOS Logo" 
                 className="w-10 h-10 object-contain rounded-full"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <span className="text-2xl font-bold text-primary dark:text-primary/10">ProfSidekick</span>
+              <span className="text-2xl font-bold text-primary dark:text-primary/10">MyOS</span>
             </button>
             
             <div className="flex items-center space-x-4">
@@ -111,7 +111,7 @@ export default function ContactPage() {
             Get in Touch
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
-            Have questions about ProfSidekick? We would love to hear from you. 
+            Have questions about MyOS? We would love to hear from you. 
             Send us a message and we will respond as soon as possible.
           </p>
         </div>
@@ -297,13 +297,13 @@ export default function ContactPage() {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Frequently Asked Questions</h2>
             <p className="text-xl text-gray-600 dark:text-gray-400">
-              Quick answers to common questions about ProfSidekick
+              Quick answers to common questions about MyOS
             </p>
           </div>
 
           <div className="space-y-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">How do I get started with ProfSidekick?</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">How do I get started with MyOS?</h3>
               <p className="text-gray-600 dark:text-gray-400">
                 Simply create a free account, upload your presentation slides (PDF or PowerPoint), 
                 configure your AI assistant settings, and start your first teaching session. 
@@ -314,7 +314,7 @@ export default function ContactPage() {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">What file formats are supported?</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                ProfSidekick currently supports PDF files and PowerPoint presentations (PPTX). 
+                MyOS currently supports PDF files and PowerPoint presentations (PPTX). 
                 We are working on adding support for Google Slides and other formats.
               </p>
             </div>
@@ -322,7 +322,7 @@ export default function ContactPage() {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">Is there a free trial available?</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Yes! You can create a free account and try ProfSidekick with up to 3 teaching sessions. 
+                Yes! You can create a free account and try MyOS with up to 3 teaching sessions. 
                 No credit card required for the trial.
               </p>
             </div>
@@ -347,13 +347,13 @@ export default function ContactPage() {
               <div className="flex items-center gap-3 mb-4">
                 <img 
                   src="/images/logo.png" 
-                  alt="ProfSidekick Logo" 
+                  alt="MyOS Logo" 
                   className="w-8 h-8 object-contain rounded-full"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
-                <span className="text-xl font-bold">ProfSidekick</span>
+                <span className="text-xl font-bold">MyOS</span>
               </div>
               <p className="text-gray-400 mb-4 max-w-md">
                 Empowering educators with AI-powered teaching tools to create more engaging and interactive learning experiences.
@@ -384,7 +384,7 @@ export default function ContactPage() {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 ProfSidekick. All rights reserved.</p>
+            <p>&copy; 2025 MyOS. All rights reserved.</p>
           </div>
         </div>
       </footer>

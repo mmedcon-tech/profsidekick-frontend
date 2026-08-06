@@ -40,7 +40,7 @@ export default function AboutPage() {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
-              <span className="text-2xl font-bold text-primary dark:text-primary/10">ProfSidekick</span>
+              <span className="text-2xl font-bold text-primary dark:text-primary/10">MyOS</span>
             </button>
 
             <div className="flex items-center space-x-4">
@@ -75,7 +75,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-br from-primary/5 to-primary/10 dark:from-gray-900 dark:to-gray-800 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-            About ProfSidekick
+            About MyOS
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
             We are on a mission to revolutionize education by empowering educators with
@@ -100,25 +100,25 @@ export default function AboutPage() {
                 intelligent, adaptive technology that enhances their natural teaching abilities.
               </p>
               <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
-                ProfSidekick bridges the gap between traditional presentations and interactive learning 
+                MyOS bridges the gap between traditional presentations and interactive learning 
                 by providing AI-powered assistance that understands your content and responds to your 
                 teaching style in real-time.
               </p>
             </div> */}
             <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl p-8">
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-primary dark:text-primary/10 mb-4">🚀 Coming Soon</h3>
+                <h3 className="text-2xl font-bold text-primary dark:text-primary/10 mb-4">Coming Soon</h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-6">
                   We are building something amazing for educators worldwide.
-                  ProfSidekick is currently in active development.
+                  MyOS is currently in active development.
                 </p>
                 {/* <div className="grid grid-cols-2 gap-4 text-center">
                    <div>
-                     <div className="text-2xl font-bold text-primary/90 dark:text-primary/40 mb-1">✨</div>
+                     <div className="text-sm font-semibold text-primary/90 dark:text-primary/40 mb-1">New</div>
                      <div className="text-sm text-gray-600 dark:text-gray-400">AI-Powered</div>
                    </div>
                    <div>
-                     <div className="text-2xl font-bold text-primary/90 dark:text-primary/40 mb-1">🎯</div>
+                     <div className="text-sm font-semibold text-primary/90 dark:text-primary/40 mb-1">Focus</div>
                      <div className="text-sm text-gray-600 dark:text-gray-400">Educator-Focused</div>
                    </div>
                    <div>
@@ -126,7 +126,7 @@ export default function AboutPage() {
                      <div className="text-sm text-gray-600 dark:text-gray-400">Future-Ready</div>
                    </div>
                    <div>
-                     <div className="text-2xl font-bold text-primary/90 dark:text-primary/40 mb-1">💡</div>
+                     <div className="text-sm font-semibold text-primary/90 dark:text-primary/40 mb-1">Ideas</div>
                      <div className="text-sm text-gray-600 dark:text-gray-400">Innovative</div>
                    </div>
                  </div> */}
@@ -142,7 +142,7 @@ export default function AboutPage() {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">Our Values</h2>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              The principles that guide everything we do at ProfSidekick
+              The principles that guide everything we do at MyOS
             </p>
           </div>
 
@@ -190,7 +190,7 @@ export default function AboutPage() {
             <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-6">Our Story</h2>
             <div className="prose prose-lg mx-auto text-gray-600 dark:text-gray-400">
               <p className="mb-6">
-                ProfSidekick was born from a simple observation: despite decades of technological advancement, 
+                MyOS was born from a simple observation: despite decades of technological advancement, 
                 most classroom presentations still rely on static slides and one-way communication. 
                 Educators wanted more interactive, engaging ways to connect with their students, but 
                 existing tools were either too complex or too limited.
@@ -201,12 +201,12 @@ export default function AboutPage() {
                 educational content and could help teachers deliver more dynamic, responsive lessons?
               </p>
               <p className="mb-6">
-                After months of research, development, and testing with real educators, ProfSidekick emerged 
+                After months of research, development, and testing with real educators, MyOS emerged 
                 as the first AI-powered teaching assistant that seamlessly integrates with your existing 
                 presentations to create truly interactive learning experiences.
               </p>
                              <p>
-                 Today, we are actively developing ProfSidekick with the vision of serving educators worldwide, 
+                 Today, we are actively developing MyOS with the vision of serving educators worldwide, 
                  from K-12 teachers to university professors, helping them transform their classrooms into engaging, 
                  AI-enhanced learning environments. We're currently in the development phase, building something truly special.
                </p>
@@ -222,7 +222,7 @@ export default function AboutPage() {
             Ready to Transform Your Teaching?
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            Join thousands of educators who are already using ProfSidekick to create more engaging lessons.
+            Join thousands of educators who are already using MyOS to create more engaging lessons.
           </p>
                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
              {isAuthenticated ? (
@@ -258,13 +258,13 @@ export default function AboutPage() {
               <div className="flex items-center gap-3 mb-4">
                 <img
                   src="/images/logo.png"
-                  alt="ProfSidekick Logo"
+                  alt="MyOS Logo"
                   className="w-8 h-8 object-contain rounded-full"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
-                <span className="text-xl font-bold">ProfSidekick</span>
+                <span className="text-xl font-bold">MyOS</span>
               </div>
               <p className="text-gray-400 mb-4 max-w-md">
                 Empowering educators with AI-powered teaching tools to create more engaging and interactive learning experiences.
@@ -295,7 +295,7 @@ export default function AboutPage() {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 ProfSidekick. All rights reserved.</p>
+            <p>&copy; 2025 MyOS. All rights reserved.</p>
           </div>
         </div>
       </footer>
