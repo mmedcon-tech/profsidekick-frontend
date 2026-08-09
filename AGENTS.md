@@ -268,6 +268,9 @@ Always check `response.ok` and read `detail` for user-facing messages. Do not as
 | GET | `/api/auth/verify-token` | Yes | BFF `GET /api/auth/verify` → `AuthContext.checkAuth()` |
 | POST | `/api/auth/refresh` | Yes | BFF `POST /api/auth/refresh` → `AuthContext.refreshToken()` |
 | POST | `/api/auth/logout` | Yes | BFF `POST /api/auth/logout` → `AuthContext.logout()` |
+| GET | `/api/auth/verify-email` | No | Verify-email page (token query) |
+| POST | `/api/auth/forgot-password` | No | BFF `POST /api/auth/forgot-password` → forgot-password page |
+| POST | `/api/auth/reset-password` | No | BFF `POST /api/auth/reset-password` → reset-password page |
 | GET | `/api/sessions` | Yes | `useUserSessions` |
 | POST | `/api/sessions/create` | Yes | `ClassCreation` |
 | GET | `/api/sessions/{id}` | Yes | `TeachingInterface` |

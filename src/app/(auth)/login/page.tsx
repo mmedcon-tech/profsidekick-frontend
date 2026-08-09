@@ -217,6 +217,15 @@ function LoginForm() {
           </div>
         </div>
 
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-primary/90 dark:text-primary/40 hover:underline font-medium"
+          >
+            Forgot password?
+          </Link>
+        </div>
+
         <div className="pt-4">
           <button
             type="submit"
