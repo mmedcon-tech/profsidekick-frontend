@@ -31,8 +31,8 @@ export const STARTER_AVATARS: StarterAvatar[] = [
     name: 'ProfSidekick',
     tagline: 'Default Educational Assistant',
     description:
-      "The platform's flagship avatar. Covers the full teaching workflow: " +
-      'courses, sessions, oral examinations, rubrics, grading, AI voice, and slides.',
+      "The platform's flagship avatar. Covers the full consultation workflow: " +
+      'courses, sessions, voice consultations, rubrics, feedback, AI voice, and slides.',
     isAvailable: true,
     publisherHref: '/dashboard',
     subscriberHref: '/dashboard',
@@ -46,7 +46,7 @@ export const STARTER_AVATARS: StarterAvatar[] = [
     tagline: 'Legal Education Avatar',
     description:
       'Socratic dialogue, case analysis, and statutory interpretation ' +
-      'for law students and professionals.',
+      'for law learners and professionals.',
     isAvailable: false,
     publisherHref: '#',
     subscriberHref: '#',

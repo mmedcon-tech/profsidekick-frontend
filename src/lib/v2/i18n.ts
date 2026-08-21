@@ -50,6 +50,7 @@ const translations: Record<string, { en: string; ar: string }> = {
   resumeSession: { en: "Resume", ar: "استئناف" },
   teaching: { en: "Teaching", ar: "تعليم" },
   examination: { en: "Examination", ar: "اختبار" },
+  consultation: { en: "Consultation", ar: "استشارة" },
   completed: { en: "Completed", ar: "مكتمل" },
   inProgress: { en: "In Progress", ar: "قيد التقدم" },
   notStarted: { en: "Not Started", ar: "لم يبدأ" },

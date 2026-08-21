@@ -98,7 +98,7 @@ export default function MarketplacePage() {
       <div>
         <div className="mb-4 flex items-center justify-between gap-4">
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Featured Teaching Avatars</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Featured Consultation Avatars</h2>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
               Emirati woman and man — portrait photos aligned with 3D upper-body framing.
             </p>

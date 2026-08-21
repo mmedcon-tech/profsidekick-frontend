@@ -63,7 +63,7 @@ export default function GlbLibraryDetailPage(): React.ReactElement {
                   </span>
                 ))}
                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                  <Mic2 size={12} /> Lip-sync during teaching
+                  <Mic2 size={12} /> Lip-sync during consultation
                 </span>
               </div>
             </div>
@@ -71,7 +71,7 @@ export default function GlbLibraryDetailPage(): React.ReactElement {
             <div className="mt-8 space-y-2 text-center text-xs leading-relaxed text-gray-400">
               <p>
                 Switch between portrait and 3D model. Lip-sync runs only when you preview speech or
-                during a live teaching session.
+                during a live consultation session.
               </p>
               {entry.id === 'avatar-2' && entry.recommendedModelUrl && (
                 <p>

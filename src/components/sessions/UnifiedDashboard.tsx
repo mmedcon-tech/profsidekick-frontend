@@ -247,7 +247,7 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
                       </div>
                       <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
                         <Users className="w-4 h-4" />
-                        <span>{course.enrollment_count || 0} students</span>
+                        <span>{course.enrollment_count || 0} subscribers</span>
                       </div>
                     </div>
 
@@ -286,7 +286,7 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Create Your Course</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Set up your course with details, enroll students, and organize content.</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Set up your course with details, enroll subscribers, and organize content.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
@@ -294,8 +294,8 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
                       <span className="text-sm font-semibold text-primary/90 dark:text-primary/40">2</span>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Build Teaching Sessions</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Upload presentations and configure AI assistants for interactive lessons.</p>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Build Consultation Sessions</h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Upload materials and configure AI assistants for interactive course consultations.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
@@ -303,8 +303,8 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
                       <span className="text-sm font-semibold text-primary/90 dark:text-primary/40">3</span>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Teach Interactively</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Deliver engaging AI-powered lessons with real-time interaction.</p>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Run Consultations</h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Deliver engaging AI-powered consultations with real-time interaction.</p>
                     </div>
                   </div>
                 </>
@@ -316,7 +316,7 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Access Your Courses</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Browse your enrolled courses and view available learning sessions.</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Browse your enrolled courses and view available consultation sessions.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
@@ -324,8 +324,8 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
                       <span className="text-sm font-semibold text-green-600">2</span>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Join Sessions</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Participate in interactive AI-powered learning experiences.</p>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Join Consultations</h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Participate in interactive AI-powered course consultations.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
@@ -333,8 +333,8 @@ export default function UnifiedDashboard({ programId }: { programId?: string } =
                       <span className="text-sm font-semibold text-green-600">3</span>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Learn & Engage</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Ask questions and interact with AI tutors during lessons.</p>
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Consult & Engage</h3>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Ask questions and interact with AI advisors during sessions.</p>
                     </div>
                   </div>
                 </>

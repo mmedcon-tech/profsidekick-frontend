@@ -64,9 +64,9 @@ const PACE_OPTIONS: PrefOption[] = [
 ];
 
 const QUESTIONING_OPTIONS: PrefOption[] = [
-  { value: 'socratic', label: 'Socratic', description: 'Teach through questions; let students reason toward answers.' },
+  { value: 'socratic', label: 'Socratic', description: 'Guide through questions; let learners reason toward answers.' },
   { value: 'direct', label: 'Direct', description: 'Explain first, then check understanding with follow-ups.' },
-  { value: 'guided', label: 'Guided Discovery', description: 'Hints and progressive prompts lead students to conclusions.' },
+  { value: 'guided', label: 'Guided Discovery', description: 'Hints and progressive prompts lead learners to conclusions.' },
 ];
 
 const FORMALITY_OPTIONS: PrefOption[] = [
@@ -91,7 +91,7 @@ const LANGUAGE_OPTIONS: PrefOption[] = [
   { value: 'introductory', label: 'Introductory', description: 'Simple language; define technical terms; avoid jargon.' },
   { value: 'intermediate', label: 'Intermediate', description: 'Standard academic terminology; concepts remain accessible.' },
   { value: 'advanced', label: 'Advanced', description: 'Advanced terminology; assumes strong foundational knowledge.' },
-  { value: 'adaptive', label: 'Adaptive', description: 'Adjusts complexity based on the student\'s demonstrated understanding.' },
+  { value: 'adaptive', label: 'Adaptive', description: 'Adjusts complexity based on the learner\'s demonstrated understanding.' },
 ];
 
 // ─── page ─────────────────────────────────────────────────────────────────────
@@ -281,7 +281,7 @@ export default function CreateAvatarPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
               <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={3}
-                placeholder="What will this avatar specialise in for your students?"
+                placeholder="What will this avatar specialise in for your subscribers?"
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#133221] text-sm resize-none" />
             </div>
           </div>

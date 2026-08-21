@@ -174,7 +174,7 @@ export default function AvatarDetailPage() {
           {[
             { done: !!avatar.configuration,                                      label: 'Configure voice & difficulty' },
             { done: (avatar.configuration?.knowledge_documents.length ?? 0) > 0, label: 'Upload knowledge documents' },
-            { done: (avatar.configuration?.rubrics.length ?? 0) > 0,             label: 'Add grading rubrics' },
+            { done: (avatar.configuration?.rubrics.length ?? 0) > 0,             label: 'Add feedback rubrics' },
             { done: avatar.is_published,                                          label: 'Publish to marketplace' },
           ].map((step) => (
             <div key={step.label} className="flex items-center gap-2 text-sm">

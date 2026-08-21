@@ -79,7 +79,7 @@ export default function ClassCreation() {
     },
   });
 
-  const [sessionMode, setSessionMode] = useState<"teaching" | "examination" | "consultation">("teaching");
+  const [sessionMode, setSessionMode] = useState<"teaching" | "examination" | "consultation">("consultation");
 
   const [availableAvatars, setAvailableAvatars] = useState<{ id: string; name: string; template_id: string; template_image_url: string | null }[]>([]);
   const [selectedAvatarId, setSelectedAvatarId] = useState<string>("");
@@ -206,7 +206,7 @@ export default function ClassCreation() {
 
   const validateForm = (): boolean => {
     if (!selectedCourseId.trim()) { setError("Please select a course"); return false; }
-    if (!classDetails.className.trim()) { setError("Class name is required"); return false; }
+    if (!classDetails.className.trim()) { setError("Session name is required"); return false; }
     if (!selectedFile) { setError("Please upload a presentation file"); return false; }
     if (!classDetails.visionInstructions.trim()) { setError("Vision instructions are required"); return false; }
     return true;
@@ -325,7 +325,7 @@ export default function ClassCreation() {
   const modeCardIdle = "border-border hover:border-primary/40 hover:bg-accent";
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={['publisher', 'admin']}>
       <audio ref={audioPlayerRef} />
       <div className="mx-auto w-full max-w-3xl">
         <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
@@ -375,7 +375,7 @@ export default function ClassCreation() {
                   onChange={handleInputChange}
                   required
                   className="w-full input-style"
-                  placeholder="Introduction to AI — Lecture 1"
+                  placeholder="Course consultation — Module 1"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">Name for this specific session</p>
               </div>
@@ -466,7 +466,7 @@ export default function ClassCreation() {
               {/* Role selection */}
               {availableRoles.length > 0 && (
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-foreground">Student Role</label>
+                  <label className="mb-1 block text-sm font-medium text-foreground">Participant Role</label>
                   <div className="space-y-2">
                     {availableRoles.map((role) => (
                       <label
@@ -607,7 +607,7 @@ export default function ClassCreation() {
               <div>
                 <label className="mb-1 block text-sm font-medium text-foreground">
                   Solution File{" "}
-                  <span className="font-normal text-muted-foreground">(optional — AI reference only, never shown to student)</span>
+                  <span className="font-normal text-muted-foreground">(optional — AI reference only, never shown to the learner)</span>
                 </label>
                 <div
                   className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${

@@ -273,7 +273,7 @@ export default function SubscriberAvatarDetailPage() {
       <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-4 flex items-start gap-3">
         <Info size={16} className="text-emerald-700 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-emerald-800 dark:text-emerald-300">
-          Sessions are voice-driven AI oral examinations. A working microphone is required.
+          Sessions are voice-driven AI course consultations. A working microphone is required.
           Each run is independent — you can retake sessions multiple times.
         </p>
       </div>

@@ -183,7 +183,7 @@ export default function SessionDetailPage() {
             <button
               onClick={handleTogglePublish}
               disabled={publishing}
-              title={session.isPublished ? 'Unpublish — students can no longer start sessions' : 'Publish — make available to enrolled students'}
+              title={session.isPublished ? 'Unpublish — subscribers can no longer start sessions' : 'Publish — make available to enrolled subscribers'}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-50 ${
                 session.isPublished
                   ? 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100 dark:border-green-700 dark:bg-green-950 dark:text-green-400'

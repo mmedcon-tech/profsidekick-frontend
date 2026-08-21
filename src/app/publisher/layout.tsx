@@ -18,6 +18,7 @@ export default function PublisherLayout({ children }: { children: React.ReactNod
   }, [isAuthenticated, isLoading, user, router]);
 
   if (isLoading || !isAuthenticated) return null;
+  if (user?.role !== 'publisher' && user?.role !== 'admin') return null;
 
   return <ThemedLayout>{children}</ThemedLayout>;
 }

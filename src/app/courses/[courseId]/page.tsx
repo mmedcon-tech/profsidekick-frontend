@@ -256,7 +256,7 @@ export default function CourseDetailPage() {
             </span>
             {isPublisher && (
               <span className="flex items-center gap-1.5">
-                <Users className="h-4 w-4" /> {students.length} student{students.length !== 1 ? 's' : ''}
+                <Users className="h-4 w-4" /> {students.length} subscriber{students.length !== 1 ? 's' : ''}
               </span>
             )}
           </div>

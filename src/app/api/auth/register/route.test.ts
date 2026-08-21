@@ -50,4 +50,24 @@ describe('POST /api/auth/register', () => {
       }),
     );
   });
+
+  it('rejects invalid roles before calling the backend', async () => {
+    const request = new NextRequest('http://localhost/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: 'badrole',
+        email: 'bad@example.com',
+        password: 'secret123',
+        firstName: 'Bad',
+        lastName: 'Role',
+        role: 'superuser',
+      }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.detail).toMatch(/Invalid role/i);
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });

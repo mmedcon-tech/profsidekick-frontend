@@ -37,9 +37,9 @@ const TABS: Tab[] = [
   },
   { 
     id: 'students', 
-    label: 'Students', 
+    label: 'Subscribers', 
     icon: Users, 
-    description: 'Manage student enrollment and access' 
+    description: 'Manage subscriber enrollment and access' 
   },
   { 
     id: 'privacy', 
@@ -192,8 +192,8 @@ export default function CourseSettingsTabs({
   const renderStudentsSettings = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Student Management</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">Control how students can access and enroll in your course.</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Subscriber Management</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">Control how subscribers can access and enroll in your course.</p>
         
         <div className="space-y-4">
           <div className="flex items-center">

@@ -25,6 +25,8 @@ export default function SubscriberLayout({ children }: { children: React.ReactNo
     );
   }
 
+  if (user?.role !== 'subscriber' && user?.role !== 'admin') return null;
+
   return (
     <ThemedLayout>
       {children}

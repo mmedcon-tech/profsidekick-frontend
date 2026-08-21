@@ -15,14 +15,14 @@ const ROLES: { value: Role; label: string; description: string; icon: React.Reac
   {
     value: 'publisher',
     label: 'Publisher',
-    description: 'Create AI-powered educational avatars, manage courses, sessions, and teach through the platform.',
+    description: 'Create AI consultation avatars, manage courses and sessions, and publish experiences for subscribers.',
     icon: <Mic size={28} />,
     color: 'blue',
   },
   {
     value: 'subscriber',
     label: 'Subscriber',
-    description: 'Browse the marketplace, subscribe to AI avatars, and learn through voice-driven experiences.',
+    description: 'Browse the marketplace, subscribe to AI avatars, and join voice-driven course consultations.',
     icon: <GraduationCap size={28} />,
     color: 'green',
   },

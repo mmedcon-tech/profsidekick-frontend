@@ -46,6 +46,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ detail: 'Missing required registration fields' }, { status: 400 });
   }
 
+  if (!['publisher', 'subscriber', 'admin'].includes(payload.role)) {
+    return NextResponse.json(
+      { detail: 'Invalid role. Must be publisher, subscriber, or admin.' },
+      { status: 400 },
+    );
+  }
+
   try {
     const response = await fetch(config.getApiUrl('/api/auth/register'), {
       method: 'POST',
