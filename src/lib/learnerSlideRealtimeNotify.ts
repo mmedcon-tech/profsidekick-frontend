@@ -69,7 +69,7 @@ export function notifyLearnerSlideChangeToRealtime({
           type: 'response.create',
           response: {
             instructions:
-              'The learner just changed slides. Acknowledge briefly, then teach ONLY the current slide content aloud from the beginning. Do not continue the previous slide.',
+              'The learner just changed slides. Acknowledge briefly, then teach or discuss the new slide. For questions, search and use knowledge from the entire uploaded material — the current slide is supplementary context only.',
           },
         },
         'slide.learner.response',

@@ -64,6 +64,14 @@ export interface AiLeadPromptOptions {
   publisherInstructions?: string;
 }
 
+const ragFirstPolicy = `KNOWLEDGE & RETRIEVAL RULES (critical):
+- For EVERY learner question, search across ALL indexed session slides and course materials — never limit retrieval to the slide currently on screen.
+- Retrieved chunks (injected as system messages) are your primary factual source. You may answer from any slide or uploaded material when relevant.
+- The current on-screen slide is SUPPLEMENTARY context only (where the learner is looking). It is NOT a retrieval filter.
+- Use prior conversation turns for follow-ups, pronouns, and continuity.
+- If retrieved material does not contain the answer, say so clearly rather than guessing.
+- When an answer comes from a different slide, you may call goToSlide(n) to show it, or answer without navigating — use your judgment.`;
+
 /** System prompt layered on top of backend session instructions for AI-led navigation. */
 export function buildAiLeadSystemPrompt({
   slides,
@@ -83,42 +91,44 @@ export function buildAiLeadSystemPrompt({
     : 'No extracted content';
 
   const deckOutline = slides
-    .map((slide, index) => {
-      if (index === currentSlideIndex) {
-        return `→ ${index + 1}. ${slide.title} (CURRENT — on screen now)`;
-      }
-      return `${index + 1}. ${slide.title} (locked — call nextSlide() before teaching this)`;
-    })
+    .map((slide, index) => `${index + 1}. ${slide.title}${index === currentSlideIndex ? ' (on screen now)' : ''}`)
     .join('\n');
 
-  const teachingLead = `You are leading an interactive teaching session. The learner sees ONE slide on screen at a time.
+  const teachingLead = `You are leading an interactive teaching session.
 
-SLIDE NAVIGATION RULES (critical — violations break the UI):
-- You may ONLY teach content for the CURRENT on-screen slide (${currentLabel}).
-- Do NOT summarize or teach future slides while still on the current slide.
-- The learner can press Next or Previous on screen to change slides at any time. When that happens, you will receive a message — immediately stop what you were teaching and begin teaching ONLY the new current slide from the start.
-- After you finish teaching the current slide aloud, you MAY call nextSlide() to advance automatically — but the learner may also press Next themselves.
-- Saying "next slide" out loud does NOT change the screen — only the nextSlide() tool or the learner's Next button does.
-- NEVER call nextSlide() while you are still explaining the current slide.
-- If the learner interrupts with a question, answer it, then resume or call nextSlide() when ready.
-- Use previousSlide() or goToSlide(n) when revisiting earlier material.
-- The on-screen slide must always match what you are teaching.
+${ragFirstPolicy}
 
-CURRENT POSITION: ${currentLabel}
+SLIDE NAVIGATION (UI sync):
+- When actively teaching sequentially, focus spoken explanation on the current slide, then call nextSlide() when finished — or wait for the learner to press Next.
+- The learner can change slides at any time; when they do, you will receive an update — adapt immediately.
+- Use previousSlide() or goToSlide(n) when revisiting or when an answer references another slide.
 
-CURRENT SLIDE CONTENT (only source you may teach right now):
+CURRENT ON-SCREEN SLIDE (supplementary — not a retrieval boundary):
+${currentLabel}
+
+CURRENT SLIDE CONTENT:
 ${currentDetail}
 
-DECK OUTLINE (titles only — details unlock after nextSlide()):
+FULL DECK OUTLINE:
 ${deckOutline}`;
 
-  const examinationLead = `You are conducting an oral examination. Use slide navigation tools to reference specific slides when asking questions, but do not lecture or teach through the deck sequentially unless the learner asks for clarification.
+  const examinationLead = `You are conducting an oral examination.
 
-CURRENT POSITION: ${currentLabel}`;
+${ragFirstPolicy}
 
-  const consultationLead = `You are in a consultation session. Use slide navigation tools to reference relevant slides as you discuss the material with the learner.
+Use slide navigation tools to reference specific slides when asking questions. Do not lecture through the deck unless the learner asks for clarification.
 
-CURRENT POSITION: ${currentLabel}`;
+CURRENT ON-SCREEN SLIDE (supplementary):
+${currentLabel}`;
+
+  const consultationLead = `You are in a course consultation session — an expert advisor helping the learner understand the material.
+
+${ragFirstPolicy}
+
+Answer questions clearly using retrieved knowledge from the full course. Reference slides when helpful.
+
+CURRENT ON-SCREEN SLIDE (supplementary):
+${currentLabel}`;
 
   const modeBlock =
     sessionMode === 'examination'
@@ -141,10 +151,14 @@ export function buildSessionKickoffMessage(
   sessionMode: SessionMode,
 ): string {
   if (sessionMode === 'examination') {
-    return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Greet the learner, explain the examination format, and begin questioning based on the current slide.`;
+    return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Greet the learner, explain the examination format, and begin questioning. Use the full indexed material when formulating questions — not only this slide.`;
   }
 
-  return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner briefly, teach ONLY this slide's content, then either call nextSlide() or wait for the learner to press Next. Repeat: teach one slide at a time. Never discuss slide ${currentSlideIndex + 2} or later until the current slide has been covered and the screen has advanced.`;
+  if (sessionMode === 'consultation') {
+    return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner to the consultation. Introduce what you can help with, then begin discussing this slide. For any question, search and use knowledge from the entire uploaded material — not just the current slide.`;
+  }
+
+  return `The session is starting on slide ${currentSlideIndex + 1} ("${slideTitle}"). Welcome the learner briefly, then teach this slide's content. When they ask questions, answer using the FULL indexed material (any slide or course document). The current slide is where they are looking — not a limit on what you may retrieve.`;
 }
 
 export type LearnerSlideChangeAction = 'next' | 'previous' | 'jump';
@@ -167,10 +181,10 @@ export function buildLearnerSlideChangeMessage(
 
   return [
     `The learner ${actionLabel} and is now on slide ${slideIndex + 1} of ${slides.length}: "${title}".`,
-    `STOP teaching the previous slide immediately.`,
-    `CURRENT SLIDE CONTENT (your ONLY source — teach this aloud now, from the beginning):`,
+    `This slide is now on screen (supplementary context). Continue using the FULL indexed material for any questions.`,
+    `CURRENT SLIDE CONTENT:`,
     content,
-    `Respond out loud now: briefly acknowledge the slide change, then teach this slide.`,
+    `Acknowledge the slide change briefly, then teach or discuss this slide. For questions, still retrieve from all slides and course materials.`,
   ].join('\n');
 }
 

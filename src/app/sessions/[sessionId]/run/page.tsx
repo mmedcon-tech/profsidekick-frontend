@@ -205,6 +205,7 @@ function SessionRunInner() {
     <LearningInterface
       classSession={classSession}
       sessionRunId={runId ?? undefined}
+      courseId={returnCourseId ?? undefined}
       sessionMode={sessionMode}
       onEndSession={handleEndSession}
     />

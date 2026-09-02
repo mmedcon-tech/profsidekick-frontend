@@ -37,16 +37,16 @@ describe('buildSlideNavigationTools', () => {
 });
 
 describe('buildAiLeadSystemPrompt', () => {
-  it('instructs the avatar to auto-advance in teaching mode', () => {
+  it('instructs RAG-first retrieval across all materials in teaching mode', () => {
     const prompt = buildAiLeadSystemPrompt({
       slides,
       sessionMode: 'teaching',
       currentSlideIndex: 0,
     });
-    expect(prompt).toMatch(/press Next or Previous/i);
-    expect(prompt).toMatch(/call nextSlide\(\)/i);
+    expect(prompt).toMatch(/ALL indexed session slides/i);
+    expect(prompt).toMatch(/supplementary context only/i);
     expect(prompt).toMatch(/Introduction/);
-    expect(prompt).toMatch(/CURRENT POSITION/i);
+    expect(prompt).toMatch(/CURRENT POSITION|CURRENT ON-SCREEN SLIDE/i);
     expect(prompt).toMatch(/Welcome to the course/);
     expect(prompt).not.toMatch(/Key ideas go here/);
   });
@@ -58,14 +58,14 @@ describe('buildAiLeadSystemPrompt', () => {
       currentSlideIndex: 1,
     });
     expect(prompt).toMatch(/oral examination/i);
-    expect(prompt).not.toMatch(/Advance automatically once you have covered the current slide/);
+    expect(prompt).toMatch(/ALL indexed session slides/i);
   });
 });
 
 describe('buildSessionKickoffMessage', () => {
-  it('asks the avatar to teach and advance in teaching mode', () => {
+  it('asks the avatar to use full indexed material in teaching mode', () => {
     const message = buildSessionKickoffMessage(0, 'Introduction', 'teaching');
-    expect(message).toMatch(/call nextSlide\(\)/i);
+    expect(message).toMatch(/FULL indexed material/i);
   });
 });
 
@@ -86,7 +86,7 @@ describe('buildLearnerSlideChangeMessage', () => {
     expect(message).toMatch(/pressed Next/i);
     expect(message).toMatch(/Core Concepts/);
     expect(message).toMatch(/Key ideas/);
-    expect(message).toMatch(/teach this aloud now/i);
+    expect(message).toMatch(/FULL indexed material/i);
   });
 });
 

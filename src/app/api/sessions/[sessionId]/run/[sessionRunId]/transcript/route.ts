@@ -7,6 +7,30 @@ interface TranscriptTurnBody {
   captured_at?: string;
 }
 
+type RouteContext = { params: Promise<{ sessionId: string; sessionRunId: string }> };
+
+export async function GET(
+  request: NextRequest,
+  context: RouteContext,
+): Promise<NextResponse> {
+  const { sessionId, sessionRunId } = await context.params;
+  const authHeader = request.headers.get('authorization');
+  const headers: Record<string, string> = {};
+  if (authHeader) headers.Authorization = authHeader;
+
+  try {
+    const response = await fetch(
+      config.getApiUrl(`/api/sessions/${sessionId}/run/${sessionRunId}/transcript`),
+      { headers },
+    );
+    const data = await response.json().catch(() => ({}));
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('transcript GET proxy error:', error);
+    return NextResponse.json({ error: 'Failed to reach backend' }, { status: 500 });
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string; sessionRunId: string }> },

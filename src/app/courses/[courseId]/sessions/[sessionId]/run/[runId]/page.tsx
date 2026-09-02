@@ -106,6 +106,7 @@ function RunPageInner() {
     <LearningInterface
       classSession={classSession}
       sessionRunId={runId}
+      courseId={courseId}
       sessionMode={sessionMode}
       onEndSession={handleEndSession}
     />

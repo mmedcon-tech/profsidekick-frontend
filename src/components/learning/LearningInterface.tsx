@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useEvent } from "@/contexts/EventContext";
 import { useHandleServerEvent } from "@/hooks/useHandleServerEvent";
 import { useTranscriptPersistence } from "@/hooks/useTranscriptPersistence";
+import { useTranscriptLoader } from "@/hooks/useTranscriptLoader";
 import { useStructuredTranscript } from "@/contexts/StructuredTranscriptContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRealtimeConnection, checkWebRTCSupport } from "@/lib/realtimeConnection";
@@ -53,6 +54,11 @@ import { useRealtimeTeachingLipSync } from "@/hooks/useRealtimeTeachingLipSync";
 import { notifyLearnerSlideChangeToRealtime } from "@/lib/learnerSlideRealtimeNotify";
 import { interruptActiveResponse, resumeInterruptedResponse } from "@/lib/realtimeInterrupt";
 import { toast } from "sonner";
+import {
+  buildRagSystemEvent,
+  formatRagContextMessage,
+  searchSessionKnowledge,
+} from "@/lib/ragContext";
 
 const defaultTeachingAvatar = getDefaultChatbotAvatar();
 const DEFAULT_SESSION_AVATAR: SessionAvatarConfig = {
@@ -87,6 +93,7 @@ interface LearningInterfaceProps {
   classSession: ClassSession;
   onEndSession: (metadata?: any) => void;
   sessionRunId?: string;
+  courseId?: string;
   startingSlide?: number;
   avatarConfig?: SessionAvatarConfig;
   isSharedLink?: boolean;
@@ -97,6 +104,7 @@ export default function LearningInterface({
   classSession,
   onEndSession,
   sessionRunId,
+  courseId: courseIdProp,
   startingSlide,
   avatarConfig,
   isSharedLink = false,
@@ -204,6 +212,43 @@ export default function LearningInterface({
   const { logClientEvent, } = useEvent();
   const { currentQuestion, latestResponse, keyConcepts, rollingNotes, addStructuredTurn } = useStructuredTranscript();
   const persistTranscriptTurn = useTranscriptPersistence(classSession.sessionId, sessionRunId);
+  const { loaded: transcriptLoaded, initialTranscript } = useTranscriptLoader(
+    classSession.sessionId,
+    sessionRunId,
+  );
+  const courseIdRef = useRef<string | undefined>(courseIdProp);
+  const transcriptHydratedRef = useRef(false);
+  const lastRagQueryRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    courseIdRef.current = courseIdProp;
+  }, [courseIdProp]);
+
+  const injectRagForQuestion = useCallback(
+    async (query: string, eventSuffix: string): Promise<void> => {
+      const trimmed = query.trim();
+      if (!trimmed) return;
+
+      lastRagQueryRef.current = trimmed;
+      try {
+        const chunks = await searchSessionKnowledge(classSession.sessionId, trimmed, {
+          token,
+          courseId: courseIdRef.current,
+          topK: 8,
+        });
+        const contextMessage = formatRagContextMessage(
+          trimmed,
+          chunks,
+          currentSlideRef.current,
+          classSession.slides,
+        );
+        sendClientEventRef.current(buildRagSystemEvent(contextMessage), `${eventSuffix}.rag_context`);
+      } catch (error) {
+        console.warn('RAG injection failed:', error);
+      }
+    },
+    [classSession.sessionId, classSession.slides, token],
+  );
 
   const getRubricTerms = useCallback((): string[] => {
     try {
@@ -1089,7 +1134,7 @@ export default function LearningInterface({
     }
   };
 
-  const submitTextMessage = (event?: React.FormEvent<HTMLFormElement>) => {
+  const submitTextMessage = async (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     const clean = textInput.trim();
     if (!clean || sessionStatus !== "CONNECTED") return;
@@ -1122,6 +1167,8 @@ export default function LearningInterface({
         ],
       },
     }, "text_input.user_message");
+
+    await injectRagForQuestion(clean, "text_input");
     sendClientEvent({ type: "response.create" }, "text_input.response");
   };
 
@@ -1332,10 +1379,20 @@ export default function LearningInterface({
     applySlideNavigation(targetIndex, "dot_navigation");
   };
 
-  // Reset transcript content when a new session run starts
+  // Reset transcript when switching runs, then hydrate from persisted turns
   useEffect(() => {
+    transcriptHydratedRef.current = false;
     setTranscript([]);
   }, [sessionRunId]);
+
+  useEffect(() => {
+    if (!transcriptLoaded || transcriptHydratedRef.current) return;
+    if (initialTranscript.length > 0) {
+      setTranscript(initialTranscript);
+      setIsTranscriptVisible(true);
+    }
+    transcriptHydratedRef.current = true;
+  }, [transcriptLoaded, initialTranscript]);
 
   // Check WebRTC support on mount
   useEffect(() => {
@@ -1506,6 +1563,7 @@ export default function LearningInterface({
           ...prev,
           { id: createTranscriptId(), role: "assistant", text: serverEvent.transcript },
         ]);
+        handleTurnComplete("assistant", serverEvent.transcript);
         if (heygenAvatarRef.current) {
           heygenAvatarRef.current
             .speak({ text: serverEvent.transcript, taskType: TaskType.REPEAT })
@@ -1534,10 +1592,16 @@ export default function LearningInterface({
             ...prev,
             { id: createTranscriptId(), role: "user", text: recognizedText },
           ]);
+          handleTurnComplete("user", recognizedText);
           clearTimeout((window as any)._speechHandleTimer);
-          (window as any)._speechHandleTimer = setTimeout(() => {
+          (window as any)._speechHandleTimer = setTimeout(async () => {
             // confidence and duration are not available on this event; pass safe defaults
             handleUserSpeech(recognizedText, 1.0, recognizedText.split(" ").length * 0.3);
+
+            // Cancel any auto-started response so retrieved knowledge is included
+            sendClientEvent({ type: "response.cancel" }, "voice.rag_cancel");
+            await injectRagForQuestion(recognizedText, "voice");
+            sendClientEvent({ type: "response.create" }, "voice.response");
           }, 400);
         }
       }
@@ -1567,17 +1631,13 @@ export default function LearningInterface({
 
           if (outputItem.name === "searchKnowledgeBase") {
             pendingAsync += 1;
-            const query = args.query;
-            fetch(config.getApiUrl(`/api/sessions/${classSession.sessionId}/search`), {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-              },
-              body: JSON.stringify({ query, course_id: undefined }),
+            const query = typeof args.query === "string" ? args.query : "";
+            searchSessionKnowledge(classSession.sessionId, query, {
+              token,
+              courseId: courseIdRef.current,
+              topK: 8,
             })
-              .then((res) => res.json())
-              .then((data) => {
+              .then((results) => {
                 sendClientEvent({
                   type: "conversation.item.create",
                   item: {
@@ -1585,8 +1645,8 @@ export default function LearningInterface({
                     call_id: outputItem.call_id,
                     output: JSON.stringify({
                       success: true,
-                      message: `Found ${(data.results || []).length} chunks of knowledge`,
-                      data: data.results || [],
+                      message: `Found ${results.length} chunks of knowledge from all indexed slides and course materials`,
+                      data: results,
                     }),
                   },
                 });
