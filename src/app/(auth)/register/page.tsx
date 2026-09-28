@@ -66,7 +66,6 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
-  const [registeredRole, setRegisteredRole] = useState<Role | ''>('');
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) router.push('/');
@@ -114,7 +113,6 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(formatApiError(data, 'Registration failed'));
       setRegisteredEmail(formData.email);
-      setRegisteredRole(formData.role);
       setStep('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -242,7 +240,7 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* ── Success: verify email ── */}
+        {/* ── Success: ready to sign in ── */}
         {step === 'done' && (
           <div className="space-y-6 text-center py-4">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
@@ -253,16 +251,9 @@ export default function RegisterPage() {
                 Account created
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                We sent a verification link to{' '}
-                <span className="font-semibold text-gray-900 dark:text-gray-100">{registeredEmail}</span>.
-                Click the link in your email to verify your account.
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{registeredEmail}</span>{' '}
+                is ready. Sign in with the username and password you just created.
               </p>
-              {registeredRole === 'publisher' && (
-                <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Publisher accounts also require admin approval after email verification.
-                  You will receive another email once your account is approved.
-                </p>
-              )}
             </div>
             <Link
               href="/login"
